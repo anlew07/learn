@@ -245,3 +245,40 @@ test("a new major event pauses real 4× simulation before another day passes", a
   expect(saved.run.paused).toBe(true);
   expect(saved.run.day).toBe(2);
 });
+
+test("fusion previews show real eligibility and charge exactly once on success", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.locator('button[data-tab="soul"]').click();
+  await expect(page.locator(".fusion-row")).toHaveCount(2);
+  await expect(page.locator('.fusion-row button[data-action="fusion"]:disabled')).toHaveCount(2);
+
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { default: Engine } = await import("/src/engine.js");
+    const { profile } = await saveRepository.load();
+    const nextRun = Engine.fresh("fusion-browser", 2, false);
+    const donor = nextRun.worlds.find((world) => world.id === "lingzai");
+    const target = nextRun.worlds.find((world) => world.id === "zombie");
+    donor.level = 2;
+    target.level = 3;
+    target.p = 100;
+    target.flags.p65 = true;
+    target.flags.p100 = true;
+    target.resource = 12;
+    await saveRepository.enqueueSave(nextRun, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-tab="soul"]').click();
+  const fuse = page.locator('button[data-action="fusion"][data-world="zombie"]');
+  await expect(fuse).toBeEnabled();
+  await expect(page.locator(".fusion-row").last()).toContainText("消耗1AP / 1灵魂");
+  await fuse.click();
+  await expect
+    .poll(async () => (await getSnapshot(page)).run?.worlds.find((w) => w.id === "zombie").status)
+    .toBe("saved");
+  const { run } = await getSnapshot(page);
+  expect(run.ap).toBe(1);
+  expect(run.soul).toBe(7);
+});

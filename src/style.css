@@ -79,3 +79,10 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 .finale-check.ready{color:#a5dbc4}
 .finale-check.missing{color:#f0ca96}
 .finale-preview .hint{margin:8px 0 0}
+
+/* Fusion eligibility is rendered from the engine's exact payment check. */
+.fusion-row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.fusion-row>div{flex:1;min-width:0}
+.fusion-row .hint{margin-top:4px;line-height:1.5}
+.fusion-row button{flex-shrink:0}
+@media(max-width:400px){.fusion-row{align-items:stretch;flex-direction:column}}

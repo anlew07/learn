@@ -6,6 +6,7 @@ import { computeWaveBonuses } from "./systems/wave-combat.js";
 import { previewMajorEvent } from "./systems/event-contract.js";
 import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
 import { summarizeFinale } from "./systems/finale-readiness.js";
+import { evaluateFusion } from "./systems/fusion-contract.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -454,29 +455,31 @@ const MultiworldEngine = (function () {
     log(s,null,a.name+"支援"+b.name+"：消耗4资源、1行动点与1灵魂，"+(mode==="p"?"拯救进度+12":"毁灭进度-12")+"。","major");
     return {ok:true};
   }
+  function previewFusion(s,targetId,providers){
+    var target=s?byId(s,targetId):null;
+    return evaluateFusion(s,target,{
+      definition:target?WORLDS[target.id]:null,
+      bossRequirement:target?bossRequirement(target):0,
+      effectiveLevel:target?effectiveLevel(s,target):0,
+      freeAP:s?availableAP(s):0,
+      canFinish:target?canFinal(s,target,0):false
+    },providers);
+  }
   function fuse(s,targetId,providers){
+    var eligibility=previewFusion(s,targetId,providers);
+    if(!eligibility.available)return {ok:false,error:eligibility.reason};
     var target=byId(s,targetId);
-    if(!s.active||!target||target.status!=="running")return {ok:false,error:"目标世界已结束"};
-    if(s.runNumber<2)return {ok:false,error:"第二局才解锁灵魂叠加"};
-    var haveBoss=target.pendingEvent&&target.pendingEvent.state==="active"&&target.pendingEvent.type==="boss";
-    var haveFinal=WORLDS[target.id].boss&&target.p>=100&&target.level>=3&&target.resource>=WORLDS[target.id].finalCost&&target.flags.p65&&target.flags.p100;
-    if(!haveBoss&&!haveFinal)return {ok:false,error:"当前没有可融合的重大战斗"};
-    if(haveFinal&&canFinal(s,target,0))return {ok:false,error:"当前分身已经可以独立获胜"};
-    var need=haveBoss?3:bossRequirement(target);
-    var gap=need-effectiveLevel(s,target);
-    if(gap<=0)return {ok:false,error:"无需借力即可获胜"};
-    var count=gap===1?1:2;
-    if(count===2&&(s.runNumber<3||s.worlds.length<3))return {ok:false,error:"需要三世界模式的三人之力"};
-    if(gap>2)return {ok:false,error:"即使三人之力也不足以获胜"};
-    var pool=alive(s).filter(function(w){return w!==target&&w.level>=2&&!w.retreat;});
-    if(providers&&providers.length)pool=providers.map(function(id){return byId(s,id);}).filter(function(w){return w&&w!==target&&w.status==="running"&&w.level>=2&&!w.retreat;});
-    if(pool.length<count)return {ok:false,error:"没有足够的可借力分身（闭关中不可借出）"};
-    if(availableAP(s)<count||s.soul<=count)return {ok:false,error:"行动点或灵魂强度不足"};
-    if(s.day<s.fusionNext)return {ok:false,error:"灵魂融合正在冷却"};
-    s.ap-=count;s.soul-=count;s.fusionNext=s.day+(count===2?21:13);
-    pool.slice(0,count).forEach(function(w){w.weaknessStart=s.day+1;w.weaknessUntil=s.day+3;});
-    if(haveBoss)finishBoss(s,target);else finalize(s,target,count);
-    log(s,null,(count===2?"三人之力":"二人之力")+"成功："+target.name+"本次战斗有效等级+"+count+"，力量提供者未来3日成长减缓。","major");
+    var count=eligibility.bonusLevel;
+    s.ap-=eligibility.apCost;s.soul-=eligibility.soulCost;
+    s.fusionNext=s.day+(count===2?21:13);
+    eligibility.donorIds.forEach(function(id){
+      var provider=byId(s,id);
+      provider.weaknessStart=s.day+1;provider.weaknessUntil=s.day+3;
+    });
+    if(eligibility.battle==="boss")finishBoss(s,target);
+    else finalize(s,target,count);
+    log(s,null,eligibility.kind+"成功："+target.name+"本次战斗有效等级+"+count+
+      "，力量提供者未来3日成长减缓。","major");
     finishRun(s);return {ok:true};
   }
   function useEcho(s,echoWorldId,targetId){
@@ -538,6 +541,6 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
+    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;

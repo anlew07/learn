@@ -169,7 +169,15 @@ function soulHtml(){
  '<div class="event-actions"><button data-action="aid" data-mode="p">援助拯救 +12</button><button data-action="aid" data-mode="d">压制毁灭 −12</button></div>'+
  '<p class="hint">闭关分身允许提供资源，但不能参与二人或三人之力。二人之力需指定正在等待处理的精英战，或符合资格的终局战。</p></section>'+
  '<section class="panel"><h2>灵魂融合</h2><p class="muted">二人之力第2局解锁；三人之力第3局解锁。当前冷却至第 '+run.fusionNext+' 天。</p>'+
- running.map(w=>'<div class="soul-row row-between"><span>'+w.name+' · '+(w.id==="lingzai"?"条件型封印":"战斗终局")+'</span><button data-action="fusion" data-world="'+w.id+'" '+(run.runNumber<2||w.id==="lingzai"?'disabled':'')+'>为此世界借力</button></div>').join("")+'</section>'+
+ running.map(w=>{
+ const f=Engine.previewFusion(run,w.id);
+ const reason=f.available?
+   f.kind+'：消耗'+f.apCost+'AP / '+f.soulCost+'灵魂；供力者'+f.donorIds.map(id=>Engine.WORLDS[id].name).join('、')+'未来3日收益−30%':
+   '当前不可借力：'+f.reason+(f.apCost?'（需'+f.apCost+'AP / '+f.soulCost+'灵魂）':'');
+ return '<div class="soul-row fusion-row"><div><b>'+esc(w.name)+'</b><div class="hint">'+esc(reason)+'</div></div>'+
+ '<button data-action="fusion" data-world="'+w.id+'" '+(f.available?'':'disabled')+'>'+
+ (f.available?'发动'+esc(f.kind):'条件未满足')+'</button></div>';
+ }).join("")+'</section>'+
  '<section class="panel"><h2>世界回响</h2>'+(echoes.length?echoes.map(e=>'<div class="soul-row"><b>'+Engine.WORLDS[e.id].name+' 回响</b><div class="event-actions">'+running.filter(w=>w.id!==e.id).map(w=>'<button data-action="echo" data-from="'+e.id+'" data-world="'+w.id+'">支援'+w.name+'</button>').join("")+'</div></div>').join(""):'<div class="muted">还没有可使用的世界回响。已拯救世界不再参与普通援助。</div>')+'</section></div>';
 }
 function statsHtml(){
