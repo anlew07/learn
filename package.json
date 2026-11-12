@@ -7,14 +7,15 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "lint": "eslint src tests scripts eslint.config.mjs",
-    "format": "prettier --write src tests scripts eslint.config.mjs",
-    "format:check": "prettier --check \"scripts/**/*.mjs\" \"eslint.config.mjs\"",
+    "lint": "eslint src tests scripts e2e eslint.config.mjs playwright.config.mjs",
+    "format": "prettier --write src tests scripts e2e eslint.config.mjs playwright.config.mjs",
+    "format:check": "prettier --check \"scripts/**/*.mjs\" \"eslint.config.mjs\" \"playwright.config.mjs\" \"e2e/**/*.pw.js\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "balance": "node scripts/balance-report.mjs --seeds=100",
     "balance:check": "node scripts/balance-report.mjs --seeds=100 --assert",
-    "verify": "npm run lint && npm run format:check && npm test && npm run build && npm run balance:check"
+    "verify": "npm run lint && npm run format:check && npm test && npm run build && npm run balance:check && npm run test:e2e",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",
@@ -26,7 +27,8 @@
     "eslint": "^9.39.0",
     "@eslint/js": "^9.39.0",
     "globals": "^16.5.0",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "@playwright/test": "^1.65.0"
   },
   "type": "module",
   "engines": {

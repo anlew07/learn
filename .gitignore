@@ -11,3 +11,7 @@ node_modules/
 *.key
 *.pem
 credentials*
+
+# E2E browser reports and traces
+playwright-report/
+test-results/
