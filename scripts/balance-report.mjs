@@ -130,11 +130,13 @@ if (shouldAssert) {
     const totalBattles = e.meanActionsPerRun.fight || 0;
     if (e.meanWaveBattles > totalBattles + 0.02) return true;
     if (row.waves) return e.meanExtraXp > e.meanWaveBattles * 0.75 + 0.05;
-    return e.meanWaveBattles !== 0 ||
+    return (
+      e.meanWaveBattles !== 0 ||
       e.meanExtraXp !== 0 ||
       e.meanExtraResources !== 0 ||
       e.meanExtraDoomReduction !== 0 ||
-      e.evolutionRatePerWorld !== 0;
+      e.evolutionRatePerWorld !== 0
+    );
   });
 
   if (
@@ -144,7 +146,7 @@ if (shouldAssert) {
     invalidWaveAccounting
   ) {
     process.stderr.write(
-      "Balance smoke test failed: stalled run, weak strategy distinction or inconsistent wave accounting.\n",
+      "Balance check failed: stalled run, strategy gap or inconsistent wave totals.\n",
     );
     process.exitCode = 1;
   }
