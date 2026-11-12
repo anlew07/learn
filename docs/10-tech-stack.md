@@ -33,3 +33,5 @@ npm run preview
 ~~~
 
 本项目需要Node.js满足当前Vite/Vitest版本要求，建议Node.js 22.12+。本地环境若无法访问npm，需在联网开发环境或者GitHub Actions安装依赖；无依赖安装就不能声称已完成正式打包测试。
+
+首次GitHub Actions运行在启动阶段失败，未返回可用执行日志，已登记Issue #2。现已使用公开seedrandom源码对引擎和17条测试进行独立JS冒烟验证；这不等于Vite生产构建和手机真机测试。

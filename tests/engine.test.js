@@ -18,12 +18,35 @@ describe("multiworld simulation baseline",()=>{
     expect(JSON.parse(JSON.stringify(a))).toEqual(a);
     expect(a.worlds[0].rng).not.toEqual(a.worlds[1].rng);
   });
-  it("does not change base-world numbers simply by enabling wave rendering",()=>{
-    const a=simulate("wave-off-on",1,false,36),b=simulate("wave-off-on",1,true,36);
+  it("does not add another main action merely by enabling wave rendering",()=>{
+    const a=simulate("wave-off-on",1,false,1),b=simulate("wave-off-on",1,true,1);
     for(let i=0;i<2;i++){
       const w=a.worlds[i],z=b.worlds[i];
-      expect([w.status,w.level,w.xp,w.resource,w.p,w.d]).toEqual([z.status,z.level,z.xp,z.resource,z.p,z.d]);
+      expect([w.level,w.xp,w.resource,w.p,w.d]).toEqual([z.level,z.xp,z.resource,z.p,z.d]);
+      expect(w.action).toEqual(z.action);
     }
+  });
+  it("gives capped build benefits only once per combat action",()=>{
+    const base=Engine.fresh("combat-bonus",1,false);
+    const variant=Engine.fresh("combat-bonus",1,true);
+    for(const s of [base,variant]){
+      const w=Engine.byId(s,"zombie");
+      w.level=2;w.resource=12;w.p=10;w.d=22;w.strategy="clear";
+      w.build.attack=[{id:"blades",lv:2},{id:"arc",lv:1}];
+      w.build.support=[{id:"armor",lv:2}];
+      w.build.evolved=true;
+      w.threat={id:"same",status:"active",progress:0,retryDay:1};
+    }
+    Engine.step(base);Engine.step(variant);
+    const a=Engine.byId(base,"zombie"),b=Engine.byId(variant,"zombie");
+    expect(a.threat.progress).toBe(1);
+    expect(b.threat.progress).toBe(1);
+    expect(b.xp-a.xp).toBeGreaterThan(0);
+    expect(b.xp-a.xp).toBeLessThanOrEqual(0.5);
+    expect(b.resource-a.resource).toBeGreaterThan(0);
+    expect(b.resource-a.resource).toBeLessThanOrEqual(0.25);
+    expect(a.d-b.d).toBeGreaterThan(0);
+    expect(a.d-b.d).toBeLessThanOrEqual(0.15);
   });
   it("still reaches a legitimate end when nobody intervenes",()=>{
     for(let i=0;i<10;i++){

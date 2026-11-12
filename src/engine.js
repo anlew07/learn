@@ -141,6 +141,25 @@ const MultiworldEngine = (function () {
     log(s,w.id,(automatic?"自动选择":"主动选择")+"战技："+p.name+(entry?" 升至Lv"+entry.lv:"")+"。","minor");
     return {ok:true};
   }
+  function combatBuildEffect(s,w) {
+    var result={clear:0,loot:0,defense:0};
+    if(!s.waves)return result;
+    w.build.attack.concat(w.build.support).forEach(function(entry){
+      var p=POWERS[w.id].find(function(candidate){return candidate.id===entry.id;});
+      if(p)result[p.kind]+=entry.lv;
+    });
+    if(w.build.evolved)result.clear+=1;
+    return result;
+  }
+  function waveCombatBonus(s,w){
+    var b=combatBuildEffect(s,w);
+    // This is a small, capped modifier on the single original combat reward.
+    // It cannot create another action, another enemy reward or another memory broadcast.
+    if(b.clear)produce(s,w,"xp",Math.min(0.5,b.clear*0.25));
+    if(b.loot)produce(s,w,"resource",Math.min(0.25,b.loot*0.125));
+    var mitigation=Math.min(0.15,b.defense*0.05+b.clear*0.03);
+    if(mitigation)addD(w,-mitigation);
+  }
   function autoBuild(s,w) {
     if(!w.build.pending||w.build.pending.due>s.day)return;
     var opts=w.build.pending.options;
@@ -269,7 +288,10 @@ const MultiworldEngine = (function () {
         w.action=w.id==="lingzai"?"清剿妖兽":w.id==="zombie"?"清理感染体":"狩猎异兽";
         produce(s,w,"xp",w.level>=4?2:3);produce(s,w,"resource",1);addD(w,-0.35);
       }
-      if(s.waves)log(s,w.id,"战潮：第一波清剿外围 → 第二波压制敌群 → 第三波清理残敌；仅结算一次战利品。","battle");
+      if(s.waves){
+        waveCombatBonus(s,w);
+        log(s,w.id,"战潮：第一波清剿外围 → 第二波压制敌群 → 第三波清理残敌；仅结算一次战利品。","battle");
+      }
     }else if(action==="explore"){
       w.action=w.id==="lingzai"?"调查灵脉":w.id==="zombie"?"追踪感染源":"追查兽王";
       addProgress(s,w,3.3);produce(s,w,"xp",0.5);optionalEvent(s,w);
@@ -447,7 +469,7 @@ const MultiworldEngine = (function () {
     if(!s.active||!echo||!target||target.status!=="running"||target.id===echoWorldId)return {ok:false,error:"回响或目标无效"};
     echo.used=true;
     if(echoWorldId==="lingzai")addD(target,-10);
-    else if(echoWorldId==="zombie")produce(s,target,"resource",6);
+    else if(echoWorldId==="zombie")target.resource=r2(target.resource+6);
     else {target.xp=r2(target.xp+8);checkLevel(s,target,true);}
     log(s,null,WORLDS[echoWorldId].name+"回响支援"+target.name+"。","major");
     return {ok:true};
