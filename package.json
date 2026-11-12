@@ -1,0 +1,21 @@
+{
+  "name": "simultaneous-apocalypse-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "三世界并行文字末日模拟器 H5 原型",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "idb-keyval": "^6.3.0",
+    "seedrandom": "^3.0.5"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4"
+  }
+}
