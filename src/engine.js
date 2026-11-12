@@ -5,6 +5,7 @@ import { selectAutonomousAction } from "./systems/action-policy.js";
 import { computeWaveBonuses } from "./systems/wave-combat.js";
 import { previewMajorEvent } from "./systems/event-contract.js";
 import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
+import { summarizeFinale } from "./systems/finale-readiness.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -527,9 +528,12 @@ const MultiworldEngine = (function () {
     return result;
   }
   function info(s,w) {
-    return {canFinish:canFinal(s,w,0),bossRequirement:bossRequirement(w),remainingResources:Math.max(0,resourceTarget(w)-w.resource),
+    var ready=canFinal(s,w,0),bossLevel=bossRequirement(w);
+    return {canFinish:ready,bossRequirement:bossLevel,remainingResources:Math.max(0,resourceTarget(w)-w.resource),
       goal:demand(w),stage:WORLDS[w.id].stages[w.level-1],resourceName:WORLDS[w.id].resourceName,
-      freeAP:availableAP(s),injured:w.injuryUntil>=s.day,threatActive:threatActive(w)};
+      freeAP:availableAP(s),injured:w.injuryUntil>=s.day,threatActive:threatActive(w),
+      finale:summarizeFinale(s,w,{definition:WORLDS[w.id],bossLevel:bossLevel,
+        effectiveLevel:effectiveLevel(s,w),canFinish:ready})};
   }
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,

@@ -70,3 +70,12 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 .session-stats .stats-world:last-child{border-bottom:0}
 .session-stats .stats-world b{display:block;margin-bottom:3px;font-size:.86rem;color:#d8e8f3}
 .session-stats .stats-world .muted{line-height:1.8}
+
+/* Lightweight finale gate: collapsed until mainline is near completion. */
+.finale-preview{margin:8px 0 10px;padding:9px;border:1px solid #466076;border-radius:10px;background:#142437}
+.finale-preview summary{cursor:pointer;font-size:.78rem;font-weight:700;color:#d6eaf7}
+.finale-checks{margin-top:9px;display:grid;gap:6px}
+.finale-check{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;font-size:.74rem;line-height:1.5}
+.finale-check.ready{color:#a5dbc4}
+.finale-check.missing{color:#f0ca96}
+.finale-preview .hint{margin:8px 0 0}

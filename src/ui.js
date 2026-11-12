@@ -71,6 +71,22 @@ function combatHtml(battle) {
    '<div class="combat-rewards">'+(bonusText.length?bonusText.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="hint">尚无额外战技收益</span>')+'</div>'+
  '</div>';
 }
+function finaleHtml(world, status) {
+ const data = status.finale;
+ if (!data || world.status !== "running" || (world.p < 65 && world.d < 70)) return "";
+ const completed = data.checks.filter((check) => check.ready).length;
+ const open = world.p >= 90 || world.d >= 75 || data.ready;
+ return '<details class="finale-preview"'+(open?' open':'')+' aria-label="终局资格预览">'+
+ '<summary>终局资格 · '+completed+'/'+data.checks.length+'项满足 · 截止剩余'+data.daysLeft+'天</summary>'+
+ '<div class="finale-checks">'+data.checks.map((check) =>
+   '<div class="finale-check '+(check.ready?'ready':'missing')+'">'+
+   '<span>'+(check.ready?'✓':'○')+' '+esc(check.label)+'</span>'+
+   '<span>'+esc(check.detail)+'</span></div>'
+ ).join('')+'</div>'+
+ (data.ready?'<p class="hint">条件已齐全，分身将在日结算时自动尝试终局。</p>':
+ '<p class="hint">缺口只反映当前状态；合法灵魂借力需另外满足AP、灵魂与供力者条件。</p>')+
+ '</details>';
+}
 function worldHtml(w){
  const v=Engine.info(run,w),stop=w.status!=="running";
  const boss=w.pendingEvent?.state==="active";
@@ -82,6 +98,7 @@ function worldHtml(w){
  '<div class="bars">'+bar(w,"p","拯救准备") +bar(w,"d","末日毁灭")+'</div>'+
  '<div class="world-note">正在进行：<strong>'+esc(w.action)+'</strong></div>'+
  '<div class="world-note">当前目标：'+esc(stop?worldStatus(w):v.goal)+'</div>'+
+ finaleHtml(w,v)+
  (w.lastDecision&&!stop?'<div class="world-note"><span class="decision-label">自主判断：</span>'+esc(w.lastDecision.reason)+'</div>':'')+
  '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 清剿 '+w.threat.progress+'/2</span>':'')+
  (v.injured?'<span class="pill bad">受伤</span>':'')+(w.weaknessUntil>=run.day&&w.weaknessStart<=run.day?'<span class="pill warn">借力虚弱</span>':'')+

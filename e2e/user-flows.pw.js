@@ -175,3 +175,75 @@ test("finished runs can open their archived battle log", async ({ page }) => {
   await expect(page.getByText("世界战报")).toBeVisible();
   await expect(page.getByText("本局行动统计")).toBeVisible();
 });
+
+test("near-finale world cards reveal each real requirement and its shortfall", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((w) => w.id === "zombie");
+    world.p = 98;
+    world.flags.p65 = true;
+    world.level = 3;
+    world.resource = 4;
+    world.injuryUntil = run.day + 2;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const card = page.locator(".world").nth(1);
+  const finale = card.locator(".finale-preview");
+  await expect(finale).toBeVisible();
+  await expect(finale).toContainText("终局资格");
+  await expect(finale).toContainText("尚缺8");
+  await expect(finale).toContainText("受伤−1");
+  await expect(finale).toContainText("Lv2/Lv4");
+
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((w) => w.id === "zombie");
+    world.p = 100;
+    world.flags.p65 = true;
+    world.flags.p100 = true;
+    world.level = 4;
+    world.resource = 12;
+    world.injuryUntil = 0;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  const ready = page.locator(".world").nth(1).locator(".finale-preview");
+  await expect(ready).toContainText("6/6项满足");
+  await expect(ready).toContainText("条件已齐全");
+});
+
+test("a new major event pauses real 4× simulation before another day passes", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((w) => w.id === "lingzai");
+    world.flags.sideFound = true;
+    world.pendingEvent = {
+      id: "lingzai/clue/critical",
+      type: "clue",
+      title: "紧急古碑线索",
+      state: "queued",
+      startDay: run.day,
+      expiresDay: run.day + 2,
+    };
+    run.speed = 4;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await expect(page.locator("select[data-action='speed']")).toHaveValue("4");
+  await page.locator('button[data-action="toggle"]').click();
+
+  await expect(page.locator(".event")).toHaveCount(1, { timeout: 12000 });
+  await expect(page.getByRole("button", { name: /继续模拟/ })).toBeVisible();
+  const saved = await getSnapshot(page);
+  expect(saved.run.paused).toBe(true);
+  expect(saved.run.day).toBe(2);
+});

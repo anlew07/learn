@@ -15,6 +15,7 @@
 - `src/systems/wave-combat.js`：计算三波战潮的封顶加成与阶段描述；不直接扣终局费用、修改实际Lv或产生第二份战利品。
 - `src/systems/event-contract.js`：重大事件的副作用为零的选项展示与支付前检查；新事件必须让UI和引擎共用合法性合同，不能单独编写显示用假概率。
 - `src/systems/run-metrics.js`：仅统计已结算的行动和战潮收益，不允许额外生成资源或随机事件。报表由 `scripts/balance-report.mjs` 读取RunState统计字段生成，不重新模拟战斗。
+- `src/systems/finale-readiness.js`：只能展示终局门槛，从引擎接收实际`canFinal`与战斗资格；不能独立重写结局扣费、产出或覆盖等级规则。
 - `src/ui.js`：展示和用户指令。只能调用引擎的正式接口；不可私自修改世界的等级、资源、冷却或结局。
 - `src/services/persistence.js`：使用idb-keyval批量事务读写RunState/ProfileState；不引入世界规则、UI DOM或剧情内容，测试通过可注入存储驱动执行。
 - `src/services/exclusive-session.js`：Web Locks原生单写者模式；不维护自研localStorage心跳锁。未获得锁的页面只读，重新获取锁后必须重读最新存档。
