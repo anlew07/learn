@@ -143,3 +143,35 @@ test("event preview describes odds, default and action costs", async ({ page }) 
   const { run } = await getSnapshot(page);
   expect(run.ap).toBe(2);
 });
+
+test("battle log tab displays recorded actions and wave bonuses", async ({ page }) => {
+  await startFirstRun(page);
+  await page.locator('button[data-action="step"]').click();
+  await page.locator('button[data-tab="log"]').click();
+  await expect(page.getByText("本局行动统计")).toBeVisible();
+  await expect(page.locator(".stats-world")).toHaveCount(2);
+  const snapshot = await getSnapshot(page);
+  const first = snapshot.run.worlds.find((world) => world.id === "lingzai");
+  expect(first.metrics.actions.growth).toBe(1);
+  expect(first.metrics.waveCombats).toBe(0);
+});
+
+test("finished runs can open their archived battle log", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.active = false;
+    run.paused = true;
+    run.result = { saved: 0, failed: 2, shards: 2, endedDay: 1 };
+    run.worlds.forEach((world) => {
+      world.status = "failed";
+    });
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "查看本局经历" })).toBeVisible();
+  await page.getByRole("button", { name: "查看本局经历" }).click();
+  await expect(page.getByText("世界战报")).toBeVisible();
+  await expect(page.getByText("本局行动统计")).toBeVisible();
+});

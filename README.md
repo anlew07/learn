@@ -42,7 +42,7 @@ npm run preview        # 预览生产打包
 | 专属规则 | 灵灾闭关、尸潮一次防线大修、兽潮两次压制 |
 | 战潮实验 | 可开关三波战报；局内战技三选一、组合进化和实际额外收益可视化 |
 | 存档 | idb-keyval / IndexedDB；本局与永久进度原子批量保存，重开默认暂停 |
-| 自动测试 | 引擎关键规则、通关路径、随机可复现测试 |
+| 自动测试 | 引擎规则、随机种子、Playwright交互与整局行为统计回归 |
 
 **现阶段不算正式试玩：** 战潮技能已初步提供有限的清剿经验、资源和减损修正，但尚待真实平衡；世界成长、灾难、AP数值属于待调整的实验值；美术/音效、完整内容表、无障碍和移动端兼容还需继续做。
 
@@ -55,6 +55,7 @@ npm run preview        # 预览生产打包
 | [src/systems/action-policy.js](src/systems/action-policy.js) | 可解释自主决策，不依赖UI/存档 |
 | [src/systems/wave-combat.js](src/systems/wave-combat.js) | 战潮数值封顶及三波文本模板 |
 | [src/systems/event-contract.js](src/systems/event-contract.js) | 重大事件预览、合法选项和支付前校验 |
+| [src/systems/run-metrics.js](src/systems/run-metrics.js) | 运行中行动统计和战潮累计收益，不修改战斗结果 |
 | [src/ui.js](src/ui.js) / [src/style.css](src/style.css) | 竖屏交互和样式 |
 | [src/services/persistence.js](src/services/persistence.js) | 独立持久化服务，原子批量写入与队列 |
 | [tests/engine.test.js](tests/engine.test.js) | 核心规则测试 |

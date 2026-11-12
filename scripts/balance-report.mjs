@@ -21,6 +21,15 @@ for (const runNumber of [1, 2, 3]) {
       let totalDays = 0;
       let incomplete = 0;
       const savedByWorld = {};
+      const actionTotals = {};
+      let worldCount = 0;
+      let waveBattles = 0;
+      let evolutionCount = 0;
+      let autoBuilds = 0;
+      let manualBuilds = 0;
+      let extraXp = 0;
+      let extraResources = 0;
+      let extraDoomReduction = 0;
 
       for (let index = 0; index < samples; index++) {
         // Keep the same seed across strategies and wave settings for useful comparisons.
@@ -46,6 +55,18 @@ for (const runNumber of [1, 2, 3]) {
         totalDays += state.result.endedDay;
         state.worlds.forEach((world) => {
           savedByWorld[world.id] = (savedByWorld[world.id] || 0) + Number(world.status === "saved");
+          worldCount++;
+          const metrics = world.metrics || {};
+          for (const [action, count] of Object.entries(metrics.actions || {})) {
+            actionTotals[action] = (actionTotals[action] || 0) + count;
+          }
+          waveBattles += metrics.waveCombats || 0;
+          evolutionCount += metrics.evolutions || 0;
+          autoBuilds += metrics.automaticBuilds || 0;
+          manualBuilds += metrics.manualBuilds || 0;
+          extraXp += metrics.extraXp || 0;
+          extraResources += metrics.extraResources || 0;
+          extraDoomReduction += metrics.extraDoomReduction || 0;
         });
       }
 
@@ -65,6 +86,23 @@ for (const runNumber of [1, 2, 3]) {
             completed ? Number((count / completed).toFixed(3)) : null,
           ]),
         ),
+        engagement: {
+          meanActionsPerRun: Object.fromEntries(
+            Object.entries(actionTotals).map(([action, count]) => [
+              action,
+              completed ? Number((count / completed).toFixed(2)) : 0,
+            ]),
+          ),
+          meanWaveBattles: completed ? Number((waveBattles / completed).toFixed(2)) : 0,
+          meanAutomaticBuilds: completed ? Number((autoBuilds / completed).toFixed(2)) : 0,
+          meanManualBuilds: completed ? Number((manualBuilds / completed).toFixed(2)) : 0,
+          evolutionRatePerWorld: worldCount ? Number((evolutionCount / worldCount).toFixed(3)) : 0,
+          meanExtraXp: completed ? Number((extraXp / completed).toFixed(2)) : 0,
+          meanExtraResources: completed ? Number((extraResources / completed).toFixed(2)) : 0,
+          meanExtraDoomReduction: completed
+            ? Number((extraDoomReduction / completed).toFixed(2))
+            : 0,
+        },
       });
     }
   }
@@ -87,13 +125,26 @@ if (shouldAssert) {
   const rates = firstRunStrategies.map((row) => row.allSavedRate);
   const spread = Math.max(...rates) - Math.min(...rates);
 
+  const invalidWaveAccounting = reports.some((row) => {
+    const e = row.engagement;
+    const totalBattles = e.meanActionsPerRun.fight || 0;
+    if (e.meanWaveBattles > totalBattles + 0.02) return true;
+    if (row.waves) return e.meanExtraXp > e.meanWaveBattles * 0.75 + 0.05;
+    return e.meanWaveBattles !== 0 ||
+      e.meanExtraXp !== 0 ||
+      e.meanExtraResources !== 0 ||
+      e.meanExtraDoomReduction !== 0 ||
+      e.evolutionRatePerWorld !== 0;
+  });
+
   if (
     reports.some((row) => row.incomplete > 0) ||
     firstRunDefault.allSavedRate >= 0.98 ||
-    spread < 0.1
+    spread < 0.1 ||
+    invalidWaveAccounting
   ) {
     process.stderr.write(
-      "Balance smoke test failed: a run stalled, default all-save rate is too high, or strategy outcomes collapsed.\n",
+      "Balance smoke test failed: stalled run, weak strategy distinction or inconsistent wave accounting.\n",
     );
     process.exitCode = 1;
   }

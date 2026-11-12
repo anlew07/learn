@@ -4,6 +4,7 @@ import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
 import { computeWaveBonuses } from "./systems/wave-combat.js";
 import { previewMajorEvent } from "./systems/event-contract.js";
+import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -126,12 +127,14 @@ const MultiworldEngine = (function () {
     var arr=w.build[p.slot],entry=arr.find(function(a){return a.id===p.id;});
     if(entry){if(entry.lv>=2)return {ok:false,error:"战技已达到当前上限"};entry.lv++;}
     else {if(arr.length>=(p.slot==="attack"?2:1))return {ok:false,error:"战技槽已满"};arr.push({id:p.id,lv:1});}
+    var wasEvolved=w.build.evolved;
     w.build.count++;w.build.pending=null;
     var combo=COMBOS[w.id],all=w.build.attack.concat(w.build.support);
     if(!w.build.evolved&&w.build.count>=2&&all.some(function(x){return x.id===combo[0];})&&all.some(function(x){return x.id===combo[1];})){
       w.build.evolved=true;w.build.evolutionName=combo[2];
       log(s,w.id,"战技进化："+combo[2]+"！","major");
     }
+    recordBuildChoice(w,automatic,!wasEvolved&&w.build.evolved);
     log(s,w.id,(automatic?"自动选择":"主动选择")+"战技："+p.name+(entry?" 升至Lv"+entry.lv:"")+"。","minor");
     return {ok:true};
   }
@@ -153,6 +156,7 @@ const MultiworldEngine = (function () {
         doomReduced:r2(beforeD-w.d)
       }
     };
+    recordWaveOutcome(w,w.lastCombat.bonus);
   }
   function autoBuild(s,w) {
     if(!w.build.pending||w.build.pending.due>s.day)return;
@@ -274,6 +278,7 @@ const MultiworldEngine = (function () {
   }
 
   function doAction(s,w,action){
+    recordWorldAction(w,action);
     w.action=action;
     if(action==="growth"){
       w.action=w.id==="lingzai"?"吸纳灵气":w.id==="zombie"?"战斗训练":"吸收进化感悟";
@@ -384,6 +389,7 @@ const MultiworldEngine = (function () {
       var nextPhase=worldPhase(w,s.day);
       if(w.id==="beast"&&w.phase!==nextPhase){w.phase=nextPhase;log(s,w.id,"兽王进入「"+nextPhase+"」阶段。","warning");}
       if(w.retreat){
+        recordWorldAction(w,"retreat");
         w.action="闭关修炼（剩余"+w.retreat.remaining+"天）";
         w.lastDecision={day:s.day,actionId:"retreat",
           reason:"闭关占用今日主要行动，环境与活跃威胁继续施压",alternatives:[]};

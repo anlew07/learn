@@ -64,3 +64,9 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 .event-choice-detail{font-size:.76rem;color:#b8c9d9;line-height:1.55}
 .event-choice-detail .warning{margin:3px 0 0;color:#f4c487}
 @media(max-width:400px){.event-choice{grid-template-columns:1fr}.event-choice button{max-width:none;width:100%}}
+
+/* Lightweight per-run analytics; no charting library or separate state store. */
+.session-stats .stats-world{padding:9px 0;border-bottom:1px solid #253a4b}
+.session-stats .stats-world:last-child{border-bottom:0}
+.session-stats .stats-world b{display:block;margin-bottom:3px;font-size:.86rem;color:#d8e8f3}
+.session-stats .stats-world .muted{line-height:1.8}

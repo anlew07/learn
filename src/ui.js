@@ -155,6 +155,22 @@ function soulHtml(){
  running.map(w=>'<div class="soul-row row-between"><span>'+w.name+' · '+(w.id==="lingzai"?"条件型封印":"战斗终局")+'</span><button data-action="fusion" data-world="'+w.id+'" '+(run.runNumber<2||w.id==="lingzai"?'disabled':'')+'>为此世界借力</button></div>').join("")+'</section>'+
  '<section class="panel"><h2>世界回响</h2>'+(echoes.length?echoes.map(e=>'<div class="soul-row"><b>'+Engine.WORLDS[e.id].name+' 回响</b><div class="event-actions">'+running.filter(w=>w.id!==e.id).map(w=>'<button data-action="echo" data-from="'+e.id+'" data-world="'+w.id+'">支援'+w.name+'</button>').join("")+'</div></div>').join(""):'<div class="muted">还没有可使用的世界回响。已拯救世界不再参与普通援助。</div>')+'</section></div>';
 }
+function statsHtml(){
+ return '<section class="panel session-stats"><h2>本局行动统计</h2>'+
+ '<p class="hint">真实行动次数与战潮累计额外收益；不计入第二次战利品。</p>'+
+ run.worlds.map(w=>{
+  const m=w.metrics||{},a=m.actions||{};
+  return '<div class="stats-world"><b>'+esc(w.name)+'</b>'+
+   '<div class="muted">成长 '+(a.growth||0)+' · 采集 '+(a.gather||0)+
+   ' · 清剿 '+(a.fight||0)+' · 探索 '+(a.explore||0)+
+   ' · 拯救准备 '+(a.rescue||0)+'</div>'+
+   (run.waves?'<div class="muted">战潮 '+(m.waveCombats||0)+' 场 · 战技进化 '+
+    (m.evolutions||0)+' 次 · 额外XP '+n(m.extraXp||0)+
+    ' · 额外资源 '+n(m.extraResources||0)+
+    ' · 额外减灾 '+n(m.extraDoomReduction||0)+'</div>':'')+
+  '</div>';
+ }).join("")+'</section>';
+}
 function logsHtml(){
  return '<section class="panel"><h2>世界战报</h2><div class="muted">普通行为自动合并，关键危机和突破保留记录。</div>'+
  run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>';
@@ -177,10 +193,13 @@ function render(){
  const banner = sessionBanner();
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
-  app.innerHTML=banner+controls()+'<div class="stack"><section class="panel result"><h2>这一次的末日已经结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
-  '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+run.worlds.map(worldHtml).join("")+'</div>'+footer()+persistenceBanner();return;
+  const content=tab==="log"?statsHtml()+logsHtml():
+   '<section class="panel result"><h2>这一次的末日已经结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
+   '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
+   statsHtml()+run.worlds.map(worldHtml).join("");
+  app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
 function footer(){return '<nav class="footer-nav"><button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'">末日世界</button><button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'">万我同源</button><button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'">战报记录</button></nav>';}
 async function execute(type,args){
