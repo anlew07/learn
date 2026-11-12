@@ -91,6 +91,8 @@ function finaleHtml(world, status) {
 }
 function worldHtml(w){
  const v=Engine.info(run,w),stop=w.status!=="running";
+ const newStrategy=w.strategy==="growth"?"clear":"growth";
+ const strategyPreview=Engine.previewStrategy(run,w.id,newStrategy);
  const boss=w.pendingEvent?.state==="active";
  const options = ['growth','clear','rescue'].map(k=>'<option value="'+k+'" '+(w.strategy===k?"selected":"")+'>'+labelStrategies[k]+'</option>').join("");
  const worldSpecific=w.id==="lingzai"?(w.retreat?"闭关剩余 "+w.retreat.remaining+" 天":w.level>=2?"可进行短期或深度闭关":"筑基解锁闭关"):w.id==="zombie"?(w.repairUsed?"安全区已进行过大修":"防线可在危机时消耗零件修复"):("兽王阶段："+(w.phase||"苏醒")+" · 要求 Lv"+v.bossRequirement+(w.suppression? " · 压制 "+w.suppression+"/2":""));
@@ -106,7 +108,11 @@ function worldHtml(w){
  (v.injured?'<span class="pill bad">受伤</span>':'')+(w.weaknessUntil>=run.day&&w.weaknessStart<=run.day?'<span class="pill warn">借力虚弱</span>':'')+
  (run.waves&&w.build.evolved?'<span class="pill good">✦ '+esc(w.build.evolutionName)+'</span>':run.waves&&w.build.count?'<span class="pill">已装备战技 '+(w.build.attack.length+w.build.support.length)+'/3</span>':'')+'</div>'+
  (run.waves&&w.lastCombat?combatHtml(w.lastCombat):"")+
- (stop?'':'<div class="select-row"><label class="muted">长期策略 <select data-action="strategy" data-world="'+w.id+'">'+options+'</select></label>'+
+ (stop?'':'<div class="select-row"><label class="muted">长期策略 <select data-action="strategy" data-world="'+w.id+'"'+
+ (strategyPreview.available?'':' disabled')+'>'+options+'</select></label>'+
+ '<span class="hint strategy-price">'+(strategyPreview.available?
+  (strategyPreview.cost===0?'前3天切换免费':'更换需1AP'):
+  '当前无法更换：'+esc(strategyPreview.reason))+'</span>'+
  (w.id==="lingzai"?(w.retreat?'<button data-action="exit-retreat" data-world="'+w.id+'">强行出关</button>':'<button data-action="retreat" data-world="'+w.id+'" '+(w.level<2||Engine.availableAP(run)<1?'disabled':'')+'>闭关</button>'):'')+
  '</div>')+
  '</section>'+
@@ -276,6 +282,7 @@ async function execute(type,args){
  if(!result.ok){
    commandBusy=false;
    queueSave();
+   render(); // Restore controls to authoritative state after a rejected change.
    report(result.error || "操作不满足条件");
    return;
  }

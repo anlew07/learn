@@ -339,3 +339,44 @@ test("aid compares a partial doom reduction without offering a wasted interventi
   await expect(preview.getByRole("button", { name: "压制毁灭压力 · D−5.5" })).toBeEnabled();
   await expect(preview).toContainText("本次实际D−5.5");
 });
+
+test("strategy switching shows AP cost and never misrepresents an unavailable choice", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.day = 4;
+    run.ap = 0;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const zombie = page.locator(".world").nth(1);
+  const strategy = zombie.locator('select[data-action="strategy"]');
+  await expect(strategy).toHaveValue("rescue");
+  await expect(strategy).toBeDisabled();
+  await expect(zombie.locator(".strategy-price")).toContainText("行动点");
+
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.ap = 1;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const enabled = page.locator(".world").nth(1).locator('select[data-action="strategy"]');
+  await expect(enabled).toBeEnabled();
+  await expect(page.locator(".world").nth(1).locator(".strategy-price")).toContainText("1AP");
+  await enabled.selectOption("clear");
+  await expect
+    .poll(async () => {
+      const saved = await getSnapshot(page);
+      return saved.run.worlds.find((world) => world.id === "zombie").strategy;
+    })
+    .toBe("clear");
+  const saved = await getSnapshot(page);
+  expect(saved.run.ap).toBe(0);
+});

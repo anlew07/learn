@@ -94,3 +94,5 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 .aid-option .hint{margin-top:6px;line-height:1.55}
 .aid-warning{margin:8px 0 0;color:#f1c38a;font-size:.78rem}
 @media(max-width:380px){.aid-options{grid-template-columns:1fr}}
+
+.strategy-price{font-size:.72rem;line-height:1.45;color:#aec9de}

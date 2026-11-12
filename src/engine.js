@@ -8,6 +8,7 @@ import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./syste
 import { summarizeFinale } from "./systems/finale-readiness.js";
 import { evaluateFusion } from "./systems/fusion-contract.js";
 import { previewResourceAid } from "./systems/aid-contract.js";
+import { previewStrategyChange } from "./systems/strategy-contract.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -424,12 +425,13 @@ const MultiworldEngine = (function () {
     return {ok:true};
   }
   function setStrategy(s,id,strategy){
-    var w=byId(s,id);
-    if(!s.active||!w||w.status!=="running"||!LABELS[strategy])return {ok:false,error:"策略或世界状态无效"};
-    if(w.strategy===strategy)return {ok:true};
-    var charge=s.day>3?1:0;
-    if(availableAP(s)<charge)return {ok:false,error:"可用行动点不足"};
-    s.ap-=charge;w.strategy=strategy;log(s,id,"调整自主策略为「"+LABELS[strategy]+"」。","minor");return {ok:true};
+    var preview=previewStrategyChange(s,id,strategy);
+    if(!preview.available)return {ok:false,error:preview.reason};
+    if(!preview.changed)return {ok:true};
+    s.ap-=preview.cost;
+    byId(s,id).strategy=strategy;
+    log(s,id,"调整自主策略为「"+LABELS[strategy]+"」，消耗"+preview.cost+"行动点。","minor");
+    return {ok:true};
   }
   function retreat(s,id,duration){
     var w=byId(s,id);
@@ -544,6 +546,6 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
+    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;
