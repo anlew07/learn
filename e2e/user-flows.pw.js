@@ -97,6 +97,18 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
     })
     .toBe("clear");
 
+  // Guarantee a real wave combat; a random first-day seed may choose
+  // gathering even under clear-first strategy when supplies are scarce.
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((w) => w.id === "zombie");
+    world.level = 2;
+    world.resource = 12;
+    world.threat = { id: "fixture-nest", status: "active", progress: 0, retryDay: 1 };
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
   await page.locator('button[data-action="step"]').click();
   await expect(page.locator(".metric").first()).toContainText("第 2 天");
   await expect(page.getByText("自主判断：")).toHaveCount(2);
