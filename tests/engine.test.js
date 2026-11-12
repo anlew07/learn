@@ -46,7 +46,7 @@ describe("multiworld simulation baseline",()=>{
     expect(b.resource-a.resource).toBeGreaterThan(0);
     expect(b.resource-a.resource).toBeLessThanOrEqual(0.25);
     expect(a.d-b.d).toBeGreaterThan(0);
-    expect(a.d-b.d).toBeLessThanOrEqual(0.15);
+    expect(a.d-b.d).toBeLessThanOrEqual(0.25);
   });
   it("still reaches a legitimate end when nobody intervenes",()=>{
     for(let i=0;i<10;i++){

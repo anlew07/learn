@@ -11,6 +11,8 @@
 - `src/config/game-data.js`：静态世界、战技、成长信息；不读写游戏运行状态。
 - `src/config/balance.js`：统一调参入口和阶段毁灭压力计算，**不添加 DOM 或持久化依赖**。
 - `src/engine.js`：纯游戏状态转换、主要行动、事件和结局。只操作显式传入的状态，不查询 DOM 或存储。
+- `src/systems/action-policy.js`：策略评分/解释文本，作为纯计算返回结果；使用传入的随机回调，不读取浏览器状态。调分先运行固定种子 A/B。
+- `src/systems/wave-combat.js`：计算三波战潮的封顶加成与阶段描述；不直接扣终局费用、修改实际Lv或产生第二份战利品。
 - `src/ui.js`：展示和用户指令。只能调用引擎的正式接口；不可私自修改世界的等级、资源、冷却或结局。
 - `src/services/persistence.js`：使用idb-keyval批量事务读写RunState/ProfileState；不引入世界规则、UI DOM或剧情内容，测试通过可注入存储驱动执行。
 - `src/services/exclusive-session.js`：Web Locks原生单写者模式；不维护自研localStorage心跳锁。未获得锁的页面只读，重新获取锁后必须重读最新存档。

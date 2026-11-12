@@ -56,6 +56,21 @@ function report(text){const el=document.querySelector("#toast");if(el){el.textCo
 function worldStatus(w){return w.status==="saved"?"已拯救":w.status==="failed"?"已崩溃":"演化中";}
 function pill(status){return status==="saved"?"good":status==="failed"?"bad":"warn";}
 function bar(w,key,label){return '<div><div class="bar-head"><span>'+label+'</span><b>'+n(w[key])+'%</b></div><div class="progress-track"><div class="progress-fill '+key+'" style="width:'+Math.min(100,Math.max(0,w[key]))+'%"></div></div></div>';}
+function combatHtml(battle) {
+ const bonus=battle.bonus||{xp:0,resource:0,doomReduced:0};
+ const bonusText=[
+   bonus.xp>0?"战技经验 +"+n(bonus.xp):"",
+   bonus.resource>0?"额外资源 +"+n(bonus.resource):"",
+   bonus.doomReduced>0?"额外减灾 "+n(bonus.doomReduced):""
+ ].filter(Boolean);
+ return '<div class="combat-recap" aria-label="最近一场战潮">'+
+   '<div class="row-between"><b>最近战潮 · 第'+battle.day+'日</b>'+
+   (battle.evolution?'<span class="pill good">✦ '+esc(battle.evolution)+'</span>':'')+'</div>'+
+   '<div class="combat-phases">'+(battle.stages||[]).map(x=>'<span>'+esc(x)+'</span>').join('<span class="combat-arrow">›</span>')+'</div>'+
+   '<div class="hint">'+(battle.skills?.length?'使用战技：'+battle.skills.map(esc).join('、'):'本次依靠基础自动战斗')+'</div>'+
+   '<div class="combat-rewards">'+(bonusText.length?bonusText.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="hint">尚无额外战技收益</span>')+'</div>'+
+ '</div>';
+}
 function worldHtml(w){
  const v=Engine.info(run,w),stop=w.status!=="running";
  const boss=w.pendingEvent?.state==="active";
@@ -67,8 +82,11 @@ function worldHtml(w){
  '<div class="bars">'+bar(w,"p","拯救准备") +bar(w,"d","末日毁灭")+'</div>'+
  '<div class="world-note">正在进行：<strong>'+esc(w.action)+'</strong></div>'+
  '<div class="world-note">当前目标：'+esc(stop?worldStatus(w):v.goal)+'</div>'+
+ (w.lastDecision&&!stop?'<div class="world-note"><span class="decision-label">自主判断：</span>'+esc(w.lastDecision.reason)+'</div>':'')+
  '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 清剿 '+w.threat.progress+'/2</span>':'')+
- (v.injured?'<span class="pill bad">受伤</span>':'')+(w.weaknessUntil>=run.day&&w.weaknessStart<=run.day?'<span class="pill warn">借力虚弱</span>':'')+'</div>'+
+ (v.injured?'<span class="pill bad">受伤</span>':'')+(w.weaknessUntil>=run.day&&w.weaknessStart<=run.day?'<span class="pill warn">借力虚弱</span>':'')+
+ (run.waves&&w.build.evolved?'<span class="pill good">✦ '+esc(w.build.evolutionName)+'</span>':run.waves&&w.build.count?'<span class="pill">已装备战技 '+(w.build.attack.length+w.build.support.length)+'/3</span>':'')+'</div>'+
+ (run.waves&&w.lastCombat?combatHtml(w.lastCombat):"")+
  (stop?'':'<div class="select-row"><label class="muted">长期策略 <select data-action="strategy" data-world="'+w.id+'">'+options+'</select></label>'+
  (w.id==="lingzai"?(w.retreat?'<button data-action="exit-retreat" data-world="'+w.id+'">强行出关</button>':'<button data-action="retreat" data-world="'+w.id+'" '+(w.level<2||Engine.availableAP(run)<1?'disabled':'')+'>闭关</button>'):'')+
  '</div>')+
@@ -78,20 +96,34 @@ function worldHtml(w){
 function eventHtml(w){
  const e=w.pendingEvent;
  const isBoss=e.type==="boss";
- return '<section class="event"><h3>⚠ '+esc(e.title)+'</h3><div class="muted">第 '+e.expiresDay+' 日到期；无人处理时分身自动选择</div><div class="event-actions">'+
- (isBoss?'<button data-action="event" data-mode="boost" data-world="'+w.id+'">花费资源强化</button><button data-action="fusion" data-world="'+w.id+'">二人 / 三人之力</button><button data-action="event" data-mode="retreat" data-world="'+w.id+'">撤离</button>':
- '<button data-action="event" data-mode="safe" data-world="'+w.id+'">谨慎处理</button><button data-action="event" data-mode="push" data-world="'+w.id+'">深入调查 · 1 AP</button><button data-action="event" data-mode="decline" data-world="'+w.id+'">放弃</button>')+
+ return '<section class="event"><h3>⚠ '+esc(e.title)+'</h3><div class="muted">第 '+e.expiresDay+' 日到期；默认：首领战可胜则自动清巢，否则撤退；线索则谨慎调查</div><div class="event-actions">'+
+ (isBoss?'<button data-action="event" data-mode="boost" data-world="'+w.id+'">结晶强化 · 1AP / 4材料</button><button data-action="fusion" data-world="'+w.id+'">二人 / 三人之力</button><button data-action="event" data-mode="retreat" data-world="'+w.id+'">安全撤离</button>':
+ '<button data-action="event" data-mode="safe" data-world="'+w.id+'">谨慎调查 · P+2</button><button data-action="event" data-mode="push" data-world="'+w.id+'">深入追踪 · 1AP / 有风险</button><button data-action="event" data-mode="decline" data-world="'+w.id+'">放弃线索</button>')+
  '</div></section>';
 }
 function buildHtml(w){
  const b=w.build.pending;
+ const combo=Engine.COMBOS[w.id];
+ const owned=w.build.attack.concat(w.build.support).map(item=>item.id);
+ const powerName=id=>Engine.POWERS[w.id].find(p=>p.id===id)?.name||id;
+ const comboText=combo.slice(0,2).map(powerName).join(' + ')+' → '+combo[2];
+ const label=w.build.evolved?'已完成进化':owned.includes(combo[0])||owned.includes(combo[1])?'已具备一项组合组件':'可以尝试收集组合组件';
  return '<section class="panel build-panel"><div class="row-between"><b>✧ '+esc(w.name)+' · 战技觉醒</b><span class="pill">第 '+b.due+' 日自动选择</span></div>'+
  '<div class="muted">可主动三选一，也可以继续挂机，分身将自动挑选。</div>'+
+ '<div class="build-combo"><strong>组合目标：</strong>'+esc(comboText)+'<div class="hint">'+label+'</div></div>'+
  '<div class="build-choice">'+b.options.map(id=>{
  const power=Engine.POWERS[w.id].find(x=>x.id===id);
- return '<button data-action="build" data-world="'+w.id+'" data-power="'+id+'">'+esc(power.name)+'<small style="display:block;color:#91a9bd">'+(power.kind==="clear"?"清潮":power.kind==="defense"?"减损":"资源")+'</small></button>';
+ const canEvolve=!w.build.evolved&&
+   ((owned.includes(combo[0])&&id===combo[1])||(owned.includes(combo[1])&&id===combo[0]));
+ const equipped=w.build.attack.concat(w.build.support).find(item=>item.id===id);
+ return '<button data-action="build" data-world="'+w.id+'" data-power="'+id+'">'+
+ esc(power.name)+(equipped?' · 升Lv'+(equipped.lv+1):'')+
+ '<small style="display:block;color:#91a9bd">'+(power.kind==="clear"?"清潮":power.kind==="defense"?"减损":"资源")+'</small>'+
+ (canEvolve?'<small class="success-text">✦ 选择后进化</small>':'')+
+ '</button>';
  }).join("")+'</div></section>';
 }
+
 function controls(){
  return '<header class="topbar"><div><div class="brand">☼ 同时穿越：末日模拟器</div><div class="micro">双世界 / 三世界 · 自动模拟原型</div></div><button data-action="home">首页</button></header>'+
  '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>全局游戏日</span></div><div class="metric"><b>'+run.soul+'</b><span>灵魂强度</span></div>'+

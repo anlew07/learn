@@ -1,6 +1,8 @@
 import seedrandom from "seedrandom";
 import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.js";
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
+import { selectAutonomousAction } from "./systems/action-policy.js";
+import { computeWaveBonuses } from "./systems/wave-combat.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -32,6 +34,7 @@ const MultiworldEngine = (function () {
       flags:{},milestones:[],threat:null,pendingEvent:null,queuedBoss:false,
       eventCount:0,injuryUntil:0,weaknessStart:0,weaknessUntil:0,retreat:null,
       repairUsed:false,suppression:0,echoMade:false,memoryCandidates:[],
+      lastDecision:null,lastCombat:null,
       build:{attack:[],support:[],count:0,pending:null,triggers:{},evolved:false,evolutionName:""}
     };
   }
@@ -131,24 +134,24 @@ const MultiworldEngine = (function () {
     log(s,w.id,(automatic?"自动选择":"主动选择")+"战技："+p.name+(entry?" 升至Lv"+entry.lv:"")+"。","minor");
     return {ok:true};
   }
-  function combatBuildEffect(s,w) {
-    var result={clear:0,loot:0,defense:0};
-    if(!s.waves)return result;
-    w.build.attack.concat(w.build.support).forEach(function(entry){
-      var p=POWERS[w.id].find(function(candidate){return candidate.id===entry.id;});
-      if(p)result[p.kind]+=entry.lv;
-    });
-    if(w.build.evolved)result.clear+=1;
-    return result;
-  }
   function waveCombatBonus(s,w){
-    var b=combatBuildEffect(s,w);
-    // This is a small, capped modifier on the single original combat reward.
-    // It cannot create another action, another enemy reward or another memory broadcast.
-    if(b.clear)produce(s,w,"xp",Math.min(0.5,b.clear*0.25));
-    if(b.loot)produce(s,w,"resource",Math.min(0.25,b.loot*0.125));
-    var mitigation=Math.min(0.15,b.defense*0.05+b.clear*0.03);
-    if(mitigation)addD(w,-mitigation);
+    var effect=computeWaveBonuses(w.id,w.build,POWERS);
+    var beforeXp=w.xp,beforeResource=w.resource,beforeD=w.d;
+    if(effect.xp)produce(s,w,"xp",effect.xp);
+    if(effect.resource)produce(s,w,"resource",effect.resource);
+    if(effect.doomReduction)addD(w,-effect.doomReduction);
+    w.lastCombat={
+      day:s.day,
+      action:w.action,
+      stages:effect.stages,
+      skills:effect.skills,
+      evolution:effect.evolution,
+      bonus:{
+        xp:r2(w.xp-beforeXp),
+        resource:r2(w.resource-beforeResource),
+        doomReduced:r2(beforeD-w.d)
+      }
+    };
   }
   function autoBuild(s,w) {
     if(!w.build.pending||w.build.pending.due>s.day)return;
@@ -156,6 +159,13 @@ const MultiworldEngine = (function () {
     var ranked=opts.map(function(id){
       var p=POWERS[w.id].find(function(x){return x.id===id;});
       var score=w.strategy==="clear"?(p.kind==="clear"?3:1):w.strategy==="growth"?(p.kind==="loot"?3:1):(p.kind==="defense"?3:1);
+      var combo=COMBOS[w.id];
+      var owned=w.build.attack.concat(w.build.support).map(function(item){return item.id;});
+      if(!w.build.evolved&&
+        ((owned.includes(combo[0])&&id===combo[1])||
+         (owned.includes(combo[1])&&id===combo[0]))){
+        score+=4;
+      }
       return {id:id,score:score};
     }).sort(function(a,b){return b.score-a.score||a.id.localeCompare(b.id);});
     chooseBuild(s,w.id,ranked[0].id,true);
@@ -227,40 +237,19 @@ const MultiworldEngine = (function () {
     log(s,w.id,"探索发现值得深入调查的新线索。","major");
   }
   function chooseAction(s,w){
-    var strat=w.strategy,need=resourceTarget(w);
-    var list=[
-      {id:"growth",score:(strat==="growth"?8:2)+(w.level<3?3:0)+(w.p>=100&&w.level<4?8:0)},
-      {id:"gather",score:(strat==="growth"?2:1)+(w.resource<need?7:0)+(w.resource<4?3:0)},
-      {id:"fight",score:(strat==="clear"?8:2)+(threatActive(w)?5:0)+(w.d>75?3:0)},
-      {id:"explore",score:(strat==="rescue"?7:2)+(w.p<65?4:0)},
-      {id:"rescue",score:(strat==="rescue"?8:2)+(w.p>=65&&w.p<100?9:0)}
-    ];
-    list=list.filter(function(a){
-      if(a.id==="explore")return w.p<65;
-      if(a.id==="rescue")return w.p>=65&&w.p<100;
-      if(a.id==="fight")return w.level>=1;
-      if(a.id==="growth"&&w.level===4&&w.p>=100)return false;
-      return true;
+    var result=selectAutonomousAction(w,{
+      reserve:resourceTarget(w),
+      bossLevel:bossRequirement(w),
+      threatActive:threatActive(w),
+      nextRandom:function(){return random(w);}
     });
-    if(w.level>=3&&w.p<65){list.forEach(function(a){if(a.id==="explore")a.score+=12;if(a.id==="growth")a.score-=8;});}
-    if(w.level>=3&&w.p>=65&&w.p<100){list.forEach(function(a){if(a.id==="rescue")a.score+=9;if(a.id==="growth")a.score-=7;});}
-    if(w.level>=4){list.forEach(function(a){if(a.id==="growth")a.score-=12;});}
-    if(w.level>=3&&w.p<65){list.forEach(function(a){if(a.id==="explore")a.score+=12;if(a.id==="growth")a.score-=8;});}
-    if(w.level>=3&&w.p>=65&&w.p<100){list.forEach(function(a){if(a.id==="rescue")a.score+=9;if(a.id==="growth")a.score-=7;});}
-    if(w.level>=4){list.forEach(function(a){if(a.id==="growth")a.score-=12;});}
-    if(w.p>=100){list.forEach(function(a){
-      if(a.id==="growth"&&w.level<bossRequirement(w))a.score+=24;
-      if(a.id==="growth"&&w.level<3)a.score+=18;
-      if(a.id==="gather"&&w.resource<need)a.score+=16;
-    });}
-    if(w.id==="zombie"&&!w.repairUsed&&w.d>=85&&w.resource>=6)return "repair";
-    if(w.id==="zombie"&&!w.repairUsed&&w.d>=55&&w.resource>=WORLDS[w.id].finalCost+6&&strat!=="growth")return "repair";
-    if(w.id==="beast"&&suppressNeeded(w)&&w.level>=4)return "suppress";
-    if(!list.length)return "gather";
-    list.forEach(function(a){a.score+=(random(w)-0.5)*2;});
-    list.sort(function(a,b){return b.score-a.score;});
-    return list[0].id;
+    w.lastDecision={
+      day:s.day,actionId:result.actionId,
+      reason:result.reason,alternatives:result.alternatives
+    };
+    return result.actionId;
   }
+
   function doAction(s,w,action){
     w.action=action;
     if(action==="growth"){
@@ -280,7 +269,9 @@ const MultiworldEngine = (function () {
       }
       if(s.waves){
         waveCombatBonus(s,w);
-        log(s,w.id,"战潮：第一波清剿外围 → 第二波压制敌群 → 第三波清理残敌；仅结算一次战利品。","battle");
+        log(s,w.id,"战潮："+w.lastCombat.stages.join(" → ")+
+          (w.lastCombat.evolution?" · "+w.lastCombat.evolution:"")+
+          "。额外收益与减损已计入本次唯一战利品。","battle");
       }
     }else if(action==="explore"){
       w.action=w.id==="lingzai"?"调查灵脉":w.id==="zombie"?"追踪感染源":"追查兽王";
@@ -371,6 +362,8 @@ const MultiworldEngine = (function () {
       if(w.id==="beast"&&w.phase!==nextPhase){w.phase=nextPhase;log(s,w.id,"兽王进入「"+nextPhase+"」阶段。","warning");}
       if(w.retreat){
         w.action="闭关修炼（剩余"+w.retreat.remaining+"天）";
+        w.lastDecision={day:s.day,actionId:"retreat",
+          reason:"闭关占用今日主要行动，环境与活跃威胁继续施压",alternatives:[]};
         produce(s,w,"xp",w.retreat.duration===6?4.8:4);
         w.retreat.remaining--;
         if(w.retreat.remaining<=0){
@@ -507,7 +500,7 @@ const MultiworldEngine = (function () {
       goal:demand(w),stage:WORLDS[w.id].stages[w.level-1],resourceName:WORLDS[w.id].resourceName,
       freeAP:availableAP(s),injured:w.injuryUntil>=s.day,threatActive:threatActive(w)};
   }
-  return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
+  return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
     resolveEvent:resolveEvent,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};

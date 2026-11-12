@@ -35,12 +35,12 @@ npm run preview        # 预览生产打包
 | --- | --- |
 | 并行世界 | 第一局灵灾+尸潮；第三局加入兽潮 |
 | 全局日历 | 1×20秒/日，2×10秒/日，4×5秒/日，暂停/恢复 |
-| 每日自主行动 | 成长、采集、清剿、探索、拯救与策略倾向 |
+| 每日自主行动 | 成长、采集、清剿、探索、拯救与策略倾向，世界卡展示自主判断依据 |
 | 末日变化 | 自然恶化、持续巢穴/尸群、普通与重大事件 |
 | 成长与终局 | 四阶段成长，P100后检查资源、等级与最终条件 |
 | 灵魂机制 | 重大记忆、P/D援助、二人/三人之力、世界回响 |
 | 专属规则 | 灵灾闭关、尸潮一次防线大修、兽潮两次压制 |
-| 战潮实验 | 可开关三波战报、有限战技三选一和进化展示 |
+| 战潮实验 | 可开关三波战报；局内战技三选一、组合进化和实际额外收益可视化 |
 | 存档 | idb-keyval / IndexedDB；本局与永久进度原子批量保存，重开默认暂停 |
 | 自动测试 | 引擎关键规则、通关路径、随机可复现测试 |
 
@@ -52,6 +52,8 @@ npm run preview        # 预览生产打包
 | --- | --- |
 | [index.html](index.html) | H5 页面入口 |
 | [src/engine.js](src/engine.js) | 可复现的模拟核心 |
+| [src/systems/action-policy.js](src/systems/action-policy.js) | 可解释自主决策，不依赖UI/存档 |
+| [src/systems/wave-combat.js](src/systems/wave-combat.js) | 战潮数值封顶及三波文本模板 |
 | [src/ui.js](src/ui.js) / [src/style.css](src/style.css) | 竖屏交互和样式 |
 | [src/services/persistence.js](src/services/persistence.js) | 独立持久化服务，原子批量写入与队列 |
 | [tests/engine.test.js](tests/engine.test.js) | 核心规则测试 |

@@ -40,3 +40,15 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 
 .app-shell.readonly button:not([data-action="retry-session"]):not([data-action="home"]):not([data-action="tab"]){opacity:.35;pointer-events:none}
 .app-shell.readonly select,.app-shell.readonly input{opacity:.45;pointer-events:none}
+
+/* Explain only the last meaningful decision and battle, without new controls. */
+.decision-label{font-weight:700;color:#b5d7ec}
+.combat-recap{margin-top:11px;padding:10px;border:1px solid #35516b;border-radius:11px;background:#0e1d2d}
+.combat-recap b{font-size:.83rem}
+.combat-phases{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin:9px 0;color:#bfd3e4;font-size:.75rem}
+.combat-phases>span:not(.combat-arrow){border:1px solid #344c5c;background:#203247;padding:3px 6px;border-radius:7px}
+.combat-arrow{font-weight:800;color:#89cdeb}
+.combat-rewards{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.build-combo{margin-top:9px;padding:9px;background:#11293b;border:1px dashed #47788e;border-radius:9px;color:#bdddec;font-size:.79rem}
+.build-combo strong{color:#e5f4fa}
+.build-choice .success-text{display:block;font-weight:800;font-size:.7rem}

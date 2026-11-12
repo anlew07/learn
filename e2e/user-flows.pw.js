@@ -86,3 +86,27 @@ test("one cross-world aid is committed once and survives reload", async ({ page 
   expect(after.run.ap).toBe(1);
   expect(after.run.worlds.find((world) => world.id === "zombie").p).toBe(12);
 });
+
+test("world cards explain decisions and recent wave combat", async ({ page }) => {
+  await startFirstRun(page);
+  await page.locator('select[data-action="strategy"][data-world="zombie"]').selectOption("clear");
+  await expect
+    .poll(async () => {
+      const saved = await getSnapshot(page);
+      return saved.run?.worlds.find((world) => world.id === "zombie")?.strategy;
+    })
+    .toBe("clear");
+
+  await page.locator('button[data-action="step"]').click();
+  await expect(page.locator(".metric").first()).toContainText("第 2 天");
+  await expect(page.getByText("自主判断：")).toHaveCount(2);
+  await expect(page.locator(".combat-recap")).toHaveCount(1);
+  await expect(page.locator(".combat-phases span:not(.combat-arrow)")).toHaveCount(3);
+  await expect(page.getByText("本次依靠基础自动战斗")).toBeVisible();
+
+  const snapshot = await getSnapshot(page);
+  const zombie = snapshot.run.worlds.find((world) => world.id === "zombie");
+  expect(zombie.lastDecision.actionId).toBe("fight");
+  expect(zombie.lastCombat.day).toBe(1);
+  expect(zombie.lastCombat.bonus.xp).toBe(0);
+});
