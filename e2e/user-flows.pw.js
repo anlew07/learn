@@ -217,9 +217,7 @@ test("near-finale world cards reveal each real requirement and its shortfall", a
   await expect(ready).toContainText("条件已齐全");
 });
 
-test("a new major event pauses real 4× simulation before another day passes", async ({
-  page,
-}) => {
+test("a new major event pauses real 4× simulation before another day passes", async ({ page }) => {
   await startFirstRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
