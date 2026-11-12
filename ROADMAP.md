@@ -22,3 +22,9 @@
 ## 测试推进方式
 
 先保证原型具备确定种子、可恢复状态和基本完整局；再用固定种子跑不同策略与战潮开关A/B，统计胜率、时长、战潮出现次数、AP使用和主要行动分布。纯设计数字不得冒充真实运行结论。
+
+## GitHub Pages发布门槛 · 2026-11-12
+
+- 已建立以`Validate H5`成功为前置条件的自动静态部署，构建使用官方GitHub Pages操作、Vite `--base=/learn/`。
+- 首次静态文件构建和artifact上传成功，但Pages站点未启用导致configure-pages失败；下一次提交后如仍未启用，将自动标记跳过并留下摘要。
+- 唯一需要仓库管理员完成的外部设置：`Settings → Pages → Source: GitHub Actions`。Android/iOS真机仍需额外验收。

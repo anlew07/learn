@@ -1,5 +1,14 @@
 # 变更记录
 
+## 2026-11-12 · 可审核的HTTPS预览发布流水线
+
+- 新增GitHub Pages官方操作组成的静态发布工作流，只有Validate H5全部通过的main版本才可以进行生产打包与发布；Vite指定`/learn/`路径。
+- 首次Pages构建与artifact上传成功；部署阶段显示Pages站点尚未启用（configure-pages返回404），没有实际公开站点。
+- 自动启用Pages需要超出默认GitHub Token的管理员权限，因此保留一次性`Settings → Pages → GitHub Actions`的外部操作，不在工作流里混用个人密钥。
+- 工作流加入官方Pages状态检查：未启用时主动跳过发布并在运行摘要说明原因，避免每次提交反复产生误导性的失败。
+- 正式代码质量CI独立保持通过；后续启用Pages后再验证真机HTTPS访问与浏览器存档。
+
+
 ## 2026-11-12 · 整局行动与战潮A/B统计
 
 - 新增可兼容旧V0.2档的 `src/systems/run-metrics.js`，记录每世界主要行动次数、战潮累计加成、自动/手动构筑与进化次数。

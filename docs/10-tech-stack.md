@@ -57,3 +57,9 @@ npm run preview
 引入 [Playwright Test](https://playwright.dev/docs/intro)（当前锁定1.65.0），使用其 `webServer` 配置自动启动 Vite，Chromium 390×844移动视口验证新局、存档和多标签页写入锁。在公开仓库的Actions运行 [#43195674404](https://github.com/anlew07/learn/actions/runs/43195674404) 实际通过。报告和失败trace由原生Playwright/GitHub Actions生成，不自研浏览器自动化。
 
 npm依赖锁文件由GitHub托管Node 22环境执行 `npm install --package-lock-only` 生成，随后 `npm ci` 校验；常规验证工作流切换到 `npm ci`，后续更新依赖需要一起提交新的锁文件。
+
+## 可公开试玩的HTTPS预览（部署准备完成，尚未启用）
+
+`.github/workflows/deploy-preview.yml` 使用GitHub官方 `configure-pages@v5`、`upload-pages-artifact@v4`、`deploy-pages@v4`。工作流只消费`Validate H5`已成功的main提交，确保不绕过Vitest、ESLint、Vite、平衡检查及Playwright测试。CI自行构建可用的Vite静态产物并设置 `--base=/learn/`。
+
+GitHub Pages默认未启用时官方action返回404；不能以`GITHUB_TOKEN`凭空创建Pages站点，也不应上传PAT到仓库。设置一次 `Settings → Pages → Source: GitHub Actions` 后自动部署。工作流检测到Pages未启用将保留说明并跳过发布，而非谎称页面可访问。正式URL必须在成功发布后核验。

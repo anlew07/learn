@@ -80,3 +80,11 @@ npm run preview        # 预览生产打包
 Web Locks 需要**安全上下文**：正式部署应使用 HTTPS，本机 `localhost` 开发正常；手机直接访问电脑局域网IP的普通 `http://` 地址可能因无法使用Web Locks而只读。真机测试请配置可信的HTTPS域名或安全隧道，不建议关闭安全检查。以上是浏览器功能限制，不是需要自研同步服务的理由。
 
 这些功能已通过独立模拟测试，**尚需真实多标签页和手机浏览器验证**。没有支持 Web Locks 的环境默认只读，不会冒险双写。
+
+## HTTPS试玩预览 · Pages未启用
+
+当前H5代码已经通过真实Chromium移动视口测试，并接入了**只发布CI通过的main版本**的GitHub Pages部署工作流。构建和页面打包已成功，但2026-11-12第一次部署在`actions/configure-pages@v5`处得到404，说明仓库的Pages站点尚未启用。
+
+**需要仓库管理员一次性操作：** 打开 [Settings → Pages](https://github.com/anlew07/learn/settings/pages)，在 **Build and deployment → Source** 选择 **GitHub Actions**。仓库网站部署与普通GitHub Actions额度是两回事。启用后，后续main提交通过完整验证就会自动部署；此前若不做此设置，自动部署工作流将明确跳过并在运行摘要说明原因，不会伪称预览已上线。
+
+计划的站点路径为 `/learn/`，Vite打包已指定 `--base=/learn/`；**在Pages首次成功发布前不将候选URL视为有效试玩链接**。
