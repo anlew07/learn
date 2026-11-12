@@ -14,15 +14,16 @@
 | [成长模板](templates/growth.md) | 境界与等级解锁 |
 | [敌人模板](templates/enemy.md) | 普通、精英、首领与战斗结果 |
 
-## 已建立的第一批内容包
+## 第一批内容包
 
 - [灵灾01：修炼与境界](packages/lingzai/01-cultivation.md)（初稿）
 - [灵灾02：妖兽生态与狩猎](packages/lingzai/02-beasts.md)（设计稿）
 - [灵灾03：探索、机缘与封印](packages/lingzai/03-exploration-seal.md)（设计稿）
-- [尸潮01：废土生存与母巢](packages/zombie/01-survival-mothernest.md)（本轮新增设计稿）
+- [尸潮01：废土生存与母巢](packages/zombie/01-survival-mothernest.md)（设计稿）
+- [双世界联动01：灵灾×尸潮](packages/soul-link/01-dual-world.md)（**本轮设计稿：记忆、援助、二人之力、边界测试**）
 
-后续：[双世界联动01]、兽潮01和三世界联动逐步填充，不一次堆满。
+后续重点为兽潮01及三世界联动。能力参数和所有玩法结果仍需程序验证。
 
 ## 更新流程
 
-每个条目至少需要：稳定ID、合法条件、自动行为或自动结果、玩家干预、即时效果、经历标记、后续关联、存档字段、异常测试。没有抽到随机机缘时必须能按普通主线完成。调整数值请注明【暂定待测】，核心规则改动先更新 docs/08-decisions.md。
+新增内容需要：稳定ID、前置条件、自动/手动处理、效果、经历标记、后续关联、存档字段与边界测试。新增规则优先调整本包，再由 docs/04-soul-link.md 等权威文档归纳统一接口。数值需标记【暂定待测】，关键变更记入 docs/08-decisions.md 和 CHANGELOG。
