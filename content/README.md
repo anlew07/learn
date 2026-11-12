@@ -1,31 +1,22 @@
 # 内容包工作区
 
-当前处于**世界内容设计阶段**，暂未编写游戏代码。每个世界通过同一套行为、成长、敌人、事件、分支与持续威胁模板表达自己的特色。
+当前为设计阶段，尚未编写可运行的游戏代码。世界内容与联动使用统一模板，战潮模块暂为实验提案。
 
-## 可复用内容模板
+## 通用模板
 
-| 模板 | 链接 |
+[世界](templates/world.md) · [行动](templates/action.md) · [成长](templates/growth.md) · [敌人](templates/enemy.md) · [事件](templates/event.md) · [分支](templates/branch.md) · [持续威胁](templates/threat.md)
+
+## 已建立的设计内容包
+
+| 内容包 | 状态 |
 | --- | --- |
-| 世界 | [world](templates/world.md) |
-| 行为 | [action](templates/action.md) |
-| 成长 | [growth](templates/growth.md) |
-| 敌人 | [enemy](templates/enemy.md) |
-| 事件 | [event](templates/event.md) |
-| 分支 | [branch](templates/branch.md) |
-| 持续威胁 | [threat](templates/threat.md) |
+| [灵灾01 修炼境界](packages/lingzai/01-cultivation.md) | 初稿 |
+| [灵灾02 妖兽生态](packages/lingzai/02-beasts.md) | 设计稿 |
+| [灵灾03 探索与封印](packages/lingzai/03-exploration-seal.md) | 设计稿 |
+| [尸潮01 搜刮与母巢](packages/zombie/01-survival-mothernest.md) | 设计稿 |
+| [双世界联动01](packages/soul-link/01-dual-world.md) | 设计稿 |
+| [兽潮01 狩猎与兽王](packages/beast/01-evolution-hunt.md) | 设计稿 |
+| [三世界联动01](packages/soul-link/02-three-world.md) | **本轮新设计稿** |
+| [战潮模拟实验01](packages/combat/01-survivor-waves.md) | **本轮新增·实验提案，未定是否纳入首版** |
 
-## 内容包版本
-
-| 内容包 | 状态 | 入口 |
-| --- | --- | --- |
-| 灵灾01 修炼与境界 | 初稿、数值待测 | [查看](packages/lingzai/01-cultivation.md) |
-| 灵灾02 妖兽生态 | 设计稿、数值待测 | [查看](packages/lingzai/02-beasts.md) |
-| 灵灾03 探索与封印 | 设计稿、数值待测 | [查看](packages/lingzai/03-exploration-seal.md) |
-| 尸潮01 废土生存与母巢 | 设计稿、数值待测 | [查看](packages/zombie/01-survival-mothernest.md) |
-| 双世界联动01 | 设计稿、数值待测 | [查看](packages/soul-link/01-dual-world.md) |
-| **兽潮01 进化狩猎与兽王** | **本次新增设计稿、数值待测** | [查看](packages/beast/01-evolution-hunt.md) |
-| 三世界联动01 | 下一步 | 待建立 |
-
-后续新增内容一律注明稳定ID、前置条件、自动结果、主动干预、数值/状态效果、经历标记、后续关联、存档字段与正反测试案例。无稀有随机事件时仍要有普通通关路线，实际数值必须通过程序模拟与玩家试玩验证。
-
-设计规则由 docs/08-decisions.md 统一登记，核心框架由 docs/01–04 等权威文档定义，不在单个内容包私自改变。
+所有数值待测。内容必须有稳定ID、条件、自动结果、可选人工干预、效果/经历、后续关联与验收测试。现有的非随机拯救基础路线必须继续存在。
