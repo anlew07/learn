@@ -268,6 +268,8 @@ const MultiworldEngine = (function () {
       reserve:resourceTarget(w),
       bossLevel:bossRequirement(w),
       threatActive:threatActive(w),
+      combatReady:effectiveLevel(s,w)>=2,
+      threatUrgencyScore:BALANCE.actions.threatUrgencyScore,
       nextRandom:function(){return random(w);}
     });
     w.lastDecision={

@@ -122,6 +122,9 @@ if (shouldAssert) {
     (row) => row.runNumber === 1 && row.strategy === "default" && !row.waves,
   );
   const firstRunStrategies = reports.filter((row) => row.runNumber === 1 && !row.waves);
+  const firstRunDefaultWithWaves = reports.find(
+    (row) => row.runNumber === 1 && row.strategy === "default" && row.waves,
+  );
   const rates = firstRunStrategies.map((row) => row.allSavedRate);
   const spread = Math.max(...rates) - Math.min(...rates);
 
@@ -143,10 +146,12 @@ if (shouldAssert) {
     reports.some((row) => row.incomplete > 0) ||
     firstRunDefault.allSavedRate >= 0.98 ||
     spread < 0.1 ||
+    firstRunDefaultWithWaves.engagement.meanWaveBattles < 0.1 ||
+    firstRunDefaultWithWaves.engagement.meanWaveBattles > 5 ||
     invalidWaveAccounting
   ) {
     process.stderr.write(
-      "Balance check failed: stalled run, strategy gap or inconsistent wave totals.\n",
+      "Balance check failed: stalled run, strategy gap, wave engagement or rewards.\n",
     );
     process.exitCode = 1;
   }

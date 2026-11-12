@@ -45,6 +45,8 @@ function explanation(world, actionId, { reserve, threatActive, bossLevel }) {
  */
 export function selectAutonomousAction(world, context) {
   const { reserve, bossLevel, threatActive, nextRandom } = context;
+  const threatUrgencyScore = context.threatUrgencyScore ?? 3.5;
+  const combatReady = context.combatReady ?? world.level >= 2;
   const strategy = world.strategy;
 
   if (
@@ -114,6 +116,14 @@ export function selectAutonomousAction(world, context) {
       if (item.id === "growth" && world.level < 3) item.score += 18;
       if (item.id === "gather" && world.resource < reserve) item.score += 16;
     }
+  }
+
+  // Persistent nodes are real deadlines, not optional combat-flavor.
+  // Every strategy may spend a main action clearing a nest when prepared;
+  // clearance does NOT add a second daily action or another reward.
+  if (threatActive && combatReady && world.threat?.progress < 2) {
+    const combat = ranked.find((item) => item.id === "fight");
+    if (combat) combat.score += threatUrgencyScore;
   }
 
   if (!ranked.length) {

@@ -21,6 +21,7 @@ export const BALANCE = {
     maxStageCombatExperience: 0.8,
     combatResources: 1,
     combatDoomReduction: 0.35,
+    threatUrgencyScore: 3.5,
   },
 };
 

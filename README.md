@@ -88,3 +88,7 @@ Web Locks 需要**安全上下文**：正式部署应使用 HTTPS，本机 `loca
 **需要仓库管理员一次性操作：** 打开 [Settings → Pages](https://github.com/anlew07/learn/settings/pages)，在 **Build and deployment → Source** 选择 **GitHub Actions**。仓库网站部署与普通GitHub Actions额度是两回事。启用后，后续main提交通过完整验证就会自动部署；此前若不做此设置，自动部署工作流将明确跳过并在运行摘要说明原因，不会伪称预览已上线。
 
 计划的站点路径为 `/learn/`，Vite打包已指定 `--base=/learn/`；**在Pages首次成功发布前不将候选URL视为有效试玩链接**。
+
+## 持续威胁的自主策略微调（实验）
+
+只有分身达到安全的有效战力、且巢群外围仍可清剿时，自动策略才会小幅提高战斗评分。成长/拯救优先仍会以主线为主；清剿优先仍有更多常规战斗。该参数位于 `src/config/balance.js`，由 `scripts/balance-report.mjs` 按固定种子检查，避免把“开启战潮”等同于挂机必胜。

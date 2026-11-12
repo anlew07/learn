@@ -33,6 +33,33 @@ describe("explainable, pure autonomous strategy", () => {
     expect(choose(world({ level: 4, p: 100, resource: 0 })).actionId).toBe("gather");
   });
 
+  it("does not force calm rescue strategies to become clear-first", () => {
+    const nest = { status: "active", progress: 0 };
+    expect(choose(world({ level: 3, p: 35, strategy: "rescue", threat: nest })).actionId).toBe("explore");
+    expect(choose(world({ level: 3, p: 35, strategy: "clear", threat: nest })).actionId).toBe("explore");
+  });
+
+  it("preserves mainline rescue even under doom pressure", () => {
+    const nest = { status: "active", progress: 0 };
+    const decision = choose(world({ level: 3, p: 35, d: 85, strategy: "rescue", threat: nest }));
+    expect(decision.actionId).toBe("explore");
+    expect(
+      choose(world({ level: 3, p: 35, d: 85, strategy: "rescue", threat: nest }), {
+        combatReady: false,
+      }).actionId,
+    ).toBe("explore");
+  });
+
+  it("does not re-farm a node after its outer guards are cleared", () => {
+    const worldSnapshot = world({
+      level: 3,
+      p: 35,
+      strategy: "rescue",
+      threat: { status: "awaiting_alpha", progress: 2 },
+    });
+    expect(choose(worldSnapshot).actionId).toBe("explore");
+  });
+
   it("prioritizes one-time zombie repair when doom is critical", () => {
     const decision = choose(world({ id: "zombie", d: 91, resource: 15 }));
     expect(decision.actionId).toBe("repair");
