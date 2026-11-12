@@ -1,0 +1,13 @@
+# Local and editor files
+.DS_Store
+.idea/
+.vscode/
+*.log
+tmp/
+dist/
+node_modules/
+.env
+.env.*
+*.key
+*.pem
+credentials*
