@@ -1,0 +1,8 @@
+# Generated artifacts and dependencies
+dist/
+node_modules/
+coverage/
+.vitest/
+
+# Legacy code is still being normalized in incremental refactors.
+# The format:check script currently checks new modules and tooling only.

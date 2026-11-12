@@ -1,20 +1,9 @@
 import seedrandom from "seedrandom";
+import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.js";
+import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 const MultiworldEngine = (function () {
   "use strict";
-  var VERSION = "0.1.0";
-  var WORLDS = {
-    lingzai: { name: "灵灾", resourceName: "灵石", stages: ["练气", "筑基", "金丹", "元婴"], finalCost: 10, boss: false },
-    zombie: { name: "尸潮", resourceName: "废土零件", stages: ["幸存者", "猎杀者", "清剿者", "末日猎手"], finalCost: 12, boss: true },
-    beast: { name: "兽潮", resourceName: "进化结晶", stages: ["猎人", "强化者", "超凡猎人", "进化领主"], finalCost: 14, boss: true }
-  };
-  var POWERS = {
-    lingzai: [{id:"thunder",name:"驭雷符",slot:"attack",kind:"clear"},{id:"sword",name:"飞剑回旋",slot:"attack",kind:"loot"},{id:"rune",name:"聚灵阵纹",slot:"support",kind:"defense"}],
-    zombie: [{id:"blades",name:"碎片飞刃",slot:"attack",kind:"clear"},{id:"arc",name:"电弧投射器",slot:"attack",kind:"loot"},{id:"armor",name:"简易护甲",slot:"support",kind:"defense"}],
-    beast: [{id:"claws",name:"裂爪连击",slot:"attack",kind:"clear"},{id:"roar",name:"震地咆哮",slot:"attack",kind:"loot"},{id:"instinct",name:"追猎直觉",slot:"support",kind:"defense"}]
-  };
-  var COMBOS = {lingzai:["thunder","rune","雷阵连锁"],zombie:["blades","armor","钢雨防线"],beast:["claws","instinct","连环猎杀"]};
-  var THRESHOLDS = [0, 14, 42, 78];
-  var LABELS = {growth:"成长优先",clear:"清剿优先",rescue:"拯救优先"};
+  var VERSION = "0.2.0";
   function clamp(value, lo, hi) { return Math.max(lo, Math.min(hi, value)); }
   function r2(value) { return Math.round(value * 100) / 100; }
   function hash(input) {
@@ -275,10 +264,10 @@ const MultiworldEngine = (function () {
     w.action=action;
     if(action==="growth"){
       w.action=w.id==="lingzai"?"吸纳灵气":w.id==="zombie"?"战斗训练":"吸收进化感悟";
-      produce(s,w,"xp",3);
+      produce(s,w,"xp",BALANCE.actions.trainingExperience);
     }else if(action==="gather"){
       w.action=w.id==="lingzai"?"寻找灵石":w.id==="zombie"?"搜刮废土":"搜集进化结晶";
-      produce(s,w,"resource",3);produce(s,w,"xp",0.2);
+      produce(s,w,"resource",BALANCE.actions.gatheringResources);produce(s,w,"xp",0.2);
     }else if(action==="fight"){
       if(threatActive(w)&&w.level>=2&&w.threat.progress<2){
         w.threat.progress++;produce(s,w,"xp",3);produce(s,w,"resource",1);addD(w,-0.6);
@@ -286,7 +275,7 @@ const MultiworldEngine = (function () {
         if(w.threat.progress>=2){w.queuedBoss=true;w.threat.status="awaiting_alpha";log(s,w.id,"巢群外围已肃清，首领挑战即将开启。","major");}
       }else{
         w.action=w.id==="lingzai"?"清剿妖兽":w.id==="zombie"?"清理感染体":"狩猎异兽";
-        produce(s,w,"xp",w.level>=4?2:3);produce(s,w,"resource",1);addD(w,-0.35);
+        produce(s,w,"xp",w.level>=4?BALANCE.actions.maxStageCombatExperience:BALANCE.actions.combatExperience);produce(s,w,"resource",BALANCE.actions.combatResources);addD(w,-BALANCE.actions.combatDoomReduction);
       }
       if(s.waves){
         waveCombatBonus(s,w);
@@ -294,10 +283,10 @@ const MultiworldEngine = (function () {
       }
     }else if(action==="explore"){
       w.action=w.id==="lingzai"?"调查灵脉":w.id==="zombie"?"追踪感染源":"追查兽王";
-      addProgress(s,w,3.3);produce(s,w,"xp",0.5);optionalEvent(s,w);
+      addProgress(s,w,BALANCE.actions.explorationProgress);produce(s,w,"xp",0.5);optionalEvent(s,w);
     }else if(action==="rescue"){
       w.action=w.id==="lingzai"?"准备灵脉封印":w.id==="zombie"?"准备母巢净化":"准备兽王讨伐";
-      addProgress(s,w,4);produce(s,w,"xp",0.2);
+      addProgress(s,w,BALANCE.actions.preparationProgress);produce(s,w,"xp",0.2);
     }else if(action==="repair"){
       w.resource-=6;w.repairUsed=true;addD(w,-12);w.action="修复安全区防线";
       log(s,w.id,"动用6份零件进行一次性防线大修，毁灭压力降低。","major");
@@ -392,7 +381,7 @@ const MultiworldEngine = (function () {
       }else doAction(s,w,chooseAction(s,w));
       // All sources of danger are calculated once after the day's major action.
       if(w.status==="running"){
-        addD(w,(s.day<35?1.3:s.day<70?1.65:2.1)*(s.runNumber===1?0.82:s.runNumber===2?1.3:1.15));
+        addD(w,dailyDoomPressure(s.day,s.runNumber));
         if(threatActive(w))addD(w,0.3);
         if(random(w)<0.015){addD(w,2.2);log(s,w.id,"末日环境突然恶化，毁灭压力上涨。","warning");}
         newThreat(s,w);

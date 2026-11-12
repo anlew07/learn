@@ -7,7 +7,7 @@ const PROFILE = "simultaneous-apocalypse-profile-v1";
 const app = document.querySelector("#app");
 const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"清剿优先",rescue:"拯救优先"};
-let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now(), busy = false;
+let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now();
 let saveQueue = Promise.resolve();
 const esc = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n = value => Number(value??0).toFixed(value%1===0?0:1);
@@ -88,7 +88,7 @@ function logsHtml(){
  run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>';
 }
 function homeHtml(){
- return '<header class="topbar"><div class="brand">☼ 同时穿越：末日模拟器</div><span class="pill">V0.1 可玩原型</span></header>'+
+ return '<header class="topbar"><div class="brand">☼ 同时穿越：末日模拟器</div><span class="pill">V0.2 开发原型</span></header>'+
  '<section class="hero"><div class="eyebrow">同一个灵魂 · 不同的末日</div><h1>一个我救不了末日，<br>就让多个我一起上。</h1>'+
  '<p>分身自动修炼、搜刮、狩猎、成长。你只负责关键选择和跨世界援助。</p>'+
  '<div class="stack" style="margin-top:20px">'+

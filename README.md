@@ -1,6 +1,6 @@
 # 同时穿越：末日模拟器
 
-> **已进入 H5 可运行原型开发阶段 · V0.1 alpha**  
+> **已进入 H5 可运行原型开发阶段 · V0.2 alpha**  
 > 多世界并行、分身自主行动、跨世界记忆与力量援助、幸存者式自动战潮实验。
 
 同一个灵魂，同时穿越多个末日世界。分身会自主成长、清剿、探索与拯救；玩家负责战略偏好、关键事件和有限的跨世界援助。
@@ -17,9 +17,12 @@ npm run dev
 在终端提供的地址打开网页。开发服务器可供同一局域网中的手机通过计算机局域网IP访问。
 
 ~~~bash
-npm test        # Vitest 核心规则自动测试
-npm run build   # 打包到 dist/
-npm run preview # 预览生产打包
+npm run lint           # ESLint 静态检查
+npm run format:check   # 新增工具模块格式规范检查
+npm test               # Vitest 核心规则测试
+npm run build          # Vite 打包到 dist/
+npm run balance:check  # 固定种子、各策略数值回归
+npm run preview        # 预览生产打包
 ~~~
 
 **目前尚未完成联网依赖安装后的完整构建验证与手机实测**。GitHub Actions 在 main 分支推送时尝试自动运行单元测试和打包，可在 [Actions](https://github.com/anlew07/learn/actions) 查看。

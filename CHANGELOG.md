@@ -1,5 +1,16 @@
 # 变更记录
 
+## 2026-11-12 · V0.2：规范化开发与首轮策略平衡
+
+- 参考ESLint、Prettier、Vite、Vitest官方工具链，新增静态检查、统一格式设置、EditorConfig、贡献指南和CI质量任务。
+- 将原来放在 src/engine.js 内的世界/战技静态定义拆至 src/config/game-data.js，将D阶段曲线与主要行动XP/R/P候选参数集中到 src/config/balance.js。
+- 调整首局危险倍率与普通清剿经验，使成长、清剿、拯救选择不再共享近似相同的收益；保持非随机常规通关路线。
+- 新增可复现、多世界、四策略和战潮开关的 scripts/balance-report.mjs，并补充配置测试。
+- 已在独立JS执行环境中使用真实seedrandom源码完成100种子×多策略的平衡运行，没有发现卡局；正式Vitest/Vite安装与浏览器测试仍未完成。
+- GitHub Actions失败Job的runner_id=0、steps=[]，没有执行首个命令；因此暂未把CI结果视为引擎代码错误。
+- 已进入V0.2测试档版本，不承诺兼容V0.1实验存档。
+
+
 ## 2026-11-12 · H5 alpha：真实随机引擎核验与战潮初步数值接入
 
 - 使用公开 seedrandom 源码独立执行引擎和测试设计，17项核心断言通过；首次GitHub Actions失败且无可读取job日志，保留P0问题。

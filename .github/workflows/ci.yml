@@ -1,16 +1,25 @@
-name: Test and build H5
+name: Validate H5
 on:
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
-  check:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
+      # No lockfile yet: npm install until CI runner becomes available to generate/review one.
       - run: npm install --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm test
       - run: npm run build
+      - run: npm run balance:check
