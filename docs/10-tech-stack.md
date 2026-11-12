@@ -35,3 +35,7 @@ npm run preview
 本项目需要Node.js满足当前Vite/Vitest版本要求，建议Node.js 22.12+。本地环境若无法访问npm，需在联网开发环境或者GitHub Actions安装依赖；无依赖安装就不能声称已完成正式打包测试。
 
 首次GitHub Actions运行在启动阶段失败，未返回可用执行日志，已登记Issue #2。现已使用公开seedrandom源码对引擎和17条测试进行独立JS冒烟验证；这不等于Vite生产构建和手机真机测试。
+
+## 存档原子性
+
+现在使用 idb-keyval 内建的 `getMany/setMany`，将RunState和ProfileState在一个批量事务中读写；避免自定义IndexedDB事务封装，也避免结局奖励发生“只写入一半”的问题。存储操作封装于 `src/services/persistence.js`；新回归测试 `tests/persistence.test.js` 覆盖连续写入、快照和错误恢复。多标签页冲突和正式备份/导入导出尚未完成。

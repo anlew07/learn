@@ -1,26 +1,34 @@
 import "./style.css";
 import Engine from "./engine.js";
-import { get, set } from "idb-keyval";
+import { saveRepository } from "./services/persistence.js";
 
-const STORE = "simultaneous-apocalypse-simulator-v1";
-const PROFILE = "simultaneous-apocalypse-profile-v1";
 const app = document.querySelector("#app");
 const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"清剿优先",rescue:"拯救优先"};
 let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now();
-let saveQueue = Promise.resolve();
+let saveError = false;
 const esc = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n = value => Number(value??0).toFixed(value%1===0?0:1);
 const win = () => run?.worlds.filter(w=>w.status==="saved").length??0;
 
-function queueSave(){
-  const snapshot = run?JSON.parse(JSON.stringify(run)):null;
-  const account = JSON.parse(JSON.stringify(profile));
-  saveQueue = saveQueue.catch(()=>{}).then(async()=>{
-    await set(STORE,snapshot);
-    await set(PROFILE,account);
-  }).catch(e=>console.error("存档失败",e));
-  return saveQueue;
+function queueSave() {
+  return saveRepository.enqueueSave(run, profile)
+    .then(() => {
+      if (saveError) {
+        saveError = false;
+        render();
+      }
+    })
+    .catch((error) => {
+      saveError = true;
+      console.error("存档失败", error);
+      render();
+    });
+}
+function persistenceBanner() {
+  return saveError
+    ? '<p class="notice" role="alert">本次存档未成功写入浏览器，请检查存储权限和剩余空间。后续操作会尝试重新保存。</p>'
+    : "";
 }
 function report(text){const el=document.querySelector("#toast");if(el){el.textContent=text;el.hidden=false;}}
 function worldStatus(w){return w.status==="saved"?"已拯救":w.status==="failed"?"已崩溃":"演化中";}
@@ -101,12 +109,12 @@ function homeHtml(){
  '<p class="hint" style="margin-top:16px">本作仍处于早期原型，所有成长、怪物与世界恶化数值会根据测试调整。</p>';
 }
 function render(){
- if(!run||tab==="home"){app.innerHTML=homeHtml();return;}
+ if(!run||tab==="home"){app.innerHTML=homeHtml()+persistenceBanner();return;}
  if(!run.active){
   app.innerHTML=controls()+'<div class="stack"><section class="panel result"><h2>这一次的末日已经结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
-  '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+run.worlds.map(worldHtml).join("")+'</div>'+footer();return;
+  '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+run.worlds.map(worldHtml).join("")+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>';
+ app.innerHTML=controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
 function footer(){return '<nav class="footer-nav"><button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'">末日世界</button><button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'">万我同源</button><button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'">战报记录</button></nav>';}
 function after(success){if(!success.ok)report(success.error||"操作不满足条件");else{if(!run.active)reward();queueSave();render();}}
@@ -178,13 +186,13 @@ setInterval(()=>{
 },300);
 async function boot(){
  try{
-   const [saved,account]=await Promise.all([get(STORE),get(PROFILE)]);
+   const { run: saved, profile: account } = await saveRepository.load();
    if(account&&typeof account.runCount==="number")profile=account;
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
      run=saved;run.paused=true;tab="world";
      if(run.result&&!run.rewarded)reward();
    }
- }catch(e){console.error("恢复存档失败",e);}
+ }catch(e){saveError=true;console.error("恢复存档失败",e);}
  tickStarted=performance.now();render();
 }
 boot();

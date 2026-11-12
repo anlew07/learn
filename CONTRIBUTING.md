@@ -12,6 +12,7 @@
 - `src/config/balance.js`：统一调参入口和阶段毁灭压力计算，**不添加 DOM 或持久化依赖**。
 - `src/engine.js`：纯游戏状态转换、主要行动、事件和结局。只操作显式传入的状态，不查询 DOM 或存储。
 - `src/ui.js`：展示和用户指令。只能调用引擎的正式接口；不可私自修改世界的等级、资源、冷却或结局。
+- `src/services/persistence.js`：使用idb-keyval批量事务读写RunState/ProfileState；不引入世界规则、UI DOM或剧情内容，测试通过可注入存储驱动执行。
 - `scripts/balance-report.mjs`：独立批量运行与可复现的结果统计。
 - `tests/`：关键规则、极端状态与回归测试。一个功能改变至少对应一个正常和一个异常用例。
 
