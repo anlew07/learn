@@ -47,3 +47,7 @@ npm run preview
 用浏览器自带的 `crypto.randomUUID()` 生成一次性的UI操作ID；指令应用与已处理结果存放于本局RunState，防止刷新时同一操作重新扣费。当前只持久化最近256个操作ID，世界终局/事件仍有其独立不可重复条件。
 
 参考：[MDN Web Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)、[MDN LockManager.request](https://developer.mozilla.org/en-US/docs/Web/API/LockManager/request)。Web Locks仅保证同一来源的浏览器标签页协调，不提供云存档。
+
+## 2026-11-12 · CI恢复
+
+仓库由 Private 改为 Public 后，重新执行的 [Actions #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251) 完整通过了 `npm install`、`npm run lint`、`npm run format:check`、`npm test`、`npm run build`、`npm run balance:check`。此前“尚无正式构建测试”的段落是历史故障记录；**截至本次重新执行已得到正式构建通过证据**。仍须完成真实浏览器与手机测试。尚无锁文件，后续提交 `package-lock.json` 再改用 `npm ci`。

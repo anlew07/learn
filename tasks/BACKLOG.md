@@ -7,11 +7,11 @@
 - [x] 初步模拟核心：种子随机流、世界日推进、自主策略、成长、灾源与结局。
 - [x] 原生竖屏UI入口、世界卡、事件、闭关、援助、灵魂融合与日志。
 - [x] IndexedDB存档、速度和暂停、第三局兽潮解锁路径。
-- [x] 创建单元测试文件和GitHub Actions工作流（需真实运行验证）。
+- [x] 创建单元测试文件与GitHub Actions；2026-11-12 第2次执行完整通过。
 
 ## 当前优先级（不等待逐项确认）
 
-- [ ] **P0：CI Runner运行环境仍未分配**：需在GitHub Actions仓库页面检查额度/Runner/服务状态；不能把未执行步骤误当作测试失败。
+- [x] **P0：CI Runner 已恢复**：公开仓库后重新执行 [Actions #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251)，所有检查通过；[Issue #2](https://github.com/anlew07/learn/issues/2) 已关闭。
 - [x] **P0：第一轮可复现平衡调参**：分离config，拉开成长与清剿XP收益；100个种子/策略的双世界胜率已不再全部100%（待玩家验证）。
 - [ ] **P0：继续平衡**：通过不同策略与战潮开关的完整报告比较三世界分布、游戏时长和玩家干预价值。
 - [x] **P0：存档双记录原子化**：复用idb-keyval setMany/getMany，独立模块、连续保存/失败重试测试与可见失败提醒。
@@ -30,7 +30,8 @@
 - [x] 新增 ESLint、Prettier、EditorConfig、CONTRIBUTING 和 CI 质量检查脚本。
 - [x] 世界静态定义和基础平衡参数从引擎拆出。
 - [x] 新增固定种子、多策略、战潮开关 A/B 报告脚本。
-- [ ] GitHub Actions Runner可用后执行真实 npm install + lint + test + build，并提交版本锁文件。
+- [x] GitHub Actions 完成真实 npm install + lint + format:check + test + build + balance:check。
+- [ ] **P1：依赖可复现**：在联网环境生成并提交 package-lock.json，将 CI 从 npm install 切换为 npm ci，重新验证。
 - [x] src/ui.js 的持久化边界独立为 src/services/persistence.js。
 - [ ] 逐步拆分 src/ui.js 的展示与交互、src/engine.js 的事件/灵魂交互，保持测试先行。
 - [x] 存档失败显示持续警告，后续写入可重试。

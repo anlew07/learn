@@ -104,3 +104,9 @@
 **这些是固定种子样本下的初步模拟结果，不是玩家测得的真实胜率。** 不应将上述数字写死为长期目标；更重要的是防止“任意策略都100%全救”。完整自动脚本 `npm run balance` 目前覆盖两/三世界、四策略、开启/关闭战潮的24组对照，允许调整样本数并输出每世界获救率。若新方案出现结果反常，先分析失利原因，不仅按胜率调大/调小毁灭数值。
 
 已知阻塞：GitHub Actions Job没有分配Runner（runner_id 0、steps空），因此无法在CI中实际运行npm、Vitest或Vite。构建通过与手机可玩性仍待验证。
+
+## 2026-11-12 · GitHub Actions 正式验收通过
+
+仓库改为 Public 后，对 [工作流运行 #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251) 发起第二次执行；GitHub返回 `completed/success`，所有检查（Node环境、`npm install`、ESLint、Prettier、Vitest、Vite build、固定种子平衡）均执行并通过。此前文档中“CI未启动”的记录属于当时的历史状况，**不再是当前阻塞**。相关 [Issue #2](https://github.com/anlew07/learn/issues/2) 已关闭。
+
+仍未验证：真实移动端HTTPS、跨标签页持有/移交Web Locks、IndexedDB异常与浏览器长时间运行。依赖锁文件也尚未提交，暂时仍使用 `npm install` 而非 `npm ci`。

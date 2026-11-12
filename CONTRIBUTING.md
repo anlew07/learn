@@ -33,7 +33,7 @@ npm run build
 npm run balance:check
 ```
 
-需要格式化新增文件时使用 `npm run format`。已有大型模块尚未批量格式化，`format:check` 先覆盖新增脚本和工具配置；相关技术债逐步处理，不为了过检查把整个游戏引擎一次性重写。等CI恢复后生成并提交可靠的 package-lock.json，切换到 `npm ci`。
+需要格式化新增文件时使用 `npm run format`。已有大型模块尚未批量格式化，`format:check` 先覆盖新增脚本和工具配置；相关技术债逐步处理，不为了过检查把整个游戏引擎一次性重写。CI 已恢复。下一步是在联网环境生成、审查并提交可靠的 `package-lock.json`，然后将工作流从 `npm install` 切换为 `npm ci`。
 
 ## 设计内容到代码
 
@@ -51,4 +51,4 @@ npm run balance:check
 
 ## 外部阻塞
 
-2026-11-12 GitHub Actions 的Job出现 `runner_id=0`、`steps=[]`，说明执行前失败，无法获得 npm/Vitest/Vite 运行结果。需要检查仓库Actions页面中的提示、额度及Runner可用性。CI恢复前，可在本地联网环境按上方命令验证；独立JS冒烟测试不等于完整打包。
+2026-11-12：此前私有仓库执行曾出现 `runner_id=0`、`steps=[]` 的启动失败；改为公开仓库并重跑后，[Actions #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251) 的完整检查已通过。现在的重点是依赖锁文件与移动浏览器真机验收，不要再将CI环境描述为阻塞。

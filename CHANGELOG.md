@@ -1,5 +1,13 @@
 # 变更记录
 
+## 2026-11-12 · 公开仓库后 Actions 全流程首次通过
+
+- 仓库由私有改为公开，重新执行原失败的 [Actions #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251)，第2次尝试完成并返回成功。
+- GitHub托管Runner成功执行 npm安装、ESLint、Prettier、Vitest、Vite build 与固定种子数值检查。
+- 关闭先前CI启动失败的 [Issue #2](https://github.com/anlew07/learn/issues/2)，将文档里的“CI未启动”标为历史问题。
+- 真实手机/浏览器测试及依赖锁文件尚待完成；构建成功不等于发布就绪。
+
+
 ## 2026-11-12 · 多标签页保护与玩家指令幂等
 
 - 接入原生Web Locks活动写入锁，同一浏览器来源只允许一个标签页推进游戏并保存；其它标签页只读，重新取得锁会重读最新IndexedDB存档。

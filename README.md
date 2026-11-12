@@ -25,7 +25,7 @@ npm run balance:check  # 固定种子、各策略数值回归
 npm run preview        # 预览生产打包
 ~~~
 
-**目前尚未完成联网依赖安装后的完整构建验证与手机实测**。GitHub Actions 在 main 分支推送时尝试自动运行单元测试和打包，可在 [Actions](https://github.com/anlew07/learn/actions) 查看。
+**GitHub Actions 已在公开仓库成功完成真实依赖安装、ESLint、Prettier、Vitest、Vite build 与数值检查**（[通过的运行记录](https://github.com/anlew07/learn/actions/runs/43193096251)，2026-11-12）。仍然需要手机浏览器与多标签页真机验收。
 
 ## 第一份原型已经包含什么？
 
@@ -65,7 +65,7 @@ npm run preview        # 预览生产打包
 
 当前版本不需要服务器或账号、没有离线挂机；数据保存在浏览器本地。不要在仓库中上传私密存档、账号信息或密钥。
 
-**目前最重要的两个任务：** 真实环境验证构建/交互，以及平衡多世界之间的毁灭压力，避免一味挂机的高胜率让策略失去意义。
+**目前最重要的两个任务：** 真实浏览器/手机 HTTPS 验收，以及继续平衡多世界末日压力与主动干预价值。CI 已通过，后续补 package-lock.json 并切换 npm ci。
 
 ## 多标签页安全保护（V0.2）
 
