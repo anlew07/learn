@@ -94,13 +94,23 @@ function worldHtml(w){
  (boss?eventHtml(w):"")+(w.build.pending?buildHtml(w):"");
 }
 function eventHtml(w){
- const e=w.pendingEvent;
- const isBoss=e.type==="boss";
- return '<section class="event"><h3>⚠ '+esc(e.title)+'</h3><div class="muted">第 '+e.expiresDay+' 日到期；默认：首领战可胜则自动清巢，否则撤退；线索则谨慎调查</div><div class="event-actions">'+
- (isBoss?'<button data-action="event" data-mode="boost" data-world="'+w.id+'">结晶强化 · 1AP / 4材料</button><button data-action="fusion" data-world="'+w.id+'">二人 / 三人之力</button><button data-action="event" data-mode="retreat" data-world="'+w.id+'">安全撤离</button>':
- '<button data-action="event" data-mode="safe" data-world="'+w.id+'">谨慎调查 · P+2</button><button data-action="event" data-mode="push" data-world="'+w.id+'">深入追踪 · 1AP / 有风险</button><button data-action="event" data-mode="decline" data-world="'+w.id+'">放弃线索</button>')+
- '</div></section>';
+ const preview=Engine.previewMajorEvent(run,w);
+ if(!preview)return "";
+ return '<section class="event" aria-label="重大事件干预">'+
+ '<div class="row-between"><h3>⚠ '+esc(preview.title)+'</h3><span class="pill warn">第'+preview.expiry+'日自动结算</span></div>'+
+ '<p class="event-summary">'+esc(preview.summary)+'</p>'+
+ '<div class="event-default"><strong>不操作的结果：</strong>'+esc(preview.defaultOutcome)+'</div>'+
+ '<div class="event-choice-list">'+preview.options.map(choice=>{
+   const action=choice.id==="fusion"?"fusion":"event";
+   return '<div class="event-choice">'+
+    '<button data-action="'+action+'" data-mode="'+choice.id+'" data-world="'+w.id+'"'+
+    (choice.available?'':' disabled')+'>'+esc(choice.label)+'</button>'+
+    '<div class="event-choice-detail">'+esc(choice.summary)+
+    (choice.available?'':'<p class="warning">暂不可选：'+esc(choice.unavailableReason)+'</p>')+
+    '</div></div>';
+ }).join("")+'</div></section>';
 }
+
 function buildHtml(w){
  const b=w.build.pending;
  const combo=Engine.COMBOS[w.id];

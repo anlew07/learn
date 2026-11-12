@@ -110,3 +110,29 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   expect(zombie.lastCombat.day).toBe(1);
   expect(zombie.lastCombat.bonus.xp).toBe(0);
 });
+
+test("major event previews risk, safe default and action costs before payment", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((w) => w.id === "lingzai");
+    world.pendingEvent = {
+      id: "lingzai/clue/test", type: "clue", title: "雾谷古碑",
+      state: "active", expiresDay: run.day + 2,
+    };
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  const event = page.locator(".event");
+  await expect(event).toHaveCount(1);
+  await expect(event).toContainText("成功率65%");
+  await expect(event).toContainText("失败率35%");
+  await expect(event).toContainText("到期自动谨慎调查");
+  await expect(event.getByRole("button", { name: "谨慎调查" })).toBeEnabled();
+  await event.getByRole("button", { name: "谨慎调查" }).click();
+  await expect(event).toHaveCount(0);
+  await expect.poll(async () => (await getSnapshot(page)).run?.worlds.find((w) => w.id === "lingzai").p).toBe(2);
+  const { run } = await getSnapshot(page);
+  expect(run.ap).toBe(2);
+});

@@ -3,6 +3,7 @@ import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.j
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
 import { computeWaveBonuses } from "./systems/wave-combat.js";
+import { previewMajorEvent } from "./systems/event-contract.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -172,32 +173,54 @@ const MultiworldEngine = (function () {
   }
   function resolveEvent(s,worldId,choice) {
     var w=byId(s,worldId);
-    if(!s.active||!w||w.status!=="running"||!w.pendingEvent||w.pendingEvent.state!=="active")return {ok:false,error:"当前没有可处理的事件"};
-    var e=w.pendingEvent;
+    if(!s.active||!w||w.status!=="running"||!w.pendingEvent||w.pendingEvent.state!=="active")
+      return {ok:false,error:"当前没有可处理的事件"};
+    var preview=previewMajorEvent(s,w);
+    var selected=preview&&preview.options.find(function(option){return option.id===choice;});
+    if(!selected)return {ok:false,error:"此事件不支持该选项"};
+    if(!selected.available)return {ok:false,error:selected.unavailableReason||"尚未满足干预条件"};
+
     if(choice==="fusion")return fuse(s,worldId);
-    if(e.type==="boss"){
-      if(choice==="boost"&&!(w.level>=2&&w.resource>=4&&availableAP(s)>=1&&effectiveLevel(s,w,1)>=3))
-        return {ok:false,error:"缺少强化条件、灵石/零件或行动点"};
-      if(choice==="retreat"){w.pendingEvent=null;w.threat.retryDay=s.day+5;log(s,w.id,"撤出危险区域，暂缓讨伐首领。","minor");return {ok:true};}
-      var level=effectiveLevel(s,w,choice==="boost"?1:0);
-      if(level<3)return {ok:false,error:"当前战斗实力不足，建议撤退或借力"};
+    if(w.pendingEvent.type==="boss"){
+      if(choice==="retreat"){
+        w.pendingEvent=null;
+        if(w.threat)w.threat.retryDay=s.day+5;
+        log(s,w.id,"谨慎撤离首领战，巢群仍在；第"+(s.day+5)+"日后可再次挑战。","minor");
+        return {ok:true};
+      }
       if(choice==="boost"){s.ap--;w.resource-=4;}
       finishBoss(s,w);
       return {ok:true};
     }
     if(choice==="push"){
-      if(availableAP(s)<1)return {ok:false,error:"行动点不足"};
       s.ap--;
       if(random(w)<0.65){
-        addProgress(s,w,5);w.flags.weakness=w.id==="zombie";
-        log(s,w.id,"深入调查成功，获得更多末日线索。","major");
+        addProgress(s,w,5);
+        if(w.id==="lingzai"){
+          w.flags.ancientSeal=true;
+          w.resource=r2(w.resource+2);
+          log(s,w.id,"探明古碑阵纹，获得2灵石与古阵拓本。","major");
+        }else if(w.id==="zombie"){
+          w.flags.weakness=true;
+          log(s,w.id,"从失联广播破译母巢弱点，终战等级需求降低。","major");
+        }else{
+          w.suppression=Math.max(w.suppression,1);
+          w.flags.beastTrail=true;
+          log(s,w.id,"循巨兽足迹识破兽王活动规律，完成一阶段压制准备。","major");
+        }
       }else{
         addD(w,5);w.injuryUntil=Math.max(w.injuryUntil,s.day+3);
-        log(s,w.id,"深入调查失败，分身受伤，世界危险增加。","warning");
+        log(s,w.id,"深入调查失败，分身受伤3个后续游戏日，世界毁灭+5。","warning");
       }
-    }else if(choice==="safe"){addProgress(s,w,2);log(s,w.id,"谨慎保存关键线索。","minor");}
-    else if(choice!=="decline")return {ok:false,error:"未知事件选项"};
-    w.flags.sideResolved=true;w.pendingEvent=null;checkWorld(s,w);
+    }else if(choice==="safe"){
+      addProgress(s,w,2);
+      log(s,w.id,"谨慎保留线索，拯救准备+2。","minor");
+    }else if(choice==="decline"){
+      log(s,w.id,"主动放弃本次线索，没有额外收益或惩罚。","minor");
+    }
+    w.flags.sideResolved=true;
+    w.pendingEvent=null;
+    checkWorld(s,w);
     return {ok:true};
   }
   function finishBoss(s,w){
@@ -209,7 +232,7 @@ const MultiworldEngine = (function () {
     if(s.waves)offerBuild(s,w,"首次击败精英");
   }
   function queuedEvent(s,w){
-    if(!w.pendingEvent&&w.queuedBoss&&threatActive(w)&&s.day>=(w.threat.retryDay||1)){
+    if(!w.pendingEvent&&threatActive(w)&&(w.queuedBoss||w.threat.status==="awaiting_alpha")&&s.day>=(w.threat.retryDay||1)){
       w.queuedBoss=false;w.eventCount++;
       w.pendingEvent={id:w.id+"/boss/"+w.eventCount,type:"boss",title:"巢群首领挑战",state:"queued",startDay:s.day+1,expiresDay:s.day+3};
     }
@@ -503,6 +526,6 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
+    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;
