@@ -110,3 +110,15 @@
 仓库改为 Public 后，对 [工作流运行 #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251) 发起第二次执行；GitHub返回 `completed/success`，所有检查（Node环境、`npm install`、ESLint、Prettier、Vitest、Vite build、固定种子平衡）均执行并通过。此前文档中“CI未启动”的记录属于当时的历史状况，**不再是当前阻塞**。相关 [Issue #2](https://github.com/anlew07/learn/issues/2) 已关闭。
 
 仍未验证：真实移动端HTTPS、跨标签页持有/移交Web Locks、IndexedDB异常与浏览器长时间运行。依赖锁文件也尚未提交，暂时仍使用 `npm install` 而非 `npm ci`。
+
+## 2026-11-12 · Chromium 浏览器实际交互验证
+
+新增 [Playwright 浏览器测试](../e2e/user-flows.pw.js) 和 [配置](../playwright.config.mjs)，由GitHub Actions自动启动 Vite 开发服务器、安装真实 Chromium，并在 **390×844 移动尺寸模拟环境**中执行：
+
+1. 第一次启动双世界、推进一个游戏日、IndexedDB保存、刷新后恢复并保持暂停；
+2. 两标签页竞争Web Locks，只读标签页拒绝非法推进，旧标签页关闭后重新接管并读取最新进度；
+3. 灵灾向尸潮进行一次进度援助，校验AP/魂/灵石/P扣费和刷新后仍然一致。
+
+首次运行 [Actions #43195674404](https://github.com/anlew07/learn/actions/runs/43195674404) 中 **3/3 场景通过**，同时 Vitest、构建、静态检查和固定种子平衡均通过。此为真实 Chromium 测试，不是移动设备实体测试；iOS Safari、Android Chrome 真机和存储异常仍待验证。
+
+`package-lock.json` 在同一阶段由Runner生成并通过`npm ci`验证；CI已改用冻结安装。

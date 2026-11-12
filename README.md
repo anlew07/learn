@@ -10,7 +10,7 @@
 需要 Node.js 22.12+、npm，以及网络连接用于安装依赖。
 
 ~~~bash
-npm install
+npm ci
 npm run dev
 ~~~
 
@@ -22,6 +22,8 @@ npm run format:check   # 新增工具模块格式规范检查
 npm test               # Vitest 核心规则测试
 npm run build          # Vite 打包到 dist/
 npm run balance:check  # 固定种子、各策略数值回归
+npx playwright install chromium  # 首次安装浏览器依赖
+npm run test:e2e      # Chromium 竖屏浏览器体验测试
 npm run preview        # 预览生产打包
 ~~~
 
@@ -65,7 +67,7 @@ npm run preview        # 预览生产打包
 
 当前版本不需要服务器或账号、没有离线挂机；数据保存在浏览器本地。不要在仓库中上传私密存档、账号信息或密钥。
 
-**目前最重要的两个任务：** 真实浏览器/手机 HTTPS 验收，以及继续平衡多世界末日压力与主动干预价值。CI 已通过，后续补 package-lock.json 并切换 npm ci。
+**当前状态：** Chromium 手机视口下的 3 个浏览器流程已在 CI 通过，包含开局/恢复、标签页接管和灵魂援助存档；`package-lock.json` 已提交、CI 使用 `npm ci`。下一步仍需 Android/iOS 真机 HTTPS 测试，并继续优化自动策略与战潮体验。
 
 ## 多标签页安全保护（V0.2）
 

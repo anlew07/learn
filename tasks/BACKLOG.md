@@ -16,7 +16,8 @@
 - [ ] **P0：继续平衡**：通过不同策略与战潮开关的完整报告比较三世界分布、游戏时长和玩家干预价值。
 - [x] **P0：存档双记录原子化**：复用idb-keyval setMany/getMany，独立模块、连续保存/失败重试测试与可见失败提醒。
 - [x] **P0：多标签页单写者与指令去重（代码+单元测试）**：Web Locks活动标签页、其它窗口只读、重新获取锁后重读存档；`applyCommand`持久化操作ID并防重。
-- [ ] **P0：真实浏览器验证**：两标签页锁竞争、退出/恢复时数据落盘、手机HTTPS、存储拒绝与强制关闭。
+- [x] **P0：Chromium 浏览器核心验证**：Playwright检查两标签页锁竞争、接管重读、开局/刷新和跨世界援助存档。
+- [ ] **P0：移动真机/极端存储测试**：Android Chrome、iOS Safari/HTTPS、存储拒绝、强制关闭和后台长时间恢复。
 - [x] **P1：战潮构筑初步生效**：清剿行动有加上限的XP/资源与D减损，实际战斗仍只结算一次（已通过独立V8冒烟测试）。
 - [ ] **P1：战潮A/B玩法平衡**：用实际浏览器交互和正式测试报告验证构筑的策略价值与操作负担。
 - [ ] **P1：提升UI**：首次重大事件4×自动暂停、操作失败提示、明确融合费用与最终材料缺口。
@@ -31,7 +32,7 @@
 - [x] 世界静态定义和基础平衡参数从引擎拆出。
 - [x] 新增固定种子、多策略、战潮开关 A/B 报告脚本。
 - [x] GitHub Actions 完成真实 npm install + lint + format:check + test + build + balance:check。
-- [ ] **P1：依赖可复现**：在联网环境生成并提交 package-lock.json，将 CI 从 npm install 切换为 npm ci，重新验证。
+- [x] **P1：依赖可复现**：GitHub Runner 生成并提交 package-lock.json，npm ci 冻结安装通过；常规 CI 已切换 npm ci（最终重跑验证见 Actions）。
 - [x] src/ui.js 的持久化边界独立为 src/services/persistence.js。
 - [ ] 逐步拆分 src/ui.js 的展示与交互、src/engine.js 的事件/灵魂交互，保持测试先行。
 - [x] 存档失败显示持续警告，后续写入可重试。

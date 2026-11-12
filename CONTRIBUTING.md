@@ -25,15 +25,17 @@
 需要 Node.js 22.12+ 和 npm。
 
 ```sh
-npm install
+npm ci
 npm run lint
 npm run format:check
 npm test
 npm run build
 npm run balance:check
+npx playwright install chromium # 首次安装浏览器
+npm run test:e2e
 ```
 
-需要格式化新增文件时使用 `npm run format`。已有大型模块尚未批量格式化，`format:check` 先覆盖新增脚本和工具配置；相关技术债逐步处理，不为了过检查把整个游戏引擎一次性重写。CI 已恢复。下一步是在联网环境生成、审查并提交可靠的 `package-lock.json`，然后将工作流从 `npm install` 切换为 `npm ci`。
+需要格式化新增文件时使用 `npm run format`。已有大型模块尚未批量格式化，`format:check` 先覆盖新增脚本和工具配置；相关技术债逐步处理，不为了过检查把整个游戏引擎一次性重写。已由 GitHub Runner 生成并提交 `package-lock.json`，且冻结安装已校验；所有常规 CI 使用 `npm ci`。改变依赖时运行 `npm install` 更新并审查 lockfile，再提交；不能只改版本号不更新锁文件。
 
 ## 设计内容到代码
 

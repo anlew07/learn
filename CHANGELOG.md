@@ -1,5 +1,14 @@
 # 变更记录
 
+## 2026-11-12 · 实际Chromium浏览器验收和依赖锁定
+
+- 新增Playwright自动化：移动尺寸390×844的Chromium真实网页，验证首次开局/推进日/刷新恢复、双标签页只读与接管、灵魂援助扣费保存；首轮3/3场景通过。
+- GitHub Runner实际安装Chromium、自动启动Vite并执行端到端测试；首次完整浏览器CI：[Actions #43195674404](https://github.com/anlew07/learn/actions/runs/43195674404)。
+- 通过一次性Runner生成并提交package-lock.json，锁定Playwright与其他npm依赖；冻结安装`npm ci`已在生成任务验证。
+- 正式CI改用`npm ci`并缓存npm下载内容，移除一次性生成工作流。
+- 真实Android/iOS手机HTTPS测试、异常存储/后台恢复仍待完成；不将移动视口模拟当作真机验收。
+
+
 ## 2026-11-12 · 公开仓库后 Actions 全流程首次通过
 
 - 仓库由私有改为公开，重新执行原失败的 [Actions #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251)，第2次尝试完成并返回成功。

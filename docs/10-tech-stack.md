@@ -51,3 +51,9 @@ npm run preview
 ## 2026-11-12 · CI恢复
 
 仓库由 Private 改为 Public 后，重新执行的 [Actions #43193096251](https://github.com/anlew07/learn/actions/runs/43193096251) 完整通过了 `npm install`、`npm run lint`、`npm run format:check`、`npm test`、`npm run build`、`npm run balance:check`。此前“尚无正式构建测试”的段落是历史故障记录；**截至本次重新执行已得到正式构建通过证据**。仍须完成真实浏览器与手机测试。尚无锁文件，后续提交 `package-lock.json` 再改用 `npm ci`。
+
+## Chromium 自动浏览器测试与锁依赖
+
+引入 [Playwright Test](https://playwright.dev/docs/intro)（当前锁定1.65.0），使用其 `webServer` 配置自动启动 Vite，Chromium 390×844移动视口验证新局、存档和多标签页写入锁。在公开仓库的Actions运行 [#43195674404](https://github.com/anlew07/learn/actions/runs/43195674404) 实际通过。报告和失败trace由原生Playwright/GitHub Actions生成，不自研浏览器自动化。
+
+npm依赖锁文件由GitHub托管Node 22环境执行 `npm install --package-lock-only` 生成，随后 `npm ci` 校验；常规验证工作流切换到 `npm ci`，后续更新依赖需要一起提交新的锁文件。
