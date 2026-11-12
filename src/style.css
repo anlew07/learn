@@ -86,3 +86,11 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 .fusion-row .hint{margin-top:4px;line-height:1.5}
 .fusion-row button{flex-shrink:0}
 @media(max-width:400px){.fusion-row{align-items:stretch;flex-direction:column}}
+
+/* Side-by-side cost previews, compact enough for a vertical mobile screen. */
+.aid-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}
+.aid-option{border:1px solid #38536a;border-radius:10px;padding:9px;background:#142436}
+.aid-option button{width:100%;white-space:normal;line-height:1.5}
+.aid-option .hint{margin-top:6px;line-height:1.55}
+.aid-warning{margin:8px 0 0;color:#f1c38a;font-size:.78rem}
+@media(max-width:380px){.aid-options{grid-template-columns:1fr}}

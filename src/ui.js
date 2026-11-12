@@ -10,6 +10,8 @@ let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = pe
 let saveError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
+let aidSourceId = null;
+let aidTargetId = null;
 const session = createExclusiveSession({
   onLost() {
     sessionStatus = "readonly";
@@ -159,15 +161,51 @@ function controls(){
  '<span class="muted">速度</span><select data-action="speed"><option value="1" '+(run.speed===1?"selected":"")+'>1× · 20秒/日</option><option value="2" '+(run.speed===2?"selected":"")+'>2× · 10秒/日</option><option value="4" '+(run.speed===4?"selected":"")+'>4× · 5秒/日</option></select>'+
  (new URLSearchParams(location.search).has("debug")?'<button data-action="step">调试：+1天</button>':'')+'</div>';
 }
+function aidChoicesHtml(fromId,toId){
+ const from=run.worlds.find(w=>w.id===fromId);
+ const to=run.worlds.find(w=>w.id===toId);
+ const materialWarning=from&&to&&from.id!==to.id&&
+   from.resource>=Engine.WORLDS[from.id].finalCost&&
+   from.resource-4<Engine.WORLDS[from.id].finalCost?
+   '<p class="aid-warning">注意：这次援助会让来源世界的材料低于自身终局需求，可能延后救援。</p>':"";
+ return '<p class="hint">目标现状：'+(to?('P'+n(to.p)+' / D'+n(to.d)+' · 截止剩余'+Math.max(0,to.deadline-run.day)+'天'):'未选择')+
+   '。每次消耗来源4材料、1AP、1灵魂；同一目标两类援助共享冷却。</p>'+
+ '<div class="aid-options">'+["p","d"].map(mode=>{
+   const preview=Engine.previewAid(run,fromId,toId,mode);
+   const title=mode==="p"?"增加拯救准备":"压制毁灭压力";
+   const effect=mode==="p"?"P+"+n(preview.actualDelta):"D−"+n(preview.actualDelta);
+   const detail=preview.available?
+     '本次实际'+effect+'，来源援助后剩余'+n(preview.sourceAfter)+'材料。':
+     '当前不可使用：'+preview.reason;
+   return '<div class="aid-option"><button data-action="aid" data-mode="'+mode+'"'+
+     (preview.available?'':' disabled')+'>'+title+' · '+effect+'</button>'+
+     '<div class="hint">'+esc(detail)+'</div></div>';
+ }).join("")+'</div>'+materialWarning;
+}
+function updateAidChoices(){
+ const source=document.querySelector("#aid-from");
+ const target=document.querySelector("#aid-to");
+ const preview=document.querySelector("#aid-choice-preview");
+ if(!source||!target||!preview||!run)return;
+ aidSourceId=source.value;
+ aidTargetId=target.value;
+ preview.innerHTML=aidChoicesHtml(aidSourceId,aidTargetId);
+}
 function soulHtml(){
  const running=run.worlds.filter(w=>w.status==="running");
- const choices=running.map(w=>'<option value="'+w.id+'">'+w.name+'（资源'+n(w.resource)+'）</option>').join("");
+ if(!running.some(w=>w.id===aidSourceId))aidSourceId=running[0]?.id||null;
+ if(!running.some(w=>w.id===aidTargetId))
+   aidTargetId=running.find(w=>w.id!==aidSourceId)?.id||running[0]?.id||null;
+ const options=(selected)=>running.map(w=>
+   '<option value="'+w.id+'"'+(w.id===selected?' selected':'')+'>'+
+   esc(w.name)+'（资源'+n(w.resource)+'）</option>').join("");
  const echoes=run.echoes.filter(e=>!e.used);
- return '<div class="stack"><section class="panel"><h2>万我同源</h2><p class="muted">资源援助不占分身每日行动，但会消耗来源世界的材料、1行动点和1灵魂；同一目标援助有冷却。</p>'+
- '<div class="select-row"><label>来源世界 <select id="aid-from">'+choices+'</select></label></div>'+
- '<div class="select-row"><label>目标世界 <select id="aid-to">'+choices+'</select></label></div>'+
- '<div class="event-actions"><button data-action="aid" data-mode="p">援助拯救 +12</button><button data-action="aid" data-mode="d">压制毁灭 −12</button></div>'+
- '<p class="hint">闭关分身允许提供资源，但不能参与二人或三人之力。二人之力需指定正在等待处理的精英战，或符合资格的终局战。</p></section>'+
+ return '<div class="stack"><section class="panel"><h2>万我同源</h2>'+
+ '<p class="muted">比较实际收益再决定是否消耗灵魂。援助不占分身的每日主要行动，但不能给同一世界重复刷新冷却。</p>'+
+ '<div class="select-row"><label>来源世界 <select id="aid-from">'+options(aidSourceId)+'</select></label></div>'+
+ '<div class="select-row"><label>目标世界 <select id="aid-to">'+options(aidTargetId)+'</select></label></div>'+
+ '<div id="aid-choice-preview" aria-live="polite">'+aidChoicesHtml(aidSourceId,aidTargetId)+'</div>'+
+ '<p class="hint">闭关分身允许提供资源，但不能参与二人或三人之力。</p></section>'+
  '<section class="panel"><h2>灵魂融合</h2><p class="muted">二人之力第2局解锁；三人之力第3局解锁。当前冷却至第 '+run.fusionNext+' 天。</p>'+
  running.map(w=>{
  const f=Engine.previewFusion(run,w.id);
@@ -284,8 +322,13 @@ function handleClick(target){
  if(action==="echo"){execute("echo",[target.dataset.from,id]);return;}
  if(action==="aid"){
    const a=document.querySelector("#aid-from")?.value,b=document.querySelector("#aid-to")?.value;
-   if(!a||!b){report("请选择来源和目标");return;}
-   if(!window.confirm("来源世界消耗4资源、1行动点和1点灵魂强度，确定要援助吗？"))return;
+   const preview=Engine.previewAid(run,a,b,mode);
+   if(!preview.available){report(preview.reason);return;}
+   const effect=mode==="p"?"拯救准备+"+n(preview.actualDelta):
+     "毁灭压力−"+n(preview.actualDelta);
+   const reserve=preview.jeopardizesSourceFinale?
+     "\n注意：来源本局终局所需材料将变得不足。":"";
+   if(!window.confirm("本次实际"+effect+"；来源消耗4资源、1AP、1灵魂。"+reserve+"\n确认援助吗？"))return;
    execute("aid",[a,b,mode]);return;
  }
 }
@@ -293,6 +336,7 @@ app.addEventListener("click",event=>{const t=event.target.closest("[data-action]
 app.addEventListener("change",event=>{
  const t=event.target,action=t.dataset.action;
  if(!run||!session.isOwner||commandBusy)return;
+ if(t.id==="aid-from"||t.id==="aid-to"){updateAidChoices();return;}
  if(action==="strategy"){execute("strategy",[t.dataset.world,t.value]);return;}
  if(action==="speed"){run.speed=Number(t.value)||1;tickStarted=performance.now();queueSave();render();}
 });

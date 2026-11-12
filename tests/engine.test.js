@@ -127,7 +127,7 @@ describe("soul links and combat build",()=>{
     expect(Engine.aid(s,from.id,to.id,"d").ok).toBe(false);
     s.day=9;s.ap=4;from.resource=20;
     expect(Engine.aid(s,from.id,to.id,"d").ok).toBe(false);
-    s.day=10;expect(Engine.aid(s,from.id,to.id,"d").ok).toBe(true);
+    s.day=10;to.d=12;expect(Engine.aid(s,from.id,to.id,"d").ok).toBe(true);
   });
   it("lets second-run fusion resolve a valid boss once",()=>{
     const s=Engine.fresh("duo",2,false),a=Engine.byId(s,"lingzai"),b=Engine.byId(s,"zombie");

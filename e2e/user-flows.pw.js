@@ -282,3 +282,60 @@ test("fusion previews show real eligibility and charge exactly once on success",
   expect(run.ap).toBe(1);
   expect(run.soul).toBe(7);
 });
+
+test("aid preview blocks wasted progress and shows real cost", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await startFirstRun(page);
+  await page.locator('button[data-tab="soul"]').click();
+
+  const preview = page.locator("#aid-choice-preview");
+  await expect(preview.getByRole("button", { name: "增加拯救准备 · P+12" })).toBeEnabled();
+  await expect(preview.getByRole("button", { name: /压制毁灭压力/ })).toBeDisabled();
+  await page.locator("#aid-to").selectOption("lingzai");
+  await expect(preview.getByRole("button", { name: /增加拯救准备/ })).toBeDisabled();
+  await expect(preview).toContainText("不同且仍在运行");
+  await page.locator("#aid-to").selectOption("zombie");
+  await expect(preview.getByRole("button", { name: /增加拯救准备/ })).toBeEnabled();
+
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.worlds.find((w) => w.id === "lingzai").resource = 12;
+    run.worlds.find((w) => w.id === "zombie").p = 98;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-tab="soul"]').click();
+  const adjusted = page.locator("#aid-choice-preview");
+  await expect(adjusted).toContainText("P+2");
+  await expect(adjusted).toContainText("材料低于自身终局需求");
+  await adjusted.getByRole("button", { name: /增加拯救准备/ }).click();
+  await expect
+    .poll(async () => (await getSnapshot(page)).run?.worlds.find((w) => w.id === "zombie").p)
+    .toBe(100);
+  const saved = await getSnapshot(page);
+  expect(saved.run.ap).toBe(1);
+  expect(saved.run.soul).toBe(7);
+  expect(saved.run.worlds.find((w) => w.id === "lingzai").resource).toBe(8);
+  await expect(adjusted.getByRole("button", { name: /增加拯救准备/ })).toBeDisabled();
+  await expect(adjusted).toContainText("目标已达到P100");
+});
+
+test("aid compares a partial doom reduction without offering a wasted intervention", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.worlds.find((w) => w.id === "zombie").d = 5.5;
+    run.worlds.find((w) => w.id === "zombie").p = 100;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-tab="soul"]').click();
+  const preview = page.locator("#aid-choice-preview");
+  await expect(preview.getByRole("button", { name: /增加拯救准备/ })).toBeDisabled();
+  await expect(preview.getByRole("button", { name: "压制毁灭压力 · D−5.5" })).toBeEnabled();
+  await expect(preview).toContainText("本次实际D−5.5");
+});

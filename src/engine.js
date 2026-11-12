@@ -7,6 +7,7 @@ import { previewMajorEvent } from "./systems/event-contract.js";
 import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
 import { summarizeFinale } from "./systems/finale-readiness.js";
 import { evaluateFusion } from "./systems/fusion-contract.js";
+import { previewResourceAid } from "./systems/aid-contract.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -445,14 +446,16 @@ const MultiworldEngine = (function () {
     checkWorld(s,w);finishRun(s);return {ok:true};
   }
   function aid(s,sourceId,targetId,mode){
-    var a=byId(s,sourceId),b=byId(s,targetId);
-    if(!s.active||!a||!b||a===b||a.status!=="running"||b.status!=="running")return {ok:false,error:"需要两个仍在运行的不同世界"};
-    if(["p","d"].indexOf(mode)<0)return {ok:false,error:"援助类型无效"};
-    if(a.resource<4||availableAP(s)<1||s.soul<=1)return {ok:false,error:"来源资源、行动点或灵魂强度不足"};
-    if(s.day<(s.aidNext[b.id]||1))return {ok:false,error:"目标世界援助冷却中"};
-    a.resource-=4;s.ap--;s.soul--;s.aidNext[b.id]=s.day+9;
-    if(mode==="p")addProgress(s,b,12);else addD(b,-12);
-    log(s,null,a.name+"支援"+b.name+"：消耗4资源、1行动点与1灵魂，"+(mode==="p"?"拯救进度+12":"毁灭进度-12")+"。","major");
+    var preview=previewResourceAid(s,sourceId,targetId,mode);
+    if(!preview.available)return {ok:false,error:preview.reason};
+    var source=byId(s,sourceId),target=byId(s,targetId);
+    source.resource=r2(source.resource-preview.resourceCost);
+    s.ap-=preview.apCost;s.soul-=preview.soulCost;
+    s.aidNext[target.id]=s.day+9;
+    if(mode==="p")addProgress(s,target,preview.actualDelta);
+    else addD(target,-preview.actualDelta);
+    log(s,null,source.name+"支援"+target.name+"：消耗4资源、1行动点与1灵魂，"+
+      (mode==="p"?"实际拯救准备+":"实际毁灭压力-")+preview.actualDelta+"。","major");
     return {ok:true};
   }
   function previewFusion(s,targetId,providers){
@@ -541,6 +544,6 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
+    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;
