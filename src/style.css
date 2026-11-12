@@ -37,3 +37,6 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 .result{border-color:#446b5a;text-align:center}.result strong{font-size:1.7rem;color:#b2e7cf}
 .notice{padding:11px;border:1px solid #66563c;color:#f0c98b;background:#28283a;border-radius:11px;font-size:.84rem}
 @media(max-width:370px){.app-shell{padding-inline:9px}.metrics{gap:4px}.metric{padding:7px 3px}.metric b{font-size:1rem}.metric span{font-size:.61rem}.build-choice{grid-template-columns:1fr}}
+
+.app-shell.readonly button:not([data-action="retry-session"]):not([data-action="home"]):not([data-action="tab"]){opacity:.35;pointer-events:none}
+.app-shell.readonly select,.app-shell.readonly input{opacity:.45;pointer-events:none}

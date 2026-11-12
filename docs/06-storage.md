@@ -28,3 +28,10 @@
 ## 跨世界状态的存储边界
 
 SoulLinkState 保存：每来源世界成功广播次数、已广播 memoryKey 和上次广播日；每目标援助 nextEligibleDay（P与D共用）；全局融合 nextEligibleDay；已发放和已消费的世界回响；已处理 operationId 与结算签名。提供者的未来3日虚弱效果以 world.statusEffects 保存，不新建独立战斗等级。所有援助及融合需原子提交双世界变化、AP/魂、冷却和目标事件实例结果。详见[双世界联动内容包01](../content/packages/soul-link/01-dual-world.md)。
+
+## V0.2 · 多标签页与指令去重
+
+- **唯一活动标签页：** `src/services/exclusive-session.js` 使用浏览器 Web Locks API 的 exclusive + ifAvailable 锁，在整个活动会话期间持有；竞争标签页进入只读，不允许推进时间、修改策略、创建本局或写存档。关闭原标签页后，玩家可手动重新取得锁并**先从 IndexedDB 读取最新快照**。
+- **不支持Web Locks时：** 默认只读而非退化为两个可写入窗口。需在HTTPS或localhost安全上下文中运行；普通局域网HTTP调试可能受限。没有引入自研心跳租约、跨标签页广播协议或第三方状态同步库。
+- **玩家指令去重：** 每次主动操作由UI生成唯一 `operationId`，引擎 `applyCommand` 统一验证并在RunState持久化最近256条操作签名及结果。相同ID重试返回原结果、不重复扣AP/魂/材料；同一ID换参数直接拒绝；失败响应也记录。历史操作去重窗口有上限，长期业务仍以事件和终局状态自身的不可重复性兜底。
+- **仍待实测：** 真实浏览器两标签页的锁竞争、后台/关闭窗口时事务落盘、移动端HTTPS环境、多设备同步、完整JSON导入/导出。此版本只承诺同一浏览器来源的单写者保护，不包含跨设备同步。

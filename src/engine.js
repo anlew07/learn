@@ -42,6 +42,7 @@ const MultiworldEngine = (function () {
       version:VERSION,id:"run-"+hash(seed+"/"+no),seed:String(seed),day:1,runNumber:no,active:true,
       waves:!!waves,speed:1,paused:true,soul:8,ap:2,apReserved:0,apMax:4,
       aidNext:{},fusionNext:1,echoes:[],memory:{},sequence:0,
+      operationResults:{},operationOrder:[],
       worlds:ids.map(function(id){return newWorld(id,seed,no);}),logs:[],
       result:null
     };
@@ -463,6 +464,44 @@ const MultiworldEngine = (function () {
     log(s,null,WORLDS[echoWorldId].name+"回响支援"+target.name+"。","major");
     return {ok:true};
   }
+  /**
+   * The UI sends one immutable operationId per user gesture. Replaying that
+   * operation after a save/refresh returns the saved outcome with no new cost.
+   * Failed outcomes are also recorded, so retries must use a fresh ID.
+   */
+  function applyCommand(s,command){
+    if(!s||!command||typeof command.operationId!=="string"||
+      !/^[A-Za-z0-9:_/.-]{1,128}$/.test(command.operationId)||
+      !Array.isArray(command.args)||command.args.length>6){
+      return {ok:false,error:"指令格式或操作ID不合法"};
+    }
+    var handlers={
+      strategy:setStrategy,
+      retreat:retreat,
+      exitRetreat:exitRetreat,
+      aid:aid,
+      fusion:fuse,
+      event:resolveEvent,
+      build:chooseBuild,
+      echo:useEcho
+    };
+    if(!Object.prototype.hasOwnProperty.call(handlers,command.type)){
+      return {ok:false,error:"未知玩家指令"};
+    }
+    var signature=JSON.stringify([command.type,command.args]);
+    var saved=s.operationResults&&s.operationResults[command.operationId];
+    if(saved){
+      if(saved.signature!==signature)return {ok:false,error:"操作ID与已有指令不匹配"};
+      return {...saved.result,replayed:true};
+    }
+    var result=handlers[command.type](s,...command.args);
+    if(!s.operationResults)s.operationResults={};
+    if(!s.operationOrder)s.operationOrder=[];
+    s.operationResults[command.operationId]={signature:signature,result:{...result}};
+    s.operationOrder.push(command.operationId);
+    if(s.operationOrder.length>256)delete s.operationResults[s.operationOrder.shift()];
+    return result;
+  }
   function info(s,w) {
     return {canFinish:canFinal(s,w,0),bossRequirement:bossRequirement(w),remainingResources:Math.max(0,resourceTarget(w)-w.resource),
       goal:demand(w),stage:WORLDS[w.id].stages[w.level-1],resourceName:WORLDS[w.id].resourceName,
@@ -471,6 +510,6 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,useEcho:useEcho,canFinal:canFinal,bossRequirement:bossRequirement};
+    resolveEvent:resolveEvent,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;

@@ -1,17 +1,28 @@
 import "./style.css";
 import Engine from "./engine.js";
 import { saveRepository } from "./services/persistence.js";
+import { createExclusiveSession } from "./services/exclusive-session.js";
 
 const app = document.querySelector("#app");
 const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"清剿优先",rescue:"拯救优先"};
 let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now();
 let saveError = false;
+let sessionStatus = "starting";
+let commandBusy = false;
+const session = createExclusiveSession({
+  onLost() {
+    sessionStatus = "readonly";
+    if (run) run.paused = true;
+    render();
+  },
+});
 const esc = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n = value => Number(value??0).toFixed(value%1===0?0:1);
 const win = () => run?.worlds.filter(w=>w.status==="saved").length??0;
 
 function queueSave() {
+  if (!session.isOwner) return Promise.resolve();
   return saveRepository.enqueueSave(run, profile)
     .then(() => {
       if (saveError) {
@@ -29,6 +40,17 @@ function persistenceBanner() {
   return saveError
     ? '<p class="notice" role="alert">本次存档未成功写入浏览器，请检查存储权限和剩余空间。后续操作会尝试重新保存。</p>'
     : "";
+}
+function sessionBanner() {
+  if (session.isOwner) return "";
+  const notice = sessionStatus === "starting"
+    ? "正在取得本局的独占写入权限……"
+    : session.supported
+      ? "另一个标签页正在运行该游戏。本页面为只读，关闭原标签页后可重新取得控制权。"
+      : "当前浏览器环境不支持安全的多标签页写入锁；请使用 HTTPS 或 localhost 的现代浏览器。";
+  return '<section class="notice" role="alert">' + notice +
+    (sessionStatus === "starting" ? "" : '<div style="margin-top:8px"><button data-action="retry-session">重新取得控制权并读取最新存档</button></div>') +
+    '</section>';
 }
 function report(text){const el=document.querySelector("#toast");if(el){el.textContent=text;el.hidden=false;}}
 function worldStatus(w){return w.status==="saved"?"已拯救":w.status==="failed"?"已崩溃":"演化中";}
@@ -109,21 +131,42 @@ function homeHtml(){
  '<p class="hint" style="margin-top:16px">本作仍处于早期原型，所有成长、怪物与世界恶化数值会根据测试调整。</p>';
 }
 function render(){
- if(!run||tab==="home"){app.innerHTML=homeHtml()+persistenceBanner();return;}
+ app.classList.toggle("readonly",!session.isOwner);
+ const banner = sessionBanner();
+ if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
-  app.innerHTML=controls()+'<div class="stack"><section class="panel result"><h2>这一次的末日已经结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
+  app.innerHTML=banner+controls()+'<div class="stack"><section class="panel result"><h2>这一次的末日已经结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
   '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+run.worlds.map(worldHtml).join("")+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
 function footer(){return '<nav class="footer-nav"><button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'">末日世界</button><button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'">万我同源</button><button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'">战报记录</button></nav>';}
-function after(success){if(!success.ok)report(success.error||"操作不满足条件");else{if(!run.active)reward();queueSave();render();}}
+async function execute(type,args){
+ if(!session.isOwner || commandBusy || !run) return;
+ commandBusy=true;
+ const result=Engine.applyCommand(run,{
+   operationId:crypto.randomUUID(),
+   type,
+   args,
+ });
+ if(!result.ok){
+   commandBusy=false;
+   queueSave();
+   report(result.error || "操作不满足条件");
+   return;
+ }
+ if(!run.active)reward();
+ const saved=queueSave();
+ render();
+ await saved;
+ commandBusy=false;
+}
 function reward(){
  if(!run?.result||run.rewarded)return;
  run.rewarded=true;profile.runCount++;profile.shards+=run.result.shards;
- queueSave();
 }
 function confirmNew(){
+ if(!session.isOwner || commandBusy)return false;
  if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
@@ -131,46 +174,49 @@ function confirmNew(){
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
+ if(action==="retry-session"){claimSession();return;}
  if(action==="home"){tab="home";render();return;}
  if(action==="continue"){tab="world";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
+ if(!session.isOwner){report("当前标签页是只读副本，请重新取得控制权。");return;}
+ if(commandBusy)return;
  if(action==="new-run"){confirmNew();return;}
  if(!run)return;
  if(action==="toggle"){run.paused=!run.paused;tickStarted=performance.now();queueSave();render();return;}
- if(action==="step"){after(Engine.step(run));return;}
+ if(action==="step"){const result=Engine.step(run);if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;}
  if(action==="retreat"){
    const length=window.confirm("安排6天深度闭关吗？\n取消则安排4天短闭关。")?6:4;
-   after(Engine.retreat(run,id,length));return;
+   execute("retreat",[id,length]);return;
  }
  if(action==="exit-retreat"){
-   if(window.confirm("强行出关将失去1点灵魂，毁灭进度+8，确定吗？"))after(Engine.exitRetreat(run,id));
+   if(window.confirm("强行出关将失去1点灵魂，毁灭进度+8，确定吗？"))execute("exitRetreat",[id]);
    return;
  }
- if(action==="event"){after(Engine.resolveEvent(run,id,mode));return;}
- if(action==="build"){after(Engine.chooseBuild(run,id,target.dataset.power,false));return;}
- if(action==="fusion"){after(Engine.fuse(run,id));return;}
- if(action==="echo"){after(Engine.useEcho(run,target.dataset.from,id));return;}
+ if(action==="event"){execute("event",[id,mode]);return;}
+ if(action==="build"){execute("build",[id,target.dataset.power,false]);return;}
+ if(action==="fusion"){execute("fusion",[id]);return;}
+ if(action==="echo"){execute("echo",[target.dataset.from,id]);return;}
  if(action==="aid"){
    const a=document.querySelector("#aid-from")?.value,b=document.querySelector("#aid-to")?.value;
    if(!a||!b){report("请选择来源和目标");return;}
    if(!window.confirm("来源世界消耗4资源、1行动点和1点灵魂强度，确定要援助吗？"))return;
-   after(Engine.aid(run,a,b,mode));return;
+   execute("aid",[a,b,mode]);return;
  }
 }
 app.addEventListener("click",event=>{const t=event.target.closest("[data-action]");if(t)handleClick(t);});
 app.addEventListener("change",event=>{
  const t=event.target,action=t.dataset.action;
- if(!run)return;
- if(action==="strategy"){after(Engine.setStrategy(run,t.dataset.world,t.value));return;}
+ if(!run||!session.isOwner||commandBusy)return;
+ if(action==="strategy"){execute("strategy",[t.dataset.world,t.value]);return;}
  if(action==="speed"){run.speed=Number(t.value)||1;tickStarted=performance.now();queueSave();render();}
 });
 document.addEventListener("visibilitychange",()=>{
- if(document.hidden&&run&&!run.paused){run.paused=true;tickStarted=performance.now();queueSave();}
+ if(document.hidden&&run&&session.isOwner&&!run.paused){run.paused=true;tickStarted=performance.now();queueSave();}
 });
-window.addEventListener("pagehide",()=>{if(run)queueSave();});
+window.addEventListener("pagehide",()=>{if(run&&session.isOwner)queueSave();});
 window.addEventListener("keydown",e=>{if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}});
 setInterval(()=>{
- if(!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
+ if(!session.isOwner||commandBusy||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
  const now=performance.now();
  if(now-tickStarted >= (TEMPOS[run.speed] || TEMPOS[1])){
    // Single day maximum per timer tick: never batch unseen days after background throttling.
@@ -184,15 +230,27 @@ setInterval(()=>{
    queueSave();render();
  }
 },300);
-async function boot(){
- try{
-   const { run: saved, profile: account } = await saveRepository.load();
+async function claimSession() {
+ sessionStatus="starting";
+ render();
+ const acquired=await session.acquire();
+ sessionStatus=acquired?"owned":"readonly";
+ try {
+   // Always reload AFTER acquiring a lock: a previous tab may have progressed.
+   const { run: saved, profile: account }=await saveRepository.load();
    if(account&&typeof account.runCount==="number")profile=account;
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
-     run=saved;run.paused=true;tab="world";
-     if(run.result&&!run.rewarded)reward();
+     run=saved;run.paused=true;
+     if(acquired&&run.result&&!run.rewarded){reward();queueSave();}
+   }else{
+     run=null;
    }
- }catch(e){saveError=true;console.error("恢复存档失败",e);}
- tickStarted=performance.now();render();
+   if(acquired){tab="world";saveError=false;}
+ }catch(error){
+   saveError=true;
+   console.error("恢复存档失败",error);
+ }
+ tickStarted=performance.now();
+ render();
 }
-boot();
+claimSession();

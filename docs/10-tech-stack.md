@@ -39,3 +39,11 @@ npm run preview
 ## 存档原子性
 
 现在使用 idb-keyval 内建的 `getMany/setMany`，将RunState和ProfileState在一个批量事务中读写；避免自定义IndexedDB事务封装，也避免结局奖励发生“只写入一半”的问题。存储操作封装于 `src/services/persistence.js`；新回归测试 `tests/persistence.test.js` 覆盖连续写入、快照和错误恢复。多标签页冲突和正式备份/导入导出尚未完成。
+
+## 单写者与操作幂等
+
+沿用成熟的原生 `navigator.locks.request()`，在安全上下文中为同来源窗口提供单写者保护；可选的 `ifAvailable` 表示锁被占用时立即进入只读，而不是挂起UI。该功能不依赖单独的同步依赖。
+
+用浏览器自带的 `crypto.randomUUID()` 生成一次性的UI操作ID；指令应用与已处理结果存放于本局RunState，防止刷新时同一操作重新扣费。当前只持久化最近256个操作ID，世界终局/事件仍有其独立不可重复条件。
+
+参考：[MDN Web Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)、[MDN LockManager.request](https://developer.mozilla.org/en-US/docs/Web/API/LockManager/request)。Web Locks仅保证同一来源的浏览器标签页协调，不提供云存档。
