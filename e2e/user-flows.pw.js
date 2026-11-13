@@ -130,7 +130,7 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
     () => document.documentElement.scrollWidth <= window.innerWidth,
   );
   expect(noHorizontalOverflow).toBe(true);
-  await expect(page.getByText("本次依靠基础自动战斗")).toBeVisible();
+  await expect(page.getByText("使用战技：碎片飞刃")).toBeVisible();
 
   const snapshot = await getSnapshot(page);
   const zombie = snapshot.run.worlds.find((world) => world.id === "zombie");
