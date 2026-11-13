@@ -630,3 +630,29 @@ test("the secret collection stays locked until discovery and survives a reload",
   await expect(collection.locator('[data-discovered="true"]')).toContainText("修仙也要摸鱼");
   await expect(collection.locator('[data-discovered="false"]')).toHaveCount(1);
 });
+
+test("cross-world secret unlocks in the game and persists as a revealed collection entry", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    for (const world of run.worlds) {
+      world.flags.easterEggs = [
+        world.id === "lingzai" ? "lingzai/tea-break" : "zombie/expired-coffee",
+      ];
+    }
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-action="step"]').click();
+  await page.locator('button[data-tab="log"]').click();
+  const entry = page.locator('[data-crossworld-secret="crossworld/tea-and-coffee"]');
+  await expect(entry).toHaveAttribute("data-discovered", "true");
+  await expect(entry).toContainText("末日茶咖会");
+  await expect.poll(async () => (await getSnapshot(page)).run.crossworldSecrets?.length).toBe(1);
+  await page.reload();
+  await page.locator('button[data-tab="log"]').click();
+  await expect(entry).toContainText("末日茶咖会");
+});
