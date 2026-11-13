@@ -81,7 +81,7 @@ describe("explainable action and wave gameplay integration", () => {
   it("settles performance-scaled wave effects once in the existing zombie fight", () => {
     const state = Engine.fresh("wave-budget-transaction", 1, true);
     const world = Engine.byId(state, "zombie");
-    state.day = 35;
+    state.day = 1;
     world.level = 2;
     world.p = 45;
     world.d = 20;
@@ -93,13 +93,11 @@ describe("explainable action and wave gameplay integration", () => {
       retryDay: 1,
     };
     world.build.attack = [
-      { id: "blades", lv: 2 },
-      { id: "arc", lv: 2 },
+      { id: "blades", lv: 1 },
+      { id: "arc", lv: 1 },
     ];
     world.build.support = [{ id: "armor", lv: 1 }];
     world.build.count = 3;
-    world.build.evolved = true;
-    world.build.evolutionName = "钢雨防线";
 
     expect(Engine.step(state).ok).toBe(true);
     expect(world.lastDecision.actionId).toBe("fight");
