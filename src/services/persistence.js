@@ -11,6 +11,8 @@ export const STORAGE_KEYS = Object.freeze({
 
 export function createSaveRepository(driver = { getMany, setMany }) {
   let tail = Promise.resolve();
+  let failureEpoch = 0;
+  let lastWriteError = null;
 
   return {
     async load() {
@@ -25,15 +27,26 @@ export function createSaveRepository(driver = { getMany, setMany }) {
       // Snapshot at command time, not when the asynchronous write starts.
       const runSnapshot = run === null ? null : JSON.parse(JSON.stringify(run));
       const profileSnapshot = JSON.parse(JSON.stringify(profile));
-      const operation = tail.then(() =>
-        driver.setMany([
-          [STORAGE_KEYS.run, runSnapshot],
-          [STORAGE_KEYS.profile, profileSnapshot],
-        ]),
-      );
+      // Commands can queue additional snapshots before an IndexedDB rejection
+      // becomes visible. Never let those stale, already-queued operations
+      // silently clear the failure banner by succeeding afterward.
+      const queuedEpoch = failureEpoch;
+      const operation = tail.then(async () => {
+        if (queuedEpoch !== failureEpoch) throw lastWriteError;
+        try {
+          await driver.setMany([
+            [STORAGE_KEYS.run, runSnapshot],
+            [STORAGE_KEYS.profile, profileSnapshot],
+          ]);
+        } catch (error) {
+          lastWriteError = error;
+          failureEpoch += 1;
+          throw error;
+        }
+      });
 
-      // A failed operation must be visible to its caller, but must not poison
-      // subsequent saves. The next successful save writes both records.
+      // Failed operations reject their own callers. Only a newly enqueued
+      // save after the failure (the UI's explicit retry) can write again.
       tail = operation.catch(() => {});
       return operation;
     },
@@ -78,7 +91,11 @@ export function assertRestorableSnapshot({ run, profile }, version) {
           !world.build ||
           typeof world.build !== "object" ||
           !Array.isArray(world.build.attack) ||
-          !Array.isArray(world.build.support),
+          !Array.isArray(world.build.support) ||
+          [...world.build.attack, ...world.build.support].some(
+            (power) =>
+              !power || typeof power !== "object" || typeof power.id !== "string",
+          ),
       ))
   ) {
     throw new Error("RunState is incompatible or malformed");
