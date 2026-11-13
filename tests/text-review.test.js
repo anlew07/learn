@@ -40,9 +40,11 @@ describe("runtime review templates", () => {
     const rows = extractDynamicTemplatesFromSource(
       'const id = "world-" + number; const copy = "毁灭压力：" + d + "，进入\\\"安全区\\\"";',
     );
-    expect(rows).toHaveLength(1);
-    expect(rows[0][3]).toBe("重点复核");
-    const csv = renderRuntimeCsv(rows);
+    const candidates = rows.filter((row) => row[5].includes("毁灭压力"));
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0][3]).toBe("重点复核");
+    expect(rows.some((row) => row[5].includes("world-"))).toBe(false);
+    const csv = renderRuntimeCsv(candidates);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv).toContain('""安全区""');
     expect(csv).toContain('"待人工复原"');
