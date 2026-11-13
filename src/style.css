@@ -318,3 +318,7 @@ button:active:not(:disabled){transform:translateY(1px)}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+/* Four compact counters retain the day readout used throughout the game. */
+.run-dashboard .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:520px){.run-dashboard .metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.run-dashboard .metric{padding:10px 5px}.run-dashboard .metric b{font-size:1.08rem;white-space:nowrap}.run-dashboard .metric span{font-size:.58rem}}
