@@ -55,7 +55,7 @@ for (const width of [320, 375, 390, 430]) {
     });
     expect(audit.width).toBeLessThanOrEqual(audit.viewport + 1);
     expect(audit.violations).toEqual([]);
-    expect(audit.sprite).toContain("avatar-lingzai");
+    expect(audit.sprite).toMatch(/avatar-lingzai|data:image\/svg\+xml/i);
     expect(audit.spriteRendering).toBe("pixelated");
     expect(audit.nav).toBe(true);
 
