@@ -393,7 +393,9 @@ test("strategy switching shows AP cost and never misrepresents an unavailable ch
   expect(saved.run.ap).toBe(0);
 });
 
-test("committed aid consequences remain visible after reload and in the battle log", async ({ page }) => {
+test("committed aid consequences remain visible after reload and in the battle log", async ({
+  page,
+}) => {
   page.on("dialog", (dialog) => dialog.accept());
   await startFirstRun(page);
   await page.locator('button[data-tab="soul"]').click();
