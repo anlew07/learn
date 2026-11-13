@@ -208,3 +208,32 @@ describe("follow-up narrative consequences", () => {
     expect(state.logs.some((entry) => entry.world === world.id && entry.text.includes("古阵回路"))).toBe(true);
   });
 });
+
+describe("boss and optional follow-up scheduling priority", () => {
+  it("handles a ready boss before an optional follow-up without consuming the clue", () => {
+    const { state, world } = unlocked("zombie");
+    world.threat = { id: "threat", status: "awaiting_alpha", progress: 2, retryDay: 1 };
+    world.queuedBoss = true;
+    Engine.step(state);
+    expect(world.pendingEvent?.type).toBe("boss");
+    expect(world.flags.followupQueued).not.toBe(true);
+    // Resolve without combat to ensure the clue is still pending.
+    Engine.step(state);
+    expect(world.pendingEvent?.state).toBe("active");
+    expect(Engine.resolveEvent(state, world.id, "retreat").ok).toBe(true);
+    Engine.step(state);
+    expect(world.pendingEvent?.type).toBe("followup");
+    expect(world.flags.followupQueued).toBe(true);
+  });
+
+  it("does not replace an already queued follow-up with a newly ready boss", () => {
+    const { state, world } = unlocked("lingzai");
+    Engine.step(state);
+    expect(world.pendingEvent?.type).toBe("followup");
+    world.threat = { id: "threat", status: "awaiting_alpha", progress: 2, retryDay: 1 };
+    world.queuedBoss = true;
+    Engine.step(state);
+    expect(world.pendingEvent?.type).toBe("followup");
+    expect(world.queuedBoss).toBe(true);
+  });
+});

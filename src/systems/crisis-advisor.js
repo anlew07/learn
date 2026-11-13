@@ -13,6 +13,19 @@ export function assessCrises(state, rules) {
     const event = rules.event(state, world);
     const notes = [];
     let priority = 0;
+    const effect = world.followupEffect;
+    if (world.flags?.followupOutcome === "commit") {
+      if (effect && state.day >= effect.start && state.day <= effect.until) {
+        const days = effect.until - state.day + 1;
+        notes.push(
+          effect.kind === "natural"
+            ? `已布设古阵：未来${days}个有效日的自然毁灭增长每天最多降低${effect.perDay}`
+            : `已启用干扰信标：剩余${days}个有效日可抵消活跃尸群额外D+${effect.perDay}/日`,
+        );
+      } else if (world.id === "beast" && world.suppression >= 2) {
+        notes.push("围猎准备已完成：兽王需求按二阶段压制规则计算");
+      }
+    }
 
     if (world.d >= 90) {
       priority = Math.max(priority, 105);

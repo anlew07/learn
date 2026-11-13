@@ -248,16 +248,18 @@ const MultiworldEngine = (function () {
     if(s.waves)offerBuild(s,w,"首次击败精英");
   }
   function queuedEvent(s,w){
+    // Active threats take priority over optional story rewards. An unresolved
+    // follow-up remains eligible and is queued after the boss is handled.
+    if(!w.pendingEvent&&threatActive(w)&&(w.queuedBoss||w.threat.status==="awaiting_alpha")&&s.day>=(w.threat.retryDay||1)){
+      w.queuedBoss=false;w.eventCount++;
+      w.pendingEvent={id:w.id+"/boss/"+w.eventCount,type:"boss",title:"巢群首领挑战",state:"queued",startDay:s.day+1,expiresDay:s.day+3};
+    }
     if(!w.pendingEvent&&canQueueFollowup(w)){
       w.flags.followupQueued=true;
       w.eventCount++;
       w.pendingEvent={id:w.id+"/followup/"+w.eventCount,type:"followup",
         title:FOLLOWUPS[w.id].title,state:"queued",startDay:s.day+1,expiresDay:s.day+3};
       log(s,w.id,"先前成功调查的线索出现后续变化："+FOLLOWUPS[w.id].title+"。","major");
-    }
-    if(!w.pendingEvent&&threatActive(w)&&(w.queuedBoss||w.threat.status==="awaiting_alpha")&&s.day>=(w.threat.retryDay||1)){
-      w.queuedBoss=false;w.eventCount++;
-      w.pendingEvent={id:w.id+"/boss/"+w.eventCount,type:"boss",title:"巢群首领挑战",state:"queued",startDay:s.day+1,expiresDay:s.day+3};
     }
   }
   function activateEvents(s,w){
