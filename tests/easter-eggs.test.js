@@ -84,3 +84,34 @@ describe("deterministic cosmetic discoveries", () => {
     expect(state.logs.filter((entry) => entry.text.includes("修仙也要摸鱼"))).toHaveLength(1);
   });
 });
+
+describe("run-local discovery collection", () => {
+  it("reveals found details but keeps unknown entries concealed and ignores locked worlds", async () => {
+    const { summarizeEasterEggCollection } = await import("../src/systems/easter-eggs.js");
+    const state = Engine.fresh("collection-view", 1, false);
+    const before = JSON.stringify(state);
+    const initial = summarizeEasterEggCollection(state);
+    expect(initial).toMatchObject({ found: 0, total: 2, complete: false });
+    expect(initial.entries.every((entry) => entry.title === "？？？")).toBe(true);
+    expect(JSON.stringify(state)).toBe(before);
+    Engine.byId(state, "lingzai").flags.easterEggs = ["lingzai/tea-break"];
+    const found = summarizeEasterEggCollection(state);
+    expect(found.found).toBe(1);
+    expect(found.entries[0].title).toBe("修仙也要摸鱼");
+    expect(found.entries[1].detail).not.toContain("末日便利店");
+    const restored = JSON.parse(JSON.stringify(state));
+    expect(summarizeEasterEggCollection(restored)).toEqual(found);
+  });
+
+  it("grants cosmetic three-world title only after all three are found", async () => {
+    const { summarizeEasterEggCollection } = await import("../src/systems/easter-eggs.js");
+    const state = Engine.fresh("all-three", 3, false);
+    for (const world of state.worlds) {
+      world.flags.easterEggs = [EASTER_EGGS[world.id].id];
+    }
+    const collection = summarizeEasterEggCollection(state);
+    expect(collection).toMatchObject({ found: 3, total: 3, complete: true });
+    expect(state.ap).toBe(2);
+    expect(state.soul).toBe(8);
+  });
+});

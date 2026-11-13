@@ -606,3 +606,27 @@ test("follow-up event can automatically choose the safe path at expiry", async (
   expect(saved.worlds.find((world) => world.id === "zombie").pendingEvent).toBeNull();
   await expect(page.locator('.event[data-world="zombie"]')).toHaveCount(0);
 });
+
+test("the secret collection stays locked until discovery and survives a reload", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.locator('button[data-tab="log"]').click();
+  const collection = page.locator("[data-collection]");
+  await expect(collection).toContainText("0 / 2");
+  await expect(collection.locator('[data-discovered="false"]')).toHaveCount(2);
+  await expect(collection).not.toContainText("修仙也要摸鱼");
+
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "lingzai");
+    world.flags.easterEggs = ["lingzai/tea-break"];
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-tab="log"]').click();
+  await expect(collection).toContainText("1 / 2");
+  await expect(collection.locator('[data-discovered="true"]')).toContainText("修仙也要摸鱼");
+  await expect(collection.locator('[data-discovered="false"]')).toHaveCount(1);
+});

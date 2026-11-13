@@ -1,5 +1,6 @@
 import "./style.css";
 import Engine from "./engine.js";
+import { summarizeEasterEggCollection } from "./systems/easter-eggs.js";
 import { saveRepository } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
@@ -297,8 +298,20 @@ function statsHtml(){
   '</div>';
  }).join("")+'</section>';
 }
+function collectionHtml() {
+ const collection = summarizeEasterEggCollection(run);
+ return '<section class="panel" aria-label="本局彩蛋图鉴" data-collection>'+
+ '<div class="row-between"><h2>隐藏发现 · 本局彩蛋图鉴</h2><span class="pill">'+collection.found+' / '+collection.total+'</span></div>'+
+ '<p class="hint">发现记录属于本局存档；不会增加战力、资源或行动点。未解锁的世界不计入本局收集进度。</p>'+
+ (collection.complete?'<p class="pill good">✦ 隐藏称号：三个世界都在摸鱼</p>':'')+
+ '<div class="collection-list">'+collection.entries.map(entry=>
+ '<article class="collection-entry" data-secret-world="'+esc(entry.worldId)+'" data-discovered="'+entry.found+'">'+
+ '<b>'+esc(entry.worldName)+' · '+esc(entry.title)+'</b>'+
+ '<p class="hint">'+esc(entry.detail)+'</p></article>'
+ ).join('')+'</div></section>';
+}
 function logsHtml(){
- return '<section class="panel"><h2>世界战报</h2><div class="muted">普通行为自动合并，关键危机和突破保留记录。</div>'+
+ return collectionHtml()+'<section class="panel"><h2>世界战报</h2><div class="muted">普通行为自动合并，关键危机和突破保留记录。</div>'+
  run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>'+interventionHtml(24);
 }
 function homeHtml(){

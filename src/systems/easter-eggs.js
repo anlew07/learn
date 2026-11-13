@@ -50,3 +50,27 @@ export function discoverEasterEgg(state, world) {
   world.flags.easterEggs.push(egg.id);
   return egg;
 }
+
+/** Read-only run collection. Missing worlds stay locked until that run unlocks them. */
+export function summarizeEasterEggCollection(state) {
+  const entries = (state?.worlds || []).map((world) => {
+    const definition = EASTER_EGGS[world.id];
+    if (!definition) return null;
+    const found = Boolean(world.flags?.easterEggs?.includes(definition.id));
+    return {
+      worldId: world.id,
+      worldName: world.name,
+      id: definition.id,
+      found,
+      title: found ? definition.title : "？？？",
+      detail: found ? definition.message : "尚未发现：留意世界成长与特殊经历。",
+    };
+  }).filter(Boolean);
+  const found = entries.filter((entry) => entry.found).length;
+  return {
+    found,
+    total: entries.length,
+    complete: entries.length === 3 && found === 3,
+    entries,
+  };
+}
