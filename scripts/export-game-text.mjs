@@ -10,16 +10,13 @@ const reviewRisk = /(?:死亡|血腥|血液|屠|虐待|绝望|末日|毁灭|尸�
 const sourceExt = new Set([".js", ".html", ".css", ".svg"]);
 
 function sourceFiles(dir) {
-  return readdirSync(dir, { withFileTypes: true })
-    .flatMap((entry) => {
-      const path = join(dir, entry.name);
-      return entry.isDirectory()
-        ? sourceFiles(path)
-        : sourceExt.has(extname(entry.name))
-          ? [path]
-          : [];
-    })
-    .sort();
+  const found = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) found.push(...sourceFiles(path));
+    else if (sourceExt.has(extname(entry.name))) found.push(path);
+  }
+  return found.sort();
 }
 
 function quoteCell(value) {
@@ -42,10 +39,13 @@ export function collectTextLines() {
       if (!chinese.test(line) && !uiEnglish.test(line)) return;
       const original = line.trim();
       const isComment = /^(?:\/\/|\/\*|\*|<!--|#)/u.test(original);
+      let category = "静态/待复核";
+      if (isComment) category = "注释/需筛除";
+      else if (/\$\{|['"]\s*\+|\+\s*['"]/u.test(original)) category = "动态拼接/需复原";
       rows.push([
         source,
         index + 1,
-        isComment ? "注释/需筛除" : /\$\{|['"]\s*\+|\+\s*['"]/u.test(original) ? "动态拼接/需复原" : "静态/待复核",
+        category,
         reviewRisk.test(original) ? "重点复核" : "常规核对",
         original,
       ]);
@@ -56,7 +56,8 @@ export function collectTextLines() {
 
 export function renderReviewCsv(rows) {
   const header = ["源码文件", "行号", "审核类型", "风险提示", "可搜索原文（源码静态片段）"];
-  return "\uFEFF" + [header, ...rows].map((row) => row.map(quoteCell).join(",")).join("\n") + "\n";
+  const csvRows = [header, ...rows].map((row) => row.map(quoteCell).join(","));
+  return `\uFEFF${csvRows.join("\n")}\n`;
 }
 
 const rows = collectTextLines();
