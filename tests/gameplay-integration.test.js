@@ -77,7 +77,6 @@ describe("explainable action and wave gameplay integration", () => {
     expect(world.lastCombat).toBeNull();
     expect(world.build.count).toBe(0);
   });
-});
 
   it("settles performance-scaled wave effects once in the existing zombie fight", () => {
     const state = Engine.fresh("wave-budget-transaction", 1, true);
@@ -87,7 +86,12 @@ describe("explainable action and wave gameplay integration", () => {
     world.p = 45;
     world.d = 20;
     world.strategy = "clear";
-    world.threat = { id: "parking-lot", progress: 0, status: "active", retryDay: 1 };
+    world.threat = {
+      id: "parking-lot",
+      progress: 0,
+      status: "active",
+      retryDay: 1,
+    };
     world.build.attack = [
       { id: "blades", lv: 2 },
       { id: "arc", lv: 2 },
@@ -117,4 +121,4 @@ describe("explainable action and wave gameplay integration", () => {
     expect(savedWorld.lastCombat).toEqual(world.lastCombat);
     expect(savedWorld.metrics.waveCombats).toBe(1);
   });
-
+});
