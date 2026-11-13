@@ -109,3 +109,60 @@ describe("survivor full-clear frenzy payoff", () => {
     expect(applyFrenzyCaps(base, false)).toEqual(base);
   });
 });
+
+describe("frenzy feeds back into the survivor build loop", () => {
+  it("first frenzy offers one legal skill choice, without instantly awarding a skill", async () => {
+    const Engine = (await import("../src/engine.js")).default;
+    const state = Engine.fresh("frenzy-awakening", 1, true);
+    const world = Engine.byId(state, "zombie");
+    state.day = 8;
+    world.level = 4;
+    world.p = 100;
+    world.resource = 20;
+    world.strategy = "clear";
+    world.threat = { id: "nest", status: "active", progress: 0, retryDay: 1 };
+    world.waveMomentum = { lastDay: 7, count: 2 };
+    world.waveClearStreak = { lastDay: 7, count: 2 };
+    world.build.attack = [{ id: "blades", lv: 2 }];
+    world.build.support = [{ id: "armor", lv: 1 }];
+    world.build.count = 2;
+    world.build.evolved = true;
+    world.build.evolutionName = "钢雨防线";
+
+    expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("fight");
+    expect(world.lastCombat.spectacle.frenzy).toBe(true);
+    expect(world.build.pending?.options.length).toBeGreaterThan(0);
+    expect(world.build.count).toBe(2);
+    expect(world.build.triggers["首次狂热清屏"]).toBe(true);
+    expect(state.logs.some((entry) => entry.text.includes("狂热爆发"))).toBe(true);
+    const restored = JSON.parse(JSON.stringify(state));
+    expect(Engine.byId(restored, "zombie").build.pending).toEqual(world.build.pending);
+  });
+
+  it("defers frenzy awakening when a different skill choice already occupies the slot", async () => {
+    const Engine = (await import("../src/engine.js")).default;
+    const state = Engine.fresh("frenzy-defer", 1, true);
+    const world = Engine.byId(state, "zombie");
+    state.day = 8;
+    world.level = 4;
+    world.p = 100;
+    world.resource = 20;
+    world.strategy = "clear";
+    world.threat = { id: "nest", status: "active", progress: 0, retryDay: 1 };
+    world.waveMomentum = { lastDay: 7, count: 2 };
+    world.waveClearStreak = { lastDay: 7, count: 2 };
+    world.build.attack = [{ id: "blades", lv: 2 }];
+    world.build.support = [{ id: "armor", lv: 1 }];
+    world.build.count = 1;
+    world.build.evolved = true;
+    world.build.evolutionName = "钢雨防线";
+    world.build.pending = { id: "existing", options: ["arc"], due: 11 };
+    expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("fight");
+    expect(world.lastCombat.spectacle.frenzy).toBe(true);
+    expect(world.flags.frenzyBuildWaiting).toBe(true);
+    expect(world.build.pending.id).toBe("existing");
+    expect(world.build.triggers["首次狂热清屏"]).toBeUndefined();
+  });
+});
