@@ -1,0 +1,76 @@
+import { test, expect } from "@playwright/test";
+
+async function openRun(page) {
+  await page.goto("/");
+  const action = page.locator('[data-action="new-run"][data-onboarding="full"]');
+  await expect(action).toBeVisible();
+  await action.click();
+  await expect(page.locator(".world")).toHaveCount(2);
+}
+
+for (const width of [320, 375, 390, 430]) {
+  test(`pixel art material and touch layout at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 820 });
+    await openRun(page);
+    const audit = await page.evaluate(() => {
+      const candidates = [...document.querySelectorAll("*")].filter((el) =>
+        el.getClientRects().length && getComputedStyle(el).visibility !== "hidden",
+      );
+      const violations = [];
+      for (const el of candidates) {
+        const style = getComputedStyle(el);
+        const label = el.className && typeof el.className === "string" ? el.className : el.tagName;
+        if (/gradient\(/i.test(style.backgroundImage)) violations.push(`${label}: gradient`);
+        if (/blur\(/i.test(style.backdropFilter)) violations.push(`${label}: backdrop blur`);
+        if (/(?:blur|drop-shadow)\(/i.test(style.filter)) violations.push(`${label}: softened filter`);
+        if (parseFloat(style.borderTopLeftRadius) > 0) violations.push(`${label}: rounded corner`);
+      }
+      const touchTargets = candidates.filter((el) => el.matches("button,select,summary"));
+      for (const el of touchTargets) {
+        if (el.getBoundingClientRect().height < 43.5) {
+          violations.push(`${el.tagName}: small target (${el.getBoundingClientRect().height}px)`);
+        }
+      }
+      const firstWorld = document.querySelector(".world");
+      const logo = firstWorld?.querySelector(".world-insignia");
+      const spriteStyle = logo && getComputedStyle(logo);
+      return {
+        width: document.documentElement.scrollWidth,
+        viewport: innerWidth,
+        violations,
+        sprite: spriteStyle?.backgroundImage ?? "",
+        spriteRendering: spriteStyle?.imageRendering ?? "",
+        nav: Boolean(document.querySelector(".footer-nav")),
+      };
+    });
+    expect(audit.width).toBeLessThanOrEqual(audit.viewport + 1);
+    expect(audit.violations).toEqual([]);
+    expect(audit.sprite).toContain("avatar-lingzai");
+    expect(audit.spriteRendering).toBe("pixelated");
+    expect(audit.nav).toBe(true);
+    await page.locator('button[data-tab="soul"]').click();
+    await expect(page.locator("#aid-choice-preview")).toBeVisible();
+    await page.locator('button[data-tab="log"]').click();
+    await expect(page.locator(".footer-nav")).toBeVisible();
+  });
+}
+
+test("reduced motion disables all replay pixel animations", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openRun(page);
+  const result = await page.evaluate(() => {
+    const ghost = document.createElement("div");
+    ghost.className = "replay-arena is-playing";
+    const wave = document.createElement("div");
+    wave.className = "replay-wave";
+    const hit = document.createElement("div");
+    hit.className = "replay-hit";
+    wave.append(hit);
+    ghost.append(wave);
+    document.body.append(ghost);
+    const values = [getComputedStyle(wave).animationName, getComputedStyle(hit).animationName];
+    ghost.remove();
+    return values;
+  });
+  expect(result).toEqual(["none", "none"]);
+});
