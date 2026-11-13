@@ -66,7 +66,7 @@ export function extractDynamicTemplatesFromSource(source, path = "src/example.js
       };
       const record = (node, kind) => {
         const result = render(node);
-        if (!result.bindings.length || !chinese.test(result.text)) return;
+        if (!result.bindings.length || !chinese.test(result.text.replaceAll("【变量】", ""))) return;
         rows.push([
           path,
           node.loc.start.line,
