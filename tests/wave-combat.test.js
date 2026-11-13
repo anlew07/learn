@@ -118,6 +118,7 @@ describe("frenzy feeds back into the survivor build loop", () => {
     state.day = 8;
     world.level = 4;
     world.p = 100;
+    world.resource = 20;
     world.strategy = "clear";
     world.threat = { id: "nest", status: "active", progress: 0, retryDay: 1 };
     world.waveMomentum = { lastDay: 7, count: 2 };
@@ -129,6 +130,7 @@ describe("frenzy feeds back into the survivor build loop", () => {
     world.build.evolutionName = "钢雨防线";
 
     expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("fight");
     expect(world.lastCombat.spectacle.frenzy).toBe(true);
     expect(world.build.pending?.options.length).toBeGreaterThan(0);
     expect(world.build.count).toBe(2);
@@ -145,6 +147,7 @@ describe("frenzy feeds back into the survivor build loop", () => {
     state.day = 8;
     world.level = 4;
     world.p = 100;
+    world.resource = 20;
     world.strategy = "clear";
     world.threat = { id: "nest", status: "active", progress: 0, retryDay: 1 };
     world.waveMomentum = { lastDay: 7, count: 2 };
@@ -156,6 +159,7 @@ describe("frenzy feeds back into the survivor build loop", () => {
     world.build.evolutionName = "钢雨防线";
     world.build.pending = { id: "existing", options: ["arc"], due: 11 };
     expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("fight");
     expect(world.lastCombat.spectacle.frenzy).toBe(true);
     expect(world.flags.frenzyBuildWaiting).toBe(true);
     expect(world.build.pending.id).toBe("existing");
