@@ -131,3 +131,35 @@ describe("crisis triage reads real contracts without predicting an ending", () =
     expect(Engine.advise(state)).toEqual(Engine.advise(state));
   });
 });
+
+describe("committed clue crisis guidance", () => {
+  it("explains active protection without mutating the run or inventing extra days", () => {
+    const state = Engine.fresh("clue-advisor", 3, false);
+    const lingzai = Engine.byId(state, "lingzai");
+    lingzai.d = 91;
+    lingzai.flags.followupOutcome = "commit";
+    lingzai.followupEffect = { kind: "natural", start: 1, until: 7, perDay: 0.4 };
+    const before = JSON.stringify(state);
+    const advice = Engine.advise(state).find((entry) => entry.worldId === "lingzai");
+    expect(advice.notes.join(" ")).toContain("自然毁灭");
+    expect(advice.notes.join(" ")).toContain("7个有效日");
+    expect(JSON.stringify(state)).toBe(before);
+    state.day = 8;
+    const expired = Engine.advise(state).find((entry) => entry.worldId === "lingzai");
+    expect(expired.notes.join(" ")).not.toContain("已布设古阵");
+  });
+
+  it("describes zombie protection and the beast suppression separately", () => {
+    const state = Engine.fresh("clue-crisis", 3, false);
+    const zombie = Engine.byId(state, "zombie");
+    const beast = Engine.byId(state, "beast");
+    zombie.d = 90;
+    beast.d = 90;
+    zombie.flags.followupOutcome = "commit";
+    zombie.followupEffect = { kind: "threat", start: 1, until: 7, perDay: 0.3 };
+    beast.flags.followupOutcome = "commit";
+    beast.suppression = 2;
+    expect(Engine.advise(state).find((row) => row.worldId === "zombie").notes.join(" ")).toContain("尸群");
+    expect(Engine.advise(state).find((row) => row.worldId === "beast").notes.join(" ")).toContain("二阶段压制");
+  });
+});
