@@ -19,7 +19,7 @@ export function assessCrises(state, rules) {
         const days = effect.until - state.day + 1;
         notes.push(
           effect.kind === "natural"
-            ? `已布设古阵：未来${days}个有效日的自然毁灭增长每天最多降低${effect.perDay}`
+            ? `已布设古阵：未来${days}个有效日的自然风险增长每天最多降低${effect.perDay}`
             : `已启用干扰信标：剩余${days}个有效日可抵消活跃尸群额外D+${effect.perDay}/日`,
         );
       } else if (world.id === "beast" && world.suppression >= 2) {
@@ -29,10 +29,10 @@ export function assessCrises(state, rules) {
 
     if (world.d >= 90) {
       priority = Math.max(priority, 105);
-      notes.push(`毁灭压力已达D${world.d}，接近100崩溃线`);
+      notes.push(`危机压力已达D${world.d}，接近100失守线`);
     } else if (world.d >= 75) {
       priority = Math.max(priority, 84);
-      notes.push(`毁灭压力D${world.d}，需要关注`);
+      notes.push(`危机压力D${world.d}，需要关注`);
     }
     if (remaining <= 3) {
       priority = Math.max(priority, 100);
