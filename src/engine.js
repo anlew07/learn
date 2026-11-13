@@ -12,6 +12,7 @@ import { previewStrategyChange } from "./systems/strategy-contract.js";
 import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
 import { assessCrises } from "./systems/crisis-advisor.js";
 import { FOLLOWUPS, canQueueFollowup, settleFollowup, followupMitigation, followupEpilogue } from "./systems/event-chain.js";
+import { discoverEasterEgg } from "./systems/easter-eggs.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -425,6 +426,9 @@ const MultiworldEngine = (function () {
           w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
         }
       }else doAction(s,w,chooseAction(s,w));
+      // Cosmetic discoveries never occupy event slots or consume RNG.
+      const secret=discoverEasterEgg(s,w);
+      if(secret)log(s,w.id,secret.message,"minor");
       // All sources of danger are calculated once after the day's major action.
       if(w.status==="running"){
         addD(w,Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
