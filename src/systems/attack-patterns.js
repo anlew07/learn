@@ -17,7 +17,7 @@ const BASIC_ATTACK = Object.freeze({ style: "basic", label: "基础攻击", icon
 
 export function featuredWaveAttack(worldId, build, powers, wave) {
   const attackSlots = (build?.attack || []).filter(
-    (slot) => powers[worldId]?.some((power) => power.id === slot.id && power.slot === "attack"),
+    (slot) => Number(slot.lv) >= 1 && powers[worldId]?.some((power) => power.id === slot.id && power.slot === "attack"),
   );
   if (!attackSlots.length) return { ...BASIC_ATTACK, bonus: 0 };
   const slot = attackSlots[(wave - 1) % attackSlots.length];
@@ -68,10 +68,14 @@ export function evolvedWaveUltimate(worldId, build, wave) {
   if (!combo || !ultimate || !build?.evolved || !Number.isInteger(wave) || wave < 1 || wave > 3) {
     return null;
   }
-  const owned = [...(build.attack || []), ...(build.support || [])];
-  if (!combo.slice(0, 2).every((id) => owned.some((slot) => slot.id === id && slot.lv >= 1))) {
-    return null;
-  }
+  // Validate actual equipment slots, not just the evolved marker or item IDs.
+  const attackReady = (build.attack || []).some(
+    (slot) => slot.id === combo[0] && Number(slot.lv) >= 1,
+  );
+  const supportReady = (build.support || []).some(
+    (slot) => slot.id === combo[1] && Number(slot.lv) >= 1,
+  );
+  if (!attackReady || !supportReady) return null;
   return {
     id: ultimate.id,
     label: ultimate.label,
