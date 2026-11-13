@@ -24,7 +24,7 @@ export const BALANCE = {
     threatUrgencyScore: 3.5,
     beastSuppressionDoomRelief: 2.5,
     beastSuppressionThreatMitigation: 0.1,
-    beastRescueNestPriorityDoom: 87,
+    beastRescueNestPriorityDoom: 93,
   },
 };
 
