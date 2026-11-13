@@ -71,4 +71,6 @@ if (process.argv.includes("--check")) {
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, expected, "utf8");
 }
-console.log(`游戏文案候选行：${rows.length}（${new Set(rows.map((row) => row[0])).size} 个源码文件）`);
+console.log(
+  `游戏文案候选行：${rows.length}（${new Set(rows.map((row) => row[0])).size} 个源码文件）`,
+);
