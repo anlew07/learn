@@ -19,6 +19,10 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Temporary Prettier diagnostic
+        run: |
+          npx prettier scripts/balance-report.mjs > /tmp/balance-report.mjs
+          diff -u scripts/balance-report.mjs /tmp/balance-report.mjs || true
       - run: npm run format:check
       - run: npm test
       - run: npm run build
