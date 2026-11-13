@@ -11,7 +11,7 @@ import { previewResourceAid } from "./systems/aid-contract.js";
 import { previewStrategyChange } from "./systems/strategy-contract.js";
 import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
 import { assessCrises } from "./systems/crisis-advisor.js";
-import { FOLLOWUPS, canQueueFollowup, settleFollowup, followupMitigation } from "./systems/event-chain.js";
+import { FOLLOWUPS, canQueueFollowup, settleFollowup, followupMitigation, followupEpilogue } from "./systems/event-chain.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -346,7 +346,7 @@ const MultiworldEngine = (function () {
     if(w.retreat){s.apReserved=Math.max(0,s.apReserved-1);w.retreat=null;}
     if(status==="saved"){
       if(!w.echoMade){s.echoes.push({id:w.id,used:false});w.echoMade=true;}
-      log(s,w.id,"世界获救！"+reason,"success");
+      log(s,w.id,"世界获救！"+reason+(followupEpilogue(w)?" "+followupEpilogue(w):""),"success");
     }else{
       s.soul=clamp(s.soul-2,0,12);
       log(s,w.id,"末日降临："+reason+"。灵魂强度-2。","danger");
