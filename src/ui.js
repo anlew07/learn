@@ -344,8 +344,8 @@ function homeHtml(){
  '<p class="muted">第一局同时开启灵灾和尸潮；第二局解锁二人之力；第三局开启兽潮与三人之力。</p>'+
  '<p class="muted">战潮实验在每局开始前选择：让自动战斗拥有三波战报与稀疏战技构筑，或保持纯模拟。</p>'+
  '<label><input id="waves-enabled" type="checkbox" checked /> 开启战潮增强实验（可以取消）</label></section>'+
- 'profileArchiveHtml()+
- <p class="hint" style="margin-top:16px">本作仍处于早期原型，所有成长、怪物与世界恶化数值会根据测试调整。</p>';
+ profileArchiveHtml()+
+ '<p class="hint" style="margin-top:16px">本作仍处于早期原型，所有成长、怪物与世界恶化数值会根据测试调整。</p>';
 }
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
