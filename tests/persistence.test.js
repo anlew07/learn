@@ -126,6 +126,7 @@ describe("save recovery guard", () => {
       { ...valid(), run: { ...valid().run, logs: null } },
       { ...valid(), run: { ...valid().run, paused: null } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], build: null }, valid().run.worlds[1]] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], build: { attack: [null], support: [] } }, valid().run.worlds[1]] } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], flags: [] }, valid().run.worlds[1]] } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], p: "bad" }, valid().run.worlds[1]] } },
     ];
@@ -168,7 +169,7 @@ describe("save recovery guard", () => {
 });
 
 describe("queued save failures under contention", () => {
-  it("retries in FIFO order after a failed transaction and saves a consistent pair", async () => {
+  it("blocks already-queued writes after failure until an explicit new save", async () => {
     const persisted = new Map();
     const started = [];
     let rejectFirst;
@@ -192,8 +193,14 @@ describe("queued save failures under contention", () => {
     expect(started).toEqual([2]);
     rejectFirst(new DOMException("Quota exceeded", "QuotaExceededError"));
     await expect(first).rejects.toMatchObject({ name: "QuotaExceededError" });
-    await Promise.all([second, third]);
-    expect(started).toEqual([2, 3, 4]);
+    await expect(second).rejects.toMatchObject({ name: "QuotaExceededError" });
+    await expect(third).rejects.toMatchObject({ name: "QuotaExceededError" });
+    expect(started).toEqual([2]);
+    expect(await repository.load()).toEqual({ run: null, profile: null });
+
+    // Only a new user-triggered retry may write the latest in-memory state.
+    await repository.enqueueSave({ day: 4 }, { shards: 4 });
+    expect(started).toEqual([2, 4]);
     expect(await repository.load()).toEqual({ run: { day: 4 }, profile: { shards: 4 } });
   });
 
