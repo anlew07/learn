@@ -59,7 +59,7 @@ describe("pixel UI closure: incompatible visual effects stay out", () => {
     const styles = ["basic","chain","pierce","fan","flurry","shockwave","storm","barrage","hunt"];
     styles.forEach((style, index) => {
       expect(art).toContain(
-        `.replay-wave.attack-${style} .replay-hit { background-position: ${-32 * index}px 0;`,
+        `.replay-wave.attack-${style} .replay-hit { background-position: ${index === 0 ? "0" : `${-32 * index}px`} 0;`,
       );
     });
     expect(art).not.toContain("status-atlas.svg");
