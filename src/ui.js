@@ -355,10 +355,11 @@ function profileArchiveHtml(){
  esc(item.label)+(item.available?'':' · 未解锁')+
  (profile.selectedTitle===item.id?' · 已装备':'')+'</button>'
  ).join('')+'</div></div>'+
+ '<details class="archive-discoveries"><summary>查看发现记录 <span>'+archive.found+' / '+archive.total+' 已解锁</span></summary>'+
  '<div class="collection-list">'+archive.entries.map(item=>
  '<div class="collection-entry" data-archive-id="'+esc(item.id)+'" data-discovered="'+item.found+'">'+
  '<b>'+esc(item.title)+'</b><span class="hint">'+(item.type==="world"?"世界发现":"跨世界秘密")+'</span></div>'
- ).join('')+'</div></section>';
+ ).join('')+'</div></details></section>';
 }
 function homeHtml(){
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+

@@ -344,3 +344,25 @@ button:active:not(:disabled){transform:translateY(1px)}
 .world-intel .world-extra{padding:3px 12px 10px;margin:5px 0}
 .intel-summary-hint{font-weight:450;font-size:.69rem;color:#849fb5}
 @media(max-width:400px){.intel-summary-hint{font-size:.64rem}}
+
+
+/* Keep the home command screen focused; full collection remains one tap away. */
+.collection-titles{margin:15px 0 10px}
+.collection-titles h3{font-size:.89rem;color:#eaf2fc}
+.collection-titles .event-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.collection-titles button{font-size:.75rem;line-height:1.5;white-space:normal;min-height:42px}
+.collection-titles button:disabled{opacity:.55}
+.archive-discoveries{margin-top:14px;border-top:1px solid #ffffff1c;padding-top:11px}
+.archive-discoveries summary{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  cursor:pointer;color:#b8d6e9;font-weight:750;font-size:.82rem;padding:9px 0
+}
+.archive-discoveries summary span{font-size:.72rem;font-weight:500;color:#9ab4c7}
+.archive-discoveries .collection-list{display:grid;gap:7px;margin:8px 0 0}
+.archive-discoveries .collection-entry{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  background:#0c1829;border:1px solid #34455d;border-radius:10px;padding:10px
+}
+.archive-discoveries .collection-entry b{font-size:.82rem}
+.archive-discoveries .collection-entry[data-discovered="false"]{opacity:.62}
+@media(max-width:400px){.collection-titles .event-actions{grid-template-columns:1fr}}

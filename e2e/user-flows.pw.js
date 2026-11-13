@@ -748,3 +748,15 @@ test("world intelligence is collapsible without hiding key survival bars", async
   await expect(intel).toContainText("状态效果");
   await expect(first.locator(".bars")).toBeVisible();
 });
+
+test("home archive keeps collections compact until explicitly expanded", async ({ page }) => {
+  await startFirstRun(page);
+  await page.locator('button[data-action="home"]').click();
+  const archive = page.locator("[data-profile-archive]");
+  const details = archive.locator(".archive-discoveries");
+  await expect(details).not.toHaveAttribute("open", "");
+  await details.locator("summary").click();
+  await expect(details).toHaveAttribute("open", "");
+  await expect(details.locator("[data-archive-id]")).toHaveCount(5);
+  await expect(archive.locator(".collection-titles")).toBeVisible();
+});
