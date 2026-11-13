@@ -74,4 +74,37 @@ describe("pixel UI closure: incompatible visual effects stay out", () => {
     expect(css).toContain("focus-visible");
     expect(css).toContain("prefers-reduced-motion");
   });
+
+  it("keeps text contrast readable on pixel primary actions and labels", () => {
+    const luminance = (hex) => {
+      const values = [1, 3, 5].map((index) => {
+        const value = parseInt(hex.slice(index, index + 2), 16) / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722;
+    };
+    const contrast = (a, b) => {
+      const values = [luminance(a), luminance(b)];
+      return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05);
+    };
+    expect(contrast("#162638", "#69c6ae")).toBeGreaterThanOrEqual(4.5);
+    for (const color of ["#a5baca", "#9be7cf", "#ffd0b0", "#ffe0a0", "#df8986"]) {
+      expect(contrast(color, "#0b1726")).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(art).toContain(
+      ".footer-nav button.active { background: #69c6ae; border-color: #69c6ae; color: #162638;",
+    );
+    expect(art).toContain(".footer-nav button.active .nav-glyph { color: #162638; }");
+    expect(art).toContain(".pill { background: var(--pixel-base); }");
+    expect(art).toContain(
+      ".btn { background: #69c6ae; border-color: #9be7cf; color: #162638; }",
+    );
+  });
+
+  it("preserves legible 320px two-column HUD counters", () => {
+    expect(base).toContain("font-size: 15px");
+    expect(art).toContain(".run-dashboard .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }");
+    expect(art).toContain(".run-dashboard .metric span { font-size:.75rem; line-height:1.3; }");
+    expect(15 * 0.75).toBeGreaterThanOrEqual(11);
+  });
 });

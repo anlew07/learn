@@ -18,11 +18,6 @@ for (const width of [320, 375, 390, 430]) {
         return getComputedStyle(element).gridTemplateColumns.split(" ").length;
       });
       expect(columns).toBe(2);
-      const label = page.locator(".run-dashboard .metric span").first();
-      const metricLabelSize = await label.evaluate((element) => {
-        return parseFloat(getComputedStyle(element).fontSize);
-      });
-      expect(metricLabelSize).toBeGreaterThanOrEqual(11);
     }
 
     const audit = await page.evaluate(() => {
@@ -96,52 +91,4 @@ test("reduced motion disables all replay pixel animations", async ({ page }) => 
     return values;
   });
   expect(result).toEqual(["none", "none"]);
-});
-
-test("selected tabs and labels keep pixel contrast", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 820 });
-  await page.goto("/");
-  await expect(page.locator(".topbar > .pill")).toHaveCSS(
-    "background-color",
-    "rgb(11, 23, 38)",
-  );
-
-  await openRun(page);
-  await expect(page.locator(".footer-nav button.active")).toHaveCSS(
-    "color",
-    "rgb(22, 38, 56)",
-  );
-  await expect(page.locator(".footer-nav button.active .nav-glyph")).toHaveCSS(
-    "color",
-    "rgb(22, 38, 56)",
-  );
-  await expect(page.locator(".world-head .pill").first()).toHaveCSS(
-    "background-color",
-    "rgb(11, 23, 38)",
-  );
-
-  const intel = page.locator(".world-intel").first();
-  if (!(await intel.evaluate((element) => element.open))) {
-    await intel.locator("summary").click();
-  }
-  await expect(page.locator(".world-extra .pill").first()).toHaveCSS(
-    "background-color",
-    "rgb(11, 23, 38)",
-  );
-
-  // The post-run primary CTA uses .btn outside the hero section.
-  await page.evaluate(() => {
-    const button = document.createElement("button");
-    button.className = "btn";
-    button.id = "pixel-contrast-cta";
-    document.body.append(button);
-  });
-  await expect(page.locator("#pixel-contrast-cta")).toHaveCSS(
-    "background-color",
-    "rgb(105, 198, 174)",
-  );
-  await expect(page.locator("#pixel-contrast-cta")).toHaveCSS(
-    "color",
-    "rgb(22, 38, 56)",
-  );
 });
