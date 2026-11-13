@@ -163,7 +163,12 @@ const MultiworldEngine = (function () {
     spectacle.frenzy=frenzy.activated;
     spectacle.clearStreak=frenzy.count;
     effect=applyFrenzyCaps(effect,frenzy.activated);
-    if(frenzy.activated)log(s,w.id,"狂热爆发！连续第三次完整清屏，战技额外收益已计入本场上限。","major");
+    if(frenzy.activated){
+      log(s,w.id,"狂热爆发！连续第三次完整清屏，战技额外收益已计入本场上限。","major");
+      // Only the first frenzy can grant a build opportunity, never a free power.
+      if(w.build.pending)w.flags.frenzyBuildWaiting=true;
+      else offerBuild(s,w,"首次狂热清屏");
+    }
     var beforeXp=w.xp,beforeResource=w.resource,beforeD=w.d;
     if(effect.xp)produce(s,w,"xp",effect.xp);
     if(effect.resource)produce(s,w,"resource",effect.resource);
@@ -460,6 +465,10 @@ const MultiworldEngine = (function () {
         if(w.status==="running")finalize(s,w,0);
         if(w.status==="running")checkWorld(s,w);
         if(w.status==="running")autoBuild(s,w);
+        if(w.status==="running"&&w.flags.frenzyBuildWaiting&&!w.build.pending){
+          w.flags.frenzyBuildWaiting=false;
+          offerBuild(s,w,"首次狂热清屏");
+        }
       }
     });
     // Cross-world secrets are processed after all world actions, so world order
