@@ -96,7 +96,7 @@ function survivorReplayHtml(battle) {
    '</div>';
  }).join('');
  return '<section class="survivor-replay" aria-label="三波战斗回放" data-survivor-replay>'+
-   '<div class="replay-head"><span>◉ 防线行动回放 · 第'+battle.day+'天</span>'+
+   '<div class="replay-head"><span>◉ 守护行动回放 · 第'+battle.day+'天</span>'+
    '<button data-action="replay-wave" type="button" aria-label="重播三波防线行动">▶ 重播</button></div>'+
    '<div class="replay-arena is-playing" data-replay-arena>'+
      '<div class="replay-hero" aria-hidden="true"><span>✦</span></div>'+
@@ -405,7 +405,7 @@ function profileArchiveHtml(){
  return '<section class="panel" aria-label="跨局收藏" data-profile-archive>'+
  '<div class="row-between"><h2>灵魂收藏 · 永久发现</h2><span class="pill">'+archive.found+' / '+archive.total+'</span></div>'+
  '<p class="hint">跨局保留彩蛋与联动剧情的发现记录；仅在本浏览器的个人存档中保存，不影响每局难度。</p>'+
- (archive.complete?'<p class="pill good">✦ 已解锁永久称号：灾变休假协会会长</p>':'')+
+ (archive.complete?'<p class="pill good">✦ 已解锁永久称号：三界假期协调员</p>':'')+
  '<div class="collection-titles" aria-label="纪念称号选择"><h3>纪念称号</h3>'+
  '<p class="hint">已解锁的称号可以装备在首页展示；没有数值加成。</p>'+
  '<div class="event-actions">'+
