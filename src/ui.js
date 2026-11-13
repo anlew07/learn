@@ -62,6 +62,41 @@ function report(text){const el=document.querySelector("#toast");if(el){el.textCo
 function worldStatus(w){return w.status==="saved"?"已拯救":w.status==="failed"?"已崩溃":"演化中";}
 function pill(status){return status==="saved"?"good":status==="failed"?"bad":"warn";}
 function bar(w,key,label){return '<div><div class="bar-head"><span>'+label+'</span><b>'+n(w[key])+'%</b></div><div class="progress-track"><div class="progress-fill '+key+'" style="width:'+Math.min(100,Math.max(0,w[key]))+'%"></div></div></div>';}
+/**
+ * A lightweight, deterministic storyboard of the recorded three-wave outcome.
+ * Rendering or replaying it never advances a day, spends resources or draws RNG.
+ * Existing saved battles without spectacle simply omit the stage.
+ */
+function survivorReplayHtml(battle) {
+ const battleData=battle?.spectacle;
+ if(!Array.isArray(battleData?.waves)||battleData.waves.length!==3)return "";
+ const waves=battleData.waves;
+ const safeWaves=waves.map((wave,index)=>{
+   const encountered=Math.max(0,Number(wave.encountered)||0);
+   const defeated=Math.max(0,Math.min(encountered,Number(wave.defeated)||0));
+   const clear=Boolean(wave.cleared);
+   const visibleCount=Math.min(9,Math.max(3,Math.ceil(encountered/4)));
+   const fallenCount=Math.round(visibleCount*(encountered?defeated/encountered:0));
+   return '<div class="replay-wave" data-wave-number="'+(index+1)+'" aria-label="第'+(index+1)+'波，击败'+defeated+'个，共'+encountered+'个敌人">'+
+     '<span class="replay-wave-name">WAVE 0'+(index+1)+'</span>'+
+     '<div class="replay-swarm" aria-hidden="true">'+Array.from({length:visibleCount},(_,i)=>
+       '<span class="replay-foe'+(i<fallenCount?' replay-fallen':'')+'">◆</span>'
+     ).join('')+'</div>'+
+     '<div class="replay-hit" aria-hidden="true">✦</div>'+
+     '<span class="replay-wave-count">'+defeated+' / '+encountered+(clear?' · CLEAR':'')+'</span>'+
+   '</div>';
+ }).join('');
+ return '<section class="survivor-replay" aria-label="三波战斗回放" data-survivor-replay>'+
+   '<div class="replay-head"><span>◉ 战潮回放 · 第'+battle.day+'天</span>'+
+   '<button data-action="replay-wave" type="button" aria-label="重播三波战潮">▶ 重播</button></div>'+
+   '<div class="replay-arena" data-replay-arena>'+
+     '<div class="replay-hero" aria-hidden="true"><span>✦</span></div>'+
+     '<div class="replay-wave-stack">'+safeWaves+'</div>'+
+     (battleData.frenzy?'<div class="replay-frenzy" aria-label="狂热爆发">⚡ FRENZY! 狂热爆发</div>':'')+
+   '</div>'+
+   '<p class="hint replay-note">按真实清剿数量生成的短时战斗演出；不是实时操作，重播不会改变本局结果。</p>'+
+ '</section>';
+}
 function combatHtml(battle) {
  const bonus=battle.bonus||{xp:0,resource:0,doomReduced:0};
  const bonusText=[
@@ -83,6 +118,7 @@ function combatHtml(battle) {
      '<b>'+wave.defeated+'/'+wave.encountered+'</b>'+
      '<i class="'+(wave.cleared?'cleared':'')+'"></i></div>'
    ).join('')+'</div></div>':'')+
+ survivorReplayHtml(battle)+
  '<div class="combat-phases">'+(battle.stages||[]).map(x=>'<span>'+esc(x)+'</span>').join('<span class="combat-arrow">›</span>')+'</div>'+
    '<div class="hint">'+(battle.skills?.length?'使用战技：'+battle.skills.map(esc).join('、'):'本次依靠基础自动战斗')+'</div>'+
    '<div class="combat-rewards">'+(bonusText.length?bonusText.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="hint">尚无额外战技收益</span>')+'</div>'+
@@ -450,6 +486,15 @@ function handleClick(target){
  if(action==="home"){tab="home";render();return;}
  if(action==="continue"){tab="world";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
+ if(action==="replay-wave"){
+   const arena=target.closest("[data-survivor-replay]")?.querySelector("[data-replay-arena]");
+   if(!arena)return;
+   arena.classList.remove("is-playing");
+   // Restart the storyboard even if its animation is already running.
+   void arena.offsetWidth;
+   arena.classList.add("is-playing");
+   return;
+ }
  if(action==="equip-title"){
    if(!session.isOwner || commandBusy)return;
    const updated=equipArchiveTitle(profile,target.dataset.title??"");

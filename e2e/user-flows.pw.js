@@ -116,6 +116,18 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   await expect(page.locator(".combat-phases span:not(.combat-arrow)")).toHaveCount(3);
   await expect(page.locator(".survivor-wave")).toHaveCount(3);
   await expect(page.locator(".survivor-score-main")).toContainText("敌群清剿");
+  const replay = page.locator("[data-survivor-replay]");
+  await expect(replay).toHaveCount(1);
+  await expect(replay.locator("[data-wave-number]")).toHaveCount(3);
+  const beforeReplay = await getSnapshot(page);
+  await replay.locator('button[data-action="replay-wave"]').click();
+  await expect(replay.locator("[data-replay-arena]")).toHaveClass(/is-playing/);
+  await replay.locator('button[data-action="replay-wave"]').click();
+  expect(await getSnapshot(page)).toEqual(beforeReplay);
+  const noHorizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth <= window.innerWidth,
+  );
+  expect(noHorizontalOverflow).toBe(true);
   await expect(page.getByText("本次依靠基础自动战斗")).toBeVisible();
 
   const snapshot = await getSnapshot(page);
