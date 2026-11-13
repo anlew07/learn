@@ -40,6 +40,15 @@ describe("human review working sheet", () => {
     expect(new Set(first.map((row) => row[1])).size).toBe(3);
   });
 
+  it("keeps candidate fingerprints stable when unrelated source lines are inserted", () => {
+    const before = buildReviewRows(staticInput, dynamicInput);
+    const shiftedStatic = staticInput.map((row) => [row[0], row[1] + 12, ...row.slice(2)]);
+    const shiftedDynamic = dynamicInput.map((row) => [row[0], row[1] + 12, ...row.slice(2)]);
+    const after = buildReviewRows(shiftedStatic, shiftedDynamic);
+    expect(after.map((row) => row[1])).toEqual(before.map((row) => row[1]));
+    expect(after.map((row) => row[5])).not.toEqual(before.map((row) => row[5]));
+  });
+
   it("escapes multiline quotes and spreadsheet formulas", () => {
     const sample = buildReviewRows(
       [["src/ui.js", 5, "静态/待复核", "常规核对", '=HYPERLINK("bad")\n求助']],
