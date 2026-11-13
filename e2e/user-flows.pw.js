@@ -807,3 +807,36 @@ test("cautious clue outcome reveals the actual four-day protective status", asyn
   await expect(world).toContainText("谨慎调查防护");
   await expect.poll(async () => (await getSnapshot(page)).run.worlds[0].clueSafety.until).toBe(5);
 });
+
+test("real evolved zombie build unleashes the steel-rain ultimate in mobile replay", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "zombie");
+    world.level = 2;
+    world.resource = 12;
+    world.threat = { id: "ultimate-nest", status: "active", progress: 0, retryDay: 1 };
+    world.strategy = "clear";
+    world.build.attack = [{ id: "blades", lv: 2 }];
+    world.build.support = [{ id: "armor", lv: 1 }];
+    world.build.evolved = true;
+    world.build.evolutionName = "钢雨防线";
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-action="step"]').click();
+  const waves = page.locator('[data-world-card="zombie"] .attack-barrage');
+  await expect(waves).toHaveCount(3);
+  await expect(waves.first()).toContainText("钢雨全域扫射");
+  await expect(waves.first()).toContainText("终极战技");
+  const snapshot = await getSnapshot(page);
+  const world = snapshot.run.worlds.find((item) => item.id === "zombie");
+  expect(world.lastCombat.spectacle.waves.map((wave) => wave.attack.ultimate)).toEqual([
+    true,
+    true,
+    true,
+  ]);
+});

@@ -463,3 +463,43 @@ button:active:not(:disabled){transform:translateY(1px)}
 @media(prefers-reduced-motion:reduce){
  .replay-arena.is-playing .replay-wave .replay-hit{animation:none!important}
 }
+
+
+/* True evolved attacks: each world gets its own readable ultimate signature. */
+.replay-wave.attack-storm{background:linear-gradient(110deg,#193e5c,#10283b);border-color:#87d8ee;box-shadow:inset 0 0 14px #4cbfff2d}
+.replay-wave.attack-storm .replay-hit{color:#aff9ff;text-shadow:0 0 16px #64eaff;font-size:29px}
+.replay-wave.attack-barrage{background:linear-gradient(110deg,#473c36,#14283a);border-color:#f2be88;box-shadow:inset 0 0 14px #ffb05a25}
+.replay-wave.attack-barrage .replay-hit{color:#ffe3a3;text-shadow:0 0 14px #ffb059;font-size:29px}
+.replay-wave.attack-hunt{background:linear-gradient(110deg,#403354,#14243c);border-color:#cf9fe8;box-shadow:inset 0 0 14px #c481f02d}
+.replay-wave.attack-hunt .replay-hit{color:#edd6ff;text-shadow:0 0 17px #dca9ff;font-size:29px}
+.replay-wave.attack-storm .replay-attack-name{color:#c7f9ff}
+.replay-wave.attack-barrage .replay-attack-name{color:#ffe3b8}
+.replay-wave.attack-hunt .replay-attack-name{color:#e9d1ff}
+.replay-arena.is-playing .attack-storm .replay-hit{animation-name:ultimate-storm}
+.replay-arena.is-playing .attack-barrage .replay-hit{animation-name:ultimate-barrage}
+.replay-arena.is-playing .attack-hunt .replay-hit{animation-name:ultimate-hunt}
+@keyframes ultimate-storm{
+  0%{opacity:0;transform:translate(24px,-50%) scale(.4)}
+  25%{opacity:1;transform:translate(-15px,-50%) scale(2.3)}
+  55%{opacity:.7;transform:translate(-65px,-50%) scale(1.3)}
+  80%{opacity:1;transform:translate(-25px,-50%) scale(2.5)}
+  100%{opacity:.5;transform:translate(-12px,-50%) scale(1)}
+}
+@keyframes ultimate-barrage{
+  0%{opacity:0;transform:translate(16px,-50%) scaleX(.2)}
+  25%{opacity:1;transform:translate(-14px,-50%) scaleX(2)}
+  50%{opacity:.5;transform:translate(-34px,-50%) scaleX(3)}
+  80%{opacity:1;transform:translate(-48px,-50%) scaleX(2)}
+  100%{opacity:.5;transform:translate(-12px,-50%) scaleX(1)}
+}
+@keyframes ultimate-hunt{
+  0%{opacity:0;transform:translate(18px,-50%) rotate(-45deg) scale(.3)}
+  30%{opacity:1;transform:translate(-15px,-50%) rotate(40deg) scale(1.8)}
+  60%{opacity:.75;transform:translate(-36px,-50%) rotate(-30deg) scale(2.2)}
+  100%{opacity:.6;transform:translate(-12px,-50%) rotate(65deg) scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .replay-arena.is-playing .attack-storm .replay-hit,
+  .replay-arena.is-playing .attack-barrage .replay-hit,
+  .replay-arena.is-playing .attack-hunt .replay-hit{animation:none!important}
+}
