@@ -834,6 +834,8 @@ test("real evolved zombie build unleashes the steel-rain ultimate in mobile repl
   const snapshot = await getSnapshot(page);
   const world = snapshot.run.worlds.find((item) => item.id === "zombie");
   expect(world.lastCombat.spectacle.waves.map((wave) => wave.attack.ultimate)).toEqual([
-    true, true, true,
+    true,
+    true,
+    true,
   ]);
 });
