@@ -1,6 +1,7 @@
 import "./style.css";
 import Engine from "./engine.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
+import { mergeProfileSecrets, summarizeProfileSecrets } from "./systems/profile-collection.js";
 import { saveRepository } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
@@ -26,6 +27,7 @@ const win = () => run?.worlds.filter(w=>w.status==="saved").length??0;
 
 function queueSave() {
   if (!session.isOwner) return Promise.resolve();
+  profile = mergeProfileSecrets(profile, run);
   return saveRepository.enqueueSave(run, profile)
     .then(() => {
       if (saveError) {
@@ -320,6 +322,17 @@ function logsHtml(){
  return collectionHtml()+'<section class="panel"><h2>世界战报</h2><div class="muted">普通行为自动合并，关键危机和突破保留记录。</div>'+
  run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>'+interventionHtml(24);
 }
+function profileArchiveHtml(){
+ const archive=summarizeProfileSecrets(profile);
+ return '<section class="panel" aria-label="跨局收藏" data-profile-archive>'+
+ '<div class="row-between"><h2>灵魂收藏 · 永久发现</h2><span class="pill">'+archive.found+' / '+archive.total+'</span></div>'+
+ '<p class="hint">跨局保留彩蛋与联动剧情的发现记录；仅在本浏览器的个人存档中保存，不影响每局难度。</p>'+
+ (archive.complete?'<p class="pill good">✦ 永久称号：末日休假协会会长</p>':'')+
+ '<div class="collection-list">'+archive.entries.map(item=>
+ '<div class="collection-entry" data-archive-id="'+esc(item.id)+'" data-discovered="'+item.found+'">'+
+ '<b>'+esc(item.title)+'</b><span class="hint">'+(item.type==="world"?"世界发现":"跨世界秘密")+'</span></div>'
+ ).join('')+'</div></section>';
+}
 function homeHtml(){
  return '<header class="topbar"><div class="brand">☼ 同时穿越：末日模拟器</div><span class="pill">V0.2 开发原型</span></header>'+
  '<section class="hero"><div class="eyebrow">同一个灵魂 · 不同的末日</div><h1>一个我救不了末日，<br>就让多个我一起上。</h1>'+
@@ -331,6 +344,7 @@ function homeHtml(){
  '<p class="muted">第一局同时开启灵灾和尸潮；第二局解锁二人之力；第三局开启兽潮与三人之力。</p>'+
  '<p class="muted">战潮实验在每局开始前选择：让自动战斗拥有三波战报与稀疏战技构筑，或保持纯模拟。</p>'+
  '<label><input id="waves-enabled" type="checkbox" checked /> 开启战潮增强实验（可以取消）</label></section>'+
+ profileArchiveHtml()+
  '<p class="hint" style="margin-top:16px">本作仍处于早期原型，所有成长、怪物与世界恶化数值会根据测试调整。</p>';
 }
 function render(){
@@ -375,6 +389,7 @@ function reward(){
 function confirmNew(){
  if(!session.isOwner || commandBusy)return false;
  if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
+ profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
  run=Engine.fresh(seed,profile.runCount+1,waves);tab="world";queueSave();render();return true;

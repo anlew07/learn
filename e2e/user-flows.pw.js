@@ -658,3 +658,31 @@ test("cross-world secret unlocks in the game and persists as a revealed collecti
   await page.locator('button[data-tab="log"]').click();
   await expect(entry).toContainText("末日茶咖会");
 });
+
+test("permanent archive survives restarting and refresh", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.worlds[0].flags.easterEggs = ["lingzai/tea-break"];
+    run.crossworldSecrets = ["crossworld/tea-and-coffee"];
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-action="step"]').click();
+  await expect.poll(async () => (await getSnapshot(page)).profile.secretArchive?.length).toBe(2);
+  await page.locator('button[data-action="home"]').click();
+  const archive = page.locator("[data-profile-archive]");
+  const firstSecret = archive.locator('[data-archive-id="lingzai/tea-break"]');
+  await expect(archive).toContainText("2 / 5");
+  await expect(firstSecret).toContainText("修仙也要摸鱼");
+  await page.locator('button[data-action="new-run"]').click();
+  await page.locator('button[data-action="home"]').click();
+  await expect(archive).toContainText("2 / 5");
+  await page.reload();
+  await page.locator('button[data-action="home"]').click();
+  await expect(archive).toContainText("2 / 5");
+  const saved = await getSnapshot(page);
+  expect(saved.profile.secretArchive).toContain("crossworld/tea-and-coffee");
+});
