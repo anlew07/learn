@@ -219,3 +219,48 @@ describe("equipped survivor attack patterns", () => {
     });
   });
 });
+
+describe("evolved ultimate wave attacks", () => {
+  it("unlocks a distinct three-wave ultimate only when its actual attack/support pair is owned", async () => {
+    const { evolvedWaveUltimate } = await import("../src/systems/attack-patterns.js");
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const combos = [
+      { id: "lingzai", attack: "thunder", support: "rune", style: "storm", bonuses: [4, 6, 8] },
+      { id: "zombie", attack: "blades", support: "armor", style: "barrage", bonuses: [7, 6, 5] },
+      { id: "beast", attack: "claws", support: "instinct", style: "hunt", bonuses: [3, 6, 9] },
+    ];
+    for (const combo of combos) {
+      const build = {
+        attack: [{ id: combo.attack, lv: 2 }],
+        support: [{ id: combo.support, lv: 1 }],
+        evolved: true,
+      };
+      const base = simulateSurvivorWaves(combo.id, { ...build, evolved: false }, POWERS, {
+        day: 70, level: 2, momentum: 1,
+      });
+      const evolved = simulateSurvivorWaves(combo.id, build, POWERS, {
+        day: 70, level: 2, momentum: 1,
+      });
+      expect(evolved.waves.map((wave) => wave.attack.style)).toEqual([
+        combo.style, combo.style, combo.style,
+      ]);
+      expect(evolved.waves.map((wave) => wave.attack.bonus)).toEqual(combo.bonuses);
+      expect(evolved.defeated).toBeGreaterThan(base.defeated);
+      expect(evolved.waves.every((wave) => wave.defeated <= wave.encountered)).toBe(true);
+      expect(evolvedWaveUltimate(combo.id, { ...build, support: [] }, 2)).toBeNull();
+      expect(evolvedWaveUltimate(combo.id, { ...build, evolved: false }, 2)).toBeNull();
+      expect(evolvedWaveUltimate(combo.id, build, 4)).toBeNull();
+      expect(JSON.parse(JSON.stringify(evolved)).waves[2].attack.ultimate).toBe(true);
+    }
+  });
+
+  it("does not grant an ultimate to a forged evolved flag or a build without attack powers", async () => {
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const fake = { attack: [], support: [{ id: "rune", lv: 1 }], evolved: true };
+    const result = simulateSurvivorWaves("lingzai", fake, POWERS, {
+      day: 15, level: 1, momentum: 0,
+    });
+    expect(result.waves.every((wave) => wave.attack.style === "basic")).toBe(true);
+    expect(result.waves.every((wave) => wave.attack.bonus === 0)).toBe(true);
+  });
+});
