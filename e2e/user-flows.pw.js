@@ -830,7 +830,7 @@ test("real evolved zombie build unleashes the steel-rain ultimate in mobile repl
   await page.locator('button[data-action="step"]').click();
   const waves = page.locator('[data-world-card="zombie"] .attack-barrage');
   await expect(waves).toHaveCount(3);
-  await expect(waves.first()).toContainText("钢雨全域扫射");
+  await expect(waves.first()).toContainText("钢雨防线覆盖");
   await expect(waves.first()).toContainText("终极战技");
   const snapshot = await getSnapshot(page);
   const world = snapshot.run.worlds.find((item) => item.id === "zombie");
@@ -859,10 +859,10 @@ test("skill awakening reveals elite enemy counters before committing a choice", 
   });
   await page.reload();
   await expect(page.locator('[data-action="build"][data-power="blades"]')).toContainText(
-    "克制：密集敌潮",
+    "克制：密集异常群",
   );
   await expect(page.locator('[data-action="build"][data-power="arc"]')).toContainText(
-    "克制：密集敌潮、迅捷兽群",
+    "克制：密集异常群、迅捷兽影",
   );
   await expect(
     page.locator('[data-action="build"][data-power="armor"] .build-counter-hint'),
