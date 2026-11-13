@@ -363,9 +363,15 @@ const MultiworldEngine = (function () {
       log(s,w.id,"动用6份零件进行一次性防线大修，毁灭压力降低。","major");
     }else if(action==="suppress"){
       w.action="压制兽王狂化";
-      if(w.suppression===0){w.suppression=1;log(s,w.id,"完成第一阶段兽王压制准备。","minor");}
-      else if(w.resource>=4){w.resource-=4;w.suppression=2;log(s,w.id,"耗费结晶完成压制；当前兽王战斗要求降低。","major");}
-      else {w.action="搜集压制所需结晶";produce(s,w,"resource",3);}
+      if(w.suppression===0){
+        w.suppression=1;
+        addD(w,-BALANCE.actions.beastSuppressionDoomRelief);
+        log(s,w.id,"完成第一阶段兽王压制准备，毁灭压力-"+BALANCE.actions.beastSuppressionDoomRelief+"。","minor");
+      }else if(w.resource>=4){
+        w.resource-=4;w.suppression=2;
+        addD(w,-BALANCE.actions.beastSuppressionDoomRelief);
+        log(s,w.id,"耗费结晶完成压制；兽王战斗要求降低，毁灭压力-"+BALANCE.actions.beastSuppressionDoomRelief+"。","major");
+      }else {w.action="搜集压制所需结晶";produce(s,w,"resource",3);}
     }
   }
   function worldPhase(w,day){return day>=70?"狂化":day>=35?"进化":"苏醒";}
@@ -462,7 +468,11 @@ const MultiworldEngine = (function () {
       if(w.status==="running"){
         addD(w,Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
           followupMitigation(w,s.day,"natural")-cautiousMitigation(w,s.day)));
-        if(threatActive(w))addD(w,Math.max(0,0.3-followupMitigation(w,s.day,"threat")));
+        if(threatActive(w)){
+          const beastSuppressionMitigation=w.id==="beast"?
+            Math.min(2,w.suppression||0)*BALANCE.actions.beastSuppressionThreatMitigation:0;
+          addD(w,Math.max(0,0.3-followupMitigation(w,s.day,"threat")-beastSuppressionMitigation));
+        }
         if(random(w)<0.015){addD(w,2.2);log(s,w.id,"末日环境突然恶化，毁灭压力上涨。","warning");}
         newThreat(s,w);
         if(w.d>=100)checkWorld(s,w);
