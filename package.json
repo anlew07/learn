@@ -12,6 +12,7 @@
     "format:check": "prettier --check \"scripts/**/*.mjs\" \"eslint.config.mjs\" \"playwright.config.mjs\" \"e2e/**/*.pw.js\"",
     "text:export": "node scripts/export-game-text.mjs",
     "text:runtime": "node scripts/export-runtime-templates.mjs",
+    "text:review": "node scripts/export-human-review.mjs",
     "text:check": "node scripts/export-game-text.mjs --check",
     "test": "vitest run",
     "test:watch": "vitest",
