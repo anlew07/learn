@@ -303,7 +303,7 @@
 "src/systems/survivor-waves.js","5","静态/待复核","常规核对","horde: Object.freeze({ label: ""密集异常群"", extraEnemies: 4, defense: 0, counters: [""fan"", ""chain"", ""storm"", ""barrage""] }),"
 "src/systems/survivor-waves.js","6","静态/待复核","常规核对","armored: Object.freeze({ label: ""装甲防线"", extraEnemies: 0, defense: 3, counters: [""pierce"", ""shockwave"", ""storm"", ""hunt""] }),"
 "src/systems/survivor-waves.js","7","静态/待复核","常规核对","swift: Object.freeze({ label: ""迅捷兽影"", extraEnemies: 2, defense: 2, counters: [""flurry"", ""chain"", ""hunt"", ""barrage""] }),"
-"src/systems/survivor-waves.js","71","静态/待复核","常规核对","grade: fullClear ? ""清屏"" : defeated / encountered >= 0.8 ? ""压制"" : ""鏖战"","
+"src/systems/survivor-waves.js","72","静态/待复核","常规核对","grade: fullClear ? ""清屏"" : defeated / encountered >= 0.8 ? ""压制"" : ""鏖战"","
 "src/systems/wave-combat.js","9","静态/待复核","重点复核","lingzai: [""妖影逼近"", ""飞剑与符阵迎击"", ""肃清残余妖气""],"
 "src/systems/wave-combat.js","10","静态/待复核","重点复核","zombie: [""感染者逼近"", ""防线迎击尸群"", ""肃清残余感染体""],"
 "src/systems/wave-combat.js","11","静态/待复核","常规核对","beast: [""异兽群迁徙"", ""猎人反击"", ""追踪溃散兽群""],"
