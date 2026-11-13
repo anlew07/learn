@@ -87,6 +87,8 @@ function survivorReplayHtml(battle) {
      ).join('')+'</div>'+
      '<div class="replay-hit" aria-hidden="true">'+esc(attack.icon)+'</div>'+
      '<span class="replay-wave-count">'+defeated+' / '+encountered+(clear?' · CLEAR':'')+'</span>'+
+     (wave.trait?'<span class="replay-trait" data-wave-trait="'+esc(wave.trait.id)+'">'+
+       esc(wave.trait.label)+(wave.trait.countered?' · 战技克制':' · 未克制')+'</span>':'')+
      '<span class="replay-attack-name">'+(attack.ultimate?'⚡ 终极战技 · ':'')+esc(attack.label)+
        (attack.bonus?' · 战技增击+'+Number(attack.bonus):'')+'</span>'+
    '</div>';
