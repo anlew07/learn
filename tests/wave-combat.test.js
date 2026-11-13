@@ -313,3 +313,64 @@ describe("skill choices explain existing elite counters", () => {
     expect(Object.keys(ELITE_WAVES)).toHaveLength(3);
   });
 });
+
+
+describe("performance-scaled wave combat budget", () => {
+  it("ties clear, loss and loot effects to actual kills and elite counters", () => {
+    const equipped = {
+      attack: [
+        { id: "blades", lv: 2 },
+        { id: "arc", lv: 2 },
+      ],
+      support: [{ id: "armor", lv: 1 }],
+      evolved: false,
+    };
+    const poorClear = {
+      encountered: 30,
+      defeated: 6,
+      waves: [
+        { trait: { countered: false } },
+        { trait: { countered: false } },
+        { trait: { countered: false } },
+      ],
+    };
+    const strongClear = {
+      encountered: 30,
+      defeated: 27,
+      waves: [
+        { trait: { countered: true } },
+        { trait: { countered: false } },
+        { trait: { countered: true } },
+      ],
+    };
+    const weak = computeWaveBonuses("zombie", equipped, POWERS, poorClear);
+    const strong = computeWaveBonuses("zombie", equipped, POWERS, strongClear);
+
+    expect(strong.clearRate).toBe(0.9);
+    expect(strong.counteredWaves).toBe(2);
+    expect(strong.waveClearBonus).toBeGreaterThan(weak.waveClearBonus);
+    expect(strong.waveLossMitigation).toBeGreaterThan(weak.waveLossMitigation);
+    expect(strong.waveLootModifier).toBeGreaterThan(weak.waveLootModifier);
+    expect(strong.xp).toBeLessThanOrEqual(0.75);
+    expect(strong.resource).toBeLessThanOrEqual(0.5);
+    expect(strong.doomReduction).toBeLessThanOrEqual(0.25);
+  });
+
+  it("does not award evolution effects from a forged flag without the real combo", () => {
+    const forged = {
+      attack: [],
+      support: [{ id: "armor", lv: 1 }],
+      evolved: true,
+      evolutionName: "钢雨防线",
+    };
+    const ordinary = computeWaveBonuses("zombie", { ...forged, evolved: false }, POWERS);
+    const invalid = computeWaveBonuses("zombie", forged, POWERS);
+
+    expect(invalid.evolution).toBe("");
+    expect(invalid.xp).toBe(ordinary.xp);
+    expect(invalid.resource).toBe(ordinary.resource);
+    expect(invalid.doomReduction).toBe(ordinary.doomReduction);
+    expect(invalid.waveClearBonus).toBe(0);
+    expect(invalid.waveLootModifier).toBe(0);
+  });
+});
