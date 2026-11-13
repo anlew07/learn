@@ -60,6 +60,7 @@ export function selectAutonomousAction(world, context) {
     world.level >= 3 &&
     world.p >= 65 &&
     world.d >= beastNestThreshold &&
+    (world.p < 100 || world.level < bossLevel || world.resource < reserve) &&
     threatActive &&
     combatReady &&
     (world.threat?.progress ?? 2) < 2
