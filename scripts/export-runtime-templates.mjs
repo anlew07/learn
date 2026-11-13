@@ -51,7 +51,10 @@ export function extractDynamicTemplatesFromSource(source, path = "src/example.js
               bindings: [],
             });
             if (i < node.expressions.length) {
-              rendered = merge(rendered, { text: "【变量】", bindings: [expr(node.expressions[i])] });
+              rendered = merge(rendered, {
+                text: "【变量】",
+                bindings: [expr(node.expressions[i])],
+              });
             }
           }
           return rendered;
