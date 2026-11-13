@@ -7,6 +7,13 @@ export const ELITE_WAVES = Object.freeze({
   swift: Object.freeze({ label: "迅捷兽群", extraEnemies: 2, defense: 2, counters: ["flurry", "chain", "hunt", "barrage"] }),
 });
 
+/** Shared UI/gameplay description; derived from the same enemy counter table. */
+export function counteredEliteWaveLabels(attackStyle) {
+  return Object.values(ELITE_WAVES)
+    .filter((trait) => trait.counters.includes(attackStyle))
+    .map((trait) => trait.label);
+}
+
 export function waveEnemyTrait(day, wave) {
   const trait = wave === 1 && day >= 14 ? "horde" :
     wave === 2 && day >= 21 ? "armored" :
