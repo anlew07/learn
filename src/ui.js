@@ -1,7 +1,7 @@
 import "./style.css";
 import Engine from "./engine.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
-import { mergeProfileSecrets, summarizeProfileSecrets } from "./systems/profile-collection.js";
+import { mergeProfileSecrets, summarizeProfileSecrets, availableArchiveTitles, equipArchiveTitle, selectedArchiveTitle } from "./systems/profile-collection.js";
 import { saveRepository } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
@@ -327,7 +327,17 @@ function profileArchiveHtml(){
  return '<section class="panel" aria-label="跨局收藏" data-profile-archive>'+
  '<div class="row-between"><h2>灵魂收藏 · 永久发现</h2><span class="pill">'+archive.found+' / '+archive.total+'</span></div>'+
  '<p class="hint">跨局保留彩蛋与联动剧情的发现记录；仅在本浏览器的个人存档中保存，不影响每局难度。</p>'+
- (archive.complete?'<p class="pill good">✦ 永久称号：末日休假协会会长</p>':'')+
+ (archive.complete?'<p class="pill good">✦ 已解锁永久称号：末日休假协会会长</p>':'')+
+ '<div class="collection-titles" aria-label="纪念称号选择"><h3>纪念称号</h3>'+
+ '<p class="hint">已解锁的称号可以装备在首页展示；没有数值加成。</p>'+
+ '<div class="event-actions">'+
+ '<button data-action="equip-title" data-title=""'+(!selectedArchiveTitle(profile)?' disabled':'')+'>不展示称号</button>'+
+ availableArchiveTitles(profile).map(item=>
+ '<button data-action="equip-title" data-title="'+esc(item.id)+'"'+
+ (!item.available||profile.selectedTitle===item.id?' disabled':'')+'>'+
+ esc(item.label)+(item.available?'':' · 未解锁')+
+ (profile.selectedTitle===item.id?' · 已装备':'')+'</button>'
+ ).join('')+'</div></div>'+
  '<div class="collection-list">'+archive.entries.map(item=>
  '<div class="collection-entry" data-archive-id="'+esc(item.id)+'" data-discovered="'+item.found+'">'+
  '<b>'+esc(item.title)+'</b><span class="hint">'+(item.type==="world"?"世界发现":"跨世界秘密")+'</span></div>'
@@ -335,7 +345,9 @@ function profileArchiveHtml(){
 }
 function homeHtml(){
  return '<header class="topbar"><div class="brand">☼ 同时穿越：末日模拟器</div><span class="pill">V0.2 开发原型</span></header>'+
- '<section class="hero"><div class="eyebrow">同一个灵魂 · 不同的末日</div><h1>一个我救不了末日，<br>就让多个我一起上。</h1>'+
+ '<section class="hero"><div class="eyebrow">同一个灵魂 · 不同的末日</div>'+
+ (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
+ '<h1>一个我救不了末日，<br>就让多个我一起上。</h1>'+
  '<p>分身自动修炼、搜刮、狩猎、成长。你只负责关键选择和跨世界援助。</p>'+
  '<div class="stack" style="margin-top:20px">'+
  (run?'<button class="btn" data-action="continue">继续当前模拟 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">开始第 '+(profile.runCount+1)+' 局</button>')+
@@ -400,6 +412,15 @@ function handleClick(target){
  if(action==="home"){tab="home";render();return;}
  if(action==="continue"){tab="world";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
+ if(action==="equip-title"){
+   if(!session.isOwner || commandBusy)return;
+   const updated=equipArchiveTitle(profile,target.dataset.title??"");
+   if(!updated.ok){report(updated.reason);return;}
+   profile=updated.profile;
+   queueSave();
+   render();
+   return;
+ }
  if(!session.isOwner){report("当前标签页是只读副本，请重新取得控制权。");return;}
  if(commandBusy)return;
  if(action==="new-run"){confirmNew();return;}

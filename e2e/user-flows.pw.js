@@ -686,3 +686,32 @@ test("permanent archive survives restarting and refresh", async ({ page }) => {
   const saved = await getSnapshot(page);
   expect(saved.profile.secretArchive).toContain("crossworld/tea-and-coffee");
 });
+
+test("earned archive title can be equipped on the home screen and survives reload", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    profile.secretArchive = ["crossworld/tea-and-coffee"];
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-action="home"]').click();
+  const titleButton = page.locator('[data-action="equip-title"][data-title="title/tea-coffee"]');
+  await expect(titleButton).toBeEnabled();
+  await expect(
+    page.locator('[data-action="equip-title"][data-title="title/holiday-chair"]'),
+  ).toBeDisabled();
+  await titleButton.click();
+  await expect(page.locator("[data-equipped-title]")).toContainText("末日茶咖联络员");
+  await expect
+    .poll(async () => (await getSnapshot(page)).profile.selectedTitle)
+    .toBe("title/tea-coffee");
+  await page.reload();
+  await page.locator('button[data-action="home"]').click();
+  await expect(page.locator("[data-equipped-title]")).toContainText("末日茶咖联络员");
+  await page.locator('[data-action="equip-title"][data-title=""]').click();
+  await expect(page.locator("[data-equipped-title]")).toHaveCount(0);
+});
