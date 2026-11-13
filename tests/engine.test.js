@@ -156,4 +156,35 @@ describe("soul links and combat build",()=>{
     expect(Engine.chooseBuild(s,"lingzai",choice,false).ok).toBe(true);
     expect(Engine.chooseBuild(s,"lingzai",choice,false).ok).toBe(false);
   });
+
+  it("makes the two beast suppression stages reduce immediate and ongoing pressure", () => {
+    const state = Engine.fresh("beast-suppression-relief", 3, false);
+    const world = Engine.byId(state, "beast");
+    state.day = 35;
+    world.level = 4;
+    world.p = 80;
+    world.d = 50;
+    world.resource = 12;
+    world.strategy = "rescue";
+    world.threat = {
+      id: "beast-nest",
+      status: "active",
+      progress: 0,
+      retryDay: 1,
+    };
+
+    const beforeFirst = world.d;
+    expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("suppress");
+    expect(world.suppression).toBe(1);
+    expect(world.d).toBeLessThan(beforeFirst + 2.5);
+
+    const afterFirst = world.d;
+    expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("suppress");
+    expect(world.suppression).toBe(2);
+    expect(world.resource).toBe(8);
+    expect(world.d).toBeLessThan(afterFirst + 2.5);
+  });
+
 });
