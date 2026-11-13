@@ -665,9 +665,7 @@ test("the permanent archive survives new runs, reloads and old profiles", async 
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
-    run.worlds.find((world) => world.id === "lingzai").flags.easterEggs = [
-      "lingzai/tea-break",
-    ];
+    run.worlds.find((world) => world.id === "lingzai").flags.easterEggs = ["lingzai/tea-break"];
     run.crossworldSecrets = ["crossworld/tea-and-coffee"];
     await saveRepository.enqueueSave(run, profile);
   });
@@ -679,9 +677,7 @@ test("the permanent archive survives new runs, reloads and old profiles", async 
   await page.locator('button[data-action="home"]').click();
   const archive = page.locator("[data-profile-archive]");
   await expect(archive).toContainText("2 / 5");
-  await expect(archive.locator('[data-archive-id="lingzai/tea-break"]')).toContainText(
-    "修仙也要摸鱼",
-  );
+  await expect(archive.locator('[data-archive-id="lingzai/tea-break"]')).toContainText("修仙也要摸鱼");
   await page.locator('button[data-action="new-run"]').click();
   await page.locator('button[data-action="home"]').click();
   await expect(archive).toContainText("2 / 5");
