@@ -614,7 +614,7 @@ test("the secret collection stays locked until discovery and survives a reload",
   await page.locator('button[data-tab="log"]').click();
   const collection = page.locator("[data-collection]");
   await expect(collection).toContainText("0 / 2");
-  await expect(collection.locator('[data-discovered="false"]')).toHaveCount(2);
+  await expect(collection.locator('[data-secret-world][data-discovered="false"]')).toHaveCount(2);
   await expect(collection).not.toContainText("修仙也要摸鱼");
 
   await page.evaluate(async () => {
@@ -627,8 +627,8 @@ test("the secret collection stays locked until discovery and survives a reload",
   await page.reload();
   await page.locator('button[data-tab="log"]').click();
   await expect(collection).toContainText("1 / 2");
-  await expect(collection.locator('[data-discovered="true"]')).toContainText("修仙也要摸鱼");
-  await expect(collection.locator('[data-discovered="false"]')).toHaveCount(1);
+  await expect(collection.locator('[data-secret-world][data-discovered="true"]')).toContainText("修仙也要摸鱼");
+  await expect(collection.locator('[data-secret-world][data-discovered="false"]')).toHaveCount(1);
 });
 
 test("cross-world secret unlocks in the game and persists as a revealed collection entry", async ({
