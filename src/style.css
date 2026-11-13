@@ -379,3 +379,12 @@ button:active:not(:disabled){transform:translateY(1px)}
 .survivor-wave b{font-size:.94rem;color:#e7f7ff;font-variant-numeric:tabular-nums}
 .survivor-wave i{display:block;height:4px;background:#ad7551;border-radius:3px}
 .survivor-wave i.cleared{background:#7bd7bd}
+
+/* A rare, measurable wave-combat payoff rather than passive stat inflation. */
+.survivor-score.frenzy-active{
+  border-color:#ffd27d;
+  background:radial-gradient(ellipse at 85% 10%,#9f5f2b66,transparent 55%),#16273a;
+  box-shadow:inset 0 0 26px #f7bd5230,0 0 24px #eab55522;
+}
+.frenzy-active .survivor-score-main strong{color:#ffe2a1;text-shadow:0 0 16px #ffb44d75}
+.frenzy-active .survivor-grade{background:#775129;color:#fff3ca}
