@@ -18,6 +18,10 @@ for (const width of [320, 375, 390, 430]) {
         return getComputedStyle(element).gridTemplateColumns.split(" ").length;
       });
       expect(columns).toBe(2);
+      const metricLabelSize = await page.locator(".run-dashboard .metric span").first().evaluate((element) => {
+        return parseFloat(getComputedStyle(element).fontSize);
+      });
+      expect(metricLabelSize).toBeGreaterThanOrEqual(11);
     }
 
     const audit = await page.evaluate(() => {
@@ -91,4 +95,50 @@ test("reduced motion disables all replay pixel animations", async ({ page }) => 
     return values;
   });
   expect(result).toEqual(["none", "none"]);
+});
+
+async function computedContrastRatio(page, foregroundSelector, backgroundSelector = foregroundSelector) {
+  const { foreground, background } = await page.evaluate(
+    ({ foregroundSelector, backgroundSelector }) => {
+      return {
+        foreground: getComputedStyle(document.querySelector(foregroundSelector)).color,
+        background: getComputedStyle(document.querySelector(backgroundSelector)).backgroundColor,
+      };
+    },
+    { foregroundSelector, backgroundSelector },
+  );
+  const luminance = (color) => {
+    const channels = color.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number) ?? [];
+    if (channels.length !== 3) throw new Error(`Unsupported computed color: ${color}`);
+    const linear = channels.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  };
+  const first = luminance(foreground);
+  const second = luminance(background);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+test("status pills and selected navigation meet readable text contrast at 320px", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 820 });
+  await page.goto("/");
+  await expect(page.locator(".topbar > .pill")).toBeVisible();
+  expect(await computedContrastRatio(page, ".topbar > .pill")).toBeGreaterThanOrEqual(4.5);
+
+  await openRun(page);
+  for (const [foreground, background] of [
+    [".footer-nav button.active", ".footer-nav button.active"],
+    [".footer-nav button.active .nav-glyph", ".footer-nav button.active"],
+    [".world-head .pill", ".world-head .pill"],
+  ]) {
+    expect(await computedContrastRatio(page, foreground, background), foreground).toBeGreaterThanOrEqual(4.5);
+  }
+  const intel = page.locator(".world-intel").first();
+  if (!(await intel.evaluate((element) => element.open))) {
+    await intel.locator("summary").click();
+  }
+  await expect(page.locator(".world-extra .pill").first()).toBeVisible();
+  expect(await computedContrastRatio(page, ".world-extra .pill")).toBeGreaterThanOrEqual(4.5);
 });
