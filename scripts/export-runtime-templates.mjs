@@ -35,7 +35,10 @@ export function extractDynamicTemplatesFromSource(source, path = "src/example.js
     create(context) {
       const code = context.sourceCode;
       const expr = (node) => code.getText(node).replace(/\s+/gu, " ").slice(0, 100);
-      const merge = (a, b) => ({ text: a.text + b.text, bindings: [...a.bindings, ...b.bindings] });
+      const merge = (a, b) => ({
+        text: a.text + b.text,
+        bindings: [...a.bindings, ...b.bindings],
+      });
       const render = (node) => {
         if (node.type === "Literal" && typeof node.value === "string") {
           return { text: node.value, bindings: [] };
@@ -43,7 +46,10 @@ export function extractDynamicTemplatesFromSource(source, path = "src/example.js
         if (node.type === "TemplateLiteral") {
           let rendered = { text: "", bindings: [] };
           for (let i = 0; i < node.quasis.length; i++) {
-            rendered = merge(rendered, { text: node.quasis[i].value.cooked ?? node.quasis[i].value.raw, bindings: [] });
+            rendered = merge(rendered, {
+              text: node.quasis[i].value.cooked ?? node.quasis[i].value.raw,
+              bindings: [],
+            });
             if (i < node.expressions.length) {
               rendered = merge(rendered, { text: "【变量】", bindings: [expr(node.expressions[i])] });
             }
@@ -106,7 +112,13 @@ export function collectRuntimeTemplates() {
 
 export function renderRuntimeCsv(rows) {
   const header = [
-    "源码文件", "起始行", "提取方式", "风险提示", "复核状态", "可搜索候选句式（变量需替换）", "变量源码表达式",
+    "源码文件",
+    "起始行",
+    "提取方式",
+    "风险提示",
+    "复核状态",
+    "可搜索候选句式（变量需替换）",
+    "变量源码表达式",
   ];
   return "\uFEFF" + [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n") + "\n";
 }
