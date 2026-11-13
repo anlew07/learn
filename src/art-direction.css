@@ -303,3 +303,104 @@ summary:focus-visible { outline-color: #b3ffdc; outline-width: 3px; outline-offs
 @media (prefers-reduced-motion: reduce) {
   .hero::after { animation: none; }
 }
+
+
+/* Character portraits and elite-wave ornaments: lightweight, purely visual assets.
+   All labels and world state remain accessible HTML produced by the engine UI. */
+.world-lingzai { --avatar-image: url("./assets/avatar-lingzai.svg"); --foe-accent: #9aded6; }
+.world-zombie { --avatar-image: url("./assets/avatar-zombie.svg"); --foe-accent: #e8ac86; }
+.world-beast { --avatar-image: url("./assets/avatar-beast.svg"); --foe-accent: #c8b0f4; }
+
+.world-lingzai .world-insignia,
+.world-zombie .world-insignia,
+.world-beast .world-insignia {
+  background-image: var(--avatar-image);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: transparent;
+  text-shadow: none;
+  border: 2px solid color-mix(in srgb, var(--world-accent) 76%, #182b3c);
+  box-shadow: 0 0 0 3px #071a28a8, 0 0 22px color-mix(in srgb, var(--world-accent) 20%, transparent);
+}
+.world .replay-hero {
+  width: 34px;
+  height: 34px;
+  left: 8px;
+  font-size: 0;
+  border-radius: 50%;
+  border: 2px solid var(--world-accent);
+  background: #142c3b var(--avatar-image) center / cover no-repeat;
+  box-shadow: 0 0 19px color-mix(in srgb, var(--world-accent) 60%, transparent);
+}
+.world .replay-hero span { display: none; }
+.world .replay-hero::after {
+  inset: -6px;
+  border-color: color-mix(in srgb, var(--world-accent) 67%, transparent);
+  box-shadow: 0 0 0 2px #091a2acc;
+  transform: none;
+}
+.world .replay-foe {
+  background: var(--foe-accent);
+  color: transparent;
+  font-size: 0;
+  width: 12px;
+  height: 14px;
+  flex: 0 1 12px;
+  clip-path: polygon(50% 0, 83% 22%, 92% 68%, 70% 100%, 30% 100%, 8% 68%, 17% 22%);
+  opacity: .88;
+  filter: drop-shadow(0 0 4px var(--foe-accent));
+}
+.world .replay-foe:not(.replay-fallen) { background: #9d8a87; opacity: .63; }
+.world .replay-foe.replay-fallen { background: var(--foe-accent); }
+
+/* Optional late-wave traits are already emitted by the main gameplay branch.
+   The icons enhance the real trait labels rather than making up combat state. */
+.replay-trait[data-wave-trait] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 25px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid #876a616b;
+  border-radius: 8px;
+  background: #151f30d9;
+  color: #f2d4bb;
+  line-height: 1.35;
+  white-space: normal;
+}
+.replay-trait[data-wave-trait]::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.replay-trait[data-wave-trait="horde"]::before { background-image: url("./assets/elite-horde.svg"); }
+.replay-trait[data-wave-trait="armored"]::before { background-image: url("./assets/elite-armored.svg"); }
+.replay-trait[data-wave-trait="swift"]::before { background-image: url("./assets/elite-swift.svg"); }
+.replay-trait[data-wave-trait="armored"] { border-color: #d5c4aa73; }
+.replay-trait[data-wave-trait="swift"] { border-color: #c7a9f089; }
+
+/* A single subtle clear flash; replay remains the deterministic presentation
+   of an already-finished encounter, not a new battle simulation. */
+@keyframes battle-clear-flash {
+  0%, 75%, 100% { box-shadow: none; }
+  89% { box-shadow: inset 0 0 45px #9df6da29, 0 0 22px #8adfc022; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .survivor-score.frenzy-active { animation: battle-clear-flash 3.1s ease-out both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .survivor-score.frenzy-active { animation: none; }
+}
+@media (max-width: 380px) {
+  .world .replay-hero { width: 29px; height: 29px; left: 5px; }
+  .world .replay-foe { width: 9px; height: 11px; flex-basis: 9px; }
+  .replay-trait[data-wave-trait] { font-size: .61rem; }
+}
