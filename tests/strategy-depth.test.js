@@ -3,6 +3,7 @@ import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { selectAutonomousAction } from "../src/systems/action-policy.js";
 import { compareRescueNestPriority } from "../scripts/strategy-depth-compare.mjs";
+import { probeRescueNestThresholds } from "../scripts/strategy-depth-core.js";
 
 function candidate(overrides = {}, threshold = 65) {
   const world = {
@@ -102,9 +103,10 @@ describe("rescue-first beast threat opportunity cost", () => {
       ),
     );
     console.info("SECOND_PHASE_SEEDED_DELTAS", JSON.stringify(first.differences));
+    console.info("SECOND_PHASE_THRESHOLD_PROBE", JSON.stringify(probeRescueNestThresholds(50)));
     console.info(
       "SECOND_PHASE_RESCUE_DETAIL",
       JSON.stringify(first.rows.filter((row) => row.runNumber === 3 && row.strategy === "rescue")),
     );
-  });
+  }, 30000);
 });
