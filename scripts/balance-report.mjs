@@ -108,6 +108,15 @@ for (const runNumber of [1, 2, 3]) {
           meanExtraDoomReduction: completed
             ? Number((extraDoomReduction / completed).toFixed(2))
             : 0,
+          meanWaveClearBonus: completed
+            ? Number((waveClearBonus / completed).toFixed(2))
+            : 0,
+          meanWaveLossMitigation: completed
+            ? Number((waveLossMitigation / completed).toFixed(2))
+            : 0,
+          meanWaveLootModifier: completed
+            ? Number((waveLootModifier / completed).toFixed(2))
+            : 0,
         },
       });
     }
