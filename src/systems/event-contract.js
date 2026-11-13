@@ -35,9 +35,9 @@ export function previewMajorEvent(state,world) {
     const detail=CLUE_DETAILS[world.id];
     return {...result,
       summary:detail.summary,
-      defaultOutcome:"到期自动谨慎调查：P+2，不消耗AP。",
+      defaultOutcome:"到期自动谨慎调查：P+2，随后4日每日自然D增长−0.2，不消耗AP。",
       options:[
-        option("safe","谨慎调查","确定P+2；不消耗AP。"),
+        option("safe","谨慎调查","确定P+2；未来4日每日自然D增长−0.2；不消耗AP。"),
         option("push","深入追踪 · 1AP",
           "成功率65%："+detail.success+" 失败率35%：D+5，受伤3个后续游戏日。",
           freeAP>=1,"可用行动点不足1点。"),

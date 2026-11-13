@@ -760,3 +760,29 @@ test("home archive keeps collections compact until explicitly expanded", async (
   await expect(details.locator("[data-archive-id]")).toHaveCount(5);
   await expect(archive.locator(".collection-titles")).toBeVisible();
 });
+
+test("cautious clue outcome reveals the actual four-day protective status", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "lingzai");
+    world.pendingEvent = {
+      id: "lingzai/clue/ui",
+      type: "clue",
+      title: "雾谷古碑",
+      state: "active",
+      expiresDay: run.day + 2,
+    };
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  const event = page.locator('.event[data-world="lingzai"]');
+  await expect(event).toContainText("未来4日");
+  await event.getByRole("button", { name: "谨慎调查" }).click();
+  const world = page.locator('[data-world-card="lingzai"]');
+  await page.locator('button[data-action="step"]').click();
+  await expect(world.locator(".world-intel")).toHaveAttribute("open", "");
+  await expect(world).toContainText("谨慎调查防护");
+  await expect.poll(async () => (await getSnapshot(page)).run.worlds[0].clueSafety.until).toBe(5);
+});

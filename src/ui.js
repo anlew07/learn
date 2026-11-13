@@ -1,5 +1,6 @@
 import "./style.css";
 import Engine from "./engine.js";
+import { cautiousAftermathSummary } from "./systems/clue-aftermath.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
 import { mergeProfileSecrets, summarizeProfileSecrets, availableArchiveTitles, equipArchiveTitle, selectedArchiveTitle } from "./systems/profile-collection.js";
 import { saveRepository } from "./services/persistence.js";
@@ -128,7 +129,7 @@ function worldHtml(w){
  '<div class="world-note">正在进行：<strong>'+esc(w.action)+'</strong></div>'+
  '<div class="world-note world-goal">当前目标：'+esc(stop?worldStatus(w):v.goal)+'</div>'+
  finaleHtml(w,v)+
- '<details class="world-intel"'+(w.d>=75||w.threat&&w.threat.status!=="cleared"?' open':'')+'>'+
+ '<details class="world-intel"'+(w.d>=75||w.threat&&w.threat.status!=="cleared"||cautiousAftermathSummary(w,run.day)?' open':'')+'>'+
  '<summary><span>◇ 作战情报</span><span class="intel-summary-hint">策略判断 · 状态效果</span></summary>'+
  (w.lastDecision&&!stop?'<div class="world-note"><span class="decision-label">自主判断：</span>'+esc(w.lastDecision.reason)+'</div>':'')+
  '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 清剿 '+w.threat.progress+'/2</span>':'')+
@@ -136,7 +137,8 @@ function worldHtml(w){
  (run.waves&&w.build.evolved?'<span class="pill good">✦ '+esc(w.build.evolutionName)+'</span>':run.waves&&w.build.count?'<span class="pill">已装备战技 '+(w.build.attack.length+w.build.support.length)+'/3</span>':'')+
  (w.flags.followupOutcome?'<span class="pill '+(w.flags.followupOutcome==="commit"?"good":"")+'">后续机缘：'+
  (w.flags.followupOutcome==="commit"?"已投入":w.flags.followupOutcome==="safe"?"已整理":"已放弃")+
- (w.followupEffect?.until>=run.day?' · 效果至第'+w.followupEffect.until+'日':'')+'</span>':'')+'</div></details>'+
+ (w.followupEffect?.until>=run.day?' · 效果至第'+w.followupEffect.until+'日':'')+'</span>':'')+
+ (cautiousAftermathSummary(w,run.day)?'<span class="pill good">'+esc(cautiousAftermathSummary(w,run.day))+'</span>':'')+'</div></details>'+
  (run.waves&&w.lastCombat?combatHtml(w.lastCombat):"")+
  (stop?'':'<div class="select-row"><label class="muted">长期策略 <select data-action="strategy" data-world="'+w.id+'"'+
  (strategyPreview.available?'':' disabled')+'>'+options+'</select></label>'+
