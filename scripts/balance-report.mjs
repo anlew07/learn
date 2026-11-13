@@ -1,5 +1,6 @@
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
+import { readWorldTerminal } from "./balance-outcome.mjs";
 
 const argumentsList = process.argv.slice(2);
 const sampleOption = argumentsList.find((arg) => arg.startsWith("--seeds="));
@@ -41,6 +42,7 @@ for (const runNumber of [1, 2, 3]) {
       for (let index = 0; index < samples; index++) {
         // Keep the same seed across strategies and wave settings for useful comparisons.
         const state = Engine.fresh(`balance-v2-r${runNumber}-${index}`, runNumber, waves);
+        const terminalByWorld = {};
         if (strategy !== "default") {
           state.worlds.forEach((world) => {
             world.strategy = strategy;
@@ -49,7 +51,13 @@ for (const runNumber of [1, 2, 3]) {
 
         let days = 0;
         while (state.active && days++ < 200) {
+          const currentDay = state.day;
           Engine.step(state);
+          for (const world of state.worlds) {
+            if (world.status !== "running" && !terminalByWorld[world.id]) {
+              terminalByWorld[world.id] = readWorldTerminal(world, state.logs, currentDay);
+            }
+          }
         }
 
         if (state.active || !state.result) {
@@ -72,34 +80,15 @@ for (const runNumber of [1, 2, 3]) {
           const outcomes =
             outcomeReasonsByWorld[world.id] ||
             (outcomeReasonsByWorld[world.id] = { saved: 0, failed: {} });
+          const terminal = terminalByWorld[world.id];
           if (world.status === "saved") {
             outcomes.saved++;
           } else {
-            const terminalLog = [...state.logs]
-              .reverse()
-              .find(
-                (entry) =>
-                  entry.world === world.id &&
-                  (entry.text.startsWith("末日降临：") || entry.text.includes("灵魂归零")),
-              );
-            const reason = terminalLog?.text.startsWith("末日降临：")
-              ? terminalLog.text.split("：")[1].split("。")[0]
-              : terminalLog
-                ? "灵魂坍塌"
-                : "未知原因";
+            const reason = terminal?.reason ?? "未知原因";
             outcomes.failed[reason] = (outcomes.failed[reason] || 0) + 1;
           }
-          const endLog = [...state.logs]
-            .reverse()
-            .find(
-              (entry) =>
-                entry.world === world.id &&
-                (entry.kind === "success" ||
-                  entry.text.startsWith("末日降临：") ||
-                  entry.text.includes("灵魂归零")),
-            );
-          if (endLog) {
-            endDayTotalsByWorld[world.id] = (endDayTotalsByWorld[world.id] || 0) + endLog.day;
+          if (terminal) {
+            endDayTotalsByWorld[world.id] = (endDayTotalsByWorld[world.id] || 0) + terminal.day;
             endDayCountsByWorld[world.id] = (endDayCountsByWorld[world.id] || 0) + 1;
           }
           waveBattles += metrics.waveCombats || 0;
