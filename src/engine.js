@@ -3,6 +3,7 @@ import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.j
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
 import { computeWaveBonuses } from "./systems/wave-combat.js";
+import { simulateSurvivorWaves } from "./systems/survivor-waves.js";
 import { previewMajorEvent } from "./systems/event-contract.js";
 import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
 import { summarizeFinale } from "./systems/finale-readiness.js";
@@ -149,6 +150,14 @@ const MultiworldEngine = (function () {
   }
   function waveCombatBonus(s,w){
     var effect=computeWaveBonuses(w.id,w.build,POWERS);
+    // Consecutive fights build a small deterministic streak; no extra RNG.
+    var previous=w.waveMomentum;
+    var momentum=previous&&s.day-previous.lastDay<=3?
+      Math.min(3,previous.count+1):1;
+    w.waveMomentum={lastDay:s.day,count:momentum};
+    var spectacle=simulateSurvivorWaves(w.id,w.build,POWERS,{
+      day:s.day,level:w.level,momentum:momentum
+    });
     var beforeXp=w.xp,beforeResource=w.resource,beforeD=w.d;
     if(effect.xp)produce(s,w,"xp",effect.xp);
     if(effect.resource)produce(s,w,"resource",effect.resource);
@@ -159,6 +168,7 @@ const MultiworldEngine = (function () {
       stages:effect.stages,
       skills:effect.skills,
       evolution:effect.evolution,
+      spectacle:spectacle,
       bonus:{
         xp:r2(w.xp-beforeXp),
         resource:r2(w.resource-beforeResource),
