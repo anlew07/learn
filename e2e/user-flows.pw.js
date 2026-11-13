@@ -733,6 +733,8 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
   await expect(page.locator('button[data-tab="soul"]')).toHaveAttribute("aria-current", "page");
   await page.locator('button[data-tab="world"]').click();
   await expect(page.locator('button[data-tab="world"]')).toHaveAttribute("aria-current", "page");
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  );
   expect(overflow).toBe(false);
 });
