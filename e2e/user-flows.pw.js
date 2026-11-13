@@ -114,6 +114,8 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   await expect(page.getByText("自主判断：")).toHaveCount(2);
   await expect(page.locator(".combat-recap")).toHaveCount(1);
   await expect(page.locator(".combat-phases span:not(.combat-arrow)")).toHaveCount(3);
+  await expect(page.locator(".survivor-wave")).toHaveCount(3);
+  await expect(page.locator(".survivor-score-main")).toContainText("敌群清剿");
   await expect(page.getByText("本次依靠基础自动战斗")).toBeVisible();
 
   const snapshot = await getSnapshot(page);
@@ -121,6 +123,9 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   expect(zombie.lastDecision.actionId).toBe("fight");
   expect(zombie.lastCombat.day).toBe(1);
   expect(zombie.lastCombat.bonus.xp).toBe(0);
+  expect(zombie.lastCombat.spectacle.waves).toHaveLength(3);
+  expect(zombie.lastCombat.spectacle.defeated).toBeGreaterThan(0);
+  expect(zombie.waveMomentum.count).toBe(1);
 });
 
 test("event preview describes odds, default and action costs", async ({ page }) => {
