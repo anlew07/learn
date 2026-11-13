@@ -15,7 +15,15 @@ function simulateStrategy(strategy, seeds, waves) {
   const worlds = Object.fromEntries(
     WORLD_IDS.map((id) => [
       id,
-      { saved: 0, totalD: 0, totalP: 0, totalResources: 0, totalEndDay: 0, actions: {}, failures: {} },
+      {
+        saved: 0,
+        totalD: 0,
+        totalP: 0,
+        totalResources: 0,
+        totalEndDay: 0,
+        actions: {},
+        failures: {},
+      },
     ]),
   );
   let fullySaved = 0;
