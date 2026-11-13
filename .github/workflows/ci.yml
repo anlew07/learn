@@ -19,7 +19,6 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - run: npx prettier scripts/export-runtime-templates.mjs | diff -u scripts/export-runtime-templates.mjs - || true
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
