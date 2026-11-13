@@ -21,6 +21,13 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run text:check
+      - run: npm run text:runtime
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-text-review
+          path: docs/review/runtime-templates.csv
+          if-no-files-found: error
+          retention-days: 14
       - run: npm test
       - run: npm run build
       - run: npm run balance:check
