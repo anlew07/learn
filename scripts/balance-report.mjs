@@ -30,6 +30,9 @@ for (const runNumber of [1, 2, 3]) {
       let extraXp = 0;
       let extraResources = 0;
       let extraDoomReduction = 0;
+      let waveClearBonus = 0;
+      let waveLossMitigation = 0;
+      let waveLootModifier = 0;
 
       for (let index = 0; index < samples; index++) {
         // Keep the same seed across strategies and wave settings for useful comparisons.
@@ -67,6 +70,9 @@ for (const runNumber of [1, 2, 3]) {
           extraXp += metrics.extraXp || 0;
           extraResources += metrics.extraResources || 0;
           extraDoomReduction += metrics.extraDoomReduction || 0;
+          waveClearBonus += metrics.waveClearBonus || 0;
+          waveLossMitigation += metrics.waveLossMitigation || 0;
+          waveLootModifier += metrics.waveLootModifier || 0;
         });
       }
 
@@ -132,12 +138,22 @@ if (shouldAssert) {
     const e = row.engagement;
     const totalBattles = e.meanActionsPerRun.fight || 0;
     if (e.meanWaveBattles > totalBattles + 0.02) return true;
-    if (row.waves) return e.meanExtraXp > e.meanWaveBattles * 0.75 + 0.05;
+    if (row.waves) {
+      return (
+        e.meanExtraXp > e.meanWaveBattles * 0.75 + 0.05 ||
+        e.meanWaveClearBonus > e.meanWaveBattles * 0.15 + 0.05 ||
+        e.meanWaveLossMitigation > e.meanWaveBattles * 0.08 + 0.05 ||
+        e.meanWaveLootModifier > e.meanWaveBattles * 0.1 + 0.05
+      );
+    }
     return (
       e.meanWaveBattles !== 0 ||
       e.meanExtraXp !== 0 ||
       e.meanExtraResources !== 0 ||
       e.meanExtraDoomReduction !== 0 ||
+      e.meanWaveClearBonus !== 0 ||
+      e.meanWaveLossMitigation !== 0 ||
+      e.meanWaveLootModifier !== 0 ||
       e.evolutionRatePerWorld !== 0
     );
   });
