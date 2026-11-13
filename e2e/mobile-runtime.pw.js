@@ -123,7 +123,9 @@ test("320–430px portrait and landscape retain accessible navigation without ov
           pageWidth: document.documentElement.scrollWidth,
           bottom: rect.bottom,
           viewportHeight: innerHeight,
-          minButtonHeight: Math.min(...buttons.map((button) => button.getBoundingClientRect().height)),
+          minButtonHeight: Math.min(
+            ...buttons.map((button) => button.getBoundingClientRect().height),
+          ),
         };
       });
       expect(geometry.pageWidth, width + "px " + tab + " horizontal overflow").toBeLessThanOrEqual(
@@ -162,7 +164,9 @@ test("enlarged Chinese text preserves the bottom navigation and action targets",
       viewport: innerWidth,
       width: document.documentElement.scrollWidth,
       navBottom: nav.getBoundingClientRect().bottom,
-      minTap: Math.min(...[...nav.querySelectorAll("button")].map((el) => el.getBoundingClientRect().height)),
+      minTap: Math.min(
+        ...[...nav.querySelectorAll("button")].map((el) => el.getBoundingClientRect().height),
+      ),
     };
   });
   expect(geometry.width).toBeLessThanOrEqual(geometry.viewport + 1);
