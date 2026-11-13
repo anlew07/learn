@@ -807,4 +807,3 @@ test("cautious clue outcome reveals the actual four-day protective status", asyn
   await expect(world).toContainText("谨慎调查防护");
   await expect.poll(async () => (await getSnapshot(page)).run.worlds[0].clueSafety.until).toBe(5);
 });
-
