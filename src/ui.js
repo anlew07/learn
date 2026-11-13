@@ -431,7 +431,11 @@ function homeHtml(){
  '<h1>一个灵魂。<br><em>守护三个世界。</em></h1>'+
  '<p>修仙、废土、兽王。三个世界同时倒计时，每次选择都可能改变终局。</p>'+
  '<div class="hero-actions">'+
- (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
+ (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':
+   profile.runCount===0?
+   '<button class="btn" data-action="new-run" data-onboarding="focus">✦ 开始第 1 局 · 快速体验</button>'+
+   '<button class="btn-soft" data-action="new-run" data-onboarding="full">深入模式 · 同时照看双世界</button>':
+   '<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+'</div></section>'+
  '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">YOUR PROGRESS</span></div>'+
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
@@ -441,6 +445,21 @@ function homeHtml(){
  '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 开启防线行动增强 · 三波战斗与战技构筑</label></section>'+
  profileArchiveHtml()+
  '<p class="hint footnote">开发中版本 · 游戏进度仅保存在当前浏览器</p>';
+}
+function inQuickStart(){
+ return Boolean(run?.onboardingFocus && run.active && run.day<9);
+}
+function quickStartHtml(){
+ const phase=run.day<=4?"观察分身每天的自主成长。点击「继续模拟」，或在调试模式按天推进。":
+   run.day<=6?"留意等级与救援准备的变化，战技觉醒后也可以主动选择能力。":
+   "你已经体验了几次行动与结算。到第9天就会自动展开双世界视图。";
+ return '<section class="panel onboarding-card" data-onboarding-guide="focus" aria-label="快速开局引导">'+
+   '<div class="row-between"><strong>第一幕 · 灵脉守护</strong><span class="pill">入门 '+run.day+' / 8</span></div>'+
+   '<p>'+phase+'</p>'+
+   '<p class="hint">当前只展示灵灾分身。废土救援分身仍在自主行动，不会暂停或丢失进度。</p>'+
+   '<p class="hint">P 是救援准备（越高越接近目标）；D 是危机压力（达到100会失守）；AP 用于关键支援。</p>'+
+   '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看全部世界</button>'+
+   '</section>';
 }
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
@@ -453,9 +472,13 @@ function render(){
    statsHtml()+run.worlds.map(worldHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack game-content"><div class="section-banner"><div><span class="eyebrow">WORLD STATUS</span><h2>平行世界</h2></div><span class="section-hint">'+run.worlds.length+' 个世界同步演化</span></div>'+crisisHtml()+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ const focus=inQuickStart();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack game-content"><div class="section-banner"><div><span class="eyebrow">WORLD STATUS</span><h2>'+(focus?'灵脉救援入门':'平行世界')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
+  (focus?quickStartHtml():(run.onboardingFocus&&run.day===9?'<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">双世界视图已经解锁。你可以继续观察，或使用灵魂联结提供支援。</p></section>':'')+crisisHtml())+
+  (focus?worldHtml(run.worlds[0]):run.worlds.map(worldHtml).join(""))+
+  (focus?'':interventionHtml(2))+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
-function footer(){return '<nav class="footer-nav" aria-label="主要导航">'+
+function footer(){if(inQuickStart())return "";return '<nav class="footer-nav" aria-label="主要导航">'+
  '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">◇</span><span>灾变世界</span></button>'+
  '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">✧</span><span>灵魂联结</span></button>'+
  '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>战报图鉴</span></button></nav>';}
@@ -484,13 +507,15 @@ function reward(){
  if(!run?.result||run.rewarded)return;
  run.rewarded=true;profile.runCount++;profile.shards+=run.result.shards;
 }
-function confirmNew(){
+function confirmNew(mode="full"){
  if(!session.isOwner || commandBusy)return false;
  if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
  profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
- run=Engine.fresh(seed,profile.runCount+1,waves);tab="world";queueSave();render();return true;
+ run=Engine.fresh(seed,profile.runCount+1,waves);
+ run.onboardingFocus=mode==="focus"&&profile.runCount===0;
+ tab="world";queueSave();render();return true;
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
@@ -518,7 +543,8 @@ function handleClick(target){
  }
  if(!session.isOwner){report("当前标签页是只读副本，请重新取得控制权。");return;}
  if(commandBusy)return;
- if(action==="new-run"){confirmNew();return;}
+ if(action==="new-run"){confirmNew(target.dataset.onboarding||"full");return;}
+ if(action==="show-all-worlds"&&run){run.onboardingFocus=false;queueSave();render();return;}
  if(!run)return;
  if(action==="crisis-aid"){
    const choices=Engine.advise(run);
