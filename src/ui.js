@@ -89,7 +89,7 @@ function survivorReplayHtml(battle) {
  return '<section class="survivor-replay" aria-label="三波战斗回放" data-survivor-replay>'+
    '<div class="replay-head"><span>◉ 战潮回放 · 第'+battle.day+'天</span>'+
    '<button data-action="replay-wave" type="button" aria-label="重播三波战潮">▶ 重播</button></div>'+
-   '<div class="replay-arena" data-replay-arena>'+
+   '<div class="replay-arena is-playing" data-replay-arena>'+
      '<div class="replay-hero" aria-hidden="true"><span>✦</span></div>'+
      '<div class="replay-wave-stack">'+safeWaves+'</div>'+
      (battleData.frenzy?'<div class="replay-frenzy" aria-label="狂热爆发">⚡ FRENZY! 狂热爆发</div>':'')+
