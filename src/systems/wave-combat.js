@@ -44,7 +44,7 @@ export function computeWaveBonuses(worldId, build, powers, spectacle = null) {
   const totals = { clear: 0, loot: 0, defense: 0 };
 
   for (const slot of equipped) {
-    if (Object.hasOwn(totals, slot.power.kind)) {
+    if (Object.prototype.hasOwnProperty.call(totals, slot.power.kind)) {
       totals[slot.power.kind] += slot.lv;
     }
   }
