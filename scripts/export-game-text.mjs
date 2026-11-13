@@ -42,13 +42,7 @@ export function collectTextLines() {
       let category = "静态/待复核";
       if (isComment) category = "注释/需筛除";
       else if (/\$\{|['"]\s*\+|\+\s*['"]/u.test(original)) category = "动态拼接/需复原";
-      rows.push([
-        source,
-        index + 1,
-        category,
-        reviewPriority(original),
-        original,
-      ]);
+      rows.push([source, index + 1, category, reviewPriority(original), original]);
     });
   }
   return rows;
