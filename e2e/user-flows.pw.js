@@ -736,3 +736,15 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
   );
   expect(overflow).toBe(false);
 });
+
+test("world intelligence is collapsible without hiding key survival bars", async ({ page }) => {
+  await startFirstRun(page);
+  const first = page.locator('[data-world-card="lingzai"]');
+  await expect(first.locator(".bars")).toBeVisible();
+  const intel = first.locator(".world-intel");
+  await expect(intel).not.toHaveAttribute("open", "");
+  await intel.locator("summary").click();
+  await expect(intel).toHaveAttribute("open", "");
+  await expect(intel).toContainText("状态效果");
+  await expect(first.locator(".bars")).toBeVisible();
+});
