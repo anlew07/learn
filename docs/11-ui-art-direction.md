@@ -43,3 +43,14 @@
 - [ ] Android Chrome / iOS Safari 真机验证，尤其是页面恢复、存档和 Web Locks（既有范围）。
 
 独立分支为 UI 实验，不自动合入 `main`。玩法分支继续开发；只有 CI 与移动端验收满足时才考虑合并。
+
+
+## 第二批 UI 预备素材与接入（2026-11-13）
+
+- 新增 3 张分身头像 SVG：`avatar-lingzai.svg`、`avatar-zombie.svg`、`avatar-beast.svg`。由已有的 `.world-insignia` 和 `.replay-hero` 背景呈现，不新增角色逻辑。
+- 新增 3 张精英标志 SVG：`elite-horde.svg`、`elite-armored.svg`、`elite-swift.svg`。仅在主线提供 `data-wave-trait` 的已结算战报上展示，不自造敌人机制。
+- 简化原来重复的战斗符号外观为可复用 CSS 角色/敌群小剪影，保留文字标签和原有 CSS 攻击特效。清屏轻闪仅在已有狂热结算区出现，并尊重系统减少动态效果偏好。
+- `tests/ui-art.test.js` 校验 10 张 SVG 的体积、静态资源安全性、Vite 相对路径、引入顺序和 reduced-motion。
+- 素材完整预览与适用范围见 [12-ui-art-gallery.md](12-ui-art-gallery.md)。
+
+仍禁止直接改动 `main` 的模拟引擎、系统规则、数值平衡或存档模型。本草案的精英图标属于**为并行玩法提前准备的视觉挂钩**，不承诺对应玩法已经合并至当前分支。合并前必须与最新主线同步并重新跑 CI。
