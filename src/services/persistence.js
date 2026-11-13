@@ -58,11 +58,27 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       !Number.isFinite(run.soul) ||
       !Array.isArray(run.worlds) ||
       run.worlds.length < 2 ||
+      !Array.isArray(run.logs) ||
+      !Array.isArray(run.echoes) ||
+      typeof run.active !== "boolean" ||
+      typeof run.paused !== "boolean" ||
       run.worlds.some(
         (world) =>
           !world ||
-          typeof world.id !== "string" ||
-          !["running", "saved", "failed"].includes(world.status),
+          !["lingzai", "zombie", "beast"].includes(world.id) ||
+          !["running", "saved", "failed"].includes(world.status) ||
+          !Number.isInteger(world.level) ||
+          world.level < 1 ||
+          !Number.isFinite(world.resource) ||
+          !Number.isFinite(world.p) ||
+          !Number.isFinite(world.d) ||
+          !world.flags ||
+          typeof world.flags !== "object" ||
+          Array.isArray(world.flags) ||
+          !world.build ||
+          typeof world.build !== "object" ||
+          !Array.isArray(world.build.attack) ||
+          !Array.isArray(world.build.support),
       ))
   ) {
     throw new Error("RunState is incompatible or malformed");
