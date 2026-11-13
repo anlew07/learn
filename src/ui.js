@@ -1,5 +1,4 @@
-import "./style.css";
-import "./art-direction.css";
+import "./style.css"; import "./art-direction.css";
 import Engine from "./engine.js";
 import { cautiousAftermathSummary } from "./systems/clue-aftermath.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
