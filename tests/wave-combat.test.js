@@ -34,3 +34,51 @@ describe("bounded wave combat and meaningful evolution", () => {
     expect(WAVE_STAGES.zombie).toHaveLength(3);
   });
 });
+
+describe("escalating survivor wave encounter", () => {
+  it("simulates repeatable enemy counts and real clear numbers without using RNG", async () => {
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const empty = { attack: [], support: [], evolved: false };
+    const first = simulateSurvivorWaves("lingzai", empty, POWERS, { day: 8, level: 1, momentum: 1 });
+    expect(first.waves).toHaveLength(3);
+    expect(first.encountered).toBe(first.waves.reduce((n, wave) => n + wave.encountered, 0));
+    expect(first.defeated).toBe(first.waves.reduce((n, wave) => n + wave.defeated, 0));
+    expect(first.defeated).toBeLessThan(first.encountered);
+    expect(simulateSurvivorWaves("lingzai", empty, POWERS, { day: 8, level: 1, momentum: 1 })).toEqual(first);
+    for (const wave of first.waves) {
+      expect(wave.defeated).toBeLessThanOrEqual(wave.encountered);
+    }
+  });
+
+  it("rewards investment with real three-wave clears and evolution burst", async () => {
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const equipped = build("lingzai", true);
+    const result = simulateSurvivorWaves("lingzai", equipped, POWERS, { day: 8, level: 4, momentum: 3 });
+    expect(result.fullClear).toBe(true);
+    expect(result.grade).toBe("清屏");
+    expect(result.combo).toBe(3);
+    expect(result.burst).toBe(true);
+    expect(result.defeated).toBe(result.encountered);
+    const later = simulateSurvivorWaves("lingzai", equipped, POWERS, { day: 70, level: 4, momentum: 3 });
+    expect(later.encountered).toBeGreaterThan(result.encountered);
+    expect(later.defeated).toBeLessThanOrEqual(later.encountered);
+  });
+
+  it("integrates with a real auto-fight and persists the streak data", async () => {
+    const Engine = (await import("../src/engine.js")).default;
+    const state = Engine.fresh("spectacle-run", 1, true);
+    const world = Engine.byId(state, "lingzai");
+    world.level = 3;
+    world.p = 45;
+    world.strategy = "clear";
+    state.day = 15;
+    Engine.step(state);
+    if (world.lastCombat) {
+      expect(world.lastCombat.spectacle.waves).toHaveLength(3);
+      expect(world.lastCombat.spectacle.defeated).toBeGreaterThan(0);
+      expect(world.waveMomentum.count).toBe(1);
+      const restored = JSON.parse(JSON.stringify(state));
+      expect(Engine.byId(restored, "lingzai").lastCombat).toEqual(world.lastCombat);
+    }
+  });
+});
