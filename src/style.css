@@ -503,3 +503,10 @@ button:active:not(:disabled){transform:translateY(1px)}
   .replay-arena.is-playing .attack-barrage .replay-hit,
   .replay-arena.is-playing .attack-hunt .replay-hit{animation:none!important}
 }
+
+
+/* Elite wave signatures reuse the existing attack replay and CSS animation. */
+.replay-trait{grid-column:1/-1;color:#edbd9b;font-size:.65rem;font-weight:800}
+.replay-trait[data-wave-trait="armored"]{color:#d9c7ae}
+.replay-trait[data-wave-trait="swift"]{color:#cbb9f9}
+.replay-wave:has(.replay-trait){border-style:solid}

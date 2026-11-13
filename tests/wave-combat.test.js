@@ -264,3 +264,40 @@ describe("evolved ultimate wave attacks", () => {
     expect(result.waves.every((wave) => wave.attack.bonus === 0)).toBe(true);
   });
 });
+
+describe("late-game elite enemy waves", () => {
+  it("introduces predictable threats at day thresholds without adding random state", async () => {
+    const { waveEnemyTrait, simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const empty = { attack: [], support: [], evolved: false };
+    expect(waveEnemyTrait(13, 1)).toBeNull();
+    expect(waveEnemyTrait(14, 1)?.id).toBe("horde");
+    expect(waveEnemyTrait(21, 2)?.id).toBe("armored");
+    expect(waveEnemyTrait(28, 3)?.id).toBe("swift");
+    const first = simulateSurvivorWaves("beast", empty, POWERS, {
+      day: 28, level: 2, momentum: 0,
+    });
+    expect(first.waves.map((wave) => wave.trait.id)).toEqual(["horde", "armored", "swift"]);
+    expect(JSON.parse(JSON.stringify(first))).toEqual(first);
+    expect(first.waves.every((wave) => wave.defeated <= wave.encountered)).toBe(true);
+  });
+
+  it("matching weapon styles counter elite resistance in actual kill counts", async () => {
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const withWeapon = (id) => ({
+      attack: [{ id, lv: 1 }], support: [], evolved: false,
+    });
+    const chain = simulateSurvivorWaves("lingzai", withWeapon("thunder"), POWERS, {
+      day: 35, level: 2, momentum: 0,
+    });
+    const pierce = simulateSurvivorWaves("lingzai", withWeapon("sword"), POWERS, {
+      day: 35, level: 2, momentum: 0,
+    });
+    expect(chain.waves[0].trait.countered).toBe(true);
+    expect(chain.waves[1].trait.countered).toBe(false);
+    expect(pierce.waves[1].trait.countered).toBe(true);
+    expect(pierce.waves[0].trait.countered).toBe(false);
+    expect(pierce.waves[1].defeated).toBeGreaterThan(0);
+    expect(chain.waves[0].defeated).toBeGreaterThan(0);
+    expect(chain.waves.every((wave) => wave.defeated <= wave.encountered)).toBe(true);
+  });
+});
