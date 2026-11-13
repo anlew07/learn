@@ -3,6 +3,7 @@ import {
   extractDynamicTemplatesFromSource,
   renderRuntimeCsv,
 } from "../scripts/export-runtime-templates.mjs";
+import { reviewPriority } from "../scripts/text-review-risk.mjs";
 
 describe("runtime review templates", () => {
   it("assembles nested concatenation once, keeping variable expressions", () => {
@@ -54,5 +55,19 @@ describe("runtime review templates", () => {
     expect(() => extractDynamicTemplatesFromSource("const = ;", "src/broken.js")).toThrow(
       /src\/broken\.js:1/,
     );
+  });
+});
+
+describe("human review risk terms", () => {
+  it("flags overlooked threat and injury text but keeps ordinary rescue copy routine", () => {
+    for (const text of [
+      "防线迎击尸群",
+      "感染者逼近",
+      "肃清残余感染体",
+      "分身受伤3个后续游戏日",
+    ]) {
+      expect(reviewPriority(text)).toBe("重点复核");
+    }
+    expect(reviewPriority("组织救援并恢复秩序")).toBe("常规核对");
   });
 });
