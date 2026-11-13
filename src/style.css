@@ -510,4 +510,3 @@ button:active:not(:disabled){transform:translateY(1px)}
 .replay-trait[data-wave-trait="armored"]{color:#d9c7ae}
 .replay-trait[data-wave-trait="swift"]{color:#cbb9f9}
 .replay-wave:has(.replay-trait){border-style:solid}
-.replay-trait:has(+ *){font-weight:800}
