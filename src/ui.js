@@ -5,14 +5,14 @@ import { counteredEliteWaveLabels } from "./systems/survivor-waves.js";
 import { cautiousAftermathSummary } from "./systems/clue-aftermath.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
 import { mergeProfileSecrets, summarizeProfileSecrets, availableArchiveTitles, equipArchiveTitle, selectedArchiveTitle } from "./systems/profile-collection.js";
-import { saveRepository } from "./services/persistence.js";
+import { saveRepository, assertRestorableSnapshot } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
 const app = document.querySelector("#app");
 const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now();
-let saveError = false;
+let saveError = false, restoreError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
 let aidSourceId = null;
@@ -40,19 +40,22 @@ function queueSave() {
     })
     .catch((error) => {
       saveError = true;
+      if (run) run.paused = true;
       console.error("存档失败", error);
       render();
     });
 }
 function persistenceBanner() {
   return saveError
-    ? '<p class="notice" role="alert">本次存档未成功写入浏览器，请检查存储权限和剩余空间。后续操作会尝试重新保存。</p>'
+    ? '<p class="notice" role="alert">存档写入失败，模拟已暂停。请勿刷新或关闭页面，先重试保存。 <button data-action="retry-save">重试保存</button></p>'
     : "";
 }
 function sessionBanner() {
   if (session.isOwner) return "";
   const notice = sessionStatus === "starting"
     ? "正在取得本局的独占写入权限……"
+    : restoreError
+      ? "读取存档失败，已停止写入以保护原有存档。请检查存储权限后重试。"
     : session.supported
       ? "另一个标签页正在运行该游戏。本页面为只读，关闭原标签页后可重新取得控制权。"
       : "当前浏览器环境不支持安全的多标签页写入锁；请使用 HTTPS 或 localhost 的现代浏览器。";
@@ -485,7 +488,7 @@ function footer(){if(inQuickStart())return "";return '<nav class="footer-nav" ar
  '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">✧</span><span>灵魂联结</span></button>'+
  '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>战报图鉴</span></button></nav>';}
 async function execute(type,args){
- if(!session.isOwner || commandBusy || !run) return;
+ if(!session.isOwner || commandBusy || saveError || !run) return;
  commandBusy=true;
  const result=Engine.applyCommand(run,{
    operationId:crypto.randomUUID(),
@@ -510,7 +513,7 @@ function reward(){
  run.rewarded=true;profile.runCount++;profile.shards+=run.result.shards;
 }
 function confirmNew(mode="full"){
- if(!session.isOwner || commandBusy)return false;
+ if(!session.isOwner || commandBusy || saveError)return false;
  if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
  profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
@@ -522,6 +525,7 @@ function confirmNew(mode="full"){
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
  if(action==="retry-session"){claimSession();return;}
+ if(action==="retry-save"){if(session.isOwner&&!commandBusy)queueSave();return;}
  if(action==="home"){tab="home";render();return;}
  if(action==="continue"){tab="world";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
@@ -544,7 +548,7 @@ function handleClick(target){
    return;
  }
  if(!session.isOwner){report("当前标签页是只读副本，请重新取得控制权。");return;}
- if(commandBusy)return;
+ if(commandBusy||saveError)return;
  if(action==="new-run"){confirmNew(target.dataset.onboarding||"full");return;}
  if(action==="show-all-worlds"&&run){run.onboardingFocus=false;queueSave();render();return;}
  if(!run)return;
@@ -596,7 +600,7 @@ function handleClick(target){
 app.addEventListener("click",event=>{const t=event.target.closest("[data-action]");if(t)handleClick(t);});
 app.addEventListener("change",event=>{
  const t=event.target,action=t.dataset.action;
- if(!run||!session.isOwner||commandBusy)return;
+ if(!run||!session.isOwner||commandBusy||saveError)return;
  if(t.id==="aid-from"||t.id==="aid-to"){updateAidChoices();return;}
  if(action==="strategy"){execute("strategy",[t.dataset.world,t.value]);return;}
  if(action==="speed"){run.speed=Number(t.value)||1;tickStarted=performance.now();queueSave();render();}
@@ -607,7 +611,7 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("pagehide",()=>{if(run&&session.isOwner)queueSave();});
 window.addEventListener("keydown",e=>{if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}});
 setInterval(()=>{
- if(!session.isOwner||commandBusy||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
+ if(!session.isOwner||commandBusy||saveError||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
  const now=performance.now();
  if(now-tickStarted >= (TEMPOS[run.speed] || TEMPOS[1])){
    // Single day maximum per timer tick: never batch unseen days after background throttling.
@@ -629,6 +633,7 @@ async function claimSession() {
  try {
    // Always reload AFTER acquiring a lock: a previous tab may have progressed.
    const { run: saved, profile: account }=await saveRepository.load();
+   assertRestorableSnapshot({run:saved,profile:account},Engine.VERSION);
    if(account&&typeof account.runCount==="number")profile=account;
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
      run=saved;run.paused=true;
@@ -636,10 +641,12 @@ async function claimSession() {
    }else{
      run=null;
    }
-   if(acquired){tab="world";saveError=false;}
+   if(acquired){tab="world";saveError=false;restoreError=false;}
  }catch(error){
-   saveError=true;
+   restoreError=true;
    console.error("恢复存档失败",error);
+   if(acquired)await session.release();
+   sessionStatus="readonly";
  }
  tickStarted=performance.now();
  render();
