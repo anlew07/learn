@@ -98,7 +98,7 @@ describe("run-local discovery collection", () => {
     const found = summarizeEasterEggCollection(state);
     expect(found.found).toBe(1);
     expect(found.entries[0].title).toBe("修仙也要摸鱼");
-    expect(found.entries[1].detail).not.toContain("末日便利店");
+    expect(found.entries[1].detail).not.toContain("避难便利店");
     const restored = JSON.parse(JSON.stringify(state));
     expect(summarizeEasterEggCollection(restored)).toEqual(found);
   });
@@ -165,8 +165,8 @@ describe("cross-world secret combinations", () => {
     second.flags.easterEggs = [EASTER_EGGS.zombie.id];
     Engine.step(state);
     expect(state.crossworldSecrets).toEqual(["crossworld/tea-and-coffee"]);
-    expect(state.logs.filter((entry) => entry.text.includes("末日茶咖会"))).toHaveLength(1);
+    expect(state.logs.filter((entry) => entry.text.includes("跨界茶咖会"))).toHaveLength(1);
     Engine.step(state);
-    expect(state.logs.filter((entry) => entry.text.includes("末日茶咖会"))).toHaveLength(1);
+    expect(state.logs.filter((entry) => entry.text.includes("跨界茶咖会"))).toHaveLength(1);
   });
 });
