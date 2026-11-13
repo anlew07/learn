@@ -1,5 +1,7 @@
 import "./style.css";
 import Engine from "./engine.js";
+import { ATTACK_PATTERNS } from "./systems/attack-patterns.js";
+import { counteredEliteWaveLabels } from "./systems/survivor-waves.js";
 import { cautiousAftermathSummary } from "./systems/clue-aftermath.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
 import { mergeProfileSecrets, summarizeProfileSecrets, availableArchiveTitles, equipArchiveTitle, selectedArchiveTitle } from "./systems/profile-collection.js";
@@ -240,6 +242,9 @@ function buildHtml(w){
  return '<button data-action="build" data-world="'+w.id+'" data-power="'+id+'">'+
  esc(power.name)+(equipped?' · 升Lv'+(equipped.lv+1):'')+
  '<small style="display:block;color:#91a9bd">'+(power.kind==="clear"?"清潮":power.kind==="defense"?"减损":"资源")+'</small>'+
+ (ATTACK_PATTERNS[id]?'<small class="build-counter-hint">克制：'+
+ esc(counteredEliteWaveLabels(ATTACK_PATTERNS[id].style).join('、')||'暂无限定敌群')+
+ '</small>':'')+
  (canEvolve?'<small class="success-text">✦ 选择后进化</small>':'')+
  '</button>';
  }).join("")+'</div></section>';
