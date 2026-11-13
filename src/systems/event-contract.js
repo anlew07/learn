@@ -60,12 +60,12 @@ export function previewMajorEvent(state,world) {
   return {...result,
     summary:"巢群首领仍在持续施压。需要有效战力Lv3；不具资格时可撤退等待成长。",
     defaultOutcome:direct?
-      "到期自动击败首领，清除持续威胁。":
+      "到期自动击退首领，清除持续威胁。":
       "到期自动撤退，5日后可以再次挑战；巢群继续施压。",
     options:[
-      option("fight","直接讨伐 · 免费","有效Lv3；成功得XP+8、资源+3、P+3、D−5，并清除巢群。",
+      option("fight","直接应对 · 免费","有效Lv3；成功得XP+8、资源+3、P+3、D−5，并清除巢群。",
         direct,"当前有效战力低于Lv3。"),
-      option("boost","资源强化 · 1AP+4材料","本次有效战力+1，不改变实际等级；成功奖励与直接讨伐相同。",
+      option("boost","资源强化 · 1AP+4材料","本次有效战力+1，不改变实际等级；成功奖励与直接应对相同。",
         boosted,"需要Lv2、4材料、1可用AP，强化后有效战力至少Lv3。"),
       option("fusion","灵魂借力 · "+(fusionStatus.kind||"查看资格"),
         "仅本次战斗：需"+(fusionStatus.apCost||"足够")+"AP及同量灵魂，供力者未来3日虚弱。",
