@@ -22,6 +22,8 @@ export const BALANCE = {
     combatResources: 1,
     combatDoomReduction: 0.35,
     threatUrgencyScore: 3.5,
+    beastSuppressionDoomRelief: 2.5,
+    beastSuppressionThreatMitigation: 0.1,
   },
 };
 
