@@ -319,8 +319,8 @@ describe("performance-scaled wave combat budget", () => {
   it("ties clear, loss and loot effects to actual kills and elite counters", () => {
     const equipped = {
       attack: [
-        { id: "blades", lv: 2 },
-        { id: "arc", lv: 2 },
+        { id: "blades", lv: 1 },
+        { id: "arc", lv: 1 },
       ],
       support: [{ id: "armor", lv: 1 }],
       evolved: false,
