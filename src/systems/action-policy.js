@@ -7,7 +7,7 @@
 export const ACTION_LABELS = Object.freeze({
   growth: "成长",
   gather: "采集",
-  fight: "清剿",
+  fight: "排险",
   explore: "探索",
   rescue: "拯救准备",
   repair: "修复防线",
@@ -16,7 +16,7 @@ export const ACTION_LABELS = Object.freeze({
 });
 
 function explanation(world, actionId, { reserve, threatActive, bossLevel }) {
-  if (actionId === "repair") return "安全区毁灭压力过高，优先投入零件修复防线";
+  if (actionId === "repair") return "安全区风险较高，优先投入零件修复防线";
   if (actionId === "suppress") return "后期兽王战力高于当前分身，优先执行常规压制准备";
   if (actionId === "growth") {
     if (world.p >= 100 && world.level < 3) return "终局要求实际等级至少Lv3，需要继续成长";
@@ -29,9 +29,9 @@ function explanation(world, actionId, { reserve, threatActive, bossLevel }) {
   }
   if (actionId === "fight") {
     if (threatActive && world.level >= 2 && world.threat?.progress < 2)
-      return "活跃巢群持续增加毁灭压力，先清理外围威胁";
-    if (world.d > 75) return "毁灭压力较高，尝试清剿敌群减缓恶化";
-    return "清剿偏好较高，在可承担的敌群中积累战斗经历";
+      return "活跃巢群持续增加危机压力，先清理外围威胁";
+    if (world.d > 75) return "危机压力较高，尝试排险敌群减缓恶化";
+    return "排险偏好较高，在可承担的敌群中积累战斗经历";
   }
   if (actionId === "explore") return "尚未定位灾变源，调查能推进主线的关键线索";
   if (actionId === "rescue") return "已经定位核心，优先把拯救准备推进到最终阶段";
