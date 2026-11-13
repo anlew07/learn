@@ -10,8 +10,8 @@ export const FOLLOWUPS = Object.freeze({
     title: "古阵回路 · 阵纹护持",
     summary: "古碑拓本可以接入真实灵脉，但需要灵石和灵魂行动点。",
     paidLabel: "刻印护灵古阵",
-    paidSummary: "消耗1AP和3灵石；立即D−3，并使未来7个游戏日的自然毁灭增长每天下降0.4。",
-    paidOutcome: "古阵刻印完成：D−3；未来7个游戏日自然毁灭增长每天减少0.4。",
+    paidSummary: "消耗1AP和3灵石；立即D−3，并使未来7个游戏日的自然风险增长每天下降0.4。",
+    paidOutcome: "古阵刻印完成：D−3；未来7个游戏日自然风险增长每天减少0.4。",
   }),
   zombie: Object.freeze({
     trigger: "weakness",
@@ -19,7 +19,7 @@ export const FOLLOWUPS = Object.freeze({
     summary: "既已掌握母巢弱点，可用零件干扰附近尸群的异常增殖。",
     paidLabel: "布设干扰信标",
     paidSummary: "消耗1AP和3废土零件；立即D−4，未来7个游戏日免除活跃尸群带来的额外D+0.3/日。",
-    paidOutcome: "干扰信标就绪：D−4；未来7个游戏日可抵消活跃尸群的额外毁灭压力。",
+    paidOutcome: "干扰信标就绪：D−4；未来7个游戏日可抵消活跃尸群的额外危机压力。",
   }),
   beast: Object.freeze({
     trigger: "beastTrail",
