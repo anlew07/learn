@@ -73,6 +73,25 @@ function combatHtml(battle) {
    '<div class="combat-rewards">'+(bonusText.length?bonusText.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="hint">尚无额外战技收益</span>')+'</div>'+
  '</div>';
 }
+function crisisHtml(){
+ const crises=Engine.advise(run);
+ if(!crises.length)return "";
+ return '<section class="panel crisis-panel" aria-label="危机决策提示">'+
+ '<div class="row-between"><h2>危机观察 · 优先关注</h2>'+
+ '<span class="pill warn">'+crises.length+'个世界需要注意</span></div>'+
+ '<p class="hint">根据当前已发生的风险排序；这不是末日结束日预测。查看建议不会花费资源或替你自动操作。</p>'+
+ crises.map(item=>'<article class="crisis-item" data-crisis-world="'+esc(item.worldId)+'">'+
+ '<div class="row-between"><b>'+esc(item.worldName)+'</b>'+
+ '<span class="hint">D'+n(item.doom)+' · 截止还剩'+item.remainingDays+'天</span></div>'+
+ '<p class="crisis-reasons">'+item.notes.map(esc).join('；')+'</p>'+
+ (item.blockers.length?'<p class="crisis-blockers">当前限制：'+item.blockers.slice(0,2).map(esc).join('；')+'</p>':'')+
+ '<div class="crisis-actions">'+item.actions.slice(0,2).map(action=>
+   '<div class="crisis-action"><div class="hint">'+esc(action.detail)+'</div>'+
+   '<button data-action="crisis-'+action.kind+'" data-world="'+esc(action.worldId)+'"'+
+   (action.kind==="aid"?' data-from="'+esc(action.sourceId)+'" data-mode="'+action.mode+'"':'')+
+   '>'+esc(action.label)+'</button></div>'
+ ).join('')+'</div></article>').join('')+'</section>';
+}
 function finaleHtml(world, status) {
  const data = status.finale;
  if (!data || world.status !== "running" || (world.p < 65 && world.d < 70)) return "";
@@ -121,7 +140,7 @@ function worldHtml(w){
 function eventHtml(w){
  const preview=Engine.previewMajorEvent(run,w);
  if(!preview)return "";
- return '<section class="event" aria-label="重大事件干预">'+
+ return '<section class="event" data-world="'+esc(w.id)+'" aria-label="重大事件干预">'+
  '<div class="row-between"><h3>⚠ '+esc(preview.title)+'</h3><span class="pill warn">第'+preview.expiry+'日自动结算</span></div>'+
  '<p class="event-summary">'+esc(preview.summary)+'</p>'+
  '<div class="event-default"><strong>不操作的结果：</strong>'+esc(preview.defaultOutcome)+'</div>'+
@@ -303,7 +322,7 @@ function render(){
    statsHtml()+run.worlds.map(worldHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+crisisHtml()+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
 function footer(){return '<nav class="footer-nav"><button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'">末日世界</button><button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'">万我同源</button><button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'">战报记录</button></nav>';}
 async function execute(type,args){
@@ -348,6 +367,25 @@ function handleClick(target){
  if(commandBusy)return;
  if(action==="new-run"){confirmNew();return;}
  if(!run)return;
+ if(action==="crisis-aid"){
+   const choices=Engine.advise(run);
+   const selected=choices.find(item=>item.worldId===id)?.actions.find(item=>
+     item.kind==="aid"&&item.sourceId===target.dataset.from&&item.mode===mode);
+   if(!selected){render();return;}
+   aidSourceId=selected.sourceId;aidTargetId=id;tab="soul";render();return;
+ }
+ if(action==="crisis-fusion"){
+   if(!Engine.previewFusion(run,id).available){render();return;}
+   tab="soul";render();return;
+ }
+ if(action==="crisis-event"){
+   if(!Engine.previewMajorEvent(run,Engine.byId(run,id))){render();return;}
+   tab="world";render();
+   document.querySelector('.event[data-world="'+id+'"]')?.scrollIntoView({
+     behavior:"smooth",block:"center"
+   });
+   return;
+ }
  if(action==="toggle"){run.paused=!run.paused;tickStarted=performance.now();queueSave();render();return;}
  if(action==="step"){const result=Engine.step(run);if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;}
  if(action==="retreat"){

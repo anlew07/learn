@@ -434,3 +434,84 @@ test("paid strategy choice records its cause without claiming immediate doom red
   expect(log).toHaveLength(1);
   expect(log[0].changes[0].effects.d).toBe(0);
 });
+
+test("crisis advisory compares a legal rescue without spending or changing the world", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await expect(page.locator(".crisis-panel")).toHaveCount(0);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.worlds.find((world) => world.id === "zombie").d = 93;
+    run.worlds.find((world) => world.id === "lingzai").resource = 15;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const panel = page.locator(".crisis-panel");
+  await expect(panel).toHaveCount(1);
+  await expect(panel.locator(".crisis-item")).toHaveCount(1);
+  await expect(panel).toContainText("毁灭压力已达D93");
+  await expect(panel).toContainText("实际D−12");
+  const before = (await getSnapshot(page)).run;
+  await panel.getByRole("button", { name: "比较援助方案" }).click();
+  await expect(page.locator("#aid-from")).toHaveValue("lingzai");
+  await expect(page.locator("#aid-to")).toHaveValue("zombie");
+  await expect(page.locator("#aid-choice-preview")).toContainText("D−12");
+  const after = (await getSnapshot(page)).run;
+  expect(after).toEqual(before);
+});
+
+test("expiring event is shown first and opens its existing choice screen", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "lingzai");
+    world.pendingEvent = {
+      id: "crisis-clue",
+      type: "clue",
+      title: "限时古碑",
+      state: "active",
+      expiresDay: run.day + 1,
+    };
+    run.worlds.find((item) => item.id === "zombie").d = 94;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const cards = page.locator(".crisis-item");
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first()).toHaveAttribute("data-crisis-world", "lingzai");
+  await expect(cards.first()).toContainText("自动处理");
+  const previous = (await getSnapshot(page)).run;
+  await cards.first().getByRole("button", { name: "查看重大事件" }).click();
+  await expect(page.locator('.event[data-world="lingzai"]')).toBeVisible();
+  expect((await getSnapshot(page)).run).toEqual(previous);
+});
+
+test("a P100 materials-only finale displays a blocker, not an invalid aid shortcut", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "zombie");
+    world.p = 100;
+    world.flags.p65 = true;
+    world.flags.p100 = true;
+    world.level = 3;
+    world.resource = 4;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const crisis = page.locator('.crisis-item[data-crisis-world="zombie"]');
+  await expect(crisis).toBeVisible();
+  await expect(crisis).toContainText("材料");
+  await expect(crisis).toContainText("跨世界援助不会转移材料");
+  await expect(crisis.locator('button[data-action="crisis-aid"]')).toHaveCount(0);
+  await expect(crisis.locator('button[data-action="crisis-fusion"]')).toHaveCount(0);
+});

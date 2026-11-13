@@ -10,6 +10,7 @@ import { evaluateFusion } from "./systems/fusion-contract.js";
 import { previewResourceAid } from "./systems/aid-contract.js";
 import { previewStrategyChange } from "./systems/strategy-contract.js";
 import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
+import { assessCrises } from "./systems/crisis-advisor.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -546,8 +547,12 @@ const MultiworldEngine = (function () {
       finale:summarizeFinale(s,w,{definition:WORLDS[w.id],bossLevel:bossLevel,
         effectiveLevel:effectiveLevel(s,w),canFinish:ready})};
   }
+  function advise(s){
+    return assessCrises(s,{info:info,event:previewMajorEvent,
+      fusion:previewFusion,aid:previewResourceAid});
+  }
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
-    fresh:fresh,step:step,byId:byId,info:info,availableAP:availableAP,chooseBuild:chooseBuild,
+    fresh:fresh,step:step,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
     resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
