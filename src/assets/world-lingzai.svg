@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 340" fill="none">
+<defs><linearGradient id="sky" x1="600" y1="0" x2="600" y2="340" gradientUnits="userSpaceOnUse"><stop stop-color="#1E5468"/><stop offset=".63" stop-color="#10334D"/><stop offset="1" stop-color="#091725"/></linearGradient><linearGradient id="mist" x1="450" y1="135" x2="920" y2="340" gradientUnits="userSpaceOnUse"><stop stop-color="#8AE6D6" stop-opacity=".46"/><stop offset="1" stop-color="#8AE6D6" stop-opacity="0"/></linearGradient></defs>
+<path d="M0 0h950v340H0z" fill="url(#sky)"/>
+<path d="M0 139c130-54 174-22 261-67 102-54 142 24 245 1 108-25 217-83 444-15v131H0V139Z" fill="#356B76" fill-opacity=".18"/>
+<circle cx="743" cy="78" r="48" stroke="#A4EBDD" stroke-opacity=".46" stroke-width="2"/><circle cx="743" cy="78" r="66" stroke="#E8D7B2" stroke-opacity=".23" stroke-dasharray="4 9"/>
+<circle cx="743" cy="78" r="29" fill="#A8EAD4" fill-opacity=".15"/>
+<path d="M418 249 540 101l53 63 65-99 120 177 73-81 99 100v79H364l54-91Z" fill="#1B4861"/>
+<path d="m508 215 80-99 28 43 40-76 95 132-89-66-43 42-35-40-76 64Z" fill="#518E8D" fill-opacity=".52"/>
+<path d="m555 243 105-107 31 23 54-66 109 149 96-72v170H476l79-97Z" fill="#0B283E" fill-opacity=".78"/>
+<path d="M647 219h156v11H647v-11Zm21-19h119v10H668v-10Zm19-18h82v11h-82v-11Z" fill="#C7DBB5" fill-opacity=".62"/>
+<path d="M710 132h36l11 50h-58l11-50Zm-24 99h79v67h-79v-67Zm-26 69h134v40H660v-40Z" fill="#0A2235"/>
+<path d="m670 198 56-24 57 24M644 224l82-28 84 28M628 300l99-20 101 20" stroke="#C5DFC4" stroke-opacity=".7" stroke-width="4" stroke-linecap="round"/>
+<path d="M707 250h40v48h-40z" fill="#82E8D0" fill-opacity=".3"/><path d="M726 235v60m-24-36h48" stroke="#E2E7BE" stroke-opacity=".75"/>
+<path d="M0 288c110-24 216-4 343-24 148-23 287 8 408-4 100-9 144-4 199 4v76H0v-52Z" fill="#091927" fill-opacity=".75"/>
+<path d="M365 281c164-53 314-25 495-19" stroke="url(#mist)" stroke-width="34" stroke-linecap="round"/>
+<path d="M773 27v11m-5-5h11M510 71v9m-4-4h8M886 115v10m-5-5h10M601 44v8m-4-4h8" stroke="#CCF9EA" stroke-opacity=".8" stroke-linecap="round"/>
+<path d="M579 296c-9-53 16-91 16-91s17 36 6 91m228 1c-16-63 17-91 17-91s20 54 3 91" stroke="#7AD5C8" stroke-opacity=".7" stroke-width="3"/>
+</svg>
