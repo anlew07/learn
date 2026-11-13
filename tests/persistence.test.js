@@ -80,9 +80,31 @@ describe("save recovery guard", () => {
       day: 3,
       ap: 2,
       soul: 7,
+      active: true,
+      paused: true,
+      logs: [],
+      echoes: [],
       worlds: [
-        { id: "lingzai", status: "running" },
-        { id: "zombie", status: "saved" },
+        {
+          id: "lingzai",
+          status: "running",
+          level: 2,
+          resource: 8,
+          p: 30,
+          d: 12,
+          flags: {},
+          build: { attack: [], support: [] },
+        },
+        {
+          id: "zombie",
+          status: "saved",
+          level: 3,
+          resource: 2,
+          p: 100,
+          d: 20,
+          flags: {},
+          build: { attack: [], support: [] },
+        },
       ],
     },
     profile: { runCount: 1, shards: 3 },
@@ -101,6 +123,12 @@ describe("save recovery guard", () => {
       { ...valid(), run: { ...valid().run, worlds: [{ id: "lingzai" }, null] } },
       { ...valid(), run: { ...valid().run, day: NaN } },
       { ...valid(), run: "not-json-state" },
+      { ...valid(), run: { ...valid().run, logs: null } },
+      { ...valid(), run: { ...valid().run, paused: null } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], build: null }, valid().run.worlds[1]] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], build: { attack: [null], support: [] } }, valid().run.worlds[1]] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], flags: [] }, valid().run.worlds[1]] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], p: "bad" }, valid().run.worlds[1]] } },
     ];
     for (const snapshot of cases) {
       const before = JSON.stringify(snapshot);
@@ -137,5 +165,72 @@ describe("save recovery guard", () => {
     expect(store.get(STORAGE_KEYS.run)).toEqual(original.run);
     failRead = false;
     expect(await repository.load()).toEqual(original);
+  });
+});
+
+describe("queued save failures under contention", () => {
+  it("blocks already-queued writes after failure until an explicit new save", async () => {
+    const persisted = new Map();
+    const started = [];
+    let rejectFirst;
+    const firstGate = new Promise((_resolve, reject) => {
+      rejectFirst = reject;
+    });
+    const repository = createSaveRepository({
+      getMany: async (keys) => keys.map((key) => persisted.get(key)),
+      setMany: async (entries) => {
+        const day = entries[0][1].day;
+        started.push(day);
+        if (day === 2) await firstGate;
+        for (const [key, value] of entries) persisted.set(key, value);
+      },
+    });
+    const first = repository.enqueueSave({ day: 2 }, { shards: 2 });
+    const second = repository.enqueueSave({ day: 3 }, { shards: 3 });
+    const third = repository.enqueueSave({ day: 4 }, { shards: 4 });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(started).toEqual([2]);
+    rejectFirst(new DOMException("Quota exceeded", "QuotaExceededError"));
+    await expect(first).rejects.toMatchObject({ name: "QuotaExceededError" });
+    await expect(second).rejects.toMatchObject({ name: "QuotaExceededError" });
+    await expect(third).rejects.toMatchObject({ name: "QuotaExceededError" });
+    expect(started).toEqual([2]);
+    expect(await repository.load()).toEqual({ run: null, profile: null });
+
+    // Only a new user-triggered retry may write the latest in-memory state.
+    await repository.enqueueSave({ day: 4 }, { shards: 4 });
+    expect(started).toEqual([2, 4]);
+    expect(await repository.load()).toEqual({ run: { day: 4 }, profile: { shards: 4 } });
+  });
+
+  it("deep-copies the newest snapshot before pending writes finish", async () => {
+    const persisted = new Map();
+    let unlock;
+    const waiting = new Promise((resolve) => {
+      unlock = resolve;
+    });
+    let first = true;
+    const repository = createSaveRepository({
+      getMany: async (keys) => keys.map((key) => persisted.get(key)),
+      setMany: async (entries) => {
+        if (first) {
+          first = false;
+          await waiting;
+        }
+        for (const [key, value] of entries) persisted.set(key, value);
+      },
+    });
+    const previous = repository.enqueueSave({ day: 1 }, { shards: 0 });
+    const run = { day: 2, worlds: [{ resource: 8, build: { attack: [{ lv: 1 }] } }] };
+    const profile = { shards: 5 };
+    const next = repository.enqueueSave(run, profile);
+    run.worlds[0].build.attack[0].lv = 3;
+    profile.shards = 50;
+    unlock();
+    await Promise.all([previous, next]);
+    const result = await repository.load();
+    expect(result.run.worlds[0].build.attack[0].lv).toBe(1);
+    expect(result.profile.shards).toBe(5);
   });
 });
