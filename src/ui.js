@@ -195,7 +195,8 @@ function controls(){
  '<div class="dashboard-heading"><div><span class="eyebrow">SURVIVAL OPERATION</span>'+
  '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 多世界行动</span></h1></div>'+
  '<span class="run-live">'+(run.active?'● 进行中':'◆ 本局结束')+'</span></div>'+
- '<div class="metrics"><div class="metric"><b>'+run.soul+'</b><span>◈ 灵魂强度</span></div>'+
+ '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>◷ 全局游戏日</span></div>'+
+ '<div class="metric"><b>'+run.soul+'</b><span>◈ 灵魂强度</span></div>'+
  '<div class="metric"><b>'+Engine.availableAP(run)+'<small> / '+run.apMax+'</small></b><span>✧ 可用行动点</span></div>'+
  '<div class="metric"><b>'+win()+'<small> / '+run.worlds.length+'</small></b><span>✓ 已拯救世界</span></div></div>'+
  '<div class="controls"><button class="btn run-toggle" data-action="toggle">'+(run.paused?'▶ 继续模拟':'Ⅱ 暂停模拟')+'</button>'+
