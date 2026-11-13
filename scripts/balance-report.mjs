@@ -22,6 +22,10 @@ for (const runNumber of [1, 2, 3]) {
       let incomplete = 0;
       const savedByWorld = {};
       const actionTotals = {};
+      const actionsByWorld = {};
+      const outcomeReasonsByWorld = {};
+      const endDayTotalsByWorld = {};
+      const endDayCountsByWorld = {};
       let worldCount = 0;
       let waveBattles = 0;
       let evolutionCount = 0;
@@ -30,6 +34,9 @@ for (const runNumber of [1, 2, 3]) {
       let extraXp = 0;
       let extraResources = 0;
       let extraDoomReduction = 0;
+      let waveClearBonus = 0;
+      let waveLossMitigation = 0;
+      let waveLootModifier = 0;
 
       for (let index = 0; index < samples; index++) {
         // Keep the same seed across strategies and wave settings for useful comparisons.
@@ -57,8 +64,43 @@ for (const runNumber of [1, 2, 3]) {
           savedByWorld[world.id] = (savedByWorld[world.id] || 0) + Number(world.status === "saved");
           worldCount++;
           const metrics = world.metrics || {};
+          const worldActions = actionsByWorld[world.id] || (actionsByWorld[world.id] = {});
           for (const [action, count] of Object.entries(metrics.actions || {})) {
             actionTotals[action] = (actionTotals[action] || 0) + count;
+            worldActions[action] = (worldActions[action] || 0) + count;
+          }
+          const outcomes =
+            outcomeReasonsByWorld[world.id] ||
+            (outcomeReasonsByWorld[world.id] = { saved: 0, failed: {} });
+          if (world.status === "saved") {
+            outcomes.saved++;
+          } else {
+            const terminalLog = [...state.logs]
+              .reverse()
+              .find(
+                (entry) =>
+                  entry.world === world.id &&
+                  (entry.text.startsWith("末日降临：") || entry.text.includes("灵魂归零")),
+              );
+            const reason = terminalLog?.text.startsWith("末日降临：")
+              ? terminalLog.text.split("：")[1].split("。")[0]
+              : terminalLog
+                ? "灵魂坍塌"
+                : "未知原因";
+            outcomes.failed[reason] = (outcomes.failed[reason] || 0) + 1;
+          }
+          const endLog = [...state.logs]
+            .reverse()
+            .find(
+              (entry) =>
+                entry.world === world.id &&
+                (entry.kind === "success" ||
+                  entry.text.startsWith("末日降临：") ||
+                  entry.text.includes("灵魂归零")),
+            );
+          if (endLog) {
+            endDayTotalsByWorld[world.id] = (endDayTotalsByWorld[world.id] || 0) + endLog.day;
+            endDayCountsByWorld[world.id] = (endDayCountsByWorld[world.id] || 0) + 1;
           }
           waveBattles += metrics.waveCombats || 0;
           evolutionCount += metrics.evolutions || 0;
@@ -67,6 +109,9 @@ for (const runNumber of [1, 2, 3]) {
           extraXp += metrics.extraXp || 0;
           extraResources += metrics.extraResources || 0;
           extraDoomReduction += metrics.extraDoomReduction || 0;
+          waveClearBonus += metrics.waveClearBonus || 0;
+          waveLossMitigation += metrics.waveLossMitigation || 0;
+          waveLootModifier += metrics.waveLootModifier || 0;
         });
       }
 
@@ -86,7 +131,38 @@ for (const runNumber of [1, 2, 3]) {
             completed ? Number((count / completed).toFixed(3)) : null,
           ]),
         ),
+        worldOutcomeReasons: Object.fromEntries(
+          Object.entries(outcomeReasonsByWorld).map(([id, outcomes]) => [
+            id,
+            {
+              savedRate: completed ? Number((outcomes.saved / completed).toFixed(3)) : null,
+              failureReasons: Object.fromEntries(
+                Object.entries(outcomes.failed).map(([reason, count]) => [
+                  reason,
+                  completed ? Number((count / completed).toFixed(3)) : null,
+                ]),
+              ),
+            },
+          ]),
+        ),
+        meanWorldEndDay: Object.fromEntries(
+          Object.entries(endDayTotalsByWorld).map(([id, total]) => [
+            id,
+            Number((total / endDayCountsByWorld[id]).toFixed(1)),
+          ]),
+        ),
         engagement: {
+          meanActionsByWorld: Object.fromEntries(
+            Object.entries(actionsByWorld).map(([id, actions]) => [
+              id,
+              Object.fromEntries(
+                Object.entries(actions).map(([action, count]) => [
+                  action,
+                  completed ? Number((count / completed).toFixed(2)) : 0,
+                ]),
+              ),
+            ]),
+          ),
           meanActionsPerRun: Object.fromEntries(
             Object.entries(actionTotals).map(([action, count]) => [
               action,
@@ -102,6 +178,11 @@ for (const runNumber of [1, 2, 3]) {
           meanExtraDoomReduction: completed
             ? Number((extraDoomReduction / completed).toFixed(2))
             : 0,
+          meanWaveClearBonus: completed ? Number((waveClearBonus / completed).toFixed(2)) : 0,
+          meanWaveLossMitigation: completed
+            ? Number((waveLossMitigation / completed).toFixed(2))
+            : 0,
+          meanWaveLootModifier: completed ? Number((waveLootModifier / completed).toFixed(2)) : 0,
         },
       });
     }
@@ -132,12 +213,22 @@ if (shouldAssert) {
     const e = row.engagement;
     const totalBattles = e.meanActionsPerRun.fight || 0;
     if (e.meanWaveBattles > totalBattles + 0.02) return true;
-    if (row.waves) return e.meanExtraXp > e.meanWaveBattles * 0.75 + 0.05;
+    if (row.waves) {
+      return (
+        e.meanExtraXp > e.meanWaveBattles * 0.75 + 0.05 ||
+        e.meanWaveClearBonus > e.meanWaveBattles * 0.15 + 0.05 ||
+        e.meanWaveLossMitigation > e.meanWaveBattles * 0.08 + 0.05 ||
+        e.meanWaveLootModifier > e.meanWaveBattles * 0.1 + 0.05
+      );
+    }
     return (
       e.meanWaveBattles !== 0 ||
       e.meanExtraXp !== 0 ||
       e.meanExtraResources !== 0 ||
       e.meanExtraDoomReduction !== 0 ||
+      e.meanWaveClearBonus !== 0 ||
+      e.meanWaveLossMitigation !== 0 ||
+      e.meanWaveLootModifier !== 0 ||
       e.evolutionRatePerWorld !== 0
     );
   });

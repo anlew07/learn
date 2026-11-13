@@ -264,3 +264,153 @@ describe("evolved ultimate wave attacks", () => {
     expect(result.waves.every((wave) => wave.attack.bonus === 0)).toBe(true);
   });
 });
+
+describe("late-game elite enemy waves", () => {
+  it("introduces predictable threats at day thresholds without adding random state", async () => {
+    const { waveEnemyTrait, simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const empty = { attack: [], support: [], evolved: false };
+    expect(waveEnemyTrait(13, 1)).toBeNull();
+    expect(waveEnemyTrait(14, 1)?.id).toBe("horde");
+    expect(waveEnemyTrait(21, 2)?.id).toBe("armored");
+    expect(waveEnemyTrait(28, 3)?.id).toBe("swift");
+    const first = simulateSurvivorWaves("beast", empty, POWERS, {
+      day: 28, level: 2, momentum: 0,
+    });
+    expect(first.waves.map((wave) => wave.trait.id)).toEqual(["horde", "armored", "swift"]);
+    expect(JSON.parse(JSON.stringify(first))).toEqual(first);
+    expect(first.waves.every((wave) => wave.defeated <= wave.encountered)).toBe(true);
+  });
+
+  it("matching weapon styles counter elite resistance in actual kill counts", async () => {
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const withWeapon = (id) => ({
+      attack: [{ id, lv: 1 }], support: [], evolved: false,
+    });
+    const chain = simulateSurvivorWaves("lingzai", withWeapon("thunder"), POWERS, {
+      day: 35, level: 2, momentum: 0,
+    });
+    const pierce = simulateSurvivorWaves("lingzai", withWeapon("sword"), POWERS, {
+      day: 35, level: 2, momentum: 0,
+    });
+    expect(chain.waves[0].trait.countered).toBe(true);
+    expect(chain.waves[1].trait.countered).toBe(false);
+    expect(pierce.waves[1].trait.countered).toBe(true);
+    expect(pierce.waves[0].trait.countered).toBe(false);
+    expect(pierce.waves[1].defeated).toBeGreaterThan(0);
+    expect(chain.waves[0].defeated).toBeGreaterThan(0);
+    expect(chain.waves.every((wave) => wave.defeated <= wave.encountered)).toBe(true);
+  });
+});
+
+describe("skill choices explain existing elite counters", () => {
+  it("derives the displayed counters from the same enemy rules used for kills", async () => {
+    const { counteredEliteWaveLabels, ELITE_WAVES } = await import("../src/systems/survivor-waves.js");
+    expect(counteredEliteWaveLabels("fan")).toEqual(["密集异常群"]);
+    expect(counteredEliteWaveLabels("pierce")).toEqual(["装甲防线"]);
+    expect(counteredEliteWaveLabels("chain")).toEqual(["密集异常群", "迅捷兽影"]);
+    expect(counteredEliteWaveLabels("storm")).toEqual(["密集异常群", "装甲防线"]);
+    expect(counteredEliteWaveLabels("basic")).toEqual([]);
+    expect(Object.keys(ELITE_WAVES)).toHaveLength(3);
+  });
+});
+
+
+describe("performance-scaled wave combat budget", () => {
+  it("ties clear, loss and loot effects to actual kills and elite counters", () => {
+    const equipped = {
+      attack: [
+        { id: "blades", lv: 1 },
+        { id: "arc", lv: 1 },
+      ],
+      support: [{ id: "armor", lv: 1 }],
+      evolved: false,
+    };
+    const poorClear = {
+      encountered: 30,
+      defeated: 6,
+      waves: [
+        { trait: { countered: false } },
+        { trait: { countered: false } },
+        { trait: { countered: false } },
+      ],
+    };
+    const strongClear = {
+      encountered: 30,
+      defeated: 27,
+      waves: [
+        { trait: { countered: true } },
+        { trait: { countered: false } },
+        { trait: { countered: true } },
+      ],
+    };
+    const weak = computeWaveBonuses("zombie", equipped, POWERS, poorClear);
+    const strong = computeWaveBonuses("zombie", equipped, POWERS, strongClear);
+
+    expect(strong.clearRate).toBe(0.9);
+    expect(strong.counteredWaves).toBe(2);
+    expect(strong.waveClearBonus).toBeGreaterThan(weak.waveClearBonus);
+    expect(strong.waveLossMitigation).toBeGreaterThan(weak.waveLossMitigation);
+    expect(strong.waveLootModifier).toBeGreaterThan(weak.waveLootModifier);
+    expect(strong.xp).toBeLessThanOrEqual(0.75);
+    expect(strong.resource).toBeLessThanOrEqual(0.5);
+    expect(strong.doomReduction).toBeLessThanOrEqual(0.25);
+  });
+
+  it("does not award evolution effects from a forged flag without the real combo", () => {
+    const forged = {
+      attack: [],
+      support: [{ id: "armor", lv: 1 }],
+      evolved: true,
+      evolutionName: "钢雨防线",
+    };
+    const ordinary = computeWaveBonuses("zombie", { ...forged, evolved: false }, POWERS);
+    const invalid = computeWaveBonuses("zombie", forged, POWERS);
+
+    expect(invalid.evolution).toBe("");
+    expect(invalid.xp).toBe(ordinary.xp);
+    expect(invalid.resource).toBe(ordinary.resource);
+    expect(invalid.doomReduction).toBe(ordinary.doomReduction);
+    expect(invalid.waveClearBonus).toBe(0);
+    expect(invalid.waveLootModifier).toBe(0);
+  });
+});
+
+
+describe("shared combat effect budget across all worlds", () => {
+  const worlds = [
+    { id: "lingzai", clear: "thunder", loot: "sword", defense: "rune" },
+    { id: "zombie", clear: "blades", loot: "arc", defense: "armor" },
+    { id: "beast", clear: "claws", loot: "roar", defense: "instinct" },
+  ];
+
+  for (const world of worlds) {
+    it(`${world.id}: uses real clear performance for all three effect channels`, () => {
+      const equipped = {
+        attack: [
+          { id: world.clear, lv: 1 },
+          { id: world.loot, lv: 1 },
+        ],
+        support: [{ id: world.defense, lv: 1 }],
+        evolved: false,
+      };
+      const spectacle = {
+        encountered: 30,
+        defeated: 27,
+        waves: [
+          { trait: { countered: true } },
+          { trait: { countered: false } },
+          { trait: { countered: false } },
+        ],
+      };
+      const effect = computeWaveBonuses(world.id, equipped, POWERS, spectacle);
+
+      expect(effect.clearRate).toBe(0.9);
+      expect(effect.waveClearBonus).toBeGreaterThan(0);
+      expect(effect.waveLossMitigation).toBeGreaterThan(0);
+      expect(effect.waveLootModifier).toBeGreaterThan(0);
+      expect(effect.xp).toBeLessThanOrEqual(0.5);
+      expect(effect.resource).toBeLessThanOrEqual(0.25);
+      expect(effect.doomReduction).toBeLessThanOrEqual(0.15);
+    });
+  }
+});

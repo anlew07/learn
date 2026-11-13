@@ -1,5 +1,26 @@
 import { featuredWaveAttack, evolvedWaveUltimate } from "./attack-patterns.js";
 
+/** Late-game wave traits use the existing combat and power rules. */
+export const ELITE_WAVES = Object.freeze({
+  horde: Object.freeze({ label: "密集异常群", extraEnemies: 4, defense: 0, counters: ["fan", "chain", "storm", "barrage"] }),
+  armored: Object.freeze({ label: "装甲防线", extraEnemies: 0, defense: 3, counters: ["pierce", "shockwave", "storm", "hunt"] }),
+  swift: Object.freeze({ label: "迅捷兽影", extraEnemies: 2, defense: 2, counters: ["flurry", "chain", "hunt", "barrage"] }),
+});
+
+/** Shared UI/gameplay description; derived from the same enemy counter table. */
+export function counteredEliteWaveLabels(attackStyle) {
+  return Object.values(ELITE_WAVES)
+    .filter((trait) => trait.counters.includes(attackStyle))
+    .map((trait) => trait.label);
+}
+
+export function waveEnemyTrait(day, wave) {
+  const trait = wave === 1 && day >= 14 ? "horde" :
+    wave === 2 && day >= 21 ? "armored" :
+    wave === 3 && day >= 28 ? "swift" : "";
+  return trait ? { id: trait, ...ELITE_WAVES[trait] } : null;
+}
+
 /**
  * Three deterministic monster waves for the optional survivors experiment.
  * The number of enemies encountered and defeated comes from level, equipped
@@ -22,12 +43,20 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
     support + (build.evolved ? 6 : 0) + Math.min(3, momentum) * 2;
   let chain = 0;
   const waves = [1, 2, 3].map((wave) => {
-    const encountered = baseEnemies + (wave - 1) * 5;
+    const trait = waveEnemyTrait(day, wave);
+    const encountered = baseEnemies + (wave - 1) * 5 + (trait?.extraEnemies || 0);
     const attack = evolvedWaveUltimate(worldId, build, wave) ||
       featuredWaveAttack(worldId, build, powers, wave);
-    const defeated = Math.min(encountered, Math.max(0, power - (wave - 1) * 2 + attack.bonus));
+    const countered = Boolean(trait?.counters.includes(attack.style));
+    // A matching attack offsets elite resistance, but cannot exceed the
+    // actual encounter count or create any material/XP rewards.
+    const traitPenalty = trait?.defense || 0;
+    const counterBonus = countered ? 3 : 0;
+    const defeated = Math.min(encountered, Math.max(0,
+      power - (wave - 1) * 2 + attack.bonus - traitPenalty + counterBonus));
     chain = defeated === encountered ? chain + 1 : 0;
-    return { wave, encountered, defeated, cleared: defeated === encountered, attack };
+    return { wave, encountered, defeated, cleared: defeated === encountered,
+      attack, trait: trait ? { id: trait.id, label: trait.label, countered } : null };
   });
   const encountered = waves.reduce((sum, wave) => sum + wave.encountered, 0);
   const defeated = waves.reduce((sum, wave) => sum + wave.defeated, 0);

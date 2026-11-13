@@ -556,3 +556,190 @@ button { border-radius: 5px; }
   .survivor-score.frenzy-active,
   .replay-wave .replay-hit { animation: none !important; }
 }
+
+/* r3 · mobile information hierarchy and touch ergonomics (presentation only).
+   Scope new styles to existing panels; do not change any UI command contracts. */
+.onboarding-card {
+  border-radius: 5px;
+  border-left: 4px solid #8de7d6;
+  box-shadow: inset 0 1px 0 #ffffff14;
+}
+.crisis-panel {
+  border-left: 4px solid #d7a66b;
+  background: linear-gradient(140deg, #332c30, #172332);
+}
+.crisis-item,
+.aid-option,
+.event-choice,
+.finale-preview,
+.intervention-item {
+  border-radius: 5px;
+}
+.event {
+  border-left: 4px solid #edc68e;
+}
+.event-default {
+  border-left: 3px solid #8edcbd;
+}
+.event-choice-detail,
+.crisis-reasons,
+.crisis-blockers,
+.aid-option .hint,
+.replay-note {
+  color: #c5d5df;
+}
+.crisis-item .row-between,
+.intervention-item .row-between,
+.replay-head,
+.world-head {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.crisis-action > .hint,
+.event-choice-detail,
+.replay-attack-name,
+.replay-trait[data-wave-trait],
+.world-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.aid-options {
+  align-items: stretch;
+}
+.aid-option {
+  background: #102538;
+  border-color: #4b6675;
+}
+.aid-option button {
+  min-height: 48px;
+}
+.finale-preview summary,
+.world-intel summary,
+.archive-discoveries summary {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+button,
+select,
+summary,
+.home-link {
+  touch-action: manipulation;
+}
+.event-choice button,
+.crisis-action button,
+.fusion-row button,
+.soul-row button,
+.select-row button,
+.replay-head button,
+.build-choice button,
+.collection-titles button {
+  min-height: 44px;
+}
+.replay-head button {
+  font-size: .78rem;
+}
+.replay-wave-name {
+  color: #b0dce0;
+}
+.replay-wave-count {
+  color: #c3edf0;
+}
+.footer-nav button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (hover: none) and (pointer: coarse) {
+  /* Avoid hover stickiness on touch screens; focus-visible still indicates keyboards. */
+  button:hover:not(:disabled) {
+    transform: none;
+  }
+  .footer-nav {
+    backdrop-filter: none;
+    background: #0c1727f8;
+  }
+}
+@media (max-width: 400px) {
+  .game-content,
+  .panel,
+  .world,
+  .run-dashboard {
+    min-width: 0;
+  }
+  .section-banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .section-hint {
+    text-align: left;
+  }
+  .event-choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .event-choice button {
+    width: 100%;
+    max-width: none;
+  }
+  .crisis-item,
+  .aid-option,
+  .event-choice {
+    padding: 10px;
+  }
+  .replay-head {
+    align-items: center;
+  }
+  .replay-wave-name {
+    font-size: .7rem;
+  }
+  .replay-wave-count,
+  .replay-attack-name,
+  .replay-trait[data-wave-trait] {
+    font-size: .73rem;
+    line-height: 1.45;
+  }
+  .survivor-wave {
+    font-size: .74rem;
+    padding: 8px 5px;
+  }
+  .footer-nav {
+    gap: 5px;
+  }
+  .footer-nav button {
+    padding-inline: 3px;
+    line-height: 1.3;
+    min-height: 56px;
+  }
+}
+@media (max-width: 350px) {
+  .hero {
+    min-height: 300px;
+  }
+  .world-meta {
+    padding: 9px;
+    font-size: .78rem;
+    line-height: 1.6;
+  }
+  .run-dashboard .metric span {
+    font-size: .65rem;
+    line-height: 1.3;
+  }
+  .world-intel summary {
+    gap: 6px;
+  }
+  .intel-summary-hint {
+    font-size: .65rem;
+  }
+  .replay-arena {
+    padding-inline: 35px 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero::after,
+  .survivor-score.frenzy-active,
+  .replay-arena.is-playing .replay-wave,
+  .replay-arena.is-playing .replay-foe,
+  .replay-arena.is-playing .replay-hero,
+  .replay-arena.is-playing .replay-frenzy,
+  .replay-arena.is-playing .replay-hit {
+    animation: none !important;
+  }
+}

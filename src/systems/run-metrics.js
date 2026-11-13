@@ -16,6 +16,9 @@ export function getWorldMetrics(world) {
       extraXp: 0,
       extraResources: 0,
       extraDoomReduction: 0,
+      waveClearBonus: 0,
+      waveLossMitigation: 0,
+      waveLootModifier: 0,
       manualBuilds: 0,
       automaticBuilds: 0,
       evolutions: 0,
@@ -35,6 +38,15 @@ export function recordWaveOutcome(world, bonus) {
   metrics.extraXp = round2(metrics.extraXp + bonus.xp);
   metrics.extraResources = round2(metrics.extraResources + bonus.resource);
   metrics.extraDoomReduction = round2(metrics.extraDoomReduction + bonus.doomReduced);
+  metrics.waveClearBonus = round2(
+    (metrics.waveClearBonus || 0) + (bonus.waveClearBonus || 0),
+  );
+  metrics.waveLossMitigation = round2(
+    (metrics.waveLossMitigation || 0) + (bonus.waveLossMitigation || 0),
+  );
+  metrics.waveLootModifier = round2(
+    (metrics.waveLootModifier || 0) + (bonus.waveLootModifier || 0),
+  );
 }
 
 export function recordBuildChoice(world, automatic, evolvedNow) {

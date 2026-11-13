@@ -503,3 +503,28 @@ button:active:not(:disabled){transform:translateY(1px)}
   .replay-arena.is-playing .attack-barrage .replay-hit,
   .replay-arena.is-playing .attack-hunt .replay-hit{animation:none!important}
 }
+
+
+/* Elite wave signatures reuse the existing attack replay and CSS animation. */
+.replay-trait{grid-column:1/-1;color:#edbd9b;font-size:.65rem;font-weight:800}
+.replay-trait[data-wave-trait="armored"]{color:#d9c7ae}
+.replay-trait[data-wave-trait="swift"]{color:#cbb9f9}
+.replay-wave:has(.replay-trait){border-style:solid}
+
+
+/* Built from the same elite counter definitions as combat, not UI-only guesses. */
+.build-counter-hint{display:block;margin-top:3px;font-size:.72rem;font-weight:750;color:#9ce7d2;line-height:1.45}
+
+
+/* First-run spotlight reuses existing panels and keeps advanced routes opt-in. */
+.onboarding-card{
+  padding:16px;
+  border-left:3px solid #8de7d6;
+  background:linear-gradient(135deg,#142c37,#132133);
+}
+.onboarding-card strong{font-size:1rem}
+.onboarding-card p{line-height:1.65;margin:10px 0}
+.onboarding-card .btn-soft{width:100%;min-height:44px;margin-top:8px}
+@media(max-width:390px){
+  .onboarding-card{padding:13px}
+}
