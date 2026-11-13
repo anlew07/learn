@@ -374,3 +374,43 @@ describe("performance-scaled wave combat budget", () => {
     expect(invalid.waveLootModifier).toBe(0);
   });
 });
+
+
+describe("shared combat effect budget across all worlds", () => {
+  const worlds = [
+    { id: "lingzai", clear: "thunder", loot: "sword", defense: "rune" },
+    { id: "zombie", clear: "blades", loot: "arc", defense: "armor" },
+    { id: "beast", clear: "claws", loot: "roar", defense: "instinct" },
+  ];
+
+  for (const world of worlds) {
+    it(`${world.id}: uses real clear performance for all three effect channels`, () => {
+      const equipped = {
+        attack: [
+          { id: world.clear, lv: 1 },
+          { id: world.loot, lv: 1 },
+        ],
+        support: [{ id: world.defense, lv: 1 }],
+        evolved: false,
+      };
+      const spectacle = {
+        encountered: 30,
+        defeated: 27,
+        waves: [
+          { trait: { countered: true } },
+          { trait: { countered: false } },
+          { trait: { countered: false } },
+        ],
+      };
+      const effect = computeWaveBonuses(world.id, equipped, POWERS, spectacle);
+
+      expect(effect.clearRate).toBe(0.9);
+      expect(effect.waveClearBonus).toBeGreaterThan(0);
+      expect(effect.waveLossMitigation).toBeGreaterThan(0);
+      expect(effect.waveLootModifier).toBeGreaterThan(0);
+      expect(effect.xp).toBeLessThanOrEqual(0.5);
+      expect(effect.resource).toBeLessThanOrEqual(0.25);
+      expect(effect.doomReduction).toBeLessThanOrEqual(0.15);
+    });
+  }
+});
