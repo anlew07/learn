@@ -404,3 +404,155 @@ summary:focus-visible { outline-color: #b3ffdc; outline-width: 3px; outline-offs
   .world .replay-foe { width: 9px; height: 11px; flex-basis: 9px; }
   .replay-trait[data-wave-trait] { font-size: .61rem; }
 }
+
+
+/* r2 / Pixel-art asset kit: keep crisp nearest-neighbor sprites without
+   a raster pipeline, icon dependency, external font, or gameplay code. */
+.hero::after,
+.world::after,
+.brand-mark,
+.world .world-insignia,
+.world .replay-hero,
+.replay-trait[data-wave-trait]::before,
+.replay-wave .replay-hit {
+  image-rendering: pixelated;
+}
+.hero::after {
+  width: min(41%, 350px);
+  filter: none;
+  opacity: .98;
+}
+.hero {
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(0deg, #dcefe908 0 1px, transparent 1px 20px),
+    radial-gradient(ellipse at 85% 45%, #235b6873, transparent 70%),
+    linear-gradient(112deg, #17283d, #101b2c 72%);
+}
+.hero .eyebrow,
+.world-kicker,
+.replay-wave-name {
+  letter-spacing: .13em;
+}
+.hero-actions .btn,
+.run-toggle {
+  border-radius: 5px;
+  box-shadow: inset 0 -3px 0 #2b7666, 3px 3px 0 #071421;
+}
+.hero-actions .btn:hover:not(:disabled),
+.run-toggle:hover:not(:disabled) {
+  box-shadow: inset 0 -3px 0 #2b7666, 3px 3px 0 #071421;
+}
+.world {
+  border-radius: 7px;
+  --radius: 7px;
+}
+.world::before { width: 4px; box-shadow: none; }
+.world::after {
+  height: 170px;
+  background-size: auto 132%;
+  background-position: right top;
+  opacity: .67;
+  mask-image: linear-gradient(90deg, transparent 2%, #000 38%), linear-gradient(180deg, #000 18%, transparent 100%);
+}
+.world-hero { min-height: 59px; }
+.world .world-insignia {
+  width: 56px;
+  height: 56px;
+  border-radius: 3px;
+  border: 2px solid var(--world-accent);
+  background-color: #101b2c;
+  box-shadow: 3px 3px 0 #050e1a;
+}
+.world-meta,
+.metric,
+.progress-track,
+.world-intel,
+.select-row button,
+.build-choice button,
+.event-choice,
+.replay-wave,
+.survivor-score,
+.survivor-wave {
+  border-radius: 4px;
+}
+.progress-track { height: 10px; }
+.progress-fill { border-radius: 1px; }
+.progress-fill.p,
+.progress-fill.d { box-shadow: none; }
+.metric b { font-variant-numeric: tabular-nums; }
+.run-dashboard { border-radius: 8px; }
+.footer-nav { border-radius: 8px 8px 0 0; }
+.footer-nav button { border-radius: 5px; }
+.footer-nav button.active { box-shadow: inset 0 -3px 0 #153d45; }
+.panel, .info-card { border-radius: 8px; }
+select, input { border-radius: 4px; }
+button { border-radius: 5px; }
+
+/* Recorded battle: one 9-tile sprite atlas for all actual attack styles.
+   Names, kill totals, bonuses and combat outcomes remain engine-derived. */
+.world .replay-hero {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border-width: 2px;
+  box-shadow: 2px 2px 0 #071421;
+}
+.world .replay-hero::after { border-radius: 2px; box-shadow: none; }
+.world .replay-foe {
+  width: 10px;
+  height: 12px;
+  flex-basis: 10px;
+  background: var(--foe-accent);
+  border: 2px solid #112739;
+  border-radius: 1px;
+  clip-path: none;
+  filter: none;
+  box-shadow: 2px 2px 0 #070d1b;
+}
+.world .replay-foe:not(.replay-fallen) { background: #8a858a; }
+.replay-wave .replay-hit {
+  width: 28px;
+  height: 28px;
+  font-size: 0 !important;
+  line-height: 0;
+  color: transparent;
+  text-shadow: none;
+  background-image: url("./assets/attack-atlas.svg");
+  background-size: 252px 28px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  filter: drop-shadow(1px 2px 0 #071421);
+  opacity: .96;
+}
+.replay-wave.attack-basic .replay-hit { background-position: 0 0; }
+.replay-wave.attack-chain .replay-hit { background-position: -28px 0; }
+.replay-wave.attack-pierce .replay-hit { background-position: -56px 0; }
+.replay-wave.attack-fan .replay-hit { background-position: -84px 0; }
+.replay-wave.attack-flurry .replay-hit { background-position: -112px 0; }
+.replay-wave.attack-shockwave .replay-hit { background-position: -140px 0; }
+.replay-wave.attack-storm .replay-hit { background-position: -168px 0; }
+.replay-wave.attack-barrage .replay-hit { background-position: -196px 0; }
+.replay-wave.attack-hunt .replay-hit { background-position: -224px 0; }
+.replay-trait[data-wave-trait] { border-radius: 3px; }
+.replay-trait[data-wave-trait]::before {
+  width: 18px;
+  height: 18px;
+  background-size: 100% 100%;
+}
+@media (max-width: 620px) {
+  .hero::after { width: 230px; right: -40px; top: 47%; opacity: .53; }
+  .world::after { height: 130px; background-size: auto 135%; opacity: .53; }
+  .world .world-insignia { width: 48px; height: 48px; }
+}
+@media (max-width: 380px) {
+  .hero::after { right: -90px; opacity: .4; }
+  .world .replay-hero { width: 27px; height: 27px; }
+  .world .replay-foe { width: 8px; height: 10px; flex-basis: 8px; }
+}
+/* Retain the existing motion safety contract. No continuously flashing pixel art. */
+@media (prefers-reduced-motion: reduce) {
+  .hero::after,
+  .survivor-score.frenzy-active,
+  .replay-wave .replay-hit { animation: none !important; }
+}
