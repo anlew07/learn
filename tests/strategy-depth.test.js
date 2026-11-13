@@ -41,6 +41,8 @@ describe("rescue-first beast threat opportunity cost", () => {
   });
 
   it("spends two daily actions, never farms elite reward twice or skips finale gates", () => {
+    const original = BALANCE.actions.beastRescueNestPriorityDoom;
+    BALANCE.actions.beastRescueNestPriorityDoom = 65;
     const state = Engine.fresh("costly-beast-rescue-fight", 3, true);
     const beast = Engine.byId(state, "beast");
     state.day = 40;
@@ -74,6 +76,7 @@ describe("rescue-first beast threat opportunity cost", () => {
     expect(Engine.canFinal(state, beast, 0)).toBe(false);
     expect(Engine.step(state).ok).toBe(true);
     expect(beast.threat.status).toBe("cleared");
+    BALANCE.actions.beastRescueNestPriorityDoom = original;
   });
 
   it("maintains deterministic same-seed A/B and never changes the first two runs", () => {
