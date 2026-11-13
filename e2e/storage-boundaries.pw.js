@@ -34,6 +34,10 @@ test("abort after first IndexedDB put keeps run and profile together", async ({ 
   await page.locator('button[data-action="step"]').click();
   await expect(page.getByRole("alert").filter({ hasText: "存档写入失败" })).toBeVisible();
   expect(await snapshot(page)).toEqual(original);
+  // The failed write must block further days, not just display an error.
+  await page.locator('button[data-action="step"]').click();
+  await expect(page.locator(".metric").first()).toContainText("第 2 天");
+  expect(await snapshot(page)).toEqual(original);
   await page.evaluate(() => window.__restorePut());
   await page.getByRole("button", { name: "重试保存" }).click();
   await expect.poll(async () => (await snapshot(page)).run?.day).toBe(2);
