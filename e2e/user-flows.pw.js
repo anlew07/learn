@@ -627,8 +627,6 @@ test("the secret collection stays locked until discovery and survives a reload",
   await page.reload();
   await page.locator('button[data-tab="log"]').click();
   await expect(collection).toContainText("1 / 2");
-  await expect(collection.locator('[data-discovered="true"]')).toContainText(
-    "修仙也要摸鱼",
-  );
+  await expect(collection.locator('[data-discovered="true"]')).toContainText("修仙也要摸鱼");
   await expect(collection.locator('[data-discovered="false"]')).toHaveCount(1);
 });
