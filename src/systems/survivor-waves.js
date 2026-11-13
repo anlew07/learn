@@ -68,7 +68,7 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
     fullClear,
     combo: chain,
     momentum: Math.min(3, momentum),
-    grade: fullClear ? "全面稳控" : defeated / encountered >= 0.8 ? "压制" : "鏖战",
+    grade: fullClear ? "清屏" : defeated / encountered >= 0.8 ? "压制" : "鏖战",
     burst: Boolean(build.evolved && fullClear),
   };
 }
