@@ -23,12 +23,12 @@ test("automatic day timer does not accumulate 300ms polling drift", async ({ pag
   await page.locator('button[data-action="toggle"]').click();
   await expect.poll(async () => (await saved(page)).run?.paused).toBe(false);
 
-  await page.clock.runFor(60_000);
-  await expect.poll(async () => (await saved(page)).run?.day).toBe(4);
+  await page.clock.runFor(420_000); // 21 virtual days, reveals small drift per polling cycle
+  await expect.poll(async () => (await saved(page)).run?.day).toBe(22);
   await page.locator('button[data-action="toggle"]').click();
   await expect.poll(async () => (await saved(page)).run?.paused).toBe(true);
   await page.reload();
-  expect((await saved(page)).run.day).toBe(4);
+  expect((await saved(page)).run.day).toBe(22);
 });
 
 test("long suspended tab and repeated visibility changes cannot cause catch-up", async ({
