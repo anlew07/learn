@@ -98,7 +98,7 @@ test("reduced motion disables all replay pixel animations", async ({ page }) => 
   expect(result).toEqual(["none", "none"]);
 });
 
-test("status pills and selected navigation use high-contrast pixel colors", async ({ page }) => {
+test("selected tabs and labels keep pixel contrast", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 820 });
   await page.goto("/");
   await expect(page.locator(".topbar > .pill")).toHaveCSS(
