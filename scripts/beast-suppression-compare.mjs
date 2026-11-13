@@ -4,131 +4,119 @@ import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
 
-const STRATEGIES = ["default", "growth", "clear", "rescue"];
-const WORLD_IDS = ["lingzai", "zombie", "beast"];
+const strategies = ["default", "growth", "clear", "rescue"];
+const worldIds = ["lingzai", "zombie", "beast"];
 
-function mean(value, samples) {
-  return Number((value / samples).toFixed(3));
+function average(value, count) {
+  return Number((value / count).toFixed(3));
 }
 
-function simulateStrategy(strategy, seeds, waves) {
-  const worlds = Object.fromEntries(
-    WORLD_IDS.map((id) => [
-      id,
-      {
-        saved: 0,
-        totalD: 0,
-        totalP: 0,
-        totalResources: 0,
-        totalEndDay: 0,
-        actions: {},
-        failures: {},
-      },
-    ]),
-  );
-  let fullySaved = 0;
-  let totalRunEndDay = 0;
-  let incomplete = 0;
+function runScenario(seeds, strategy, waves) {
+  const totals = {};
+  for (const id of worldIds) {
+    totals[id] = {
+      saved: 0,
+      endDay: 0,
+      resource: 0,
+      p: 0,
+      d: 0,
+      actions: {},
+      failureReasons: {},
+    };
+  }
+
+  let completed = 0;
+  let allSaved = 0;
+  let totalRunDay = 0;
 
   for (let index = 0; index < seeds; index++) {
-    // Reuse the exact seed scheme used by balance-report.mjs.
     const state = Engine.fresh("balance-v2-r3-" + index, 3, waves);
-    const terminalByWorld = {};
+    const ends = {};
     if (strategy !== "default") {
-      state.worlds.forEach((world) => {
-        world.strategy = strategy;
-      });
+      for (const world of state.worlds) world.strategy = strategy;
     }
 
     let ticks = 0;
     while (state.active && ticks++ < 200) {
-      const day = state.day;
+      const currentDay = state.day;
       Engine.step(state);
       for (const world of state.worlds) {
-        if (world.status !== "running" && !terminalByWorld[world.id]) {
-          terminalByWorld[world.id] = readWorldTerminal(world, state.logs, day);
+        if (world.status !== "running" && !ends[world.id]) {
+          ends[world.id] = readWorldTerminal(world, state.logs, currentDay);
         }
       }
     }
-    if (state.active || !state.result) {
-      incomplete++;
-      continue;
-    }
-    fullySaved += Number(state.result.saved === state.worlds.length);
-    totalRunEndDay += state.result.endedDay;
+    if (state.active || !state.result) continue;
+
+    completed++;
+    allSaved += Number(state.result.saved === state.worlds.length);
+    totalRunDay += state.result.endedDay;
     for (const world of state.worlds) {
-      const row = worlds[world.id];
+      const row = totals[world.id];
       row.saved += Number(world.status === "saved");
-      row.totalD += world.d;
-      row.totalP += world.p;
-      row.totalResources += world.resource;
-      row.totalEndDay += terminalByWorld[world.id]?.day ?? state.result.endedDay;
+      row.endDay += ends[world.id]?.day ?? state.result.endedDay;
+      row.resource += world.resource;
+      row.p += world.p;
+      row.d += world.d;
       for (const [action, count] of Object.entries(world.metrics?.actions || {})) {
         row.actions[action] = (row.actions[action] || 0) + count;
       }
-      if (world.status === "failed") {
-        const reason = terminalByWorld[world.id]?.reason ?? "未知原因";
-        row.failures[reason] = (row.failures[reason] || 0) + 1;
+      if (world.status !== "saved") {
+        const reason = ends[world.id]?.reason ?? "未知原因";
+        row.failureReasons[reason] = (row.failureReasons[reason] || 0) + 1;
       }
     }
   }
 
-  const completed = seeds - incomplete;
+  const worlds = {};
+  for (const id of worldIds) {
+    const row = totals[id];
+    const actions = {};
+    const failureReasons = {};
+    for (const [action, count] of Object.entries(row.actions)) {
+      actions[action] = completed ? average(count, completed) : null;
+    }
+    for (const [reason, count] of Object.entries(row.failureReasons)) {
+      failureReasons[reason] = completed ? average(count, completed) : null;
+    }
+    worlds[id] = {
+      savedRate: completed ? average(row.saved, completed) : null,
+      meanEndDay: completed ? average(row.endDay, completed) : null,
+      meanRemainingResources: completed ? average(row.resource, completed) : null,
+      meanP: completed ? average(row.p, completed) : null,
+      meanD: completed ? average(row.d, completed) : null,
+      meanActions: actions,
+      failureReasons,
+    };
+  }
   return {
-    strategy,
     completed,
-    incomplete,
-    allSavedRate: completed ? mean(fullySaved, completed) : null,
-    meanRunEndDay: completed ? mean(totalRunEndDay, completed) : null,
-    worlds: Object.fromEntries(
-      WORLD_IDS.map((id) => {
-        const data = worlds[id];
-        return [
-          id,
-          {
-            savedRate: completed ? mean(data.saved, completed) : null,
-            meanD: completed ? mean(data.totalD, completed) : null,
-            meanP: completed ? mean(data.totalP, completed) : null,
-            meanRemainingResources: completed ? mean(data.totalResources, completed) : null,
-            meanEndDay: completed ? mean(data.totalEndDay, completed) : null,
-            meanActions: Object.fromEntries(
-              Object.entries(data.actions).map(([action, count]) => [
-                action,
-                completed ? mean(count, completed) : null,
-              ]),
-            ),
-            failureReasons: Object.fromEntries(
-              Object.entries(data.failures).map(([reason, count]) => [
-                reason,
-                completed ? mean(count, completed) : null,
-              ]),
-            ),
-          },
-        ];
-      }),
-    ),
+    incomplete: seeds - completed,
+    allSavedRate: completed ? average(allSaved, completed) : null,
+    meanRunEndDay: completed ? average(totalRunDay, completed) : null,
+    worlds,
   };
 }
 
 /**
- * Pair runs with the same seeds and no extra random draws. The baseline sets
- * the two #30 suppression bonuses to zero, not other gameplay properties.
+ * Pair identical seeds. The baseline disables the two PR #30 bonuses;
+ * the candidate uses the current values. Always restore shared tuning.
  */
 export function compareBeastSuppression(seeds = 100, { waves = false } = {}) {
   if (!Number.isInteger(seeds) || seeds < 10 || seeds > 1000) {
     throw new RangeError("seeds must be an integer between 10 and 1000");
   }
+
   const actions = BALANCE.actions;
   const relief = actions.beastSuppressionDoomRelief;
   const mitigation = actions.beastSuppressionThreatMitigation;
   const rows = [];
-
   try {
     for (const mode of ["baseline", "candidate"]) {
       actions.beastSuppressionDoomRelief = mode === "baseline" ? 0 : relief;
       actions.beastSuppressionThreatMitigation = mode === "baseline" ? 0 : mitigation;
-      for (const strategy of STRATEGIES) {
-        rows.push({ mode, ...simulateStrategy(strategy, seeds, waves) });
+      for (const strategy of strategies) {
+        rows.push({ mode, strategy, ...runScenario(seeds, strategy, waves) });
       }
     }
   } finally {
@@ -136,24 +124,22 @@ export function compareBeastSuppression(seeds = 100, { waves = false } = {}) {
     actions.beastSuppressionThreatMitigation = mitigation;
   }
 
-  const comparisons = STRATEGIES.map((strategy) => {
+  const comparisons = [];
+  for (const strategy of strategies) {
     const baseline = rows.find((row) => row.mode === "baseline" && row.strategy === strategy);
     const candidate = rows.find((row) => row.mode === "candidate" && row.strategy === strategy);
-    return {
+    const difference = candidate.worlds.beast.savedRate - baseline.worlds.beast.savedRate;
+    comparisons.push({
       strategy,
       beastSaveRateBaseline: baseline.worlds.beast.savedRate,
       beastSaveRateCandidate: candidate.worlds.beast.savedRate,
-      deltaBeastSaveRate: Number(
-        (candidate.worlds.beast.savedRate - baseline.worlds.beast.savedRate).toFixed(3),
-      ),
-      deltaAllSavedRate: Number(
-        (candidate.allSavedRate - baseline.allSavedRate).toFixed(3),
-      ),
-      otherWorldRatesUnchanged: WORLD_IDS.filter((id) => id !== "beast").every(
-        (id) => baseline.worlds[id].savedRate === candidate.worlds[id].savedRate,
-      ),
-    };
-  });
+      deltaBeastSaveRate: Number(difference.toFixed(3)),
+      deltaAllSavedRate: Number((candidate.allSavedRate - baseline.allSavedRate).toFixed(3)),
+      otherWorldRatesUnchanged: worldIds
+        .filter((id) => id !== "beast")
+        .every((id) => baseline.worlds[id].savedRate === candidate.worlds[id].savedRate),
+    });
+  }
   return {
     samplesPerVariant: seeds,
     runNumber: 3,
@@ -166,7 +152,8 @@ export function compareBeastSuppression(seeds = 100, { waves = false } = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const params = process.argv.slice(2);
-  const seeds = Number(params.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 100);
+  const seedsText = params.find((arg) => arg.startsWith("--seeds="));
+  const seeds = Number(seedsText?.split("=")[1] ?? 100);
   const report = compareBeastSuppression(seeds, { waves: params.includes("--waves") });
   process.stdout.write(JSON.stringify(report, null, 2) + "\n");
   if (
@@ -174,6 +161,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     (report.rows.some((row) => row.incomplete > 0) ||
       report.comparisons.some((row) => row.deltaBeastSaveRate < 0))
   ) {
-    throw new Error("Beast A/B check failed: stalled run or worse beast rescue rate.");
+    throw new Error("Beast A/B check failed: stalled run or lower rescue rate.");
   }
 }
