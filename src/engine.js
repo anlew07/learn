@@ -12,6 +12,7 @@ import { previewStrategyChange } from "./systems/strategy-contract.js";
 import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
 import { assessCrises } from "./systems/crisis-advisor.js";
 import { FOLLOWUPS, canQueueFollowup, settleFollowup, followupMitigation, followupEpilogue } from "./systems/event-chain.js";
+import { startCautiousInvestigation, cautiousMitigation, settleCautiousAftermath } from "./systems/clue-aftermath.js";
 import { discoverEasterEgg, discoverCrossworldSecrets } from "./systems/easter-eggs.js";
 const MultiworldEngine = (function () {
   "use strict";
@@ -231,7 +232,8 @@ const MultiworldEngine = (function () {
       }
     }else if(choice==="safe"){
       addProgress(s,w,2);
-      log(s,w.id,"谨慎保留线索，拯救准备+2。","minor");
+      startCautiousInvestigation(w,s.day);
+      log(s,w.id,"谨慎保留线索：P+2，未来4日自然毁灭增长每天减少0.2。","minor");
     }else if(choice==="decline"){
       log(s,w.id,"主动放弃本次线索，没有额外收益或惩罚。","minor");
     }
@@ -426,13 +428,15 @@ const MultiworldEngine = (function () {
           w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
         }
       }else doAction(s,w,chooseAction(s,w));
+      const aftermath=settleCautiousAftermath(w,s.day);
+      if(aftermath)log(s,w.id,aftermath,"minor");
       // Cosmetic discoveries never occupy event slots or consume RNG.
       const secret=discoverEasterEgg(s,w);
       if(secret)log(s,w.id,secret.message,"minor");
       // All sources of danger are calculated once after the day's major action.
       if(w.status==="running"){
         addD(w,Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
-          followupMitigation(w,s.day,"natural")));
+          followupMitigation(w,s.day,"natural")-cautiousMitigation(w,s.day)));
         if(threatActive(w))addD(w,Math.max(0,0.3-followupMitigation(w,s.day,"threat")));
         if(random(w)<0.015){addD(w,2.2);log(s,w.id,"末日环境突然恶化，毁灭压力上涨。","warning");}
         newThreat(s,w);
