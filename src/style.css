@@ -366,3 +366,16 @@ button:active:not(:disabled){transform:translateY(1px)}
 .archive-discoveries .collection-entry b{font-size:.82rem}
 .archive-discoveries .collection-entry[data-discovered="false"]{opacity:.62}
 @media(max-width:400px){.collection-titles .event-actions{grid-template-columns:1fr}}
+
+/* Survivors' three-wave display: recorded counts, not a separate reward faucet. */
+.survivor-score{display:grid;gap:9px;margin-top:11px;padding:13px;background:#091b2c;border:1px solid #366071;border-radius:12px}
+.survivor-score-main{display:flex;align-items:baseline;gap:8px}
+.survivor-score-main strong{font-size:2rem;line-height:1;font-weight:900;color:#b4f8db;font-variant-numeric:tabular-nums}
+.survivor-score-main span{font-size:.75rem;color:#b3cad7}
+.survivor-grade{justify-self:start;padding:4px 10px;border-radius:9px;background:#52392e;color:#ffd3a2;font-weight:800;font-size:.73rem}
+.survivor-grade.survivor-clear{background:#184f42;color:#bdfbe0}
+.survivor-wave-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.survivor-wave{display:grid;gap:5px;padding:9px;border-radius:9px;background:#11283b;font-size:.68rem;color:#aabfcc}
+.survivor-wave b{font-size:.94rem;color:#e7f7ff;font-variant-numeric:tabular-nums}
+.survivor-wave i{display:block;height:4px;background:#ad7551;border-radius:3px}
+.survivor-wave i.cleared{background:#7bd7bd}
