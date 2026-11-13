@@ -715,3 +715,24 @@ test("earned archive title can be equipped on the home screen and survives reloa
   await page.locator('[data-action="equip-title"][data-title=""]').click();
   await expect(page.locator("[data-equipped-title]")).toHaveCount(0);
 });
+
+test("refreshed dashboard exposes distinct world identities and keyboard-safe navigation", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await expect(page.locator(".run-dashboard")).toContainText("多世界行动");
+  await expect(page.locator(".run-dashboard .metric")).toHaveCount(4);
+  await expect(page.locator('[data-world-card="lingzai"] .world-kicker')).toContainText(
+    "CULTIVATION",
+  );
+  await expect(page.locator('[data-world-card="zombie"] .world-kicker')).toContainText(
+    "OUTBREAK",
+  );
+  await expect(page.locator('[aria-label="主要导航"] button')).toHaveCount(3);
+  await page.locator('button[data-tab="soul"]').click();
+  await expect(page.locator('button[data-tab="soul"]')).toHaveAttribute("aria-current", "page");
+  await page.locator('button[data-tab="world"]').click();
+  await expect(page.locator('button[data-tab="world"]')).toHaveAttribute("aria-current", "page");
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(overflow).toBe(false);
+});
