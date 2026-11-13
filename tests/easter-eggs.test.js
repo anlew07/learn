@@ -115,3 +115,58 @@ describe("run-local discovery collection", () => {
     expect(state.soul).toBe(8);
   });
 });
+
+describe("cross-world secret combinations", () => {
+  it("requires genuine discovery flags in two worlds and unlocks exactly once", async () => {
+    const { previewCrossworldSecrets, discoverCrossworldSecrets } = await import("../src/systems/easter-eggs.js");
+    const state = Engine.fresh("cross-two", 1, false);
+    const original = JSON.stringify(state);
+    expect(previewCrossworldSecrets(state)).toEqual([]);
+    expect(JSON.stringify(state)).toBe(original);
+    Engine.byId(state, "lingzai").flags.easterEggs = [EASTER_EGGS.lingzai.id];
+    expect(discoverCrossworldSecrets(state)).toEqual([]);
+    Engine.byId(state, "zombie").flags.easterEggs = [EASTER_EGGS.zombie.id];
+    expect(previewCrossworldSecrets(state).map((item) => item.id)).toEqual(["crossworld/tea-and-coffee"]);
+    const ap = state.ap, soul = state.soul;
+    expect(discoverCrossworldSecrets(state)).toHaveLength(1);
+    expect(discoverCrossworldSecrets(state)).toEqual([]);
+    expect(state.ap).toBe(ap);
+    expect(state.soul).toBe(soul);
+    expect(JSON.parse(JSON.stringify(state)).crossworldSecrets).toEqual(["crossworld/tea-and-coffee"]);
+  });
+
+  it("requires all three worlds for the final secret and hides missing clues", async () => {
+    const { discoverCrossworldSecrets, summarizeCrossworldSecrets } = await import("../src/systems/easter-eggs.js");
+    const state = Engine.fresh("cross-three", 3, false);
+    for (const id of ["lingzai", "zombie"]) {
+      Engine.byId(state, id).flags.easterEggs = [EASTER_EGGS[id].id];
+    }
+    expect(discoverCrossworldSecrets(state)).toHaveLength(1);
+    let view = summarizeCrossworldSecrets(state);
+    expect(view).toHaveLength(2);
+    expect(view[1].title).toBe("？？？");
+    Engine.byId(state, "beast").flags.easterEggs = [EASTER_EGGS.beast.id];
+    const before = JSON.stringify(state);
+    expect(summarizeCrossworldSecrets(state)[1].found).toBe(false);
+    expect(JSON.stringify(state)).toBe(before);
+    expect(discoverCrossworldSecrets(state).map((item) => item.id)).toEqual(["crossworld/three-world-party"]);
+    view = summarizeCrossworldSecrets(state);
+    expect(view.every((item) => item.found)).toBe(true);
+    expect(discoverCrossworldSecrets(state)).toEqual([]);
+    const saved = JSON.parse(JSON.stringify(state));
+    expect(summarizeCrossworldSecrets(saved)).toEqual(view);
+  });
+
+  it("records the combined discovery in the actual step log without changing resources", () => {
+    const state = Engine.fresh("cross-step", 1, false);
+    const first = Engine.byId(state, "lingzai");
+    const second = Engine.byId(state, "zombie");
+    first.flags.easterEggs = [EASTER_EGGS.lingzai.id];
+    second.flags.easterEggs = [EASTER_EGGS.zombie.id];
+    Engine.step(state);
+    expect(state.crossworldSecrets).toEqual(["crossworld/tea-and-coffee"]);
+    expect(state.logs.filter((entry) => entry.text.includes("末日茶咖会"))).toHaveLength(1);
+    Engine.step(state);
+    expect(state.logs.filter((entry) => entry.text.includes("末日茶咖会"))).toHaveLength(1);
+  });
+});

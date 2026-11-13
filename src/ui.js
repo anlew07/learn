@@ -1,6 +1,6 @@
 import "./style.css";
 import Engine from "./engine.js";
-import { summarizeEasterEggCollection } from "./systems/easter-eggs.js";
+import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
 import { saveRepository } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
@@ -308,6 +308,12 @@ function collectionHtml() {
  '<article class="collection-entry" data-secret-world="'+esc(entry.worldId)+'" data-discovered="'+entry.found+'">'+
  '<b>'+esc(entry.worldName)+' · '+esc(entry.title)+'</b>'+
  '<p class="hint">'+esc(entry.detail)+'</p></article>'
+ ).join('')+'</div>'+
+ '<h3>跨世界秘密 · '+summarizeCrossworldSecrets(run).filter(item=>item.found).length+
+ ' / '+summarizeCrossworldSecrets(run).length+'</h3>'+
+ '<div class="collection-list">'+summarizeCrossworldSecrets(run).map(item=>
+ '<article class="collection-entry" data-crossworld-secret="'+esc(item.id)+'" data-discovered="'+item.found+'">'+
+ '<b>'+esc(item.title)+'</b><p class="hint">'+esc(item.detail)+'</p></article>'
  ).join('')+'</div></section>';
 }
 function logsHtml(){

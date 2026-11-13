@@ -74,3 +74,57 @@ export function summarizeEasterEggCollection(state) {
     entries,
   };
 }
+
+/** Independent, non-rewarding combinations of existing world discoveries. */
+export const CROSSWORLD_SECRETS = Object.freeze([
+  Object.freeze({
+    id: "crossworld/tea-and-coffee",
+    worlds: Object.freeze(["lingzai", "zombie"]),
+    title: "末日茶咖会",
+    message: "跨世界彩蛋「末日茶咖会」：修仙分身贡献灵茶，废土分身贡献过期咖啡。灵魂会议最终决定：这两样还是不要混着喝。",
+  }),
+  Object.freeze({
+    id: "crossworld/three-world-party",
+    worlds: Object.freeze(["lingzai", "zombie", "beast"]),
+    title: "三个我都不想加班",
+    message: "跨世界彩蛋「三个我都不想加班」：灵茶、咖啡和会跳舞的兽群在灵魂记忆中碰头。三位分身一致通过了末日休假提案。",
+  }),
+]);
+
+function hasAllClues(state, worlds) {
+  return worlds.every((id) => {
+    const world = state?.worlds?.find((item) => item.id === id);
+    return Boolean(world?.flags?.easterEggs?.includes(EASTER_EGGS[id].id));
+  });
+}
+
+export function previewCrossworldSecrets(state) {
+  if (!state?.active) return [];
+  return CROSSWORLD_SECRETS.filter((secret) =>
+    hasAllClues(state, secret.worlds) && !state.crossworldSecrets?.includes(secret.id),
+  );
+}
+
+/** Record secrets once, even if a legacy save omitted the new collection field. */
+export function discoverCrossworldSecrets(state) {
+  const available = previewCrossworldSecrets(state);
+  if (!available.length) return [];
+  if (!Array.isArray(state.crossworldSecrets)) state.crossworldSecrets = [];
+  for (const secret of available) state.crossworldSecrets.push(secret.id);
+  return available;
+}
+
+/** A pure collection summary, suitable for display in archived completed runs. */
+export function summarizeCrossworldSecrets(state) {
+  return CROSSWORLD_SECRETS
+    .filter((secret) => secret.worlds.every((id) => state?.worlds?.some((world) => world.id === id)))
+    .map((secret) => {
+      const found = Boolean(state?.crossworldSecrets?.includes(secret.id));
+      return {
+        id: secret.id,
+        found,
+        title: found ? secret.title : "？？？",
+        detail: found ? secret.message : "尚未发现：试着在不同世界收集隐藏经历。",
+      };
+    });
+}
