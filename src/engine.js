@@ -149,8 +149,8 @@ const MultiworldEngine = (function () {
     return {ok:true};
   }
   function waveCombatBonus(s,w){
-    var effect=computeWaveBonuses(w.id,w.build,POWERS);
-    // Consecutive fights build a small deterministic streak; no extra RNG.
+    // Resolve the encounter first: build effects are scaled by actual clears
+    // and elite counters, then paid once through this battle transaction.
     var previous=w.waveMomentum;
     var momentum=previous&&s.day-previous.lastDay<=3?
       Math.min(3,previous.count+1):1;
@@ -158,6 +158,7 @@ const MultiworldEngine = (function () {
     var spectacle=simulateSurvivorWaves(w.id,w.build,POWERS,{
       day:s.day,level:w.level,momentum:momentum
     });
+    var effect=computeWaveBonuses(w.id,w.build,POWERS,spectacle);
     const frenzy=nextSurvivorFrenzy(w.waveClearStreak,s.day,spectacle.fullClear);
     w.waveClearStreak={lastDay:frenzy.lastDay,count:frenzy.count};
     spectacle.frenzy=frenzy.activated;
@@ -183,7 +184,10 @@ const MultiworldEngine = (function () {
       bonus:{
         xp:r2(w.xp-beforeXp),
         resource:r2(w.resource-beforeResource),
-        doomReduced:r2(beforeD-w.d)
+        doomReduced:r2(beforeD-w.d),
+        waveClearBonus:r2(effect.waveClearBonus),
+        waveLossMitigation:r2(effect.waveLossMitigation),
+        waveLootModifier:r2(effect.waveLootModifier)
       }
     };
     recordWaveOutcome(w,w.lastCombat.bonus);

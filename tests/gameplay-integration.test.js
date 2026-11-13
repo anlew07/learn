@@ -77,4 +77,46 @@ describe("explainable action and wave gameplay integration", () => {
     expect(world.lastCombat).toBeNull();
     expect(world.build.count).toBe(0);
   });
+
+  it("settles performance-scaled wave effects once in the existing zombie fight", () => {
+    const state = Engine.fresh("wave-budget-transaction", 1, true);
+    const world = Engine.byId(state, "zombie");
+    state.day = 1;
+    world.level = 2;
+    world.p = 45;
+    world.d = 20;
+    world.strategy = "clear";
+    world.threat = {
+      id: "parking-lot",
+      progress: 0,
+      status: "active",
+      retryDay: 1,
+    };
+    world.build.attack = [
+      { id: "blades", lv: 1 },
+      { id: "arc", lv: 1 },
+    ];
+    world.build.support = [{ id: "armor", lv: 1 }];
+    world.build.count = 3;
+
+    expect(Engine.step(state).ok).toBe(true);
+    expect(world.lastDecision.actionId).toBe("fight");
+    expect(world.lastCombat.spectacle.fullClear).toBe(true);
+    expect(world.lastCombat.bonus.waveClearBonus).toBeGreaterThan(0);
+    expect(world.lastCombat.bonus.waveLossMitigation).toBeGreaterThan(0);
+    expect(world.lastCombat.bonus.waveLootModifier).toBeGreaterThan(0);
+    expect(world.metrics.waveCombats).toBe(1);
+    expect(world.metrics.waveClearBonus).toBe(world.lastCombat.bonus.waveClearBonus);
+    expect(world.metrics.waveLossMitigation).toBe(
+      world.lastCombat.bonus.waveLossMitigation,
+    );
+    expect(world.metrics.waveLootModifier).toBe(
+      world.lastCombat.bonus.waveLootModifier,
+    );
+
+    const restored = JSON.parse(JSON.stringify(state));
+    const savedWorld = Engine.byId(restored, "zombie");
+    expect(savedWorld.lastCombat).toEqual(world.lastCombat);
+    expect(savedWorld.metrics.waveCombats).toBe(1);
+  });
 });
