@@ -388,3 +388,45 @@ button:active:not(:disabled){transform:translateY(1px)}
 }
 .frenzy-active .survivor-score-main strong{color:#ffe2a1;text-shadow:0 0 16px #ffb44d75}
 .frenzy-active .survivor-grade{background:#775129;color:#fff3ca}
+
+
+/* Recorded battle storyboard: purely presentational, zero simulation side-effects. */
+.survivor-replay{margin-top:12px;border:1px solid #365570;border-radius:13px;overflow:hidden;background:#091626}
+.replay-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #29435c;color:#d3ebfb;font-size:.77rem;font-weight:800}
+.replay-head button{font-size:.73rem;min-height:33px;padding:5px 11px;background:#2e6b7f;border:1px solid #579ba9}
+.replay-arena{position:relative;padding:14px 13px 12px 47px;min-height:174px;overflow:hidden;
+ background:radial-gradient(ellipse at 22% 50%,#24607844,transparent 47%),
+ repeating-linear-gradient(0deg,transparent 0px,transparent 31px,#7eacbf12 32px)}
+.replay-hero{position:absolute;left:9px;top:50%;transform:translateY(-50%);z-index:2;color:#b6ffe8;text-shadow:0 0 16px #96fff4;font-size:24px}
+.replay-hero::after{content:"";position:absolute;inset:5px;border:1px solid #84f7d1aa;border-radius:50%;transform:scale(1.6)}
+.replay-wave-stack{display:grid;gap:8px}
+.replay-wave{display:grid;grid-template-columns:54px minmax(0,1fr);column-gap:7px;row-gap:3px;align-items:center;min-height:43px;padding:5px 8px;border:1px solid #31516a;border-radius:9px;background:#12283ca8}
+.replay-wave-name{font-size:.61rem;letter-spacing:.08em;color:#8acbcc;font-weight:800}
+.replay-swarm{display:flex;justify-content:space-between;gap:2px;min-width:0}
+.replay-foe{color:#f59b90;font-size:14px;line-height:1.3;text-shadow:0 0 9px #dd755155;display:inline-block}
+.replay-foe:not(.replay-fallen){color:#bc9b98;opacity:.75}
+.replay-wave-count{grid-column:2;font-size:.65rem;color:#a5d8dc;font-variant-numeric:tabular-nums}
+.replay-hit{display:none;position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:34px;color:#b4ffe6;text-shadow:0 0 14px #62e9e6}
+.replay-frenzy{position:absolute;inset:auto 12px 8px;z-index:3;text-align:center;font-size:.82rem;font-weight:900;letter-spacing:.1em;color:#ffe2a1;text-shadow:0 0 18px #ffbb58;background:#3b2317c9;border:1px solid #c7924f;border-radius:8px;padding:3px 7px}
+.replay-note{padding:0 12px 9px;margin:7px 0 0;font-size:.67rem}
+.replay-arena.is-playing .replay-wave{animation:replay-enter .65s ease-out both}
+.replay-arena.is-playing .replay-wave:nth-child(2){animation-delay:.95s}
+.replay-arena.is-playing .replay-wave:nth-child(3){animation-delay:1.9s}
+.replay-arena.is-playing .replay-foe.replay-fallen{animation:replay-defeat .7s ease-in both;animation-delay:.48s}
+.replay-arena.is-playing .replay-wave:nth-child(2) .replay-fallen{animation-delay:1.43s}
+.replay-arena.is-playing .replay-wave:nth-child(3) .replay-fallen{animation-delay:2.38s}
+.replay-arena.is-playing .replay-hero{animation:replay-pulse .75s ease-in-out 4}
+.replay-arena.is-playing .replay-frenzy{animation:replay-burst 3.15s ease-out both}
+@keyframes replay-enter{from{opacity:.15;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes replay-defeat{0%,35%{opacity:1;transform:scale(1)}75%{color:#b0fff1;transform:scale(1.4)}100%{opacity:.18;transform:scale(.4)}}
+@keyframes replay-pulse{50%{text-shadow:0 0 23px #ddffdb,0 0 31px #75edd2;transform:translateY(-50%) scale(1.2)}}
+@keyframes replay-burst{0%,72%{opacity:0;transform:scale(.8)}85%{opacity:1;transform:scale(1.07)}100%{opacity:1;transform:scale(1)}}
+@media(max-width:380px){.replay-wave{grid-template-columns:48px minmax(0,1fr);padding:5px}.replay-foe{font-size:11px}.replay-arena{padding-left:38px}}
+@media(prefers-reduced-motion:reduce){
+  .replay-arena.is-playing .replay-wave,
+  .replay-arena.is-playing .replay-foe,
+  .replay-arena.is-playing .replay-hero,
+  .replay-arena.is-playing .replay-frenzy{animation:none!important}
+}
+/* Playback remains safe in spectator mode because it never changes the run. */
+.app-shell.readonly button[data-action="replay-wave"]{opacity:1;pointer-events:auto}
