@@ -180,3 +180,27 @@ export function compareRescueNestPriority(samples = 100, { waves = false } = {})
     differences,
   };
 }
+
+/** Quick scenario-specific sweep before choosing a candidate threshold. */
+export function probeRescueNestThresholds(samples = 50, thresholds = [65, 80, 84, 87, 90, 95]) {
+  const previous = BALANCE.actions.beastRescueNestPriorityDoom;
+  const rows = [];
+  try {
+    for (const threshold of thresholds) {
+      BALANCE.actions.beastRescueNestPriorityDoom = threshold;
+      const baseline = simulate(3, "default", false, samples);
+      const rescue = simulate(3, "rescue", false, samples);
+      rows.push({
+        threshold,
+        default: baseline.worlds.beast.saveRate,
+        rescue: rescue.worlds.beast.saveRate,
+        defaultFights: baseline.worlds.beast.meanFights,
+        rescueFights: rescue.worlds.beast.meanFights,
+        eliteClear: rescue.worlds.beast.eliteClearRate,
+      });
+    }
+  } finally {
+    BALANCE.actions.beastRescueNestPriorityDoom = previous;
+  }
+  return rows;
+}
