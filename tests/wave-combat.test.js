@@ -305,10 +305,10 @@ describe("late-game elite enemy waves", () => {
 describe("skill choices explain existing elite counters", () => {
   it("derives the displayed counters from the same enemy rules used for kills", async () => {
     const { counteredEliteWaveLabels, ELITE_WAVES } = await import("../src/systems/survivor-waves.js");
-    expect(counteredEliteWaveLabels("fan")).toEqual(["密集敌潮"]);
-    expect(counteredEliteWaveLabels("pierce")).toEqual(["装甲精英"]);
-    expect(counteredEliteWaveLabels("chain")).toEqual(["密集敌潮", "迅捷兽群"]);
-    expect(counteredEliteWaveLabels("storm")).toEqual(["密集敌潮", "装甲精英"]);
+    expect(counteredEliteWaveLabels("fan")).toEqual(["密集异常群"]);
+    expect(counteredEliteWaveLabels("pierce")).toEqual(["装甲防线"]);
+    expect(counteredEliteWaveLabels("chain")).toEqual(["密集异常群", "迅捷兽影"]);
+    expect(counteredEliteWaveLabels("storm")).toEqual(["密集异常群", "装甲防线"]);
     expect(counteredEliteWaveLabels("basic")).toEqual([]);
     expect(Object.keys(ELITE_WAVES)).toHaveLength(3);
   });

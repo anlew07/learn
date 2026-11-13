@@ -61,17 +61,17 @@ export function summarizeProfileSecrets(profile) {
 export const ARCHIVE_TITLES = Object.freeze([
   Object.freeze({
     id: "title/tea-coffee",
-    label: "末日茶咖联络员",
+    label: "跨界茶咖联络员",
     required: Object.freeze(["crossworld/tea-and-coffee"]),
   }),
   Object.freeze({
     id: "title/beast-night",
-    label: "兽潮夜游人",
+    label: "兽域星光观察员",
     required: Object.freeze(["beast/dancing-beasts"]),
   }),
   Object.freeze({
     id: "title/holiday-chair",
-    label: "末日休假协会会长",
+    label: "三界假期协调员",
     required: Object.freeze(DISCOVERIES.map((item) => item.id)),
   }),
 ]);

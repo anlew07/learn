@@ -141,7 +141,7 @@ describe("committed clue crisis guidance", () => {
     lingzai.followupEffect = { kind: "natural", start: 1, until: 7, perDay: 0.4 };
     const before = JSON.stringify(state);
     const advice = Engine.advise(state).find((entry) => entry.worldId === "lingzai");
-    expect(advice.notes.join(" ")).toContain("自然毁灭");
+    expect(advice.notes.join(" ")).toContain("自然风险");
     expect(advice.notes.join(" ")).toContain("7个有效日");
     expect(JSON.stringify(state)).toBe(before);
     state.day = 8;

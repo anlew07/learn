@@ -29,7 +29,7 @@ export function previewResourceAid(state, sourceId, targetId, mode) {
   } else if (!validMode) reason = "援助类型无效";
   else if (actualDelta === 0) {
     reason = mode === "p" ? "目标已达到P100，本次援助不会增加准备进度" :
-      "目标毁灭压力已为0，本次援助不会减灾";
+      "目标危机压力已为0，本次援助不会减灾";
   } else if (source.resource < resourceCost) reason = "来源资源不足4";
   else if (freeAP < apCost) reason = "可用行动点不足1";
   else if (state.soul <= soulCost) reason = "灵魂强度不足，援助后必须保留至少1点";

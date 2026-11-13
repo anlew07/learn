@@ -13,19 +13,19 @@ export const WORLDS = {
     "boss": false
   },
   "zombie": {
-    "name": "尸潮",
+    "name": "废土救援",
     "resourceName": "废土零件",
     "stages": [
       "幸存者",
-      "猎杀者",
-      "清剿者",
-      "末日猎手"
+      "追逐者",
+      "排险者",
+      "救援先锋"
     ],
     "finalCost": 12,
     "boss": true
   },
   "beast": {
-    "name": "兽潮",
+    "name": "生态守护",
     "resourceName": "进化结晶",
     "stages": [
       "猎人",
@@ -117,7 +117,7 @@ export const COMBOS = {
   "beast": [
     "claws",
     "instinct",
-    "连环猎杀"
+    "协同守护"
   ]
 };
 
@@ -132,6 +132,6 @@ export const THRESHOLDS = [
 /** Static content definitions: keep world-specific facts out of the engine. */
 export const LABELS = {
   "growth": "成长优先",
-  "clear": "清剿优先",
+  "clear": "排险优先",
   "rescue": "拯救优先"
 };

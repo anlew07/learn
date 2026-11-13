@@ -7,8 +7,8 @@ import { COMBOS } from "../config/game-data.js";
  */
 export const ATTACK_PATTERNS = Object.freeze({
   thunder: Object.freeze({ style: "chain", label: "驭雷连锁", icon: "⚡" }),
-  sword: Object.freeze({ style: "pierce", label: "飞剑贯穿", icon: "✧" }),
-  blades: Object.freeze({ style: "fan", label: "碎刃扇射", icon: "✦" }),
+  sword: Object.freeze({ style: "pierce", label: "飞剑回旋", icon: "✧" }),
+  blades: Object.freeze({ style: "fan", label: "碎晶回旋", icon: "✦" }),
   arc: Object.freeze({ style: "chain", label: "电弧弹射", icon: "ϟ" }),
   claws: Object.freeze({ style: "flurry", label: "裂爪连击", icon: "╳" }),
   roar: Object.freeze({ style: "shockwave", label: "震地冲击", icon: "◎" }),
@@ -48,14 +48,14 @@ export const EVOLUTION_ULTIMATES = Object.freeze({
   }),
   zombie: Object.freeze({
     id: "barrage",
-    label: "钢雨全域扫射",
+    label: "钢雨防线覆盖",
     icon: "✷",
     pattern: "barrage",
     bonus: Object.freeze([7, 6, 5]),
   }),
   beast: Object.freeze({
     id: "hunt",
-    label: "兽王连环猎杀",
+    label: "兽域协同守护",
     icon: "╳",
     pattern: "hunt",
     bonus: Object.freeze([3, 6, 9]),
