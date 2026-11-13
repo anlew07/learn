@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 340" fill="none">
+<title>尸潮夕阳废城</title>
 <defs><linearGradient id="sky" x1="600" y1="0" x2="600" y2="340" gradientUnits="userSpaceOnUse"><stop stop-color="#563C40"/><stop offset=".57" stop-color="#3A343A"/><stop offset="1" stop-color="#101E2A"/></linearGradient><radialGradient id="sun"><stop stop-color="#FFD6A0" stop-opacity=".8"/><stop offset=".55" stop-color="#F3A473" stop-opacity=".24"/><stop offset="1" stop-color="#F3A473" stop-opacity="0"/></radialGradient></defs>
 <path d="M0 0h950v340H0z" fill="url(#sky)"/>
 <circle cx="726" cy="100" r="115" fill="url(#sun)"/><circle cx="726" cy="100" r="47" fill="#F4BC87" fill-opacity=".63"/>
