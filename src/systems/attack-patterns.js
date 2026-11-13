@@ -1,3 +1,5 @@
+import { COMBOS } from "../config/game-data.js";
+
 /**
  * Deterministic attacks for the survivors wave theatre.
  * One equipped attack is featured per wave. Visual styles and bounded extra
@@ -30,4 +32,52 @@ export function featuredWaveAttack(worldId, build, powers, wave) {
     shockwave: level + (wave === 3 ? 2 : 0),
   };
   return { id: slot.id, ...pattern, bonus: Math.min(4, bonusByStyle[pattern.style] || 0) };
+}
+
+/**
+ * An ultimate requires the real evolved weapon/support pair. Never trust an
+ * obsolete evolved flag alone. The effect is a combat clear bonus, not loot.
+ */
+export const EVOLUTION_ULTIMATES = Object.freeze({
+  lingzai: Object.freeze({
+    id: "storm",
+    label: "雷阵万剑",
+    icon: "⚡",
+    pattern: "storm",
+    bonus: Object.freeze([4, 6, 8]),
+  }),
+  zombie: Object.freeze({
+    id: "barrage",
+    label: "钢雨全域扫射",
+    icon: "✷",
+    pattern: "barrage",
+    bonus: Object.freeze([7, 6, 5]),
+  }),
+  beast: Object.freeze({
+    id: "hunt",
+    label: "兽王连环猎杀",
+    icon: "╳",
+    pattern: "hunt",
+    bonus: Object.freeze([3, 6, 9]),
+  }),
+});
+
+export function evolvedWaveUltimate(worldId, build, wave) {
+  const combo = COMBOS[worldId];
+  const ultimate = EVOLUTION_ULTIMATES[worldId];
+  if (!combo || !ultimate || !build?.evolved || !Number.isInteger(wave) || wave < 1 || wave > 3) {
+    return null;
+  }
+  const owned = [...(build.attack || []), ...(build.support || [])];
+  if (!combo.slice(0, 2).every((id) => owned.some((slot) => slot.id === id && slot.lv >= 1))) {
+    return null;
+  }
+  return {
+    id: ultimate.id,
+    label: ultimate.label,
+    icon: ultimate.icon,
+    style: ultimate.pattern,
+    bonus: ultimate.bonus[wave - 1],
+    ultimate: true,
+  };
 }
