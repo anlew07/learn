@@ -118,6 +118,7 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   await expect(page.locator(".survivor-score-main")).toContainText("敌群清剿");
   const replay = page.locator("[data-survivor-replay]");
   await expect(replay).toHaveCount(1);
+  await expect(replay.locator("[data-replay-arena]")).toHaveClass(/is-playing/);
   await expect(replay.locator("[data-wave-number]")).toHaveCount(3);
   const beforeReplay = await getSnapshot(page);
   await replay.locator('button[data-action="replay-wave"]').click();
