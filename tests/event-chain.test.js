@@ -167,3 +167,44 @@ describe("optional world story chains", () => {
     expect(JSON.stringify(state)).toBe(before);
   });
 });
+
+describe("follow-up narrative consequences", () => {
+  it("keeps a distinct epilogue for each paid world outcome", async () => {
+    const { followupEpilogue } = await import("../src/systems/event-chain.js");
+    const expected = { lingzai: "古阵回路", zombie: "母巢干扰信标", beast: "巨兽足迹" };
+    for (const id of Object.keys(expected)) {
+      const { world } = unlocked(id);
+      world.flags.followupResolved = true;
+      world.flags.followupOutcome = "commit";
+      expect(followupEpilogue(world)).toContain(expected[id]);
+    }
+  });
+
+  it("distinguishes safe, decline, incomplete and unknown clues without mutation", async () => {
+    const { followupEpilogue } = await import("../src/systems/event-chain.js");
+    const { world } = unlocked();
+    const snapshot = JSON.stringify(world);
+    expect(followupEpilogue(world)).toContain("未完成");
+    expect(JSON.stringify(world)).toBe(snapshot);
+    world.flags.followupResolved = true;
+    world.flags.followupOutcome = "safe";
+    expect(followupEpilogue(world)).toContain("调查记录");
+    world.flags.followupOutcome = "decline";
+    expect(followupEpilogue(world)).toContain("主动放弃");
+    delete world.flags.ancientSeal;
+    expect(followupEpilogue(world)).toBe("");
+  });
+
+  it("shows committed investigation in the actual successful world log", () => {
+    const { state, world } = unlocked("lingzai");
+    world.flags.followupResolved = true;
+    world.flags.followupOutcome = "commit";
+    world.p = 100;
+    world.flags.p100 = true;
+    world.level = 4;
+    world.resource = 100;
+    Engine.step(state);
+    expect(world.status).toBe("saved");
+    expect(state.logs.some((entry) => entry.world === world.id && entry.text.includes("古阵回路"))).toBe(true);
+  });
+});

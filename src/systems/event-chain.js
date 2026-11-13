@@ -140,3 +140,20 @@ export function followupMitigation(world, day, kind) {
   }
   return effect.perDay;
 }
+
+/** A read-only epilogue: the player's earlier clue and follow-up choices remain visible. */
+export function followupEpilogue(world) {
+  const flags = world?.flags || {};
+  const config = FOLLOWUPS[world?.id];
+  if (!config || !flags[config.trigger]) return "";
+  if (!flags.followupResolved) return "曾深入调查灾难线索，但未完成后续行动。";
+  if (flags.followupOutcome === "safe") return "此前保留的调查记录成为重建世界的第一份档案。";
+  if (flags.followupOutcome === "decline") return "此前主动放弃了线索的后续机缘，最终仍凭常规准备走到了这里。";
+  if (flags.followupOutcome !== "commit") return "";
+  const endings = {
+    lingzai: "曾刻下的古阵回路与灵脉核心共鸣，为新世界留下护灵阵纹。",
+    zombie: "先前布设的母巢干扰信标成为净化行动的关键记录。",
+    beast: "根据巨兽足迹设置的伏击阵地，最终成为兽王围猎的决胜线索。",
+  };
+  return endings[world.id] || "";
+}
