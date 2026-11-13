@@ -725,9 +725,7 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
   await expect(page.locator('[data-world-card="lingzai"] .world-kicker')).toContainText(
     "CULTIVATION",
   );
-  await expect(page.locator('[data-world-card="zombie"] .world-kicker')).toContainText(
-    "OUTBREAK",
-  );
+  await expect(page.locator('[data-world-card="zombie"] .world-kicker')).toContainText("OUTBREAK");
   await expect(page.locator('[aria-label="主要导航"] button')).toHaveCount(3);
   await page.locator('button[data-tab="soul"]').click();
   await expect(page.locator('button[data-tab="soul"]')).toHaveAttribute("aria-current", "page");
