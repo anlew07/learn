@@ -39,3 +39,24 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
     burst: Boolean(build.evolved && fullClear),
   };
 }
+
+/** Every third full clear in a short streak unleashes a bounded frenzy pulse. */
+export function nextSurvivorFrenzy(previous, day, fullClear) {
+  const chained = Boolean(
+    fullClear && previous && Number.isFinite(previous.lastDay) &&
+    day > previous.lastDay && day - previous.lastDay <= 3,
+  );
+  const count = fullClear ? (chained ? previous.count || 0 : 0) + 1 : 0;
+  const activated = count >= 3;
+  return { lastDay: day, count: activated ? 0 : count, activated };
+}
+
+/** A frenzy may only raise the existing wave bonus to its original hard cap. */
+export function applyFrenzyCaps(bonuses, active) {
+  return {
+    ...bonuses,
+    xp: Math.min(0.75, bonuses.xp + (active ? 0.15 : 0)),
+    resource: Math.min(0.5, bonuses.resource + (active ? 0.12 : 0)),
+    doomReduction: Math.min(0.25, bonuses.doomReduction + (active ? 0.05 : 0)),
+  };
+}

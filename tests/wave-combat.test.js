@@ -82,3 +82,30 @@ describe("escalating survivor wave encounter", () => {
     }
   });
 });
+
+describe("survivor full-clear frenzy payoff", () => {
+  it("activates once on every third timely full clear and resets on interruptions", async () => {
+    const { nextSurvivorFrenzy } = await import("../src/systems/survivor-waves.js");
+    const a = nextSurvivorFrenzy(null, 2, true);
+    const b = nextSurvivorFrenzy(a, 4, true);
+    const c = nextSurvivorFrenzy(b, 6, true);
+    expect([a.activated, b.activated, c.activated]).toEqual([false, false, true]);
+    expect(c.count).toBe(0);
+    expect(nextSurvivorFrenzy(c, 7, true).count).toBe(1);
+    expect(nextSurvivorFrenzy(b, 8, true).count).toBe(1);
+    expect(nextSurvivorFrenzy(b, 5, false).count).toBe(0);
+    expect(nextSurvivorFrenzy(b, 4, true).activated).toBe(false);
+  });
+
+  it("never crosses existing XP, material or doom reward caps", async () => {
+    const { applyFrenzyCaps } = await import("../src/systems/survivor-waves.js");
+    const base = { xp: 0.5, resource: 0.2, doomReduction: 0.1 };
+    const boosted = applyFrenzyCaps(base, true);
+    expect(boosted.xp).toBeGreaterThan(base.xp);
+    expect(boosted.resource).toBeGreaterThan(base.resource);
+    expect(boosted.doomReduction).toBeGreaterThan(base.doomReduction);
+    const capped = applyFrenzyCaps({ xp: 0.75, resource: 0.5, doomReduction: 0.25 }, true);
+    expect(capped).toEqual({ xp: 0.75, resource: 0.5, doomReduction: 0.25 });
+    expect(applyFrenzyCaps(base, false)).toEqual(base);
+  });
+});

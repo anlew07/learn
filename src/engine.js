@@ -3,7 +3,7 @@ import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.j
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
 import { computeWaveBonuses } from "./systems/wave-combat.js";
-import { simulateSurvivorWaves } from "./systems/survivor-waves.js";
+import { simulateSurvivorWaves, nextSurvivorFrenzy, applyFrenzyCaps } from "./systems/survivor-waves.js";
 import { previewMajorEvent } from "./systems/event-contract.js";
 import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
 import { summarizeFinale } from "./systems/finale-readiness.js";
@@ -158,6 +158,12 @@ const MultiworldEngine = (function () {
     var spectacle=simulateSurvivorWaves(w.id,w.build,POWERS,{
       day:s.day,level:w.level,momentum:momentum
     });
+    const frenzy=nextSurvivorFrenzy(w.waveClearStreak,s.day,spectacle.fullClear);
+    w.waveClearStreak={lastDay:frenzy.lastDay,count:frenzy.count};
+    spectacle.frenzy=frenzy.activated;
+    spectacle.clearStreak=frenzy.count;
+    effect=applyFrenzyCaps(effect,frenzy.activated);
+    if(frenzy.activated)log(s,w.id,"狂热爆发！连续第三次完整清屏，战技额外收益已计入本场上限。","major");
     var beforeXp=w.xp,beforeResource=w.resource,beforeD=w.d;
     if(effect.xp)produce(s,w,"xp",effect.xp);
     if(effect.resource)produce(s,w,"resource",effect.resource);
