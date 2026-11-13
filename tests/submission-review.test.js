@@ -79,7 +79,7 @@ describe("human review working sheet", () => {
     for (const row of rows) {
       const path = row[4];
       if (!sources.has(path)) {
-        sources.set(path, readFileSync(join(root, path), "utf8").split(/\\r?\\n/u));
+        sources.set(path, readFileSync(join(root, path), "utf8").split(/\r?\n/u));
       }
       const sourceLine = sources.get(path)[row[5] - 1];
       expect(sourceLine, path + ":" + row[5]).toBeDefined();
