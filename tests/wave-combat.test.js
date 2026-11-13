@@ -166,3 +166,56 @@ describe("frenzy feeds back into the survivor build loop", () => {
     expect(world.build.triggers["首次狂热清屏"]).toBeUndefined();
   });
 });
+
+describe("equipped survivor attack patterns", () => {
+  it("has distinct deterministic attack behaviors for six weapons", async () => {
+    const { featuredWaveAttack, ATTACK_PATTERNS } = await import("../src/systems/attack-patterns.js");
+    const cases = [
+      ["lingzai", "thunder", "chain"],
+      ["lingzai", "sword", "pierce"],
+      ["zombie", "blades", "fan"],
+      ["zombie", "arc", "chain"],
+      ["beast", "claws", "flurry"],
+      ["beast", "roar", "shockwave"],
+    ];
+    for (const [worldId, id, style] of cases) {
+      const equipped = { attack: [{ id, lv: 2 }], support: [], evolved: false };
+      const first = featuredWaveAttack(worldId, equipped, POWERS, 1);
+      const third = featuredWaveAttack(worldId, equipped, POWERS, 3);
+      expect(first.style).toBe(style);
+      expect(first.bonus).toBeGreaterThan(0);
+      expect(third.bonus).toBeLessThanOrEqual(4);
+      expect(ATTACK_PATTERNS[id].label).toBe(first.label);
+      expect(featuredWaveAttack(worldId, equipped, POWERS, 1)).toEqual(first);
+    }
+    expect(featuredWaveAttack("zombie", { attack: [], support: [] }, POWERS, 1).bonus).toBe(0);
+  });
+
+  it("alternates equipped attack weapons across the three recorded waves", async () => {
+    const { simulateSurvivorWaves } = await import("../src/systems/survivor-waves.js");
+    const equipped = {
+      attack: [{ id: "thunder", lv: 2 }, { id: "sword", lv: 2 }],
+      support: [],
+      evolved: false,
+    };
+    const result = simulateSurvivorWaves("lingzai", equipped, POWERS, {
+      day: 45, level: 2, momentum: 1,
+    });
+    expect(result.waves.map((wave) => wave.attack.id)).toEqual(["thunder", "sword", "thunder"]);
+    const noWeapons = simulateSurvivorWaves(
+      "lingzai", { attack: [], support: [], evolved: false }, POWERS,
+      { day: 45, level: 2, momentum: 1 },
+    );
+    expect(result.defeated).toBeGreaterThan(noWeapons.defeated);
+    expect(result.waves.every((wave) => wave.defeated <= wave.encountered)).toBe(true);
+    expect(JSON.parse(JSON.stringify(result)).waves[1].attack.style).toBe("pierce");
+  });
+
+  it("ignores invalid or support-only skills rather than fabricating attack damage", async () => {
+    const { featuredWaveAttack } = await import("../src/systems/attack-patterns.js");
+    const unsupported = { attack: [{ id: "armor", lv: 10 }, { id: "missing", lv: 2 }] };
+    expect(featuredWaveAttack("zombie", unsupported, POWERS, 2)).toMatchObject({
+      style: "basic", bonus: 0,
+    });
+  });
+});

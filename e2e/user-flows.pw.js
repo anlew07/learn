@@ -106,6 +106,7 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
     world.level = 2;
     world.resource = 12;
     world.threat = { id: "fixture-nest", status: "active", progress: 0, retryDay: 1 };
+    world.build.attack = [{ id: "blades", lv: 2 }];
     await saveRepository.enqueueSave(run, profile);
   });
   await page.reload();
@@ -129,13 +130,15 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
     () => document.documentElement.scrollWidth <= window.innerWidth,
   );
   expect(noHorizontalOverflow).toBe(true);
-  await expect(page.getByText("本次依靠基础自动战斗")).toBeVisible();
+  await expect(page.getByText("使用战技：碎片飞刃")).toBeVisible();
 
   const snapshot = await getSnapshot(page);
   const zombie = snapshot.run.worlds.find((world) => world.id === "zombie");
   expect(zombie.lastDecision.actionId).toBe("fight");
   expect(zombie.lastCombat.day).toBe(1);
-  expect(zombie.lastCombat.bonus.xp).toBe(0);
+  expect(zombie.lastCombat.bonus.xp).toBeGreaterThan(0);
+  expect(zombie.lastCombat.spectacle.waves[0].attack.style).toBe("fan");
+  await expect(page.locator('[data-world-card="zombie"] .attack-fan')).toHaveCount(3);
   expect(zombie.lastCombat.spectacle.waves).toHaveLength(3);
   expect(zombie.lastCombat.spectacle.defeated).toBeGreaterThan(0);
   expect(zombie.waveMomentum.count).toBe(1);
