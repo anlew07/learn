@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+<title>兽潮分身：荒野猎手</title>
+<defs><radialGradient id="bg" cx=".45" cy=".34" r=".8"><stop stop-color="#6B548D"/><stop offset="1" stop-color="#1A2743"/></radialGradient><linearGradient id="cloak" x1="25" y1="112" x2="140" y2="158"><stop stop-color="#967FB7"/><stop offset=".5" stop-color="#4C567C"/><stop offset="1" stop-color="#293452"/></linearGradient><linearGradient id="skin" x1="64" y1="54" x2="94" y2="102"><stop stop-color="#EDD1BA"/><stop offset="1" stop-color="#BD938A"/></linearGradient></defs>
+<circle cx="80" cy="80" r="77" fill="url(#bg)"/><circle cx="80" cy="80" r="68" stroke="#DABFF4" stroke-opacity=".3" stroke-dasharray="3 7"/>
+<path d="M52 64 35 36l-4-21 14 14 15 6m50 29 16-29 4-20-14 14-15 6" stroke="#D2BCEB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23 157 31 120c6-17 20-22 36-23h30c17 2 30 9 35 23l8 37H23Z" fill="url(#cloak)" stroke="#DABBF5" stroke-opacity=".4" stroke-width="2"/>
+<path d="m46 112 34 31 34-31-11-11H57l-11 11Z" fill="#303956"/><path d="m53 117 27 26 27-26" stroke="#E5CBDB" stroke-width="3"/>
+<path d="M48 64c-1-28 11-44 32-44s34 16 32 44l-4 51-12 9-2-38-29 1-2 37-12-9-3-51Z" fill="#25263D"/>
+<path d="M58 66c1-17 11-27 23-27 13 0 23 10 25 27l-3 22c-4 12-12 20-22 20-11 0-18-8-22-20l-1-22Z" fill="url(#skin)"/>
+<path d="M54 66c10-6 12-16 14-22 13 10 26 9 40 20l-1-14-14-18-30 0-14 23 5 11Z" fill="#292940"/>
+<path d="m65 74 11 2m15 0 8-2" stroke="#52485A" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M53 80c6 6 13 8 20 8m16 0c8 0 13-2 19-8" stroke="#B99BD1" stroke-width="3" stroke-opacity=".9"/>
+<path d="m46 94 9 18-6 12m65-30-9 18 6 12" stroke="#7A6C94" stroke-width="7"/>
+<path d="m117 69 20 11-14 8" stroke="#ECD5A5" stroke-width="3" stroke-linecap="round"/><path d="M29 82h10m-5-5v10" stroke="#E8CDFF" stroke-width="2"/>
+</svg>
