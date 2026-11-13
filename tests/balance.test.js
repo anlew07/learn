@@ -13,6 +13,9 @@ describe("declarative rules and balance configuration", () => {
     expect(BALANCE.actions.gatheringResources).toBeGreaterThan(
       BALANCE.actions.combatResources,
     );
+    expect(BALANCE.actions.beastSuppressionDoomRelief).toBeGreaterThan(0);
+    expect(BALANCE.actions.beastSuppressionDoomRelief).toBeLessThanOrEqual(3);
+    expect(BALANCE.actions.beastSuppressionThreatMitigation * 2).toBeLessThanOrEqual(0.2);
   });
 
   it("keeps the natural world pressure independent from action choice", () => {
