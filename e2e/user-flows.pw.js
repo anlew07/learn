@@ -671,9 +671,7 @@ test("permanent archive survives restarting and refresh", async ({ page }) => {
   });
   await page.reload();
   await page.locator('button[data-action="step"]').click();
-  await expect
-    .poll(async () => (await getSnapshot(page)).profile.secretArchive?.length)
-    .toBe(2);
+  await expect.poll(async () => (await getSnapshot(page)).profile.secretArchive?.length).toBe(2);
   await page.locator('button[data-action="home"]').click();
   const archive = page.locator("[data-profile-archive]");
   const firstSecret = archive.locator('[data-archive-id="lingzai/tea-break"]');
