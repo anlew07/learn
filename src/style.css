@@ -430,3 +430,36 @@ button:active:not(:disabled){transform:translateY(1px)}
 }
 /* Playback remains safe in spectator mode because it never changes the run. */
 .app-shell.readonly button[data-action="replay-wave"]{opacity:1;pointer-events:auto}
+
+
+/* Distinct attack silhouettes for real equipped skills (no new asset dependencies). */
+.replay-wave{position:relative;overflow:hidden}
+.replay-wave .replay-hit{display:block;right:8px;top:30%;font-size:22px;opacity:.8;pointer-events:none}
+.replay-attack-name{grid-column:1/-1;color:#b7e7e4;font-size:.63rem;letter-spacing:.015em;font-weight:750}
+.replay-wave.attack-chain{border-color:#4f86b9}
+.replay-wave.attack-chain .replay-hit{color:#9bddff;text-shadow:0 0 12px #58c8ff}
+.replay-wave.attack-pierce{border-color:#74b8ab}
+.replay-wave.attack-pierce .replay-hit{color:#acfff2;text-shadow:0 0 14px #54ecd4}
+.replay-wave.attack-fan{border-color:#bf8ab4}
+.replay-wave.attack-fan .replay-hit{color:#f5c2f2;text-shadow:0 0 14px #e89bf0}
+.replay-wave.attack-flurry{border-color:#d6a47b}
+.replay-wave.attack-flurry .replay-hit{color:#ffd4a6;text-shadow:0 0 14px #f6aa5b}
+.replay-wave.attack-shockwave{border-color:#b6a1dc}
+.replay-wave.attack-shockwave .replay-hit{color:#d8c5ff;text-shadow:0 0 14px #af84ef}
+.replay-arena.is-playing .replay-wave .replay-hit{
+ animation:replay-skill-hit .68s ease-in-out both;animation-delay:.3s
+}
+.replay-arena.is-playing .replay-wave:nth-child(2) .replay-hit{animation-delay:1.25s}
+.replay-arena.is-playing .replay-wave:nth-child(3) .replay-hit{animation-delay:2.2s}
+.replay-arena.is-playing .attack-pierce .replay-hit{animation-name:replay-skill-pierce}
+.replay-arena.is-playing .attack-fan .replay-hit{animation-name:replay-skill-fan}
+.replay-arena.is-playing .attack-flurry .replay-hit{animation-name:replay-skill-flurry}
+.replay-arena.is-playing .attack-shockwave .replay-hit{animation-name:replay-skill-shockwave}
+@keyframes replay-skill-hit{0%{opacity:0;transform:translate(0,-50%) scale(.2)}45%{opacity:1;transform:translate(-22px,-50%) scale(1.65)}100%{opacity:.5;transform:translate(-10px,-50%) scale(.7)}}
+@keyframes replay-skill-pierce{0%{opacity:0;transform:translate(30px,-50%) rotate(-35deg)}50%{opacity:1;transform:translate(-65px,-50%) rotate(20deg)}100%{opacity:.5;transform:translate(-10px,-50%) rotate(160deg)}}
+@keyframes replay-skill-fan{0%{opacity:0;transform:translateY(-50%) scaleX(.2)}50%{opacity:1;transform:translate(-18px,-50%) scaleX(2)}100%{opacity:.5;transform:translate(-18px,-50%) scaleX(1)}}
+@keyframes replay-skill-flurry{0%{opacity:0;transform:translateY(-50%) rotate(-45deg)}30%{opacity:1;transform:translate(-16px,-50%) rotate(40deg)}65%{transform:translate(-25px,-50%) rotate(-30deg)}100%{opacity:.6;transform:translate(-15px,-50%)}}
+@keyframes replay-skill-shockwave{0%{opacity:0;transform:translateY(-50%) scale(.1)}60%{opacity:1;transform:translate(-8px,-50%) scale(2.2)}100%{opacity:.3;transform:translate(-8px,-50%) scale(2.7)}}
+@media(prefers-reduced-motion:reduce){
+ .replay-arena.is-playing .replay-wave .replay-hit{animation:none!important}
+}
