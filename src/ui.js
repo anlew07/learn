@@ -125,7 +125,10 @@ function worldHtml(w){
  (w.lastDecision&&!stop?'<div class="world-note"><span class="decision-label">自主判断：</span>'+esc(w.lastDecision.reason)+'</div>':'')+
  '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 清剿 '+w.threat.progress+'/2</span>':'')+
  (v.injured?'<span class="pill bad">受伤</span>':'')+(w.weaknessUntil>=run.day&&w.weaknessStart<=run.day?'<span class="pill warn">借力虚弱</span>':'')+
- (run.waves&&w.build.evolved?'<span class="pill good">✦ '+esc(w.build.evolutionName)+'</span>':run.waves&&w.build.count?'<span class="pill">已装备战技 '+(w.build.attack.length+w.build.support.length)+'/3</span>':'')+'</div>'+
+ (run.waves&&w.build.evolved?'<span class="pill good">✦ '+esc(w.build.evolutionName)+'</span>':run.waves&&w.build.count?'<span class="pill">已装备战技 '+(w.build.attack.length+w.build.support.length)+'/3</span>':'')+
+ (w.flags.followupOutcome?'<span class="pill '+(w.flags.followupOutcome==="commit"?"good":"")+'">后续机缘：'+
+ (w.flags.followupOutcome==="commit"?"已投入":w.flags.followupOutcome==="safe"?"已整理":"已放弃")+
+ (w.followupEffect?.until>=run.day?' · 效果至第'+w.followupEffect.until+'日':'')+'</span>':'')+'</div>'+
  (run.waves&&w.lastCombat?combatHtml(w.lastCombat):"")+
  (stop?'':'<div class="select-row"><label class="muted">长期策略 <select data-action="strategy" data-world="'+w.id+'"'+
  (strategyPreview.available?'':' disabled')+'>'+options+'</select></label>'+

@@ -21,6 +21,7 @@
 - `src/systems/strategy-contract.js`：唯一长期策略切换支付前合同，支持免费期、闭关AP预留和无效状态；引擎和世界卡必须读取同一规则，操作失败必须重绘真实状态。
 - `src/systems/intervention-ledger.js`：只做动作结算前后快照差异/本局历史上限，不允许预判未发生的结果、重新应用收益或抽取随机数。由`applyCommand`成功分支调用，重复操作ID由既有去重层兜底。
 - `src/systems/crisis-advisor.js`：只通过既有规则合同判断当前风险和可执行操作；输入RunState和外部纯函数回调，不操作战斗、不生成奖励、不做未来天数预测。UI只做导航，不直接支付。
+- `src/systems/event-chain.js`：两阶段世界事件的内容、一次性排队资格、纯预览、实际结算和每日后续效果。不得在UI另写支付逻辑，也不能以某个稀有线索挡住非随机P30/65/100主线。
 - `scripts/intervention-compare.mjs`：本地固定种子批量对照，结果必须带脚本化干预、成功执行比例和结局差异，不得宣称玩家真实胜率。
 - `src/ui.js`：展示和用户指令。只能调用引擎的正式接口；不可私自修改世界的等级、资源、冷却或结局。
 - `src/services/persistence.js`：使用idb-keyval批量事务读写RunState/ProfileState；不引入世界规则、UI DOM或剧情内容，测试通过可注入存储驱动执行。

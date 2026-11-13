@@ -1,5 +1,6 @@
 import { WORLDS } from "../config/game-data.js";
 import { evaluateFusion } from "./fusion-contract.js";
+import { previewFollowup } from "./event-chain.js";
 
 /**
  * Shared, side-effect-free preview and pre-payment validation for event choices.
@@ -44,6 +45,7 @@ export function previewMajorEvent(state,world) {
       ],
     };
   }
+  if(e.type==="followup")return previewFollowup(state,world);
   if(e.type!=="boss")return null;
   const level=Math.max(0,world.level-Number(world.injuryUntil>=state.day));
   const direct=level>=3;

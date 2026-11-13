@@ -515,3 +515,94 @@ test("a P100 materials-only finale displays a blocker, not an invalid aid shortc
   await expect(crisis.locator('button[data-action="crisis-aid"]')).toHaveCount(0);
   await expect(crisis.locator('button[data-action="crisis-fusion"]')).toHaveCount(0);
 });
+
+test("Lingzai follow-up lets players invest into a visible seven-day seal effect", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "lingzai");
+    world.flags.sideFound = true;
+    world.flags.sideResolved = true;
+    world.flags.p65 = true;
+    world.flags.ancientSeal = true;
+    world.flags.followupQueued = true;
+    world.p = 65;
+    world.resource = 7;
+    world.pendingEvent = {
+      id: "lingzai/followup/test",
+      type: "followup",
+      title: "古阵回路 · 阵纹护持",
+      state: "active",
+      expiresDay: run.day + 2,
+    };
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+
+  const event = page.locator('.event[data-world="lingzai"]');
+  await expect(event).toContainText("未来7个游戏日");
+  await expect(event).toContainText("到期不操作");
+  const before = (await getSnapshot(page)).run;
+  await expect(event.getByRole("button", { name: "刻印护灵古阵" })).toBeEnabled();
+  expect((await getSnapshot(page)).run).toEqual(before);
+  await event.getByRole("button", { name: "刻印护灵古阵" }).click();
+  await expect(event).toHaveCount(0);
+
+  await expect
+    .poll(async () => {
+      const saved = await getSnapshot(page);
+      return saved.run.worlds.find((world) => world.id === "lingzai").flags.followupOutcome;
+    })
+    .toBe("commit");
+  const saved = (await getSnapshot(page)).run;
+  const world = saved.worlds.find((item) => item.id === "lingzai");
+  expect(saved.ap).toBe(1);
+  expect(world.resource).toBe(4);
+  expect(world.followupEffect).toEqual({
+    kind: "natural",
+    start: saved.day + 1,
+    until: saved.day + 7,
+    perDay: 0.4,
+  });
+  await expect(page.locator(".world").first()).toContainText("后续机缘：已投入");
+  await page.reload();
+  await expect(page.locator(".world").first()).toContainText("效果至第");
+});
+
+test("follow-up event can automatically choose the safe path at expiry", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "zombie");
+    world.flags.sideFound = true;
+    world.flags.sideResolved = true;
+    world.flags.p65 = true;
+    world.flags.weakness = true;
+    world.flags.followupQueued = true;
+    world.p = 65;
+    world.pendingEvent = {
+      id: "zombie/followup/test",
+      type: "followup",
+      title: "失联广播 · 母巢扰流",
+      state: "active",
+      expiresDay: run.day,
+    };
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-action="step"]').click();
+  await expect
+    .poll(async () => {
+      const saved = await getSnapshot(page);
+      return saved.run.worlds.find((world) => world.id === "zombie").flags.followupOutcome;
+    })
+    .toBe("safe");
+  const saved = (await getSnapshot(page)).run;
+  expect(saved.ap).toBe(2);
+  expect(saved.worlds.find((world) => world.id === "zombie").pendingEvent).toBeNull();
+  await expect(page.locator('.event[data-world="zombie"]')).toHaveCount(0);
+});

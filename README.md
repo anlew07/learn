@@ -81,13 +81,13 @@ Web Locks 需要**安全上下文**：正式部署应使用 HTTPS，本机 `loca
 
 这些功能已通过独立模拟测试，**尚需真实多标签页和手机浏览器验证**。没有支持 Web Locks 的环境默认只读，不会冒险双写。
 
-## HTTPS试玩预览 · Pages未启用
+## HTTPS试玩预览 · GitHub Pages已发布
 
-当前H5代码已经通过真实Chromium移动视口测试，并接入了**只发布CI通过的main版本**的GitHub Pages部署工作流。构建和页面打包已成功，但2026-11-12第一次部署在`actions/configure-pages@v5`处得到404，说明仓库的Pages站点尚未启用。
+**试玩地址：** https://anlew07.github.io/learn/
 
-**需要仓库管理员一次性操作：** 打开 [Settings → Pages](https://github.com/anlew07/learn/settings/pages)，在 **Build and deployment → Source** 选择 **GitHub Actions**。仓库网站部署与普通GitHub Actions额度是两回事。启用后，后续main提交通过完整验证就会自动部署；此前若不做此设置，自动部署工作流将明确跳过并在运行摘要说明原因，不会伪称预览已上线。
+仓库已经在 Settings → Pages 选择 GitHub Actions。2026-11-13 通过补充 `check-pages` 的 `pages: read` 授权后，正式部署 [Actions #43350526046](https://github.com/anlew07/learn/actions/runs/43350526046) 的 build/deploy 都成功，部署日志显示 `Reported success!` 和上述 `page_url`。这不是仅通过单元测试或被跳过的部署任务。
 
-计划的站点路径为 `/learn/`，Vite打包已指定 `--base=/learn/`；**在Pages首次成功发布前不将候选URL视为有效试玩链接**。
+之后只有 `Validate H5` 全部通过的 main 版本会自动更新站点；Vite使用 `--base=/learn/`，Pages由GitHub托管。**GitHub确认发布成功，不等于已经完成Android Chrome / iOS Safari真机加载、后台恢复、存档与多标签页验证。**
 
 ## 持续威胁的自主策略微调（实验）
 
@@ -126,3 +126,9 @@ Web Locks 需要**安全上下文**：正式部署应使用 HTTPS，本机 `loca
 每个世界列出当前状况以及从真实`info`/`previewMajorEvent`/`previewAid`/`previewFusion`得到的合法选择。优先使用**不会使来源终局材料从达标跌为不达标**的援助者；如无合法援助，清楚显示AP、冷却或来源资源阻碍。P100但缺材料时明确说明跨世界援助不会把材料转给目标，不能用P援助解决材料缺口。
 
 按钮仅**跳转**到现有援助、灵魂融合或事件处理面板，不代玩家执行，不消耗AP/灵魂，不更改存档或随机数。高优先级是当前风险排序，不是预测哪一世界必定失败、哪一次援助能延后若干天。
+
+## 三世界两段式机缘
+
+成功完成第一阶段的高风险调查（65%成功率）后，若已完成P65主线，每个世界会且只会排队触发一次后续事件：灵灾古阵回路、尸潮扰流信标、兽潮围猎阵地。可以免费整理结果（至多P+2），或支付1AP与3份本世界材料获得不同的持续/终战效果。无人操作到期自动选择安全研究，不中断挂机。
+
+灵灾：D−3和未来7个游戏日自然恶化每天减0.4；尸潮：D−4和未来7个游戏日有活跃尸群时抵消额外D+0.3；兽潮：D−2、二阶段压制，终战等级要求由原兽王规则实时计算。没有触发初始机缘、调查失败或拒绝后续时，**不影响正常P30/65/100主线的可通关性**。每世界最多同时一个重大事件，新事件和同世界已有首领事件串行。 

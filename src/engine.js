@@ -11,6 +11,7 @@ import { previewResourceAid } from "./systems/aid-contract.js";
 import { previewStrategyChange } from "./systems/strategy-contract.js";
 import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
 import { assessCrises } from "./systems/crisis-advisor.js";
+import { FOLLOWUPS, canQueueFollowup, settleFollowup, followupMitigation } from "./systems/event-chain.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -191,6 +192,11 @@ const MultiworldEngine = (function () {
     if(!selected.available)return {ok:false,error:selected.unavailableReason||"尚未满足干预条件"};
 
     if(choice==="fusion")return fuse(s,worldId);
+    if(w.pendingEvent.type==="followup"){
+      var outcome=settleFollowup(s,w,choice,{addProgress:addProgress,addD:addD,log:log});
+      checkWorld(s,w);finishRun(s);
+      return outcome;
+    }
     if(w.pendingEvent.type==="boss"){
       if(choice==="retreat"){
         w.pendingEvent=null;
@@ -242,6 +248,13 @@ const MultiworldEngine = (function () {
     if(s.waves)offerBuild(s,w,"首次击败精英");
   }
   function queuedEvent(s,w){
+    if(!w.pendingEvent&&canQueueFollowup(w)){
+      w.flags.followupQueued=true;
+      w.eventCount++;
+      w.pendingEvent={id:w.id+"/followup/"+w.eventCount,type:"followup",
+        title:FOLLOWUPS[w.id].title,state:"queued",startDay:s.day+1,expiresDay:s.day+3};
+      log(s,w.id,"先前成功调查的线索出现后续变化："+FOLLOWUPS[w.id].title+"。","major");
+    }
     if(!w.pendingEvent&&threatActive(w)&&(w.queuedBoss||w.threat.status==="awaiting_alpha")&&s.day>=(w.threat.retryDay||1)){
       w.queuedBoss=false;w.eventCount++;
       w.pendingEvent={id:w.id+"/boss/"+w.eventCount,type:"boss",title:"巢群首领挑战",state:"queued",startDay:s.day+1,expiresDay:s.day+3};
@@ -412,8 +425,9 @@ const MultiworldEngine = (function () {
       }else doAction(s,w,chooseAction(s,w));
       // All sources of danger are calculated once after the day's major action.
       if(w.status==="running"){
-        addD(w,dailyDoomPressure(s.day,s.runNumber));
-        if(threatActive(w))addD(w,0.3);
+        addD(w,Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
+          followupMitigation(w,s.day,"natural")));
+        if(threatActive(w))addD(w,Math.max(0,0.3-followupMitigation(w,s.day,"threat")));
         if(random(w)<0.015){addD(w,2.2);log(s,w.id,"末日环境突然恶化，毁灭压力上涨。","warning");}
         newThreat(s,w);
         if(w.d>=100)checkWorld(s,w);
