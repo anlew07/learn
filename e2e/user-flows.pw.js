@@ -891,8 +891,8 @@ test("first run defaults to a focused rescue tutorial without changing the simul
   }
   await expect(page.locator(".world")).toHaveCount(2);
   await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
+  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(9);
   const completed = await getSnapshot(page);
-  expect(completed.run.day).toBe(9);
   expect(completed.run.worlds).toHaveLength(2);
 });
 
@@ -904,12 +904,11 @@ test("quick start can reveal both worlds immediately without paying AP or losing
   const before = await getSnapshot(page);
   await page.locator('[data-action="show-all-worlds"]').click();
   await expect(page.locator(".world")).toHaveCount(2);
+  await expect.poll(async () => (await getSnapshot(page)).run.onboardingFocus).toBe(false);
   const after = await getSnapshot(page);
-  expect(after.run.onboardingFocus).toBe(false);
   expect(after.run.day).toBe(before.run.day);
   expect(after.run.ap).toBe(before.run.ap);
   expect(after.run.soul).toBe(before.run.soul);
   await page.reload();
   await expect(page.locator(".world")).toHaveCount(2);
 });
-
