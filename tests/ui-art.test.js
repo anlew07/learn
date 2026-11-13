@@ -23,7 +23,7 @@ const artwork = Object.keys(artworkSizes);
 
 describe("small, self-contained pixel-art kit", () => {
   it("loads the pixel presentation after the existing game stylesheet", () => {
-    expect(ui).toContain('import "./style.css";\nimport "./art-direction.css";');
+    expect(ui).toContain('import "./style.css"; import "./art-direction.css";');
   });
 
   it.each(artwork)("keeps %s on a tiny, fixed integer pixel grid", (name) => {
