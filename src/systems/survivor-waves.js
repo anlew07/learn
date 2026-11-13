@@ -40,7 +40,7 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
   }, 0);
   const baseEnemies = Math.min(42, 7 + Math.floor(Math.max(1, day) / 7) * 2);
   const power = 8 + Math.max(0, level - 1) * 3 + attack * 4 +
-    support + (build.evolved ? 6 : 0) + Math.min(3, momentum) * 2;
+    support + (evolvedWaveUltimate(worldId, build, 1) ? 6 : 0) + Math.min(3, momentum) * 2;
   let chain = 0;
   const waves = [1, 2, 3].map((wave) => {
     const trait = waveEnemyTrait(day, wave);
@@ -69,7 +69,7 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
     combo: chain,
     momentum: Math.min(3, momentum),
     grade: fullClear ? "清屏" : defeated / encountered >= 0.8 ? "压制" : "鏖战",
-    burst: Boolean(build.evolved && fullClear),
+    burst: Boolean(evolvedWaveUltimate(worldId, build, 1) && fullClear),
   };
 }
 
