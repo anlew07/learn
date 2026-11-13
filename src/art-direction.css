@@ -78,6 +78,8 @@ summary:focus-visible { outline-color: #b8f0fc; outline-width: 3px; outline-offs
 .experiment-toggle { background: #162638; border: 1px solid #496c7c; }
 .footer-nav button.active .nav-glyph { color: #162638; }
 .footer-nav button:not(.active):hover { color: #f2f0e6; background: #162638; }
+.btn { background: #69c6ae; border-color: #9be7cf; color: #162638; }
+.btn:hover:not(:disabled) { background: #9be7cf; border-color: #9be7cf; color: #162638; }
 .pill { background: var(--pixel-base); }
 .pill.good { color: #9be7cf; border-color: #3e897e; }
 .pill.bad { color: #ffd0b0; border-color: #a65c58; }
