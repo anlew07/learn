@@ -96,3 +96,10 @@ button{background:#273e55;color:#eaf4fb;border:1px solid #395971;border-radius:9
 @media(max-width:380px){.aid-options{grid-template-columns:1fr}}
 
 .strategy-price{font-size:.72rem;line-height:1.45;color:#aec9de}
+
+.intervention-history{display:grid;gap:8px}
+.intervention-item{padding:10px;border:1px solid #314b60;border-radius:10px;background:#132234}
+.intervention-item .row-between b{font-size:.82rem}
+.intervention-item .hint{margin-top:4px;line-height:1.6}
+.intervention-effects{margin:7px 0 1px;font-size:.8rem;line-height:1.65}
+.intervention-world{margin-top:3px;overflow-wrap:anywhere}

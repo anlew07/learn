@@ -392,3 +392,43 @@ test("strategy switching shows AP cost and never misrepresents an unavailable ch
   const saved = await getSnapshot(page);
   expect(saved.run.ap).toBe(0);
 });
+
+test("committed aid consequences remain visible after reload and in the battle log", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await startFirstRun(page);
+  await page.locator('button[data-tab="soul"]').click();
+  await page.locator('button[data-action="aid"][data-mode="p"]').click();
+  const activity = page.locator(".intervention-history").first();
+  await expect(activity).toContainText("跨世界援助");
+  await expect(activity).toContainText("拯救准备+12");
+  await expect(activity).toContainText("资源-4");
+  await expect(activity).toContainText("AP−1");
+  await expect(activity).toContainText("第10日起");
+  const snapshot = await getSnapshot(page);
+  expect(snapshot.run.interventions).toHaveLength(1);
+  await page.reload();
+  await expect(page.locator(".intervention-history")).toContainText("跨世界援助");
+  await page.locator('button[data-tab="log"]').click();
+  await expect(page.locator(".intervention-history")).toContainText("拯救准备+12");
+  expect((await getSnapshot(page)).run.interventions).toHaveLength(1);
+});
+
+test("paid strategy choice records its cause without claiming immediate doom reduction", async ({
+  page,
+}) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    run.day = 4;
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('select[data-action="strategy"][data-world="zombie"]').selectOption("growth");
+  await expect(page.locator(".intervention-history")).toContainText("调整长期策略");
+  await expect(page.locator(".intervention-history")).toContainText("拯救优先 → 成长优先");
+  await expect(page.locator(".intervention-history")).toContainText("AP−1");
+  const log = (await getSnapshot(page)).run.interventions;
+  expect(log).toHaveLength(1);
+  expect(log[0].changes[0].effects.d).toBe(0);
+});

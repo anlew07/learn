@@ -9,6 +9,7 @@ import { summarizeFinale } from "./systems/finale-readiness.js";
 import { evaluateFusion } from "./systems/fusion-contract.js";
 import { previewResourceAid } from "./systems/aid-contract.js";
 import { previewStrategyChange } from "./systems/strategy-contract.js";
+import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -527,7 +528,9 @@ const MultiworldEngine = (function () {
       if(saved.signature!==signature)return {ok:false,error:"操作ID与已有指令不匹配"};
       return {...saved.result,replayed:true};
     }
+    var before=captureIntervention(s);
     var result=handlers[command.type](s,...command.args);
+    if(result.ok)recordIntervention(s,command,before);
     if(!s.operationResults)s.operationResults={};
     if(!s.operationOrder)s.operationOrder=[];
     s.operationResults[command.operationId]={signature:signature,result:{...result}};

@@ -23,6 +23,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run balance:check
+      - run: npm run compare:interventions:check
       - name: Install Chromium for browser acceptance tests
         run: npx playwright install --with-deps chromium
       - name: Verify real mobile-viewport Chromium flows

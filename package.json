@@ -14,8 +14,10 @@
     "test:watch": "vitest",
     "balance": "node scripts/balance-report.mjs --seeds=100",
     "balance:check": "node scripts/balance-report.mjs --seeds=100 --assert",
-    "verify": "npm run lint && npm run format:check && npm test && npm run build && npm run balance:check && npm run test:e2e",
-    "test:e2e": "playwright test"
+    "verify": "npm run lint && npm run format:check && npm test && npm run build && npm run balance:check && npm run compare:interventions:check && npm run test:e2e",
+    "test:e2e": "playwright test",
+    "compare:interventions": "node scripts/intervention-compare.mjs --seeds=60",
+    "compare:interventions:check": "node scripts/intervention-compare.mjs --seeds=40 --assert"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",

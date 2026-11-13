@@ -222,7 +222,42 @@ function soulHtml(){
  '<button data-action="fusion" data-world="'+w.id+'" '+(f.available?'':'disabled')+'>'+
  (f.available?'发动'+esc(f.kind):'条件未满足')+'</button></div>';
  }).join("")+'</section>'+
- '<section class="panel"><h2>世界回响</h2>'+(echoes.length?echoes.map(e=>'<div class="soul-row"><b>'+Engine.WORLDS[e.id].name+' 回响</b><div class="event-actions">'+running.filter(w=>w.id!==e.id).map(w=>'<button data-action="echo" data-from="'+e.id+'" data-world="'+w.id+'">支援'+w.name+'</button>').join("")+'</div></div>').join(""):'<div class="muted">还没有可使用的世界回响。已拯救世界不再参与普通援助。</div>')+'</section></div>';
+ '<section class="panel"><h2>世界回响</h2>'+(echoes.length?echoes.map(e=>'<div class="soul-row"><b>'+Engine.WORLDS[e.id].name+' 回响</b><div class="event-actions">'+running.filter(w=>w.id!==e.id).map(w=>'<button data-action="echo" data-from="'+e.id+'" data-world="'+w.id+'">支援'+w.name+'</button>').join("")+'</div></div>').join(""):'<div class="muted">还没有可使用的世界回响。已拯救世界不再参与普通援助。</div>')+'</section>'+interventionHtml(4)+'</div>';
+}
+function interventionHtml(limit=5){
+ const entries=Array.isArray(run.interventions)?run.interventions.slice(-limit).reverse():[];
+ if(!entries.length)return "";
+ const precise=(value)=>String(Number(value.toFixed(2)));
+ const signed=(value)=>value>0?"+"+precise(value):precise(value);
+ const changes=(entry)=>entry.changes.flatMap((world)=>{
+  const parts=[];
+  for(const [key,label] of [["p","拯救准备"],["d","毁灭压力"],["resource","资源"],["xp","经验"]]){
+   if(world.effects[key])parts.push(label+signed(world.effects[key]));
+  }
+  if(world.strategyFrom!==world.strategyTo){
+   parts.push("策略："+(labelStrategies[world.strategyFrom]||world.strategyFrom)+" → "+
+     (labelStrategies[world.strategyTo]||world.strategyTo));
+  }
+  if(world.statusFrom!==world.statusTo)parts.push("世界状态："+world.statusTo);
+  if(world.buildAdded>0)parts.push("新增战技"+world.buildAdded+"项");
+  if(world.eventResolved)parts.push("重大事件已处理");
+  if(world.retreatFrom!==world.retreatTo)parts.push(world.retreatTo?"进入闭关":"退出闭关");
+  return parts.length?['<div class="intervention-world"><b>'+esc(world.name)+'</b>：'+
+    parts.map(esc).join(" · ")+'</div>']:[];
+ }).join("");
+ return '<section class="panel intervention-history" aria-label="已结算干预"><h2>你的决定带来了什么</h2>'+
+ '<p class="hint">以下是当时真实结算的差额，不是未来天数预测；后续变化仍取决于世界自主行动。</p>'+
+ entries.map(entry=>'<article class="intervention-item">'+
+   '<div class="row-between"><b>第'+entry.day+'日 · '+esc(entry.title)+'</b>'+
+   '<span class="pill">实际已结算</span></div>'+
+   '<div class="hint">全局成本：'+
+     (entry.apSpent?'AP−'+n(entry.apSpent)+' ':'')+
+     (entry.soulSpent?'灵魂−'+n(entry.soulSpent):'')+
+     (!entry.apSpent&&!entry.soulSpent?'无AP/灵魂消耗':'')+'</div>'+
+   '<div class="intervention-effects">'+changes(entry)+'</div>'+
+   (entry.nextAidDay?'<div class="hint">此目标再次援助：第'+entry.nextAidDay+'日起</div>':'')+
+   (entry.nextFusionDay?'<div class="hint">灵魂借力冷却至第'+entry.nextFusionDay+'日</div>':'')+
+ '</article>').join("")+'</section>';
 }
 function statsHtml(){
  return '<section class="panel session-stats"><h2>本局行动统计</h2>'+
@@ -242,7 +277,7 @@ function statsHtml(){
 }
 function logsHtml(){
  return '<section class="panel"><h2>世界战报</h2><div class="muted">普通行为自动合并，关键危机和突破保留记录。</div>'+
- run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>';
+ run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>'+interventionHtml(24);
 }
 function homeHtml(){
  return '<header class="topbar"><div class="brand">☼ 同时穿越：末日模拟器</div><span class="pill">V0.2 开发原型</span></header>'+
@@ -268,7 +303,7 @@ function render(){
    statsHtml()+run.worlds.map(worldHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
 function footer(){return '<nav class="footer-nav"><button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'">末日世界</button><button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'">万我同源</button><button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'">战报记录</button></nav>';}
 async function execute(type,args){

@@ -19,6 +19,8 @@
 - `src/systems/fusion-contract.js`：提供副作用为零的融合资格、费用和供力者计算；引擎`fuse`和UI预览必须消费同一结果。对显式ID列表去重，不能以重复供力者绕过人数门槛。
 - `src/systems/aid-contract.js`：唯一的援助支付前合同，明确实际P/D增量、费用、源世界材料风险和共享冷却；纯计算无RNG、无存档写入。UI直接呈现合同，引擎`aid`在扣费前重新确认。
 - `src/systems/strategy-contract.js`：唯一长期策略切换支付前合同，支持免费期、闭关AP预留和无效状态；引擎和世界卡必须读取同一规则，操作失败必须重绘真实状态。
+- `src/systems/intervention-ledger.js`：只做动作结算前后快照差异/本局历史上限，不允许预判未发生的结果、重新应用收益或抽取随机数。由`applyCommand`成功分支调用，重复操作ID由既有去重层兜底。
+- `scripts/intervention-compare.mjs`：本地固定种子批量对照，结果必须带脚本化干预、成功执行比例和结局差异，不得宣称玩家真实胜率。
 - `src/ui.js`：展示和用户指令。只能调用引擎的正式接口；不可私自修改世界的等级、资源、冷却或结局。
 - `src/services/persistence.js`：使用idb-keyval批量事务读写RunState/ProfileState；不引入世界规则、UI DOM或剧情内容，测试通过可注入存储驱动执行。
 - `src/services/exclusive-session.js`：Web Locks原生单写者模式；不维护自研localStorage心跳锁。未获得锁的页面只读，重新获取锁后必须重读最新存档。
