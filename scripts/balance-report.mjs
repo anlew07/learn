@@ -75,11 +75,13 @@ for (const runNumber of [1, 2, 3]) {
           if (world.status === "saved") {
             outcomes.saved++;
           } else {
-            const terminalLog = [...state.logs].reverse().find(
-              (entry) =>
-                entry.world === world.id &&
-                (entry.text.startsWith("末日降临：") || entry.text.includes("灵魂归零")),
-            );
+            const terminalLog = [...state.logs]
+              .reverse()
+              .find(
+                (entry) =>
+                  entry.world === world.id &&
+                  (entry.text.startsWith("末日降临：") || entry.text.includes("灵魂归零")),
+              );
             const reason = terminalLog?.text.startsWith("末日降临：")
               ? terminalLog.text.split("：")[1].split("。")[0]
               : terminalLog
@@ -87,16 +89,17 @@ for (const runNumber of [1, 2, 3]) {
                 : "未知原因";
             outcomes.failed[reason] = (outcomes.failed[reason] || 0) + 1;
           }
-          const endLog = [...state.logs].reverse().find(
-            (entry) =>
-              entry.world === world.id &&
-              (entry.kind === "success" ||
-                entry.text.startsWith("末日降临：") ||
-                entry.text.includes("灵魂归零")),
-          );
+          const endLog = [...state.logs]
+            .reverse()
+            .find(
+              (entry) =>
+                entry.world === world.id &&
+                (entry.kind === "success" ||
+                  entry.text.startsWith("末日降临：") ||
+                  entry.text.includes("灵魂归零")),
+            );
           if (endLog) {
-            endDayTotalsByWorld[world.id] =
-              (endDayTotalsByWorld[world.id] || 0) + endLog.day;
+            endDayTotalsByWorld[world.id] = (endDayTotalsByWorld[world.id] || 0) + endLog.day;
             endDayCountsByWorld[world.id] = (endDayCountsByWorld[world.id] || 0) + 1;
           }
           waveBattles += metrics.waveCombats || 0;
