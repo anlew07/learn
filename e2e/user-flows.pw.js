@@ -9,7 +9,7 @@ async function getSnapshot(page) {
 
 async function startFirstRun(page) {
   await page.goto("/?debug=1");
-  const newRun = page.getByRole("button", { name: /开始第 1 局/ });
+  const newRun = page.locator('[data-action="new-run"][data-onboarding="full"]');
   await expect(newRun).toBeVisible();
   await newRun.click();
   await expect(page.locator(".world")).toHaveCount(2);
@@ -867,4 +867,48 @@ test("skill awakening reveals elite enemy counters before committing a choice", 
   await expect(
     page.locator('[data-action="build"][data-power="armor"] .build-counter-hint'),
   ).toHaveCount(0);
+});
+
+test("first run defaults to a focused rescue tutorial without changing the simulation", async ({
+  page,
+}) => {
+  await page.goto("/?debug=1");
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  await expect(page.locator(".world")).toHaveCount(1);
+  await expect(page.locator(".world-title")).toHaveText("灵灾");
+  await expect(page.locator('[data-onboarding-guide="focus"]')).toContainText("救援准备");
+  await expect(page.locator("nav.footer-nav")).toHaveCount(0);
+  const initial = await getSnapshot(page);
+  expect(initial.run.worlds).toHaveLength(2);
+  expect(initial.run.onboardingFocus).toBe(true);
+
+  await page.locator('button[data-action="step"]').click();
+  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(2);
+  await page.reload();
+  await expect(page.locator(".world")).toHaveCount(1);
+  for (let index = 0; index < 7; index++) {
+    await page.locator('button[data-action="step"]').click();
+  }
+  await expect(page.locator(".world")).toHaveCount(2);
+  await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
+  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(9);
+  const completed = await getSnapshot(page);
+  expect(completed.run.worlds).toHaveLength(2);
+});
+
+test("quick start can reveal both worlds immediately without paying AP or losing progress", async ({
+  page,
+}) => {
+  await page.goto("/?debug=1");
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  const before = await getSnapshot(page);
+  await page.locator('[data-action="show-all-worlds"]').click();
+  await expect(page.locator(".world")).toHaveCount(2);
+  await expect.poll(async () => (await getSnapshot(page)).run.onboardingFocus).toBe(false);
+  const after = await getSnapshot(page);
+  expect(after.run.day).toBe(before.run.day);
+  expect(after.run.ap).toBe(before.run.ap);
+  expect(after.run.soul).toBe(before.run.soul);
+  await page.reload();
+  await expect(page.locator(".world")).toHaveCount(2);
 });
