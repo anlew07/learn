@@ -77,13 +77,18 @@ function survivorReplayHtml(battle) {
    const clear=Boolean(wave.cleared);
    const visibleCount=Math.min(9,Math.max(3,Math.ceil(encountered/4)));
    const fallenCount=Math.round(visibleCount*(encountered?defeated/encountered:0));
-   return '<div class="replay-wave" data-wave-number="'+(index+1)+'" aria-label="第'+(index+1)+'波，击败'+defeated+'个，共'+encountered+'个敌人">'+
+   const attack=wave.attack||{style:"basic",label:"基础攻击",icon:"✦",bonus:0};
+   const style=["chain","pierce","fan","flurry","shockwave","basic"].includes(attack.style)?
+     attack.style:"basic";
+   return '<div class="replay-wave attack-'+style+'" data-attack-style="'+style+'" data-wave-number="'+(index+1)+'" aria-label="第'+(index+1)+'波，'+esc(attack.label)+'，击败'+defeated+'个，共'+encountered+'个敌人">'+
      '<span class="replay-wave-name">WAVE 0'+(index+1)+'</span>'+
      '<div class="replay-swarm" aria-hidden="true">'+Array.from({length:visibleCount},(_,i)=>
        '<span class="replay-foe'+(i<fallenCount?' replay-fallen':'')+'">◆</span>'
      ).join('')+'</div>'+
-     '<div class="replay-hit" aria-hidden="true">✦</div>'+
+     '<div class="replay-hit" aria-hidden="true">'+esc(attack.icon)+'</div>'+
      '<span class="replay-wave-count">'+defeated+' / '+encountered+(clear?' · CLEAR':'')+'</span>'+
+     '<span class="replay-attack-name">'+esc(attack.label)+
+       (attack.bonus?' · 战技增击+'+Number(attack.bonus):'')+'</span>'+
    '</div>';
  }).join('');
  return '<section class="survivor-replay" aria-label="三波战斗回放" data-survivor-replay>'+
