@@ -2,11 +2,11 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Linter } from "eslint";
+import { reviewPriority } from "./text-review-risk.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const output = join(root, "docs/review/runtime-templates.csv");
 const chinese = /[\u3400-\u9fff]/u;
-const reviewRisk = /(?:死亡|血腥|血液|屠|虐待|绝望|末日|毁灭|尸潮|兽潮|猎杀|清剿|杀戮)/u;
 
 function jsFiles(dir) {
   const result = [];
@@ -72,7 +72,7 @@ export function extractDynamicTemplatesFromSource(source, path = "src/example.js
           path,
           node.loc.start.line,
           kind,
-          reviewRisk.test(result.text) ? "重点复核" : "常规核对",
+          reviewPriority(result.text),
           "待人工复原",
           result.text,
           result.bindings.join("；"),

@@ -1,12 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { reviewPriority } from "./text-review-risk.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const output = join(root, "docs/review/game-text.csv");
 const chinese = /[\u3400-\u9fff]/u;
 const uiEnglish = /\b(?:WAVE|CLEAR|FRENZY|MULTIVERSE|EARLY ACCESS)\b/;
-const reviewRisk = /(?:死亡|血腥|血液|屠|虐待|绝望|末日|毁灭|尸潮|兽潮|猎杀|清剿|杀戮)/u;
 const sourceExt = new Set([".js", ".html", ".css", ".svg"]);
 
 function sourceFiles(dir) {
@@ -46,7 +46,7 @@ export function collectTextLines() {
         source,
         index + 1,
         category,
-        reviewRisk.test(original) ? "重点复核" : "常规核对",
+        reviewPriority(original),
         original,
       ]);
     });
