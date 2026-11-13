@@ -35,7 +35,7 @@ describe("rescue-first beast threat opportunity cost", () => {
     expect(candidate({ threat: { status: "awaiting_alpha", progress: 2 } }).actionId)
       .not.toBe("fight");
     expect(candidate({ strategy: "growth" }).actionId).not.toBe("fight");
-    expect(candidate({ strategy: "clear" }).actionId).not.toBe("growth");
+    expect(candidate({ strategy: "clear" })).toEqual(candidate({ strategy: "clear" }, 101));
     expect(candidate({}, 101).actionId).not.toBe("fight");
   });
 
