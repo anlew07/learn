@@ -123,6 +123,7 @@ describe("rescue-first beast threat opportunity cost", () => {
   }, 30000);
   it("measures wave-on resource and clear-rate accounting without duplicate battles", () => {
     const paired = compareRescueNestPriority(60, { waves: true });
+    const noWaves = compareRescueNestPriority(60, { waves: false });
     expect(paired.rows.every((row) => row.incomplete === 0)).toBe(true);
     for (const row of paired.rows) {
       for (const world of Object.values(row.worlds)) {
@@ -133,6 +134,27 @@ describe("rescue-first beast threat opportunity cost", () => {
       }
     }
     console.info("SECOND_PHASE_WAVES_SEEDED_DELTAS", JSON.stringify(paired.differences));
+    console.info(
+      "SECOND_PHASE_WAVE_COMPARISON",
+      JSON.stringify(
+        paired.rows
+          .filter((row) => row.runNumber === 3)
+          .map((row) => {
+            const control = noWaves.rows.find(
+              (item) => item.runNumber === 3 && item.strategy === row.strategy &&
+                item.mode === row.mode,
+            );
+            return {
+              mode: row.mode,
+              strategy: row.strategy,
+              beastWithWaves: row.worlds.beast.saveRate,
+              beastWithoutWaves: control.worlds.beast.saveRate,
+              meanWaveBattles: row.worlds.beast.meanWaveBattles,
+              meanWaveResources: row.worlds.beast.meanWaveResources,
+            };
+          }),
+      ),
+    );
     console.info(
       "SECOND_PHASE_WAVES_RESCUE",
       JSON.stringify(
