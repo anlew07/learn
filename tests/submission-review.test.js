@@ -1,0 +1,62 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildReviewRows,
+  renderHumanReviewCsv,
+  reviewScene,
+  reviewTopics,
+} from "../scripts/export-human-review.mjs";
+
+describe("human review working sheet", () => {
+  const staticInput = [
+    ["src/systems/wave-combat.js", 10, "静态/待复核", "重点复核", 'message: "迎击尸群";'],
+  ];
+  const dynamicInput = [
+    [
+      "src/engine.js",
+      88,
+      "加号拼接",
+      "重点复核",
+      "待人工复原",
+      "救援失败：【变量】",
+      "reason",
+    ],
+  ];
+
+  it("combines existing exporters and retains exact origin, branches and blank review fields", () => {
+    const rows = buildReviewRows(staticInput, dynamicInput);
+    expect(rows).toHaveLength(2);
+    expect(rows[0][3]).toBe("动态模板");
+    expect(rows[0][9]).toBe("救援失败：【变量】");
+    expect(rows[0][11]).toBe("reason");
+    expect(rows[0][12]).toBe("");
+    expect(rows[1][10]).toContain("迎击尸群");
+    expect(rows.every((row) => row[15] === "待人工复核")).toBe(true);
+  });
+
+  it("uses deterministic unique review fingerprints even for duplicate source statements", () => {
+    const first = buildReviewRows([...staticInput, ...staticInput], dynamicInput);
+    const second = buildReviewRows([...staticInput, ...staticInput], dynamicInput);
+    expect(first).toEqual(second);
+    expect(new Set(first.map((row) => row[1])).size).toBe(3);
+  });
+
+  it("escapes multiline quotes and spreadsheet formulas", () => {
+    const sample = buildReviewRows(
+      [["src/ui.js", 5, "静态/待复核", "常规核对", '=HYPERLINK("bad")\n求助']],
+      [],
+    );
+    const csv = renderHumanReviewCsv(sample);
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+    expect(csv).toContain('"\u0027=HYPERLINK(""bad"")\n求助"');
+    expect(csv).toContain('"待人工复核"');
+    expect(csv).toContain('"定位用源码（非最终可见全文）"');
+  });
+
+  it("classifies risk and game scenes without calling them platform decisions", () => {
+    expect(reviewTopics("尸群逼近，分身受伤")).toContain("感染或恐怖氛围");
+    expect(reviewTopics("尸群逼近，分身受伤")).toContain("伤势或失败代价");
+    expect(reviewTopics("大家互相救援")).toBe("常规语境审阅");
+    expect(reviewScene("src/systems/easter-eggs.js")).toBe("隐藏彩蛋");
+    expect(reviewScene("src/systems/wave-combat.js")).toBe("战斗与回放");
+  });
+});

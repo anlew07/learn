@@ -54,17 +54,19 @@ export function renderReviewCsv(rows) {
   return `\uFEFF${csvRows.join("\n")}\n`;
 }
 
-const rows = collectTextLines();
-const expected = renderReviewCsv(rows);
-if (process.argv.includes("--check")) {
-  if (!existsSync(output) || readFileSync(output, "utf8") !== expected) {
-    console.error("审查文本清单与游戏源码不一致；执行 npm run text:export 并提交更新的 CSV。");
-    process.exitCode = 1;
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const rows = collectTextLines();
+  const expected = renderReviewCsv(rows);
+  if (process.argv.includes("--check")) {
+    if (!existsSync(output) || readFileSync(output, "utf8") !== expected) {
+      console.error("审查文本清单与游戏源码不一致；执行 npm run text:export 并提交更新的 CSV。");
+      process.exitCode = 1;
+    }
+  } else {
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, expected, "utf8");
   }
-} else {
-  mkdirSync(dirname(output), { recursive: true });
-  writeFileSync(output, expected, "utf8");
+  console.log(
+    `游戏文案候选行：${rows.length}（${new Set(rows.map((row) => row[0])).size} 个源码文件）`,
+  );
 }
-console.log(
-  `游戏文案候选行：${rows.length}（${new Set(rows.map((row) => row[0])).size} 个源码文件）`,
-);
