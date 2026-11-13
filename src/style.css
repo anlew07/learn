@@ -322,3 +322,25 @@ button:active:not(:disabled){transform:translateY(1px)}
 /* Four compact counters retain the day readout used throughout the game. */
 .run-dashboard .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:520px){.run-dashboard .metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.run-dashboard .metric{padding:10px 5px}.run-dashboard .metric b{font-size:1.08rem;white-space:nowrap}.run-dashboard .metric span{font-size:.58rem}}
+
+
+/* Secondary world information stays available without burying critical progress. */
+.world-goal{padding:0 0 2px;color:#b2c8d7}
+.world-intel{
+  margin:12px 0 5px;border:1px solid #ffffff18;border-radius:12px;
+  background:#08142270;overflow:hidden
+}
+.world-intel summary{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;
+  padding:10px 12px;color:#c0d8e5;font-size:.78rem;font-weight:750;
+  list-style:none
+}
+.world-intel summary::-webkit-details-marker{display:none}
+.world-intel summary::after{content:"⌄";font-size:1.05rem;color:#91d9ce;margin-left:auto}
+.world-intel[open] summary::after{content:"⌃"}
+.world-intel summary:focus-visible{outline:2px solid #9ce7d2;outline-offset:-2px;border-radius:10px}
+.world-intel[open] summary{border-bottom:1px solid #ffffff16}
+.world-intel .world-note{padding:1px 12px}
+.world-intel .world-extra{padding:3px 12px 10px;margin:5px 0}
+.intel-summary-hint{font-weight:450;font-size:.69rem;color:#849fb5}
+@media(max-width:400px){.intel-summary-hint{font-size:.64rem}}
