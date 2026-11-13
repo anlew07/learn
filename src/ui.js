@@ -441,8 +441,10 @@ function homeHtml(){
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
  '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
  '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
- '<p class="muted">首局开启灵灾与废土，第三局解锁兽域。分身自动行动，你负责关键抉择。</p>'+
- '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 开启防线行动增强 · 三波战斗与战技构筑</label></section>'+
+ (profile.runCount===0&&!run?'<p class="muted">建议先体验灵灾分身的成长与救援，再逐步展开其他世界。</p>':
+ '<p class="muted">多个世界会自主行动，你可以通过关键决策组织救援。</p>')+
+ '<details class="advanced-settings"><summary>进阶设置 · 防线行动</summary>'+
+ '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 启用三波防线行动与战技构筑</label></details></section>'+
  profileArchiveHtml()+
  '<p class="hint footnote">开发中版本 · 游戏进度仅保存在当前浏览器</p>';
 }
