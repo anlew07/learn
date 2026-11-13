@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSaveRepository, STORAGE_KEYS } from "../src/services/persistence.js";
+import { createSaveRepository, STORAGE_KEYS, assertRestorableSnapshot } from "../src/services/persistence.js";
 
 describe("atomic, queued run persistence", () => {
   it("saves run and permanent rewards in one batch per operation", async () => {
@@ -70,5 +70,72 @@ describe("atomic, queued run persistence", () => {
     await repository.enqueueSave({ day: 4 }, { shards: 3 });
     expect((await repository.load()).run.day).toBe(4);
     expect((await repository.load()).profile.shards).toBe(3);
+  });
+});
+
+describe("save recovery guard", () => {
+  const valid = () => ({
+    run: {
+      version: "0.2.0",
+      day: 3,
+      ap: 2,
+      soul: 7,
+      worlds: [
+        { id: "lingzai", status: "running" },
+        { id: "zombie", status: "saved" },
+      ],
+    },
+    profile: { runCount: 1, shards: 3 },
+  });
+
+  it("accepts fresh storage, including a missing profile, and a valid run", () => {
+    expect(() => assertRestorableSnapshot({ run: null, profile: null }, "0.2.0")).not.toThrow();
+    expect(() => assertRestorableSnapshot({ ...valid(), profile: null }, "0.2.0")).not.toThrow();
+    expect(() => assertRestorableSnapshot(valid(), "0.2.0")).not.toThrow();
+  });
+
+  it("fails closed on incompatible and corrupt runs without modifying the input", () => {
+    const cases = [
+      { ...valid(), run: { ...valid().run, version: "0.1.0" } },
+      { ...valid(), run: { ...valid().run, worlds: [] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ id: "lingzai" }, null] } },
+      { ...valid(), run: { ...valid().run, day: NaN } },
+      { ...valid(), run: "not-json-state" },
+    ];
+    for (const snapshot of cases) {
+      const before = JSON.stringify(snapshot);
+      expect(() => assertRestorableSnapshot(snapshot, "0.2.0")).toThrow(/RunState/);
+      expect(JSON.stringify(snapshot)).toBe(before);
+    }
+  });
+
+  it("rejects invalid permanent profile rather than replacing it with an empty one", () => {
+    for (const profile of [{ runCount: -1, shards: 0 }, { runCount: 1 }, "invalid"]) {
+      expect(() => assertRestorableSnapshot({ ...valid(), profile }, "0.2.0")).toThrow(
+        /ProfileState/,
+      );
+    }
+  });
+
+  it("propagates an IndexedDB read rejection and preserves stored values", async () => {
+    const original = { run: { day: 4 }, profile: { shards: 8 } };
+    const store = new Map([
+      [STORAGE_KEYS.run, original.run],
+      [STORAGE_KEYS.profile, original.profile],
+    ]);
+    let failRead = true;
+    const repository = createSaveRepository({
+      getMany: async (keys) => {
+        if (failRead) throw new DOMException("Access denied", "SecurityError");
+        return keys.map((key) => store.get(key));
+      },
+      setMany: async (entries) => {
+        for (const [key, value] of entries) store.set(key, value);
+      },
+    });
+    await expect(repository.load()).rejects.toMatchObject({ name: "SecurityError" });
+    expect(store.get(STORAGE_KEYS.run)).toEqual(original.run);
+    failRead = false;
+    expect(await repository.load()).toEqual(original);
   });
 });

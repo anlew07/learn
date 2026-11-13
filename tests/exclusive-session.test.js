@@ -45,6 +45,23 @@ describe("single-writer session ownership", () => {
     await first.release();
   });
 
+  it("recovers after the lock provider rejects a request", async () => {
+    let requests = 0;
+    const session = createExclusiveSession({
+      locks: {
+        request: async (_name, _options, callback) => {
+          if (++requests === 1) throw new DOMException("Denied", "SecurityError");
+          return callback({ name: "test-session" });
+        },
+      },
+    });
+    expect(await session.acquire()).toBe(false);
+    expect(session.isOwner).toBe(false);
+    expect(await session.acquire()).toBe(true);
+    await session.release();
+    expect(session.isOwner).toBe(false);
+  });
+
   it("fails closed when Web Locks is unavailable", async () => {
     const unsupported = createExclusiveSession({ locks: null });
     expect(unsupported.supported).toBe(false);

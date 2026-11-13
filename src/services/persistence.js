@@ -41,3 +41,41 @@ export function createSaveRepository(driver = { getMany, setMany }) {
 }
 
 export const saveRepository = createSaveRepository();
+
+/**
+ * Reject incompatible or malformed snapshots before enabling a new writer.
+ * This intentionally does not repair, delete or overwrite browser data.
+ */
+export function assertRestorableSnapshot({ run, profile }, version) {
+  if (
+    run !== null &&
+    (typeof run !== "object" ||
+      Array.isArray(run) ||
+      run.version !== version ||
+      !Number.isInteger(run.day) ||
+      run.day < 1 ||
+      !Number.isFinite(run.ap) ||
+      !Number.isFinite(run.soul) ||
+      !Array.isArray(run.worlds) ||
+      run.worlds.length < 2 ||
+      run.worlds.some(
+        (world) =>
+          !world ||
+          typeof world.id !== "string" ||
+          !["running", "saved", "failed"].includes(world.status),
+      ))
+  ) {
+    throw new Error("RunState is incompatible or malformed");
+  }
+  if (
+    profile !== null &&
+    (typeof profile !== "object" ||
+      Array.isArray(profile) ||
+      !Number.isInteger(profile.runCount) ||
+      profile.runCount < 0 ||
+      !Number.isFinite(profile.shards) ||
+      profile.shards < 0)
+  ) {
+    throw new Error("ProfileState is malformed");
+  }
+}

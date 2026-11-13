@@ -15,7 +15,7 @@
 
 ## 本地保存
 
-**V0.2 alpha 实现：** 已采用浏览器 IndexedDB（idb-keyval），不再使用早期计划的 localStorage。通过 `src/services/persistence.js` 的 `getMany/setMany` 在一次原子事务中保存**本局RunState + 永久ProfileState**；按操作生成快照并串行保存，避免旧异步写入覆盖新状态。重要日结算、玩家操作、暂停、世界结局及页面隐藏会发起保存。保存失败将出现可见警告并在后续操作中重试。
+**V0.2 alpha 实现：** 已采用浏览器 IndexedDB（idb-keyval），不再使用早期计划的 localStorage。通过 `src/services/persistence.js` 的 `getMany/setMany` 在一次原子事务中保存**本局RunState + 永久ProfileState**；按操作生成快照并串行保存，避免旧异步写入覆盖新状态。重要日结算、玩家操作、暂停、世界结局及页面隐藏会发起保存。保存失败会暂停模拟并显示「重试保存」，恢复成功前不再推进；读取失败或发现不兼容/损坏存档时主动释放写入锁、禁止新局覆盖原数据，并提示检查存储权限后重试。
 
 **已实现**本局结算的 `run.rewarded` 标记和世界状态检查；**仍待实现/补测**完整玩家指令operationId去重、多标签页锁、完整快照备份/回退与手动JSON导入导出。不要把这些旧设计任务写成当前已完成的功能。不同浏览器不会自动同步存档，清理浏览器数据仍会造成丢失。
 
