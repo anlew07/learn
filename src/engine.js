@@ -12,7 +12,7 @@ import { previewStrategyChange } from "./systems/strategy-contract.js";
 import { captureIntervention, recordIntervention } from "./systems/intervention-ledger.js";
 import { assessCrises } from "./systems/crisis-advisor.js";
 import { FOLLOWUPS, canQueueFollowup, settleFollowup, followupMitigation, followupEpilogue } from "./systems/event-chain.js";
-import { discoverEasterEgg } from "./systems/easter-eggs.js";
+import { discoverEasterEgg, discoverCrossworldSecrets } from "./systems/easter-eggs.js";
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
@@ -441,6 +441,11 @@ const MultiworldEngine = (function () {
         if(w.status==="running")checkWorld(s,w);
         if(w.status==="running")autoBuild(s,w);
       }
+    });
+    // Cross-world secrets are processed after all world actions, so world order
+    // cannot affect whether a combination unlocks on this day.
+    discoverCrossworldSecrets(s).forEach(function(secret){
+      log(s,null,secret.message,"minor");
     });
     memory(s);finishRun(s);
     if(s.active)s.day++;
