@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 340" fill="none">
+<title>兽潮紫月荒原</title>
 <defs><linearGradient id="sky" x1="500" y1="0" x2="700" y2="340" gradientUnits="userSpaceOnUse"><stop stop-color="#483A69"/><stop offset=".7" stop-color="#282E51"/><stop offset="1" stop-color="#131D32"/></linearGradient><radialGradient id="moon"><stop stop-color="#F3DFFF" stop-opacity=".65"/><stop offset=".48" stop-color="#BB9DE0" stop-opacity=".22"/><stop offset="1" stop-color="#8F8CD5" stop-opacity="0"/></radialGradient></defs>
 <path d="M0 0h950v340H0z" fill="url(#sky)"/>
 <circle cx="720" cy="95" r="108" fill="url(#moon)"/><circle cx="720" cy="95" r="51" stroke="#DEC7FF" stroke-opacity=".55" stroke-width="2"/><circle cx="720" cy="95" r="36" fill="#C6AFE8" fill-opacity=".16"/>
