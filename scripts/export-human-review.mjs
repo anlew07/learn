@@ -103,7 +103,7 @@ export function buildReviewRows(staticRows, dynamicRows) {
         JSON.stringify([
           entry.kind,
           entry.path,
-          entry.line,
+          // Keep audit IDs stable when unrelated source lines shift.
           entry.type,
           entry.candidate,
           entry.source,
