@@ -701,10 +701,14 @@ test("earned archive title can be equipped on the home screen and survives reloa
   await page.locator('button[data-action="home"]').click();
   const titleButton = page.locator('[data-action="equip-title"][data-title="title/tea-coffee"]');
   await expect(titleButton).toBeEnabled();
-  await expect(page.locator('[data-action="equip-title"][data-title="title/holiday-chair"]')).toBeDisabled();
+  await expect(
+    page.locator('[data-action="equip-title"][data-title="title/holiday-chair"]'),
+  ).toBeDisabled();
   await titleButton.click();
   await expect(page.locator("[data-equipped-title]")).toContainText("末日茶咖联络员");
-  await expect.poll(async () => (await getSnapshot(page)).profile.selectedTitle).toBe("title/tea-coffee");
+  await expect
+    .poll(async () => (await getSnapshot(page)).profile.selectedTitle)
+    .toBe("title/tea-coffee");
   await page.reload();
   await page.locator('button[data-action="home"]').click();
   await expect(page.locator("[data-equipped-title]")).toContainText("末日茶咖联络员");
