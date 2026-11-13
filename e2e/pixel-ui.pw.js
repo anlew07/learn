@@ -12,28 +12,38 @@ for (const width of [320, 375, 390, 430]) {
   test(`pixel art material and touch layout at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 820 });
     await openRun(page);
+
     const audit = await page.evaluate(() => {
-      const candidates = [...document.querySelectorAll("*")].filter((el) =>
-        el.getClientRects().length && getComputedStyle(el).visibility !== "hidden",
-      );
+      const visible = [...document.querySelectorAll("*")].filter((element) => {
+        const style = getComputedStyle(element);
+        return element.getClientRects().length > 0 && style.visibility !== "hidden";
+      });
       const violations = [];
-      for (const el of candidates) {
-        const style = getComputedStyle(el);
-        const label = el.className && typeof el.className === "string" ? el.className : el.tagName;
-        if (/gradient\(/i.test(style.backgroundImage)) violations.push(`${label}: gradient`);
-        if (/blur\(/i.test(style.backdropFilter)) violations.push(`${label}: backdrop blur`);
-        if (/(?:blur|drop-shadow)\(/i.test(style.filter)) violations.push(`${label}: softened filter`);
-        if (parseFloat(style.borderTopLeftRadius) > 0) violations.push(`${label}: rounded corner`);
+      for (const element of visible) {
+        const style = getComputedStyle(element);
+        const label = typeof element.className === "string" ? element.className : element.tagName;
+        if (/gradient\(/i.test(style.backgroundImage)) {
+          violations.push(`${label}: gradient`);
+        }
+        if (/blur\(/i.test(style.backdropFilter)) {
+          violations.push(`${label}: backdrop blur`);
+        }
+        if (/(?:blur|drop-shadow)\(/i.test(style.filter)) {
+          violations.push(`${label}: softened filter`);
+        }
+        if (parseFloat(style.borderTopLeftRadius) > 0) {
+          violations.push(`${label}: rounded corner`);
+        }
       }
-      const touchTargets = candidates.filter((el) => el.matches("button,select,summary"));
-      for (const el of touchTargets) {
-        if (el.getBoundingClientRect().height < 43.5) {
-          violations.push(`${el.tagName}: small target (${el.getBoundingClientRect().height}px)`);
+      for (const element of visible.filter((item) => item.matches("button,select,summary"))) {
+        const height = element.getBoundingClientRect().height;
+        if (height < 43.5) {
+          violations.push(`${element.tagName}: small target (${height}px)`);
         }
       }
       const firstWorld = document.querySelector(".world");
       const logo = firstWorld?.querySelector(".world-insignia");
-      const spriteStyle = logo && getComputedStyle(logo);
+      const spriteStyle = logo ? getComputedStyle(logo) : null;
       return {
         width: document.documentElement.scrollWidth,
         viewport: innerWidth,
@@ -48,6 +58,7 @@ for (const width of [320, 375, 390, 430]) {
     expect(audit.sprite).toContain("avatar-lingzai");
     expect(audit.spriteRendering).toBe("pixelated");
     expect(audit.nav).toBe(true);
+
     await page.locator('button[data-tab="soul"]').click();
     await expect(page.locator("#aid-choice-preview")).toBeVisible();
     await page.locator('button[data-tab="log"]').click();
