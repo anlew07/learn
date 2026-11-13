@@ -1,3 +1,5 @@
+import { featuredWaveAttack } from "./attack-patterns.js";
+
 /**
  * Three deterministic monster waves for the optional survivors experiment.
  * The number of enemies encountered and defeated comes from level, equipped
@@ -21,9 +23,10 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
   let chain = 0;
   const waves = [1, 2, 3].map((wave) => {
     const encountered = baseEnemies + (wave - 1) * 5;
-    const defeated = Math.min(encountered, Math.max(0, power - (wave - 1) * 2));
+    const attack = featuredWaveAttack(worldId, build, powers, wave);
+    const defeated = Math.min(encountered, Math.max(0, power - (wave - 1) * 2 + attack.bonus));
     chain = defeated === encountered ? chain + 1 : 0;
-    return { wave, encountered, defeated, cleared: defeated === encountered };
+    return { wave, encountered, defeated, cleared: defeated === encountered, attack };
   });
   const encountered = waves.reduce((sum, wave) => sum + wave.encountered, 0);
   const defeated = waves.reduce((sum, wave) => sum + wave.defeated, 0);
