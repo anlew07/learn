@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Inspect exporter formatting
+        run: npx prettier scripts/export-game-text.mjs | diff -u scripts/export-game-text.mjs - || true
       - run: npm run format:check
       - run: npm run text:check
       - run: npm test
