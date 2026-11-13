@@ -5,7 +5,7 @@ import { selectAutonomousAction } from "../src/systems/action-policy.js";
 import { compareRescueNestPriority } from "../scripts/strategy-depth-compare.mjs";
 import { probeRescueNestThresholds } from "../scripts/strategy-depth-core.js";
 
-function candidate(overrides = {}, threshold = 65) {
+function candidate(overrides = {}, threshold = 65, moreContext = {}) {
   const world = {
     id: "beast",
     strategy: "rescue",
@@ -24,6 +24,7 @@ function candidate(overrides = {}, threshold = 65) {
     combatReady: true,
     beastRescueNestPriorityDoom: threshold,
     nextRandom: () => 0.5,
+    ...moreContext,
   });
 }
 
@@ -37,6 +38,10 @@ describe("rescue-first beast threat opportunity cost", () => {
       .not.toBe("fight");
     expect(candidate({ strategy: "growth" }).actionId).not.toBe("fight");
     expect(candidate({ strategy: "clear" })).toEqual(candidate({ strategy: "clear" }, 101));
+    expect(
+      candidate({ level: 4, resource: 20, suppression: 2 }, 65, { bossLevel: 4, reserve: 14 })
+        .actionId,
+    ).not.toBe("fight");
     expect(candidate({}, 101).actionId).not.toBe("fight");
   });
 
@@ -112,4 +117,29 @@ describe("rescue-first beast threat opportunity cost", () => {
       JSON.stringify(first.rows.filter((row) => row.runNumber === 3 && row.strategy === "rescue")),
     );
   }, 30000);
+  it("measures wave-on resource and clear-rate accounting without duplicate battles", () => {
+    const paired = compareRescueNestPriority(60, { waves: true });
+    expect(paired.rows.every((row) => row.incomplete === 0)).toBe(true);
+    for (const row of paired.rows) {
+      for (const world of Object.values(row.worlds)) {
+        expect(world.meanWaveBattles).toBeLessThanOrEqual(world.meanFights + 0.001);
+        expect(world.meanWaveXp).toBeLessThanOrEqual(world.meanWaveBattles * 0.75 + 0.02);
+        expect(world.meanWaveResources).toBeLessThanOrEqual(world.meanWaveBattles * 0.5 + 0.02);
+        expect(world.meanSuppressionStages).toBeLessThanOrEqual(2);
+      }
+    }
+    console.info("SECOND_PHASE_WAVES_SEEDED_DELTAS", JSON.stringify(paired.differences));
+    console.info(
+      "SECOND_PHASE_WAVES_RESCUE",
+      JSON.stringify(
+        paired.rows
+          .filter((row) => row.runNumber === 3 && row.strategy === "rescue")
+          .map((row) => ({
+            mode: row.mode,
+            world: row.worlds.beast,
+          })),
+      ),
+    );
+  }, 30000);
+
 });
