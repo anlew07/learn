@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { collectTextLines } from "../scripts/export-game-text.mjs";
+import { collectRuntimeTemplates } from "../scripts/export-runtime-templates.mjs";
 import { describe, expect, it } from "vitest";
 import {
   buildReviewRows,
@@ -63,6 +65,30 @@ describe("human review working sheet", () => {
     expect(csv).toContain('"\u0027=HYPERLINK(""bad"")\n求助"');
     expect(csv).toContain('"待人工复核"');
     expect(csv).toContain('"定位用源码（非最终可见全文）"');
+  });
+
+  it("can trace every generated candidate back to an existing source line", () => {
+    const root = fileURLToPath(new URL("../", import.meta.url));
+    const staticRows = collectTextLines();
+    const dynamicRows = collectRuntimeTemplates();
+    const rows = buildReviewRows(staticRows, dynamicRows);
+    const sources = new Map();
+
+    expect(rows).toHaveLength(staticRows.length + dynamicRows.length);
+    expect(new Set(rows.map((row) => row[1])).size).toBe(rows.length);
+    for (const row of rows) {
+      const path = row[4];
+      if (!sources.has(path)) {
+        sources.set(path, readFileSync(join(root, path), "utf8").split(/\\r?\\n/u));
+      }
+      const sourceLine = sources.get(path)[row[5] - 1];
+      expect(sourceLine, path + ":" + row[5]).toBeDefined();
+      if (row[3] === "源码行") expect(row[10]).toBe(sourceLine.trim());
+      else {
+        expect(row[9]).not.toBe("");
+        expect(row[11]).not.toBe("");
+      }
+    }
   });
 
   it("exports a review sheet without touching the checked-in static text archive", () => {
