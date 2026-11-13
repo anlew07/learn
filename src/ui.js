@@ -118,8 +118,11 @@ function worldHtml(w){
  const boss=w.pendingEvent?.state==="active";
  const options = ['growth','clear','rescue'].map(k=>'<option value="'+k+'" '+(w.strategy===k?"selected":"")+'>'+labelStrategies[k]+'</option>').join("");
  const worldSpecific=w.id==="lingzai"?(w.retreat?"闭关剩余 "+w.retreat.remaining+" 天":w.level>=2?"可进行短期或深度闭关":"筑基解锁闭关"):w.id==="zombie"?(w.repairUsed?"安全区已进行过大修":"防线可在危机时消耗零件修复"):("兽王阶段："+(w.phase||"苏醒")+" · 要求 Lv"+v.bossRequirement+(w.suppression? " · 压制 "+w.suppression+"/2":""));
- return '<section class="world '+(stop?w.status:"")+'">'+
- '<div class="world-head"><span class="world-title">'+esc(w.name)+'</span><span class="pill '+pill(w.status)+'">'+worldStatus(w)+'</span></div>'+
+ const worldIdentity={lingzai:{glyph:"✦",label:"灵脉异变",category:"CULTIVATION"},zombie:{glyph:"☣",label:"失序禁区",category:"OUTBREAK"},beast:{glyph:"♜",label:"兽王领地",category:"BEASTFALL"}}[w.id]||{glyph:"◇",label:"异界",category:"WORLD"};
+ return '<section class="world world-'+esc(w.id)+' '+(stop?w.status:"")+'" data-world-card="'+esc(w.id)+'">'+
+ '<div class="world-hero"><div class="world-insignia" aria-hidden="true">'+worldIdentity.glyph+'</div>'+
+ '<div class="world-identity"><span class="world-kicker">'+worldIdentity.category+' · '+worldIdentity.label+'</span>'+
+ '<div class="world-head"><span class="world-title">'+esc(w.name)+'</span><span class="pill '+pill(w.status)+'">'+worldStatus(w)+'</span></div></div></div>'+
  '<div class="world-meta">Lv'+w.level+' · '+esc(v.stage)+'　|　'+esc(v.resourceName)+' <b class="resource">'+n(w.resource)+'</b>　|　剩余 '+Math.max(0,w.deadline-run.day)+' 天</div>'+
  '<div class="bars">'+bar(w,"p","拯救准备") +bar(w,"d","末日毁灭")+'</div>'+
  '<div class="world-note">正在进行：<strong>'+esc(w.action)+'</strong></div>'+
@@ -185,12 +188,24 @@ function buildHtml(w){
 }
 
 function controls(){
- return '<header class="topbar"><div><div class="brand">☼ 同时穿越：末日模拟器</div><div class="micro">双世界 / 三世界 · 自动模拟原型</div></div><button data-action="home">首页</button></header>'+
- '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>全局游戏日</span></div><div class="metric"><b>'+run.soul+'</b><span>灵魂强度</span></div>'+
- '<div class="metric"><b>'+Engine.availableAP(run)+' / '+run.apMax+'</b><span>可用行动点</span></div><div class="metric"><b>'+win()+' / '+run.worlds.length+'</b><span>获救世界</span></div></div>'+
- '<div class="controls" style="margin:12px 0"><button class="btn" data-action="toggle">'+(run.paused?"▶ 继续模拟":"Ⅱ 暂停模拟")+'</button>'+
- '<span class="muted">速度</span><select data-action="speed"><option value="1" '+(run.speed===1?"selected":"")+'>1× · 20秒/日</option><option value="2" '+(run.speed===2?"selected":"")+'>2× · 10秒/日</option><option value="4" '+(run.speed===4?"selected":"")+'>4× · 5秒/日</option></select>'+
- (new URLSearchParams(location.search).has("debug")?'<button data-action="step">调试：+1天</button>':'')+'</div>';
+ return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
+ '<div class="brand">同时穿越</div><div class="micro">MULTIVERSE · 末日模拟器</div></div></div>'+
+ '<button class="home-link" data-action="home">⌂ 首页</button></header>'+
+ '<section class="run-dashboard" aria-label="本局总览">'+
+ '<div class="dashboard-heading"><div><span class="eyebrow">SURVIVAL OPERATION</span>'+
+ '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 多世界行动</span></h1></div>'+
+ '<span class="run-live">'+(run.active?'● 进行中':'◆ 本局结束')+'</span></div>'+
+ '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>◷ 全局游戏日</span></div>'+
+ '<div class="metric"><b>'+run.soul+'</b><span>◈ 灵魂强度</span></div>'+
+ '<div class="metric"><b>'+Engine.availableAP(run)+'<small> / '+run.apMax+'</small></b><span>✧ 可用行动点</span></div>'+
+ '<div class="metric"><b>'+win()+'<small> / '+run.worlds.length+'</small></b><span>✓ 已拯救世界</span></div></div>'+
+ '<div class="controls"><button class="btn run-toggle" data-action="toggle">'+(run.paused?'▶ 继续模拟':'Ⅱ 暂停模拟')+'</button>'+
+ '<label class="speed-control"><span>模拟速度</span><select aria-label="模拟速度" data-action="speed">'+
+ '<option value="1" '+(run.speed===1?"selected":"")+'>1× · 20秒/日</option>'+
+ '<option value="2" '+(run.speed===2?"selected":"")+'>2× · 10秒/日</option>'+
+ '<option value="4" '+(run.speed===4?"selected":"")+'>4× · 5秒/日</option></select></label>'+
+ (new URLSearchParams(location.search).has("debug")?'<button data-action="step">调试：+1天</button>':'')+
+ '</div></section>';
 }
 function aidChoicesHtml(fromId,toId){
  const from=run.worlds.find(w=>w.id===fromId);
@@ -344,20 +359,24 @@ function profileArchiveHtml(){
  ).join('')+'</div></section>';
 }
 function homeHtml(){
- return '<header class="topbar"><div class="brand">☼ 同时穿越：末日模拟器</div><span class="pill">V0.2 开发原型</span></header>'+
- '<section class="hero"><div class="eyebrow">同一个灵魂 · 不同的末日</div>'+
+ return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
+ '<div class="micro">MULTIVERSE · 末日模拟器</div></div></div><span class="pill">EARLY ACCESS · V0.2</span></header>'+
+ '<section class="hero"><div class="hero-orb" aria-hidden="true"><span>✧</span></div>'+
+ '<div class="eyebrow">THREE WORLDS · ONE SOUL</div>'+
  (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
- '<h1>一个我救不了末日，<br>就让多个我一起上。</h1>'+
- '<p>分身自动修炼、搜刮、狩猎、成长。你只负责关键选择和跨世界援助。</p>'+
- '<div class="stack" style="margin-top:20px">'+
- (run?'<button class="btn" data-action="continue">继续当前模拟 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">开始第 '+(profile.runCount+1)+' 局</button>')+
- (run?'<button data-action="new-run">放弃本局，重新开启</button>':'')+'</div></section>'+
- '<section class="panel" style="margin-top:14px"><h2>进度与解锁</h2><p class="muted">已经完成 '+profile.runCount+' 局 · 世界碎片 '+profile.shards+' 枚。</p>'+
- '<p class="muted">第一局同时开启灵灾和尸潮；第二局解锁二人之力；第三局开启兽潮与三人之力。</p>'+
- '<p class="muted">战潮实验在每局开始前选择：让自动战斗拥有三波战报与稀疏战技构筑，或保持纯模拟。</p>'+
- '<label><input id="waves-enabled" type="checkbox" checked /> 开启战潮增强实验（可以取消）</label></section>'+
+ '<h1>一个灵魂。<br><em>三场末日。</em></h1>'+
+ '<p>修仙、尸潮、兽王。三个世界同时倒计时，每次选择都可能改变终局。</p>'+
+ '<div class="hero-actions">'+
+ (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
+ (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+'</div></section>'+
+ '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">YOUR PROGRESS</span></div>'+
+ '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
+ '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
+ '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
+ '<p class="muted">首局开启灵灾与尸潮，第三局解锁兽潮。分身自动行动，你负责关键抉择。</p>'+
+ '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 开启战潮增强 · 三波战斗与战技构筑</label></section>'+
  profileArchiveHtml()+
- '<p class="hint" style="margin-top:16px">本作仍处于早期原型，所有成长、怪物与世界恶化数值会根据测试调整。</p>';
+ '<p class="hint footnote">开发中版本 · 游戏进度仅保存在当前浏览器</p>';
 }
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
@@ -370,9 +389,12 @@ function render(){
    statsHtml()+run.worlds.map(worldHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack">'+crisisHtml()+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack game-content"><div class="section-banner"><div><span class="eyebrow">WORLD STATUS</span><h2>平行世界</h2></div><span class="section-hint">'+run.worlds.length+' 个世界同步演化</span></div>'+crisisHtml()+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
-function footer(){return '<nav class="footer-nav"><button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'">末日世界</button><button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'">万我同源</button><button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'">战报记录</button></nav>';}
+function footer(){return '<nav class="footer-nav" aria-label="主要导航">'+
+ '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">◇</span><span>末日世界</span></button>'+
+ '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">✧</span><span>灵魂联结</span></button>'+
+ '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>战报图鉴</span></button></nav>';}
 async function execute(type,args){
  if(!session.isOwner || commandBusy || !run) return;
  commandBusy=true;
