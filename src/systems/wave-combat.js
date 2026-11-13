@@ -75,22 +75,25 @@ export function computeWaveBonuses(worldId, build, powers, spectacle = null) {
   );
   const requestedLootModifier = Math.min(0.1, totals.loot * 0.05 * clearRate);
 
-  const xp = Math.min(0.75, baseExperience + requestedClearBonus);
-  const resource = Math.min(0.5, baseResources + requestedLootModifier);
-  const doomReduction = Math.min(0.25, baseDoomReduction + requestedLossMitigation);
+  const xpCap = 0.5 + evolutionXp;
+  const resourceCap = 0.25 + evolutionResource;
+  const doomCap = 0.15 + evolutionDefense;
+  const xp = Math.min(xpCap, baseExperience + requestedClearBonus);
+  const resource = Math.min(resourceCap, baseResources + requestedLootModifier);
+  const doomReduction = Math.min(doomCap, baseDoomReduction + requestedLossMitigation);
 
   return {
     xp,
     resource,
     doomReduction,
-    waveClearBonus: Math.max(0, xp - Math.min(0.75, baseExperience)),
+    waveClearBonus: Math.max(0, xp - Math.min(xpCap, baseExperience)),
     waveLossMitigation: Math.max(
       0,
-      doomReduction - Math.min(0.25, baseDoomReduction),
+      doomReduction - Math.min(doomCap, baseDoomReduction),
     ),
     waveLootModifier: Math.max(
       0,
-      resource - Math.min(0.5, baseResources),
+      resource - Math.min(resourceCap, baseResources),
     ),
     clearRate,
     counteredWaves,
