@@ -13,9 +13,14 @@ export const WAVE_STAGES = Object.freeze({
 
 function equippedPowers(worldId, build, powers) {
   const available = powers[worldId] || [];
-  return [...(build.attack || []), ...(build.support || [])]
-    .map((slot) => {
-      const power = available.find((candidate) => candidate.id === slot.id);
+  return [
+    ...(build.attack || []).map((slot) => ({ slot, expected: "attack" })),
+    ...(build.support || []).map((slot) => ({ slot, expected: "support" })),
+  ]
+    .map(({ slot, expected }) => {
+      const power = available.find(
+        (candidate) => candidate.id === slot.id && candidate.slot === expected,
+      );
       if (!power) return null;
       const level = Math.max(0, Math.min(2, Math.floor(Number(slot.lv) || 0)));
       return level > 0 ? { ...slot, lv: level, power } : null;
@@ -28,7 +33,11 @@ function hasValidEvolution(worldId, build, equipped) {
   return Boolean(
     build.evolved &&
       combo &&
-      combo.slice(0, 2).every((id) => equipped.some((slot) => slot.id === id)),
+      combo.slice(0, 2).every((id, index) =>
+        equipped.some(
+          (slot) => slot.id === id && slot.power.slot === (index === 0 ? "attack" : "support"),
+        ),
+      ),
   );
 }
 

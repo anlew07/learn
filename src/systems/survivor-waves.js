@@ -29,15 +29,16 @@ export function waveEnemyTrait(day, wave) {
  * Never alters boss eligibility or the world's base automatic action.
  */
 export function simulateSurvivorWaves(worldId, build, powers, { day, level, momentum = 0 }) {
-  const equipped = [...(build.attack || []), ...(build.support || [])];
-  const attack = equipped.reduce((total, slot) => {
-    const power = powers[worldId]?.find((candidate) => candidate.id === slot.id);
-    return total + (power?.slot === "attack" ? Math.min(2, slot.lv) : 0);
+  // Invalid old-save slots cannot create power or substitute for equipment.
+  const validSlotPower = (slots, kind) => slots.reduce((total, slot) => {
+    const power = powers[worldId]?.find(
+      (candidate) => candidate.id === slot.id && candidate.slot === kind,
+    );
+    const level = Math.max(0, Math.min(2, Math.floor(Number(slot.lv) || 0)));
+    return total + (power ? level : 0);
   }, 0);
-  const support = equipped.reduce((total, slot) => {
-    const power = powers[worldId]?.find((candidate) => candidate.id === slot.id);
-    return total + (power?.slot === "support" ? Math.min(2, slot.lv) : 0);
-  }, 0);
+  const attack = validSlotPower(build.attack || [], "attack");
+  const support = validSlotPower(build.support || [], "support");
   const baseEnemies = Math.min(42, 7 + Math.floor(Math.max(1, day) / 7) * 2);
   const power = 8 + Math.max(0, level - 1) * 3 + attack * 4 +
     support + (evolvedWaveUltimate(worldId, build, 1) ? 6 : 0) + Math.min(3, momentum) * 2;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { POWERS } from "../src/config/game-data.js";
+import { COMBOS, POWERS } from "../src/config/game-data.js";
 import { simulateSurvivorWaves } from "../src/systems/survivor-waves.js";
 import { computeWaveBonuses } from "../src/systems/wave-combat.js";
 import { evolvedWaveUltimate } from "../src/systems/attack-patterns.js";
@@ -17,6 +17,48 @@ describe("evolution and elite counter integrity", () => {
       );
       expect(computeWaveBonuses(id, forged, POWERS).evolution).toBe("");
       expect(simulateSurvivorWaves(id, forged, POWERS, context).burst).toBe(false);
+    });
+  }
+
+  for (const id of ["lingzai", "zombie", "beast"]) {
+    it(id + ": rejects swapped and zero-level evolution equipment", () => {
+      const [attackId, supportId] = COMBOS[id];
+      const empty = { attack: [], support: [], evolved: false };
+      const swapped = {
+        attack: [{ id: supportId, lv: 1 }],
+        support: [{ id: attackId, lv: 2 }],
+        evolved: true,
+        evolutionName: "invalid",
+      };
+      const context = { day: 35, level: 3, momentum: 1 };
+      expect(evolvedWaveUltimate(id, swapped, 1)).toBe(null);
+      expect(evolvedWaveUltimate(id, swapped, 3)).toBe(null);
+      expect(simulateSurvivorWaves(id, swapped, POWERS, context)).toEqual(
+        simulateSurvivorWaves(id, empty, POWERS, context),
+      );
+      expect(computeWaveBonuses(id, swapped, POWERS)).toMatchObject({
+        xp: 0,
+        resource: 0,
+        doomReduction: 0,
+        evolution: "",
+        skills: [],
+      });
+
+      const zeroLevel = {
+        attack: [{ id: attackId, lv: 0 }],
+        support: [{ id: supportId, lv: 1 }],
+        evolved: true,
+      };
+      const supportOnly = {
+        attack: [],
+        support: [{ id: supportId, lv: 1 }],
+        evolved: false,
+      };
+      expect(evolvedWaveUltimate(id, zeroLevel, 2)).toBe(null);
+      expect(simulateSurvivorWaves(id, zeroLevel, POWERS, context)).toEqual(
+        simulateSurvivorWaves(id, supportOnly, POWERS, context),
+      );
+      expect(computeWaveBonuses(id, zeroLevel, POWERS).evolution).toBe("");
     });
   }
 
