@@ -5,9 +5,7 @@ import Engine from "../src/engine.js";
  * "Ended on day X" is an observation, never a guaranteed number of days saved.
  */
 const params = process.argv.slice(2);
-const seeds = Number(
-  params.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 40,
-);
+const seeds = Number(params.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 40);
 const shouldAssert = params.includes("--assert");
 
 if (!Number.isInteger(seeds) || seeds < 10 || seeds > 1000) {
@@ -34,11 +32,7 @@ for (const runNumber of [1, 3]) {
     let totalD = 0;
 
     for (let i = 0; i < seeds; i++) {
-      const state = Engine.fresh(
-        `intervention-compare-r${runNumber}-s${i}`,
-        runNumber,
-        true,
-      );
+      const state = Engine.fresh(`intervention-compare-r${runNumber}-s${i}`, runNumber, true);
       let tried = false;
       let ticks = 0;
 
@@ -48,11 +42,7 @@ for (const runNumber of [1, 3]) {
           const isStrategy = scenario === "strategy-shift";
           const args = isStrategy
             ? ["zombie", "growth"]
-            : [
-                "lingzai",
-                "zombie",
-                scenario === "early-progress-aid" ? "p" : "d",
-              ];
+            : ["lingzai", "zombie", scenario === "early-progress-aid" ? "p" : "d"];
           const command = {
             operationId: `compare:${scenario}:${i}`,
             type: isStrategy ? "strategy" : "aid",
@@ -68,10 +58,7 @@ for (const runNumber of [1, 3]) {
                 totalD += changed.effects.d;
               }
             }
-            if (
-              !Engine.applyCommand(state, command).replayed ||
-              state.interventions.length !== 1
-            ) {
+            if (!Engine.applyCommand(state, command).replayed || state.interventions.length !== 1) {
               replayFailures++;
             }
           }
@@ -108,17 +95,12 @@ const comparisons = rows
   .filter((row) => row.scenario !== "idle")
   .map((row) => {
     const idle = rows.find(
-      (candidate) =>
-        candidate.runNumber === row.runNumber && candidate.scenario === "idle",
+      (candidate) => candidate.runNumber === row.runNumber && candidate.scenario === "idle",
     );
     return {
       ...row,
-      deltaAllSavedRate: Number(
-        (row.allSavedRate - idle.allSavedRate).toFixed(3),
-      ),
-      deltaMeanSavedWorlds: Number(
-        (row.meanSavedWorlds - idle.meanSavedWorlds).toFixed(3),
-      ),
+      deltaAllSavedRate: Number((row.allSavedRate - idle.allSavedRate).toFixed(3)),
+      deltaMeanSavedWorlds: Number((row.meanSavedWorlds - idle.meanSavedWorlds).toFixed(3)),
       deltaMeanEndDay: Number((row.meanEndDay - idle.meanEndDay).toFixed(2)),
     };
   });
@@ -140,11 +122,7 @@ process.stdout.write(
 if (
   shouldAssert &&
   (rows.some((row) => row.incomplete > 0 || row.replayFailures > 0) ||
-    rows.some(
-      (row) => row.scenario === "early-progress-aid" && row.applied !== seeds,
-    ))
+    rows.some((row) => row.scenario === "early-progress-aid" && row.applied !== seeds))
 ) {
-  throw new Error(
-    "Intervention smoke check failed: stalled run, duplicate charge or missing aid.",
-  );
+  throw new Error("Intervention smoke check failed: stalled run, duplicate charge or missing aid.");
 }
