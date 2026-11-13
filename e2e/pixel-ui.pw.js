@@ -12,6 +12,13 @@ for (const width of [320, 375, 390, 430]) {
   test(`pixel art material and touch layout at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 820 });
     await openRun(page);
+    await expect(page.locator(".topbar .home-link")).toHaveCSS("white-space", "nowrap");
+    if (width <= 350) {
+      const columns = await page.locator(".run-dashboard .metrics").evaluate((element) => {
+        return getComputedStyle(element).gridTemplateColumns.split(" ").length;
+      });
+      expect(columns).toBe(2);
+    }
 
     const audit = await page.evaluate(() => {
       const visible = [...document.querySelectorAll("*")].filter((element) => {

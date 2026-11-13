@@ -27,3 +27,7 @@
 ### 技术选型
 
 参考 [MDN `image-rendering`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/image-rendering) 使用原生 CSS 像素缩放。考察过 MIT 许可的 [NES.css](https://github.com/nostalgic-css/NES.css)，但其整套按钮/排版组件会与当前原生界面重叠，增加 CSS 覆盖和资源体积；本轮不引入，沿用已有 SVG/CSS 方案。
+
+## Chromium 截图复核（本阶段）
+
+基于 PR CI 失败工件中的实际 **320px 与 390px** 截图进行人工视觉复核：像素头像、平涂 HUD、硬边按钮和底部导航均已呈现。发现 320px 下顶栏「首页」两个汉字竖向断行、四列计数器标签挤压；已增加顶栏按钮 `white-space: nowrap` 与最窄屏 2×2 计数器布局，并增加浏览器断言。截图仅代表 Chromium 模拟视口，不是 Android/iOS 真机测试。
