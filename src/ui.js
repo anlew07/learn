@@ -72,7 +72,18 @@ function combatHtml(battle) {
  return '<div class="combat-recap" aria-label="最近一场战潮">'+
    '<div class="row-between"><b>最近战潮 · 第'+battle.day+'日</b>'+
    (battle.evolution?'<span class="pill good">✦ '+esc(battle.evolution)+'</span>':'')+'</div>'+
-   '<div class="combat-phases">'+(battle.stages||[]).map(x=>'<span>'+esc(x)+'</span>').join('<span class="combat-arrow">›</span>')+'</div>'+
+   (battle.spectacle?'<div class="survivor-score" aria-label="自动战潮清剿统计">'+
+   '<div class="survivor-score-main"><strong>'+battle.spectacle.defeated+'</strong>'+
+   '<span> / '+battle.spectacle.encountered+' 敌群清剿</span></div>'+
+   '<span class="survivor-grade '+(battle.spectacle.fullClear?'survivor-clear':'')+'">'+
+     (battle.spectacle.burst?'✦ 进化爆发 · ':'')+esc(battle.spectacle.grade)+
+     (battle.spectacle.momentum>1?' · 连战×'+battle.spectacle.momentum:'')+'</span>'+
+   '<div class="survivor-wave-grid">'+battle.spectacle.waves.map(wave=>
+     '<div class="survivor-wave"><span>第'+wave.wave+'波</span>'+
+     '<b>'+wave.defeated+'/'+wave.encountered+'</b>'+
+     '<i class="'+(wave.cleared?'cleared':'')+'"></i></div>'
+   ).join('')+'</div></div>':'')+
+ '<div class="combat-phases">'+(battle.stages||[]).map(x=>'<span>'+esc(x)+'</span>').join('<span class="combat-arrow">›</span>')+'</div>'+
    '<div class="hint">'+(battle.skills?.length?'使用战技：'+battle.skills.map(esc).join('、'):'本次依靠基础自动战斗')+'</div>'+
    '<div class="combat-rewards">'+(bonusText.length?bonusText.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="hint">尚无额外战技收益</span>')+'</div>'+
  '</div>';
