@@ -1,3 +1,7 @@
+import { spawnSync } from "node:child_process";
+import { readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   buildReviewRows,
@@ -59,6 +63,24 @@ describe("human review working sheet", () => {
     expect(csv).toContain('"\u0027=HYPERLINK(""bad"")\n求助"');
     expect(csv).toContain('"待人工复核"');
     expect(csv).toContain('"定位用源码（非最终可见全文）"');
+  });
+
+  it("exports a review sheet without touching the checked-in static text archive", () => {
+    const root = fileURLToPath(new URL("../", import.meta.url));
+    const staticCsvPath = join(root, "docs/review/game-text.csv");
+    const before = readFileSync(staticCsvPath);
+    const modifiedAt = statSync(staticCsvPath).mtimeMs;
+    const command = spawnSync(process.execPath, ["scripts/export-human-review.mjs", "--stdout"], {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: 8 * 1024 * 1024,
+    });
+
+    expect(command.status, command.stderr).toBe(0);
+    expect(command.stdout.startsWith("\uFEFF")).toBe(true);
+    expect(command.stdout).toContain('"玩家可见完整原文（人工填写）"');
+    expect(readFileSync(staticCsvPath)).toEqual(before);
+    expect(statSync(staticCsvPath).mtimeMs).toBe(modifiedAt);
   });
 
   it("classifies risk and game scenes without calling them platform decisions", () => {
