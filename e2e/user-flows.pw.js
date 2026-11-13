@@ -841,7 +841,9 @@ test("real evolved zombie build unleashes the steel-rain ultimate in mobile repl
   ]);
 });
 
-test("skill awakening reveals elite enemy counters before committing a choice", async ({ page }) => {
+test("skill awakening reveals elite enemy counters before committing a choice", async ({
+  page,
+}) => {
   await startFirstRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
@@ -862,5 +864,7 @@ test("skill awakening reveals elite enemy counters before committing a choice", 
   await expect(page.locator('[data-action="build"][data-power="arc"]')).toContainText(
     "克制：密集敌潮、迅捷兽群",
   );
-  await expect(page.locator('[data-action="build"][data-power="armor"] .build-counter-hint')).toHaveCount(0);
+  await expect(
+    page.locator('[data-action="build"][data-power="armor"] .build-counter-hint'),
+  ).toHaveCount(0);
 });
