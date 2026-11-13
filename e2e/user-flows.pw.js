@@ -804,3 +804,32 @@ test("cautious clue outcome reveals the actual four-day protective status", asyn
   await expect(world).toContainText("谨慎调查防护");
   await expect.poll(async () => (await getSnapshot(page)).run.worlds[0].clueSafety.until).toBe(5);
 });
+
+test("equipped weapons produce distinct recorded attacks in mobile wave replay", async ({ page }) => {
+  await startFirstRun(page);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { run, profile } = await saveRepository.load();
+    const world = run.worlds.find((item) => item.id === "zombie");
+    world.level = 2;
+    world.resource = 12;
+    world.threat = { id: "pattern-nest", status: "active", progress: 0, retryDay: 1 };
+    world.build.attack = [{ id: "blades", lv: 2 }, { id: "arc", lv: 1 }];
+    await saveRepository.enqueueSave(run, profile);
+  });
+  await page.reload();
+  await page.locator('button[data-action="step"]').click();
+  const replay = page.locator('[data-world-card="zombie"] [data-survivor-replay]');
+  await expect(replay.locator('[data-wave-number="1"]')).toHaveAttribute("data-attack-style", "fan");
+  await expect(replay.locator('[data-wave-number="2"]')).toHaveAttribute("data-attack-style", "chain");
+  await expect(replay.locator('[data-wave-number="3"]')).toContainText("碎刃扇射");
+  const saved = await getSnapshot(page);
+  const world = saved.run.worlds.find((item) => item.id === "zombie");
+  expect(world.lastCombat.spectacle.waves.map((wave) => wave.attack.id)).toEqual([
+    "blades",
+    "arc",
+    "blades",
+  ]);
+  await page.reload();
+  await expect(replay.locator('[data-wave-number="2"]')).toContainText("电弧弹射");
+});
