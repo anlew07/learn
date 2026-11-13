@@ -132,9 +132,7 @@ for (const runNumber of [1, 2, 3]) {
           Object.entries(outcomeReasonsByWorld).map(([id, outcomes]) => [
             id,
             {
-              savedRate: completed
-                ? Number((outcomes.saved / completed).toFixed(3))
-                : null,
+              savedRate: completed ? Number((outcomes.saved / completed).toFixed(3)) : null,
               failureReasons: Object.fromEntries(
                 Object.entries(outcomes.failed).map(([reason, count]) => [
                   reason,
