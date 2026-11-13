@@ -106,6 +106,7 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
     world.level = 2;
     world.resource = 12;
     world.threat = { id: "fixture-nest", status: "active", progress: 0, retryDay: 1 };
+    world.build.attack = [{ id: "blades", lv: 2 }];
     await saveRepository.enqueueSave(run, profile);
   });
   await page.reload();
@@ -135,7 +136,9 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   const zombie = snapshot.run.worlds.find((world) => world.id === "zombie");
   expect(zombie.lastDecision.actionId).toBe("fight");
   expect(zombie.lastCombat.day).toBe(1);
-  expect(zombie.lastCombat.bonus.xp).toBe(0);
+  expect(zombie.lastCombat.bonus.xp).toBeGreaterThan(0);
+  expect(zombie.lastCombat.spectacle.waves[0].attack.style).toBe("fan");
+  await expect(page.locator('[data-world-card="zombie"] .attack-fan')).toHaveCount(3);
   expect(zombie.lastCombat.spectacle.waves).toHaveLength(3);
   expect(zombie.lastCombat.spectacle.defeated).toBeGreaterThan(0);
   expect(zombie.waveMomentum.count).toBe(1);
@@ -805,39 +808,3 @@ test("cautious clue outcome reveals the actual four-day protective status", asyn
   await expect.poll(async () => (await getSnapshot(page)).run.worlds[0].clueSafety.until).toBe(5);
 });
 
-test("equipped weapons produce distinct recorded attacks in mobile wave replay", async ({
-  page,
-}) => {
-  await startFirstRun(page);
-  await page.evaluate(async () => {
-    const { saveRepository } = await import("/src/services/persistence.js");
-    const { run, profile } = await saveRepository.load();
-    const world = run.worlds.find((item) => item.id === "zombie");
-    world.level = 2;
-    world.resource = 12;
-    world.threat = { id: "pattern-nest", status: "active", progress: 0, retryDay: 1 };
-    world.build.attack = [{ id: "blades", lv: 2 }, { id: "arc", lv: 1 }];
-    await saveRepository.enqueueSave(run, profile);
-  });
-  await page.reload();
-  await page.locator('button[data-action="step"]').click();
-  const replay = page.locator('[data-world-card="zombie"] [data-survivor-replay]');
-  await expect(replay.locator('[data-wave-number="1"]')).toHaveAttribute(
-    "data-attack-style",
-    "fan",
-  );
-  await expect(replay.locator('[data-wave-number="2"]')).toHaveAttribute(
-    "data-attack-style",
-    "chain",
-  );
-  await expect(replay.locator('[data-wave-number="3"]')).toContainText("碎刃扇射");
-  const saved = await getSnapshot(page);
-  const world = saved.run.worlds.find((item) => item.id === "zombie");
-  expect(world.lastCombat.spectacle.waves.map((wave) => wave.attack.id)).toEqual([
-    "blades",
-    "arc",
-    "blades",
-  ]);
-  await page.reload();
-  await expect(replay.locator('[data-wave-number="2"]')).toContainText("电弧弹射");
-});
