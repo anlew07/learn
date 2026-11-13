@@ -182,7 +182,7 @@ export function compareRescueNestPriority(samples = 100, { waves = false } = {})
 }
 
 /** Quick scenario-specific sweep before choosing a candidate threshold. */
-export function probeRescueNestThresholds(samples = 50, thresholds = [65, 80, 84, 87, 90, 95]) {
+export function probeRescueNestThresholds(samples = 50, thresholds = [90, 91, 92, 93, 94, 95]) {
   const previous = BALANCE.actions.beastRescueNestPriorityDoom;
   const rows = [];
   try {
