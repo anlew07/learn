@@ -607,10 +607,12 @@ test("follow-up event can automatically choose the safe path at expiry", async (
   await expect(page.locator('.event[data-world="zombie"]')).toHaveCount(0);
 });
 
-test("the secret collection stays locked until discovery and survives a reload", async ({ page }) => {
+test("the secret collection stays locked until discovery and survives a reload", async ({
+  page,
+}) => {
   await startFirstRun(page);
   await page.locator('button[data-tab="log"]').click();
-  const collection = page.locator('[data-collection]');
+  const collection = page.locator("[data-collection]");
   await expect(collection).toContainText("0 / 2");
   await expect(collection.locator('[data-discovered="false"]')).toHaveCount(2);
   await expect(collection).not.toContainText("修仙也要摸鱼");
@@ -625,6 +627,8 @@ test("the secret collection stays locked until discovery and survives a reload",
   await page.reload();
   await page.locator('button[data-tab="log"]').click();
   await expect(collection).toContainText("1 / 2");
-  await expect(collection.locator('[data-discovered="true"]')).toContainText("修仙也要摸鱼");
+  await expect(collection.locator('[data-discovered="true"]')).toContainText(
+    "修仙也要摸鱼",
+  );
   await expect(collection.locator('[data-discovered="false"]')).toHaveCount(1);
 });
