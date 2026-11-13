@@ -2,9 +2,9 @@ import { featuredWaveAttack, evolvedWaveUltimate } from "./attack-patterns.js";
 
 /** Late-game wave traits use the existing combat and power rules. */
 export const ELITE_WAVES = Object.freeze({
-  horde: Object.freeze({ label: "密集敌潮", extraEnemies: 4, defense: 0, counters: ["fan", "chain", "storm", "barrage"] }),
-  armored: Object.freeze({ label: "装甲精英", extraEnemies: 0, defense: 3, counters: ["pierce", "shockwave", "storm", "hunt"] }),
-  swift: Object.freeze({ label: "迅捷兽群", extraEnemies: 2, defense: 2, counters: ["flurry", "chain", "hunt", "barrage"] }),
+  horde: Object.freeze({ label: "密集异常群", extraEnemies: 4, defense: 0, counters: ["fan", "chain", "storm", "barrage"] }),
+  armored: Object.freeze({ label: "装甲防线", extraEnemies: 0, defense: 3, counters: ["pierce", "shockwave", "storm", "hunt"] }),
+  swift: Object.freeze({ label: "迅捷兽影", extraEnemies: 2, defense: 2, counters: ["flurry", "chain", "hunt", "barrage"] }),
 });
 
 /** Shared UI/gameplay description; derived from the same enemy counter table. */
@@ -68,7 +68,7 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
     fullClear,
     combo: chain,
     momentum: Math.min(3, momentum),
-    grade: fullClear ? "清屏" : defeated / encountered >= 0.8 ? "压制" : "鏖战",
+    grade: fullClear ? "全面稳控" : defeated / encountered >= 0.8 ? "压制" : "鏖战",
     burst: Boolean(build.evolved && fullClear),
   };
 }
