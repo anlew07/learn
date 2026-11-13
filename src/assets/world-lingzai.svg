@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 340" fill="none">
+<title>灵灾仙山剪影</title>
 <defs><linearGradient id="sky" x1="600" y1="0" x2="600" y2="340" gradientUnits="userSpaceOnUse"><stop stop-color="#1E5468"/><stop offset=".63" stop-color="#10334D"/><stop offset="1" stop-color="#091725"/></linearGradient><linearGradient id="mist" x1="450" y1="135" x2="920" y2="340" gradientUnits="userSpaceOnUse"><stop stop-color="#8AE6D6" stop-opacity=".46"/><stop offset="1" stop-color="#8AE6D6" stop-opacity="0"/></linearGradient></defs>
 <path d="M0 0h950v340H0z" fill="url(#sky)"/>
 <path d="M0 139c130-54 174-22 261-67 102-54 142 24 245 1 108-25 217-83 444-15v131H0V139Z" fill="#356B76" fill-opacity=".18"/>
