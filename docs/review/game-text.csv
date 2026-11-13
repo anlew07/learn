@@ -150,7 +150,7 @@
 "src/systems/action-policy.js","36","静态/待复核","常规核对","if (actionId === ""explore"") return ""尚未定位灾变源，调查能推进主线的关键线索"";"
 "src/systems/action-policy.js","37","静态/待复核","常规核对","if (actionId === ""rescue"") return ""已经定位核心，优先把拯救准备推进到最终阶段"";"
 "src/systems/action-policy.js","38","静态/待复核","常规核对","return ""保持自主发展"";"
-"src/systems/action-policy.js","69","静态/待复核","常规核对","reason: ""危机较高且具备应对精英的实力，用两次主要行动解除长期巢穴威胁"","
+"src/systems/action-policy.js","70","静态/待复核","常规核对","reason: ""危机较高且具备应对精英的实力，用两次主要行动解除长期巢穴威胁"","
 "src/systems/aid-contract.js","25","静态/待复核","常规核对","if (!state?.active) reason = ""本局已经结束"";"
 "src/systems/aid-contract.js","28","静态/待复核","常规核对","reason = ""请选择两个不同且仍在运行的世界"";"
 "src/systems/aid-contract.js","29","静态/待复核","常规核对","} else if (!validMode) reason = ""援助类型无效"";"
