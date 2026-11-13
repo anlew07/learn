@@ -510,3 +510,7 @@ button:active:not(:disabled){transform:translateY(1px)}
 .replay-trait[data-wave-trait="armored"]{color:#d9c7ae}
 .replay-trait[data-wave-trait="swift"]{color:#cbb9f9}
 .replay-wave:has(.replay-trait){border-style:solid}
+
+
+/* Built from the same elite counter definitions as combat, not UI-only guesses. */
+.build-counter-hint{display:block;margin-top:3px;font-size:.72rem;font-weight:750;color:#9ce7d2;line-height:1.45}
