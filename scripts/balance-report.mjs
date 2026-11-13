@@ -22,6 +22,10 @@ for (const runNumber of [1, 2, 3]) {
       let incomplete = 0;
       const savedByWorld = {};
       const actionTotals = {};
+      const actionsByWorld = {};
+      const outcomeReasonsByWorld = {};
+      const endDayTotalsByWorld = {};
+      const endDayCountsByWorld = {};
       let worldCount = 0;
       let waveBattles = 0;
       let evolutionCount = 0;
@@ -60,8 +64,43 @@ for (const runNumber of [1, 2, 3]) {
           savedByWorld[world.id] = (savedByWorld[world.id] || 0) + Number(world.status === "saved");
           worldCount++;
           const metrics = world.metrics || {};
+          const worldActions = actionsByWorld[world.id] || (actionsByWorld[world.id] = {});
           for (const [action, count] of Object.entries(metrics.actions || {})) {
             actionTotals[action] = (actionTotals[action] || 0) + count;
+            worldActions[action] = (worldActions[action] || 0) + count;
+          }
+          const outcomes =
+            outcomeReasonsByWorld[world.id] ||
+            (outcomeReasonsByWorld[world.id] = { saved: 0, failed: {} });
+          if (world.status === "saved") {
+            outcomes.saved++;
+          } else {
+            const terminalLog = [...state.logs]
+              .reverse()
+              .find(
+                (entry) =>
+                  entry.world === world.id &&
+                  (entry.text.startsWith("末日降临：") || entry.text.includes("灵魂归零")),
+              );
+            const reason = terminalLog?.text.startsWith("末日降临：")
+              ? terminalLog.text.split("：")[1].split("。")[0]
+              : terminalLog
+                ? "灵魂坍塌"
+                : "未知原因";
+            outcomes.failed[reason] = (outcomes.failed[reason] || 0) + 1;
+          }
+          const endLog = [...state.logs]
+            .reverse()
+            .find(
+              (entry) =>
+                entry.world === world.id &&
+                (entry.kind === "success" ||
+                  entry.text.startsWith("末日降临：") ||
+                  entry.text.includes("灵魂归零")),
+            );
+          if (endLog) {
+            endDayTotalsByWorld[world.id] = (endDayTotalsByWorld[world.id] || 0) + endLog.day;
+            endDayCountsByWorld[world.id] = (endDayCountsByWorld[world.id] || 0) + 1;
           }
           waveBattles += metrics.waveCombats || 0;
           evolutionCount += metrics.evolutions || 0;
@@ -92,7 +131,38 @@ for (const runNumber of [1, 2, 3]) {
             completed ? Number((count / completed).toFixed(3)) : null,
           ]),
         ),
+        worldOutcomeReasons: Object.fromEntries(
+          Object.entries(outcomeReasonsByWorld).map(([id, outcomes]) => [
+            id,
+            {
+              savedRate: completed ? Number((outcomes.saved / completed).toFixed(3)) : null,
+              failureReasons: Object.fromEntries(
+                Object.entries(outcomes.failed).map(([reason, count]) => [
+                  reason,
+                  completed ? Number((count / completed).toFixed(3)) : null,
+                ]),
+              ),
+            },
+          ]),
+        ),
+        meanWorldEndDay: Object.fromEntries(
+          Object.entries(endDayTotalsByWorld).map(([id, total]) => [
+            id,
+            Number((total / endDayCountsByWorld[id]).toFixed(1)),
+          ]),
+        ),
         engagement: {
+          meanActionsByWorld: Object.fromEntries(
+            Object.entries(actionsByWorld).map(([id, actions]) => [
+              id,
+              Object.fromEntries(
+                Object.entries(actions).map(([action, count]) => [
+                  action,
+                  completed ? Number((count / completed).toFixed(2)) : 0,
+                ]),
+              ),
+            ]),
+          ),
           meanActionsPerRun: Object.fromEntries(
             Object.entries(actionTotals).map(([action, count]) => [
               action,
