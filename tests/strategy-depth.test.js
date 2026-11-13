@@ -39,9 +39,13 @@ describe("rescue-first beast threat opportunity cost", () => {
     expect(candidate({ strategy: "growth" }).actionId).not.toBe("fight");
     expect(candidate({ strategy: "clear" })).toEqual(candidate({ strategy: "clear" }, 101));
     expect(
-      candidate({ level: 4, resource: 20, suppression: 2 }, 65, { bossLevel: 4, reserve: 14 })
-        .actionId,
-    ).not.toBe("fight");
+      candidate({ level: 4, resource: 20, suppression: 2 }, 65, { bossLevel: 4, reserve: 14 }),
+    ).toEqual(
+      candidate({ level: 4, resource: 20, suppression: 2 }, 101, {
+        bossLevel: 4,
+        reserve: 14,
+      }),
+    );
     expect(candidate({}, 101).actionId).not.toBe("fight");
   });
 
