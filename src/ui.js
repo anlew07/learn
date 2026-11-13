@@ -1,4 +1,4 @@
-import "./style.css";
+import "./style.css"; import "./art-direction.css";
 import Engine from "./engine.js";
 import { ATTACK_PATTERNS } from "./systems/attack-patterns.js";
 import { counteredEliteWaveLabels } from "./systems/survivor-waves.js";

@@ -1,0 +1,745 @@
+/**
+ * Art direction · r1
+ * Purely presentational layer imported after the base stylesheet.
+ * No gameplay data, timing, selectors used for commands, or save behavior is changed.
+ * Original artwork lives in ./assets; Vite rewrites relative URLs for GitHub Pages.
+ */
+:root {
+  --surface: #121c2c;
+  --surface-raised: #18273a;
+  --line: #35495e;
+  --text: #f5f3e9;
+  --muted: #acc0d0;
+  --accent: #8de7d6;
+  --amber: #edcc93;
+  --radius: 18px;
+  font-family: "PingFang SC", "Microsoft YaHei", Inter, system-ui, sans-serif;
+  background: #080e1a;
+  color: var(--text);
+}
+body {
+  background:
+    radial-gradient(ellipse 65% 33% at 49% -5%, #29435b 0%, transparent 83%),
+    radial-gradient(ellipse 36% 36% at 110% 49%, #27304770 0%, transparent 100%),
+    linear-gradient(180deg, #0b1321, #080e1a 63%);
+}
+.app-shell { max-width: 940px; }
+.topbar { align-items: center; }
+.brand { font-weight: 900; letter-spacing: .015em; }
+.brand-mark {
+  position: relative;
+  background: #14263b url("./assets/soul-portal.svg") center / 140% no-repeat;
+  color: transparent;
+  border: 1px solid #b3eadd63;
+  box-shadow: 0 0 0 4px #66d6cb12, 0 8px 30px #0007;
+}
+.topbar > .pill { color: #f0d7a6; border-color: #9f835363; letter-spacing: .045em; }
+
+/* Landing: one strong piece of art, quiet supporting type, clear primary action. */
+.hero {
+  min-height: 365px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 49px clamp(22px, 5vw, 52px);
+  background:
+    radial-gradient(ellipse 75% 130% at 85% 39%, #26435c7d 0%, transparent 72%),
+    linear-gradient(108deg, #17283d 0%, #101b2c 65%, #131d32 100%);
+  border-color: #61778a88;
+  box-shadow: inset 0 1px 0 #ffffff1c, 0 26px 52px #0007;
+}
+.hero::before {
+  background-image: linear-gradient(#e4eceb08 1px, transparent 1px), linear-gradient(90deg, #e4eceb08 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(110deg, transparent 12%, #0007);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: min(55%, 480px);
+  aspect-ratio: 1;
+  top: 50%;
+  right: -4%;
+  transform: translateY(-50%);
+  background: url("./assets/soul-portal.svg") center / contain no-repeat;
+  filter: drop-shadow(0 15px 48px #54c4bf24);
+  pointer-events: none;
+  opacity: .88;
+}
+.hero-orb { display: none; }
+.hero > :not(.hero-orb) { position: relative; z-index: 1; }
+.hero .eyebrow { color: #efcea0; }
+.hero h1 {
+  max-width: 620px;
+  font-size: clamp(2.4rem, 6.3vw, 4rem);
+  line-height: 1.14;
+  letter-spacing: -.06em;
+  text-shadow: 0 2px 28px #080f23c0;
+}
+.hero h1 em { color: #99f2dd; }
+.hero p { max-width: 390px; color: #d3dddf; font-size: .97rem; }
+.hero-actions { margin-top: 30px; }
+.hero-actions .btn, .run-toggle {
+  color: #0c2b32;
+  background: linear-gradient(115deg, #c3f8e3 0%, #74d9ca 86%);
+  border: 1px solid #c4ffea;
+  box-shadow: 0 8px 24px #5de9d02c, inset 0 1px 0 #fff8;
+  font-weight: 850;
+}
+.hero-actions .btn:hover:not(:disabled), .run-toggle:hover:not(:disabled) {
+  background: linear-gradient(115deg, #e6fff0, #8beedf);
+  border-color: #e6fff0;
+}
+.hero-actions .btn-soft { background: #152c3cbc; border-color: #6a8b9473; }
+.home-link { border-color: #526679; }
+
+/* Main HUD: information density without the feeling of a spreadsheet. */
+.run-dashboard {
+  background:
+    radial-gradient(ellipse 60% 110% at 95% 0%, #286d7273 0%, transparent 78%),
+    linear-gradient(140deg, #1d3047 0%, #111f32 65%, #0f2130);
+  border-color: #526a7c;
+  box-shadow: inset 0 1px 0 #e7ffed15, 0 14px 40px #0006;
+}
+.dashboard-heading h1 { color: #fff7e8; }
+.run-live { background: #19514880; border-color: #63c7aa; color: #b9ffdf; }
+.run-live::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: #9af2c4;
+  box-shadow: 0 0 10px #92ffd3;
+}
+.metric {
+  background: #091a2ac4;
+  border-color: #4660788c;
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 #ffffff0c;
+}
+.metric b { color: #fff8eb; font-variant-numeric: tabular-nums; }
+.metric:nth-child(2) b { color: #9ef1df; }
+.metric:nth-child(3) b { color: #f6d7a0; }
+.metric:nth-child(4) b { color: #c5b9fd; }
+.metric span { color: #bbcede; }
+.section-banner { margin-top: 10px; }
+.section-banner h2 { color: #fff2df; letter-spacing: .02em; }
+.section-hint { white-space: normal; text-align: right; }
+
+/* World scene art is decorative: text, button labels and status bars remain real DOM. */
+.world {
+  --scene-image: none;
+  isolation: isolate;
+  background: linear-gradient(148deg, #19283a, #101a2a 72%);
+  border-color: color-mix(in srgb, var(--world-accent) 32%, #334b5c);
+  box-shadow: inset 0 1px 0 #ffffff0d, 0 12px 36px #0006;
+}
+.world-lingzai { --scene-image: url("./assets/world-lingzai.svg"); }
+.world-zombie { --scene-image: url("./assets/world-zombie.svg"); }
+.world-beast { --scene-image: url("./assets/world-beast.svg"); }
+.world::before { width: 4px; z-index: 2; }
+.world::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 190px;
+  background-image: var(--scene-image);
+  background-size: cover;
+  background-position: right top;
+  opacity: .47;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 40%), linear-gradient(180deg, #000 12%, transparent 100%);
+  mask-composite: intersect;
+  pointer-events: none;
+}
+.world > * { position: relative; z-index: 1; }
+.world-hero {
+  border-bottom: 1px solid #d4ebdf15;
+  padding-bottom: 15px;
+  margin-bottom: 12px;
+}
+.world-insignia {
+  border-radius: 19px;
+  width: 60px;
+  height: 60px;
+  font-size: 31px;
+  border-color: color-mix(in srgb, var(--world-accent) 58%, #152635);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--world-accent) 23%, #0d1d2e), #101b2c);
+  box-shadow: inset 0 1px 0 #fff3, 0 0 0 4px #0b18245e;
+  text-shadow: 0 0 20px var(--world-accent);
+}
+.world-kicker { font-size: .66rem; letter-spacing: .115em; text-shadow: 0 1px 7px #030915; }
+.world-title { font-size: 1.35rem; font-weight: 900; color: #fff8e8; text-shadow: 0 2px 12px #050e19b0; }
+.world-head .pill { background: #0c192bcc; backdrop-filter: blur(7px); }
+.world-meta {
+  border: 1px solid #46607448;
+  background: #091524ae;
+  color: #d3dfeb;
+  font-variant-numeric: tabular-nums;
+}
+.world .bars { margin: 18px 0 15px; }
+.bar-head { color: #d7e3e8; }
+.bar-head b { font-variant-numeric: tabular-nums; font-size: .83rem; }
+.progress-track { height: 11px; border: 1px solid #46607366; background: #050d1b; }
+.progress-fill.p { background: linear-gradient(90deg, #4aafc8, #a9f6d5); box-shadow: 0 0 9px #82ebc88a; }
+.progress-fill.d { background: linear-gradient(90deg, #eec16f, #dc6870); box-shadow: 0 0 9px #e88d7985; }
+.world-goal { color: #c6d7e3; }
+.world-intel { background: #071527b3; border-color: #53708555; }
+.world-intel summary { color: #d6e9eb; }
+.select-row { border-color: #819fb333; }
+.select-row button, .event-choice button, .crisis-action button { min-height: 44px; }
+select { color: #f5f4ea; }
+select:disabled { cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible,
+summary:focus-visible { outline-color: #b3ffdc; outline-width: 3px; outline-offset: 3px; }
+
+/* Decisions and battle feedback: reward moments have stronger hierarchy. */
+.panel, .info-card {
+  background: linear-gradient(155deg, #182439, #101a2a);
+  border-color: #40566e;
+  box-shadow: inset 0 1px 0 #ffffff08, 0 12px 32px #0004;
+}
+.panel h2 { color: #fff0d9; }
+.event { background: linear-gradient(142deg, #31283a, #1d2133); border-color: #947377; }
+.event h3 { color: #ffe3bc; }
+.event-choice { background: #161e31cc; border-color: #655e75; }
+.event-default { background: #153b36a8; border-color: #4c9680; color: #c7ffdf; }
+.build-panel { background: linear-gradient(125deg, #253449, #13243a); border-color: #578b9d; }
+.build-choice button { min-height: 64px; border-color: #496f82; }
+.survivor-score {
+  background: radial-gradient(ellipse at 100% 0%, #2b6d7380, transparent 70%), #0b2230;
+  border-color: #548e94;
+}
+.survivor-score-main strong { font-size: 2.45rem; text-shadow: 0 0 14px #85e3c744; }
+.survivor-wave { background: #0b2030; border: 1px solid #35596a7a; }
+.survivor-replay { border-color: #537787; box-shadow: 0 10px 28px #0003; }
+.replay-head { background: linear-gradient(90deg, #1a3e4c, #10283c); }
+.replay-arena {
+  background:
+    radial-gradient(ellipse at 18% 45%, #42bea03f, transparent 48%),
+    linear-gradient(#8dbac411 1px, transparent 1px),
+    linear-gradient(90deg, #8dbac411 1px, transparent 1px),
+    #0a1a2a;
+  background-size: auto, 24px 24px, 24px 24px, auto;
+}
+.replay-wave { background: #102b3bd9; }
+.replay-wave-name { color: #e5d19f; }
+.replay-attack-name { color: #c9ecdd; }
+.replay-frenzy { box-shadow: 0 0 24px #eaaa5d3d; }
+.result { background: radial-gradient(ellipse at 50% 0%, #296a5e52, transparent 70%), #142434; }
+.result strong { color: #b9ffe2; }
+.progress-summary > div {
+  background: linear-gradient(145deg, #0e2637, #101b2b);
+  border-color: #3d6070;
+}
+.progress-summary strong { color: #e9d39f; }
+.progress-summary > div:nth-child(2) strong { color: #9ef3dd; }
+.progress-summary > div:nth-child(3) strong { color: #cec0ff; }
+.experiment-toggle { background: #102c3a; border: 1px solid #416678; }
+
+/* Docked navigation: active selection reads as a clear destination. */
+.footer-nav {
+  max-width: 940px;
+  border: 1px solid #4960718c;
+  border-bottom: 0;
+  border-radius: 19px 19px 0 0;
+  background: #0c1727f4;
+  box-shadow: 0 -9px 34px #0008;
+}
+.footer-nav button { min-height: 57px; border-radius: 12px; }
+.footer-nav button.active {
+  background: linear-gradient(160deg, #24515b, #183b4b);
+  border-color: #5ea79f;
+  box-shadow: inset 0 1px 0 #baffef1d;
+  color: #effff7;
+}
+.footer-nav button.active .nav-glyph { color: #b1ffe3; }
+.footer-nav button:not(.active):hover { color: #e1f5f0; background: #1a2b3c; }
+.pill.good { color: #b2f8d7; border-color: #4c9c7e; }
+.pill.bad { color: #ffb1b3; border-color: #b46b78; }
+.pill.warn { color: #ffd995; border-color: #ad8750; }
+.notice { border-color: #997955; color: #ffe0ae; }
+
+/* Small screens keep action targets usable and do not cover the main CTA. */
+@media (max-width: 620px) {
+  .hero { min-height: 335px; padding: 37px 23px 28px; }
+  .hero::after { width: 310px; right: -112px; top: 48%; opacity: .45; }
+  .hero h1 { font-size: clamp(2.35rem, 9vw, 3.15rem); }
+  .hero p { max-width: 270px; }
+  .world::after { height: 145px; opacity: .34; }
+  .world-insignia { width: 51px; height: 51px; font-size: 27px; }
+  .world-title { font-size: 1.18rem; }
+  .section-banner h2 { font-size: 1.32rem; }
+  .run-dashboard { border-radius: 17px; }
+  .footer-nav { border-radius: 14px 14px 0 0; }
+}
+@media (max-width: 370px) {
+  .hero::after { right: -158px; }
+  .hero-actions .btn { width: 100%; }
+  .hero h1 { font-size: 2.25rem; }
+  .world-hero { gap: 9px; }
+  .world-kicker { font-size: .59rem; }
+  .world-meta { overflow-wrap: anywhere; }
+  .world-head { gap: 5px; }
+  .world-head .pill { font-size: .64rem; }
+  .run-dashboard .metric { padding: 9px 4px; }
+  .run-dashboard .metric b { font-size: 1rem; }
+  .footer-nav { gap: 4px; padding-inline: 7px; }
+  .footer-nav button { font-size: .67rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero::after { animation: portal-presence 11s ease-in-out infinite; }
+  @keyframes portal-presence {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.035); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero::after { animation: none; }
+}
+
+
+/* Character portraits and elite-wave ornaments: lightweight, purely visual assets.
+   All labels and world state remain accessible HTML produced by the engine UI. */
+.world-lingzai { --avatar-image: url("./assets/avatar-lingzai.svg"); --foe-accent: #9aded6; }
+.world-zombie { --avatar-image: url("./assets/avatar-zombie.svg"); --foe-accent: #e8ac86; }
+.world-beast { --avatar-image: url("./assets/avatar-beast.svg"); --foe-accent: #c8b0f4; }
+
+.world-lingzai .world-insignia,
+.world-zombie .world-insignia,
+.world-beast .world-insignia {
+  background-image: var(--avatar-image);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: transparent;
+  text-shadow: none;
+  border: 2px solid color-mix(in srgb, var(--world-accent) 76%, #182b3c);
+  box-shadow: 0 0 0 3px #071a28a8, 0 0 22px color-mix(in srgb, var(--world-accent) 20%, transparent);
+}
+.world .replay-hero {
+  width: 34px;
+  height: 34px;
+  left: 8px;
+  font-size: 0;
+  border-radius: 50%;
+  border: 2px solid var(--world-accent);
+  background: #142c3b var(--avatar-image) center / cover no-repeat;
+  box-shadow: 0 0 19px color-mix(in srgb, var(--world-accent) 60%, transparent);
+}
+.world .replay-hero span { display: none; }
+.world .replay-hero::after {
+  inset: -6px;
+  border-color: color-mix(in srgb, var(--world-accent) 67%, transparent);
+  box-shadow: 0 0 0 2px #091a2acc;
+  transform: none;
+}
+.world .replay-foe {
+  background: var(--foe-accent);
+  color: transparent;
+  font-size: 0;
+  width: 12px;
+  height: 14px;
+  flex: 0 1 12px;
+  clip-path: polygon(50% 0, 83% 22%, 92% 68%, 70% 100%, 30% 100%, 8% 68%, 17% 22%);
+  opacity: .88;
+  filter: drop-shadow(0 0 4px var(--foe-accent));
+}
+.world .replay-foe:not(.replay-fallen) { background: #9d8a87; opacity: .63; }
+.world .replay-foe.replay-fallen { background: var(--foe-accent); }
+
+/* Optional late-wave traits are already emitted by the main gameplay branch.
+   The icons enhance the real trait labels rather than making up combat state. */
+.replay-trait[data-wave-trait] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 25px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid #876a616b;
+  border-radius: 8px;
+  background: #151f30d9;
+  color: #f2d4bb;
+  line-height: 1.35;
+  white-space: normal;
+}
+.replay-trait[data-wave-trait]::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.replay-trait[data-wave-trait="horde"]::before { background-image: url("./assets/elite-horde.svg"); }
+.replay-trait[data-wave-trait="armored"]::before { background-image: url("./assets/elite-armored.svg"); }
+.replay-trait[data-wave-trait="swift"]::before { background-image: url("./assets/elite-swift.svg"); }
+.replay-trait[data-wave-trait="armored"] { border-color: #d5c4aa73; }
+.replay-trait[data-wave-trait="swift"] { border-color: #c7a9f089; }
+
+/* A single subtle clear flash; replay remains the deterministic presentation
+   of an already-finished encounter, not a new battle simulation. */
+@keyframes battle-clear-flash {
+  0%, 75%, 100% { box-shadow: none; }
+  89% { box-shadow: inset 0 0 45px #9df6da29, 0 0 22px #8adfc022; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .survivor-score.frenzy-active { animation: battle-clear-flash 3.1s ease-out both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .survivor-score.frenzy-active { animation: none; }
+}
+@media (max-width: 380px) {
+  .world .replay-hero { width: 29px; height: 29px; left: 5px; }
+  .world .replay-foe { width: 9px; height: 11px; flex-basis: 9px; }
+  .replay-trait[data-wave-trait] { font-size: .61rem; }
+}
+
+
+/* r2 / Pixel-art asset kit: keep crisp nearest-neighbor sprites without
+   a raster pipeline, icon dependency, external font, or gameplay code. */
+.hero::after,
+.world::after,
+.brand-mark,
+.world .world-insignia,
+.world .replay-hero,
+.replay-trait[data-wave-trait]::before,
+.replay-wave .replay-hit {
+  image-rendering: pixelated;
+}
+.hero::after {
+  width: min(41%, 350px);
+  filter: none;
+  opacity: .98;
+}
+.hero {
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(0deg, #dcefe908 0 1px, transparent 1px 20px),
+    radial-gradient(ellipse at 85% 45%, #235b6873, transparent 70%),
+    linear-gradient(112deg, #17283d, #101b2c 72%);
+}
+.hero .eyebrow,
+.world-kicker,
+.replay-wave-name {
+  letter-spacing: .13em;
+}
+.hero-actions .btn,
+.run-toggle {
+  border-radius: 5px;
+  box-shadow: inset 0 -3px 0 #2b7666, 3px 3px 0 #071421;
+}
+.hero-actions .btn:hover:not(:disabled),
+.run-toggle:hover:not(:disabled) {
+  box-shadow: inset 0 -3px 0 #2b7666, 3px 3px 0 #071421;
+}
+.world {
+  border-radius: 7px;
+  --radius: 7px;
+}
+.world::before { width: 4px; box-shadow: none; }
+.world::after {
+  height: 170px;
+  background-size: auto 132%;
+  background-position: right top;
+  opacity: .67;
+  mask-image: linear-gradient(90deg, transparent 2%, #000 38%), linear-gradient(180deg, #000 18%, transparent 100%);
+}
+.world-hero { min-height: 59px; }
+.world .world-insignia {
+  width: 56px;
+  height: 56px;
+  border-radius: 3px;
+  border: 2px solid var(--world-accent);
+  background-color: #101b2c;
+  box-shadow: 3px 3px 0 #050e1a;
+}
+.world-meta,
+.metric,
+.progress-track,
+.world-intel,
+.select-row button,
+.build-choice button,
+.event-choice,
+.replay-wave,
+.survivor-score,
+.survivor-wave {
+  border-radius: 4px;
+}
+.progress-track { height: 10px; }
+.progress-fill { border-radius: 1px; }
+.progress-fill.p,
+.progress-fill.d { box-shadow: none; }
+.metric b { font-variant-numeric: tabular-nums; }
+.run-dashboard { border-radius: 8px; }
+.footer-nav { border-radius: 8px 8px 0 0; }
+.footer-nav button { border-radius: 5px; }
+.footer-nav button.active { box-shadow: inset 0 -3px 0 #153d45; }
+.panel, .info-card { border-radius: 8px; }
+select, input { border-radius: 4px; }
+button { border-radius: 5px; }
+
+/* Recorded battle: one 9-tile sprite atlas for all actual attack styles.
+   Names, kill totals, bonuses and combat outcomes remain engine-derived. */
+.world .replay-hero {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border-width: 2px;
+  box-shadow: 2px 2px 0 #071421;
+}
+.world .replay-hero::after { border-radius: 2px; box-shadow: none; }
+.world .replay-foe {
+  width: 10px;
+  height: 12px;
+  flex-basis: 10px;
+  background: var(--foe-accent);
+  border: 2px solid #112739;
+  border-radius: 1px;
+  clip-path: none;
+  filter: none;
+  box-shadow: 2px 2px 0 #070d1b;
+}
+.world .replay-foe:not(.replay-fallen) { background: #8a858a; }
+.replay-wave .replay-hit {
+  width: 28px;
+  height: 28px;
+  font-size: 0 !important;
+  line-height: 0;
+  color: transparent;
+  text-shadow: none;
+  background-image: url("./assets/attack-atlas.svg");
+  background-size: 252px 28px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  filter: drop-shadow(1px 2px 0 #071421);
+  opacity: .96;
+}
+.replay-wave.attack-basic .replay-hit { background-position: 0 0; }
+.replay-wave.attack-chain .replay-hit { background-position: -28px 0; }
+.replay-wave.attack-pierce .replay-hit { background-position: -56px 0; }
+.replay-wave.attack-fan .replay-hit { background-position: -84px 0; }
+.replay-wave.attack-flurry .replay-hit { background-position: -112px 0; }
+.replay-wave.attack-shockwave .replay-hit { background-position: -140px 0; }
+.replay-wave.attack-storm .replay-hit { background-position: -168px 0; }
+.replay-wave.attack-barrage .replay-hit { background-position: -196px 0; }
+.replay-wave.attack-hunt .replay-hit { background-position: -224px 0; }
+.replay-trait[data-wave-trait] { border-radius: 3px; }
+.replay-trait[data-wave-trait]::before {
+  width: 18px;
+  height: 18px;
+  background-size: 100% 100%;
+}
+@media (max-width: 620px) {
+  .hero::after { width: 230px; right: -40px; top: 47%; opacity: .53; }
+  .world::after { height: 130px; background-size: auto 135%; opacity: .53; }
+  .world .world-insignia { width: 48px; height: 48px; }
+}
+@media (max-width: 380px) {
+  .hero::after { right: -90px; opacity: .4; }
+  .world .replay-hero { width: 27px; height: 27px; }
+  .world .replay-foe { width: 8px; height: 10px; flex-basis: 8px; }
+}
+/* Retain the existing motion safety contract. No continuously flashing pixel art. */
+@media (prefers-reduced-motion: reduce) {
+  .hero::after,
+  .survivor-score.frenzy-active,
+  .replay-wave .replay-hit { animation: none !important; }
+}
+
+/* r3 · mobile information hierarchy and touch ergonomics (presentation only).
+   Scope new styles to existing panels; do not change any UI command contracts. */
+.onboarding-card {
+  border-radius: 5px;
+  border-left: 4px solid #8de7d6;
+  box-shadow: inset 0 1px 0 #ffffff14;
+}
+.crisis-panel {
+  border-left: 4px solid #d7a66b;
+  background: linear-gradient(140deg, #332c30, #172332);
+}
+.crisis-item,
+.aid-option,
+.event-choice,
+.finale-preview,
+.intervention-item {
+  border-radius: 5px;
+}
+.event {
+  border-left: 4px solid #edc68e;
+}
+.event-default {
+  border-left: 3px solid #8edcbd;
+}
+.event-choice-detail,
+.crisis-reasons,
+.crisis-blockers,
+.aid-option .hint,
+.replay-note {
+  color: #c5d5df;
+}
+.crisis-item .row-between,
+.intervention-item .row-between,
+.replay-head,
+.world-head {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.crisis-action > .hint,
+.event-choice-detail,
+.replay-attack-name,
+.replay-trait[data-wave-trait],
+.world-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.aid-options {
+  align-items: stretch;
+}
+.aid-option {
+  background: #102538;
+  border-color: #4b6675;
+}
+.aid-option button {
+  min-height: 48px;
+}
+.finale-preview summary,
+.world-intel summary,
+.archive-discoveries summary {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+button,
+select,
+summary,
+.home-link {
+  touch-action: manipulation;
+}
+.event-choice button,
+.crisis-action button,
+.fusion-row button,
+.soul-row button,
+.select-row button,
+.replay-head button,
+.build-choice button,
+.collection-titles button {
+  min-height: 44px;
+}
+.replay-head button {
+  font-size: .78rem;
+}
+.replay-wave-name {
+  color: #b0dce0;
+}
+.replay-wave-count {
+  color: #c3edf0;
+}
+.footer-nav button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (hover: none) and (pointer: coarse) {
+  /* Avoid hover stickiness on touch screens; focus-visible still indicates keyboards. */
+  button:hover:not(:disabled) {
+    transform: none;
+  }
+  .footer-nav {
+    backdrop-filter: none;
+    background: #0c1727f8;
+  }
+}
+@media (max-width: 400px) {
+  .game-content,
+  .panel,
+  .world,
+  .run-dashboard {
+    min-width: 0;
+  }
+  .section-banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .section-hint {
+    text-align: left;
+  }
+  .event-choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .event-choice button {
+    width: 100%;
+    max-width: none;
+  }
+  .crisis-item,
+  .aid-option,
+  .event-choice {
+    padding: 10px;
+  }
+  .replay-head {
+    align-items: center;
+  }
+  .replay-wave-name {
+    font-size: .7rem;
+  }
+  .replay-wave-count,
+  .replay-attack-name,
+  .replay-trait[data-wave-trait] {
+    font-size: .73rem;
+    line-height: 1.45;
+  }
+  .survivor-wave {
+    font-size: .74rem;
+    padding: 8px 5px;
+  }
+  .footer-nav {
+    gap: 5px;
+  }
+  .footer-nav button {
+    padding-inline: 3px;
+    line-height: 1.3;
+    min-height: 56px;
+  }
+}
+@media (max-width: 350px) {
+  .hero {
+    min-height: 300px;
+  }
+  .world-meta {
+    padding: 9px;
+    font-size: .78rem;
+    line-height: 1.6;
+  }
+  .run-dashboard .metric span {
+    font-size: .65rem;
+    line-height: 1.3;
+  }
+  .world-intel summary {
+    gap: 6px;
+  }
+  .intel-summary-hint {
+    font-size: .65rem;
+  }
+  .replay-arena {
+    padding-inline: 35px 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero::after,
+  .survivor-score.frenzy-active,
+  .replay-arena.is-playing .replay-wave,
+  .replay-arena.is-playing .replay-foe,
+  .replay-arena.is-playing .replay-hero,
+  .replay-arena.is-playing .replay-frenzy,
+  .replay-arena.is-playing .replay-hit {
+    animation: none !important;
+  }
+}
