@@ -62,9 +62,9 @@ describe("equippable cosmetic archive titles", () => {
     const earned = { ...original, secretArchive: ["crossworld/tea-and-coffee"] };
     const result = equipArchiveTitle(earned, "title/tea-coffee");
     expect(result.ok).toBe(true);
-    expect(selectedArchiveTitle(result.profile)).toBe("末日茶咖联络员");
+    expect(selectedArchiveTitle(result.profile)).toBe("跨界茶咖联络员");
     expect(JSON.stringify(earned)).not.toContain("selectedTitle");
-    expect(selectedArchiveTitle(JSON.parse(JSON.stringify(result.profile)))).toBe("末日茶咖联络员");
+    expect(selectedArchiveTitle(JSON.parse(JSON.stringify(result.profile)))).toBe("跨界茶咖联络员");
     const cleared = equipArchiveTitle(result.profile, "");
     expect(selectedArchiveTitle(cleared.profile)).toBe("");
   });
@@ -79,7 +79,7 @@ describe("equippable cosmetic archive titles", () => {
     expect(equipArchiveTitle(partial, "title/holiday-chair").ok).toBe(false);
     const dressed = equipArchiveTitle(complete, "title/holiday-chair");
     expect(dressed.ok).toBe(true);
-    expect(selectedArchiveTitle(dressed.profile)).toBe("末日休假协会会长");
+    expect(selectedArchiveTitle(dressed.profile)).toBe("三界假期协调员");
     expect(availableArchiveTitles(complete)).toHaveLength(3);
     expect(equipArchiveTitle(complete, "title/invalid").ok).toBe(false);
     expect(dressed.profile.runCount).toBe(3);

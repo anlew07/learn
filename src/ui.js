@@ -10,7 +10,7 @@ import { createExclusiveSession } from "./services/exclusive-session.js";
 
 const app = document.querySelector("#app");
 const TEMPOS = {1:20000,2:10000,4:5000};
-const labelStrategies = {growth:"成长优先",clear:"清剿优先",rescue:"拯救优先"};
+const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now();
 let saveError = false;
 let sessionStatus = "starting";
@@ -61,7 +61,7 @@ function sessionBanner() {
     '</section>';
 }
 function report(text){const el=document.querySelector("#toast");if(el){el.textContent=text;el.hidden=false;}}
-function worldStatus(w){return w.status==="saved"?"已拯救":w.status==="failed"?"已崩溃":"演化中";}
+function worldStatus(w){return w.status==="saved"?"已拯救":w.status==="failed"?"救援未完成":"演化中";}
 function pill(status){return status==="saved"?"good":status==="failed"?"bad":"warn";}
 function bar(w,key,label){return '<div><div class="bar-head"><span>'+label+'</span><b>'+n(w[key])+'%</b></div><div class="progress-track"><div class="progress-fill '+key+'" style="width:'+Math.min(100,Math.max(0,w[key]))+'%"></div></div></div>';}
 /**
@@ -79,10 +79,10 @@ function survivorReplayHtml(battle) {
    const clear=Boolean(wave.cleared);
    const visibleCount=Math.min(9,Math.max(3,Math.ceil(encountered/4)));
    const fallenCount=Math.round(visibleCount*(encountered?defeated/encountered:0));
-   const attack=wave.attack||{style:"basic",label:"基础攻击",icon:"✦",bonus:0};
+   const attack=wave.attack||{style:"basic",label:"基础应对",icon:"✦",bonus:0};
    const style=["chain","pierce","fan","flurry","shockwave","storm","barrage","hunt","basic"].includes(attack.style)?
      attack.style:"basic";
-   return '<div class="replay-wave attack-'+style+'" data-attack-style="'+style+'" data-wave-number="'+(index+1)+'" aria-label="第'+(index+1)+'波，'+esc(attack.label)+'，击败'+defeated+'个，共'+encountered+'个敌人">'+
+   return '<div class="replay-wave attack-'+style+'" data-attack-style="'+style+'" data-wave-number="'+(index+1)+'" aria-label="第'+(index+1)+'波，'+esc(attack.label)+'，击退'+defeated+'个，共'+encountered+'个异常目标">'+
      '<span class="replay-wave-name">WAVE 0'+(index+1)+'</span>'+
      '<div class="replay-swarm" aria-hidden="true">'+Array.from({length:visibleCount},(_,i)=>
        '<span class="replay-foe'+(i<fallenCount?' replay-fallen':'')+'">◆</span>'
@@ -96,14 +96,14 @@ function survivorReplayHtml(battle) {
    '</div>';
  }).join('');
  return '<section class="survivor-replay" aria-label="三波战斗回放" data-survivor-replay>'+
-   '<div class="replay-head"><span>◉ 战潮回放 · 第'+battle.day+'天</span>'+
-   '<button data-action="replay-wave" type="button" aria-label="重播三波战潮">▶ 重播</button></div>'+
+   '<div class="replay-head"><span>◉ 守护行动回放 · 第'+battle.day+'天</span>'+
+   '<button data-action="replay-wave" type="button" aria-label="重播三波防线行动">▶ 重播</button></div>'+
    '<div class="replay-arena is-playing" data-replay-arena>'+
      '<div class="replay-hero" aria-hidden="true"><span>✦</span></div>'+
      '<div class="replay-wave-stack">'+safeWaves+'</div>'+
      (battleData.frenzy?'<div class="replay-frenzy" aria-label="狂热爆发">⚡ FRENZY! 狂热爆发</div>':'')+
    '</div>'+
-   '<p class="hint replay-note">按真实清剿数量生成的短时战斗演出；不是实时操作，重播不会改变本局结果。</p>'+
+   '<p class="hint replay-note">按真实排险数量生成的短时战斗演出；不是实时操作，重播不会改变本局结果。</p>'+
  '</section>';
 }
 function combatHtml(battle) {
@@ -113,12 +113,12 @@ function combatHtml(battle) {
    bonus.resource>0?"额外资源 +"+n(bonus.resource):"",
    bonus.doomReduced>0?"额外减灾 "+n(bonus.doomReduced):""
  ].filter(Boolean);
- return '<div class="combat-recap" aria-label="最近一场战潮">'+
-   '<div class="row-between"><b>最近战潮 · 第'+battle.day+'日</b>'+
+ return '<div class="combat-recap" aria-label="最近一场防线行动">'+
+   '<div class="row-between"><b>最近防线行动 · 第'+battle.day+'日</b>'+
    (battle.evolution?'<span class="pill good">✦ '+esc(battle.evolution)+'</span>':'')+'</div>'+
-   (battle.spectacle?'<div class="survivor-score'+(battle.spectacle.frenzy?' frenzy-active':'')+'" aria-label="自动战潮清剿统计">'+
+   (battle.spectacle?'<div class="survivor-score'+(battle.spectacle.frenzy?' frenzy-active':'')+'" aria-label="自动防线行动排险统计">'+
    '<div class="survivor-score-main"><strong>'+battle.spectacle.defeated+'</strong>'+
-   '<span> / '+battle.spectacle.encountered+' 敌群清剿</span></div>'+
+   '<span> / '+battle.spectacle.encountered+' 异常群体已稳控</span></div>'+
    '<span class="survivor-grade '+(battle.spectacle.fullClear?'survivor-clear':'')+'">'+
      (battle.spectacle.frenzy?'⚡ 狂热爆发 · ':battle.spectacle.burst?'✦ 进化爆发 · ':'')+esc(battle.spectacle.grade)+
      (battle.spectacle.momentum>1?' · 连战×'+battle.spectacle.momentum:'')+'</span>'+
@@ -139,7 +139,7 @@ function crisisHtml(){
  return '<section class="panel crisis-panel" aria-label="危机决策提示">'+
  '<div class="row-between"><h2>危机观察 · 优先关注</h2>'+
  '<span class="pill warn">'+crises.length+'个世界需要注意</span></div>'+
- '<p class="hint">根据当前已发生的风险排序；这不是末日结束日预测。查看建议不会花费资源或替你自动操作。</p>'+
+ '<p class="hint">根据当前已发生的风险排序；这不是灾变结束日预测。查看建议不会花费资源或替你自动操作。</p>'+
  crises.map(item=>'<article class="crisis-item" data-crisis-world="'+esc(item.worldId)+'">'+
  '<div class="row-between"><b>'+esc(item.worldName)+'</b>'+
  '<span class="hint">D'+n(item.doom)+' · 截止还剩'+item.remainingDays+'天</span></div>'+
@@ -181,14 +181,14 @@ function worldHtml(w){
  '<div class="world-identity"><span class="world-kicker">'+worldIdentity.category+' · '+worldIdentity.label+'</span>'+
  '<div class="world-head"><span class="world-title">'+esc(w.name)+'</span><span class="pill '+pill(w.status)+'">'+worldStatus(w)+'</span></div></div></div>'+
  '<div class="world-meta">Lv'+w.level+' · '+esc(v.stage)+'　|　'+esc(v.resourceName)+' <b class="resource">'+n(w.resource)+'</b>　|　剩余 '+Math.max(0,w.deadline-run.day)+' 天</div>'+
- '<div class="bars">'+bar(w,"p","拯救准备") +bar(w,"d","末日毁灭")+'</div>'+
+ '<div class="bars">'+bar(w,"p","拯救准备") +bar(w,"d","危机压力")+'</div>'+
  '<div class="world-note">正在进行：<strong>'+esc(w.action)+'</strong></div>'+
  '<div class="world-note world-goal">当前目标：'+esc(stop?worldStatus(w):v.goal)+'</div>'+
  finaleHtml(w,v)+
  '<details class="world-intel"'+(w.d>=75||w.threat&&w.threat.status!=="cleared"||cautiousAftermathSummary(w,run.day)?' open':'')+'>'+
  '<summary><span>◇ 作战情报</span><span class="intel-summary-hint">策略判断 · 状态效果</span></summary>'+
  (w.lastDecision&&!stop?'<div class="world-note"><span class="decision-label">自主判断：</span>'+esc(w.lastDecision.reason)+'</div>':'')+
- '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 清剿 '+w.threat.progress+'/2</span>':'')+
+ '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 排险 '+w.threat.progress+'/2</span>':'')+
  (v.injured?'<span class="pill bad">受伤</span>':'')+(w.weaknessUntil>=run.day&&w.weaknessStart<=run.day?'<span class="pill warn">借力虚弱</span>':'')+
  (run.waves&&w.build.evolved?'<span class="pill good">✦ '+esc(w.build.evolutionName)+'</span>':run.waves&&w.build.count?'<span class="pill">已装备战技 '+(w.build.attack.length+w.build.support.length)+'/3</span>':'')+
  (w.flags.followupOutcome?'<span class="pill '+(w.flags.followupOutcome==="commit"?"good":"")+'">后续机缘：'+
@@ -252,7 +252,7 @@ function buildHtml(w){
 
 function controls(){
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
- '<div class="brand">同时穿越</div><div class="micro">MULTIVERSE · 末日模拟器</div></div></div>'+
+ '<div class="brand">同时穿越</div><div class="micro">MULTIVERSE · 多世界救援计划</div></div></div>'+
  '<button class="home-link" data-action="home">⌂ 首页</button></header>'+
  '<section class="run-dashboard" aria-label="本局总览">'+
  '<div class="dashboard-heading"><div><span class="eyebrow">SURVIVAL OPERATION</span>'+
@@ -281,7 +281,7 @@ function aidChoicesHtml(fromId,toId){
    '。每次消耗来源4材料、1AP、1灵魂；同一目标两类援助共享冷却。</p>'+
  '<div class="aid-options">'+["p","d"].map(mode=>{
    const preview=Engine.previewAid(run,fromId,toId,mode);
-   const title=mode==="p"?"增加拯救准备":"压制毁灭压力";
+   const title=mode==="p"?"增加拯救准备":"压制危机压力";
    const effect=mode==="p"?"P+"+n(preview.actualDelta):"D−"+n(preview.actualDelta);
    const detail=preview.available?
      '本次实际'+effect+'，来源援助后剩余'+n(preview.sourceAfter)+'材料。':
@@ -334,7 +334,7 @@ function interventionHtml(limit=5){
  const signed=(value)=>value>0?"+"+precise(value):precise(value);
  const changes=(entry)=>entry.changes.flatMap((world)=>{
   const parts=[];
-  for(const [key,label] of [["p","拯救准备"],["d","毁灭压力"],["resource","资源"],["xp","经验"]]){
+  for(const [key,label] of [["p","拯救准备"],["d","危机压力"],["resource","资源"],["xp","经验"]]){
    if(world.effects[key])parts.push(label+signed(world.effects[key]));
   }
   if(world.strategyFrom!==world.strategyTo){
@@ -364,14 +364,14 @@ function interventionHtml(limit=5){
 }
 function statsHtml(){
  return '<section class="panel session-stats"><h2>本局行动统计</h2>'+
- '<p class="hint">真实行动次数与战潮累计额外收益；不计入第二次战利品。</p>'+
+ '<p class="hint">真实行动次数与防线行动累计额外收益；不计入第二次战利品。</p>'+
  run.worlds.map(w=>{
   const m=w.metrics||{},a=m.actions||{};
   return '<div class="stats-world"><b>'+esc(w.name)+'</b>'+
    '<div class="muted">成长 '+(a.growth||0)+' · 采集 '+(a.gather||0)+
-   ' · 清剿 '+(a.fight||0)+' · 探索 '+(a.explore||0)+
+   ' · 排险 '+(a.fight||0)+' · 探索 '+(a.explore||0)+
    ' · 拯救准备 '+(a.rescue||0)+'</div>'+
-   (run.waves?'<div class="muted">战潮 '+(m.waveCombats||0)+' 场 · 战技进化 '+
+   (run.waves?'<div class="muted">防线行动 '+(m.waveCombats||0)+' 场 · 战技进化 '+
     (m.evolutions||0)+' 次 · 额外XP '+n(m.extraXp||0)+
     ' · 额外资源 '+n(m.extraResources||0)+
     ' · 额外减灾 '+n(m.extraDoomReduction||0)+'</div>':'')+
@@ -405,7 +405,7 @@ function profileArchiveHtml(){
  return '<section class="panel" aria-label="跨局收藏" data-profile-archive>'+
  '<div class="row-between"><h2>灵魂收藏 · 永久发现</h2><span class="pill">'+archive.found+' / '+archive.total+'</span></div>'+
  '<p class="hint">跨局保留彩蛋与联动剧情的发现记录；仅在本浏览器的个人存档中保存，不影响每局难度。</p>'+
- (archive.complete?'<p class="pill good">✦ 已解锁永久称号：末日休假协会会长</p>':'')+
+ (archive.complete?'<p class="pill good">✦ 已解锁永久称号：三界假期协调员</p>':'')+
  '<div class="collection-titles" aria-label="纪念称号选择"><h3>纪念称号</h3>'+
  '<p class="hint">已解锁的称号可以装备在首页展示；没有数值加成。</p>'+
  '<div class="event-actions">'+
@@ -424,23 +424,44 @@ function profileArchiveHtml(){
 }
 function homeHtml(){
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
- '<div class="micro">MULTIVERSE · 末日模拟器</div></div></div><span class="pill">EARLY ACCESS · V0.2</span></header>'+
+ '<div class="micro">MULTIVERSE · 多世界救援计划</div></div></div><span class="pill">EARLY ACCESS · V0.2</span></header>'+
  '<section class="hero"><div class="hero-orb" aria-hidden="true"><span>✧</span></div>'+
  '<div class="eyebrow">THREE WORLDS · ONE SOUL</div>'+
  (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
- '<h1>一个灵魂。<br><em>三场末日。</em></h1>'+
- '<p>修仙、尸潮、兽王。三个世界同时倒计时，每次选择都可能改变终局。</p>'+
+ '<h1>一个灵魂。<br><em>守护三个世界。</em></h1>'+
+ '<p>修仙、废土、兽王。三个世界同时倒计时，每次选择都可能改变终局。</p>'+
  '<div class="hero-actions">'+
- (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
+ (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':
+   profile.runCount===0?
+   '<button class="btn" data-action="new-run" data-onboarding="focus">✦ 开始第 1 局 · 快速体验</button>'+
+   '<button class="btn-soft" data-action="new-run" data-onboarding="full">深入模式 · 同时照看双世界</button>':
+   '<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+'</div></section>'+
  '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">YOUR PROGRESS</span></div>'+
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
  '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
  '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
- '<p class="muted">首局开启灵灾与尸潮，第三局解锁兽潮。分身自动行动，你负责关键抉择。</p>'+
- '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 开启战潮增强 · 三波战斗与战技构筑</label></section>'+
+ (profile.runCount===0&&!run?'<p class="muted">建议先体验灵灾分身的成长与救援，再逐步展开其他世界。</p>':
+ '<p class="muted">多个世界会自主行动，你可以通过关键决策组织救援。</p>')+
+ '<details class="advanced-settings"><summary>进阶设置 · 防线行动</summary>'+
+ '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 启用三波防线行动与战技构筑</label></details></section>'+
  profileArchiveHtml()+
  '<p class="hint footnote">开发中版本 · 游戏进度仅保存在当前浏览器</p>';
+}
+function inQuickStart(){
+ return Boolean(run?.onboardingFocus && run.active && run.day<9);
+}
+function quickStartHtml(){
+ const phase=run.day<=4?"观察分身每天的自主成长。点击「继续模拟」，或在调试模式按天推进。":
+   run.day<=6?"留意等级与救援准备的变化，战技觉醒后也可以主动选择能力。":
+   "你已经体验了几次行动与结算。到第9天就会自动展开双世界视图。";
+ return '<section class="panel onboarding-card" data-onboarding-guide="focus" aria-label="快速开局引导">'+
+   '<div class="row-between"><strong>第一幕 · 灵脉守护</strong><span class="pill">入门 '+run.day+' / 8</span></div>'+
+   '<p>'+phase+'</p>'+
+   '<p class="hint">当前只展示灵灾分身。废土救援分身仍在自主行动，不会暂停或丢失进度。</p>'+
+   '<p class="hint">P 是救援准备（越高越接近目标）；D 是危机压力（达到100会失守）；AP 用于关键支援。</p>'+
+   '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看全部世界</button>'+
+   '</section>';
 }
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
@@ -448,15 +469,19 @@ function render(){
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
   const content=tab==="log"?statsHtml()+logsHtml():
-   '<section class="panel result"><h2>这一次的末日已经结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
+   '<section class="panel result"><h2>本轮救援行动已结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
    '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
    statsHtml()+run.worlds.map(worldHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack game-content"><div class="section-banner"><div><span class="eyebrow">WORLD STATUS</span><h2>平行世界</h2></div><span class="section-hint">'+run.worlds.length+' 个世界同步演化</span></div>'+crisisHtml()+run.worlds.map(worldHtml).join("")+interventionHtml(2)+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ const focus=inQuickStart();
+ app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack game-content"><div class="section-banner"><div><span class="eyebrow">WORLD STATUS</span><h2>'+(focus?'灵脉救援入门':'平行世界')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
+  (focus?quickStartHtml():(run.onboardingFocus&&run.day===9?'<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">双世界视图已经解锁。你可以继续观察，或使用灵魂联结提供支援。</p></section>':'')+crisisHtml())+
+  (focus?worldHtml(run.worlds[0]):run.worlds.map(worldHtml).join(""))+
+  (focus?'':interventionHtml(2))+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
-function footer(){return '<nav class="footer-nav" aria-label="主要导航">'+
- '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">◇</span><span>末日世界</span></button>'+
+function footer(){if(inQuickStart())return "";return '<nav class="footer-nav" aria-label="主要导航">'+
+ '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">◇</span><span>灾变世界</span></button>'+
  '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">✧</span><span>灵魂联结</span></button>'+
  '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>战报图鉴</span></button></nav>';}
 async function execute(type,args){
@@ -484,13 +509,15 @@ function reward(){
  if(!run?.result||run.rewarded)return;
  run.rewarded=true;profile.runCount++;profile.shards+=run.result.shards;
 }
-function confirmNew(){
+function confirmNew(mode="full"){
  if(!session.isOwner || commandBusy)return false;
  if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
  profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
- run=Engine.fresh(seed,profile.runCount+1,waves);tab="world";queueSave();render();return true;
+ run=Engine.fresh(seed,profile.runCount+1,waves);
+ run.onboardingFocus=mode==="focus"&&profile.runCount===0;
+ tab="world";queueSave();render();return true;
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
@@ -518,7 +545,8 @@ function handleClick(target){
  }
  if(!session.isOwner){report("当前标签页是只读副本，请重新取得控制权。");return;}
  if(commandBusy)return;
- if(action==="new-run"){confirmNew();return;}
+ if(action==="new-run"){confirmNew(target.dataset.onboarding||"full");return;}
+ if(action==="show-all-worlds"&&run){run.onboardingFocus=false;queueSave();render();return;}
  if(!run)return;
  if(action==="crisis-aid"){
    const choices=Engine.advise(run);
@@ -546,7 +574,7 @@ function handleClick(target){
    execute("retreat",[id,length]);return;
  }
  if(action==="exit-retreat"){
-   if(window.confirm("强行出关将失去1点灵魂，毁灭进度+8，确定吗？"))execute("exitRetreat",[id]);
+   if(window.confirm("强行出关将失去1点灵魂，危机进度+8，确定吗？"))execute("exitRetreat",[id]);
    return;
  }
  if(action==="event"){execute("event",[id,mode]);return;}
@@ -558,7 +586,7 @@ function handleClick(target){
    const preview=Engine.previewAid(run,a,b,mode);
    if(!preview.available){report(preview.reason);return;}
    const effect=mode==="p"?"拯救准备+"+n(preview.actualDelta):
-     "毁灭压力−"+n(preview.actualDelta);
+     "危机压力−"+n(preview.actualDelta);
    const reserve=preview.jeopardizesSourceFinale?
      "\n注意：来源本局终局所需材料将变得不足。":"";
    if(!window.confirm("本次实际"+effect+"；来源消耗4资源、1AP、1灵魂。"+reserve+"\n确认援助吗？"))return;

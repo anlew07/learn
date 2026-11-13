@@ -41,7 +41,7 @@ const MultiworldEngine = (function () {
     return {
       id:id,name:WORLDS[id].name,status:"running",level:1,xp:0,resource:4,
       p:0,d:0,deadline:runNumber===1?76:94,strategy:id==="lingzai"?"growth":"rescue",
-      action:"正在观察末日",rng:seedrandom(String(seed)+"/"+id, {state:true}).state(),
+      action:"正在观察灾变",rng:seedrandom(String(seed)+"/"+id, {state:true}).state(),
       buildRng:seedrandom(String(seed)+"/build/"+id, {state:true}).state(),
       flags:{},milestones:[],threat:null,pendingEvent:null,queuedBoss:false,
       eventCount:0,injuryUntil:0,weaknessStart:0,weaknessUntil:0,retreat:null,
@@ -81,7 +81,7 @@ const MultiworldEngine = (function () {
   }
   function effectiveLevel(s,w,bonus){return Math.max(0,w.level+(bonus||0)-(w.injuryUntil>=s.day?1:0));}
   function demand(w){
-    if(w.p<65)return "调查末日根源";
+    if(w.p<65)return "调查灾变根源";
     if(w.p<100)return "完善最终拯救准备";
     if(w.level<3)return "提升至终局基础等级";
     if(w.resource<resourceTarget(w))return "收集最终资源";
@@ -103,7 +103,7 @@ const MultiworldEngine = (function () {
     }
   }
   function milestone(s,w) {
-    var thresholds=[30,65,100],names={30:"发现末日异常规律",65:"定位灾难核心",100:"完成主要拯救准备"};
+    var thresholds=[30,65,100],names={30:"发现灾变异常规律",65:"定位灾难核心",100:"完成主要拯救准备"};
     thresholds.forEach(function(v){
       if(w.p>=v&&!w.flags["p"+v]){
         w.flags["p"+v]=true;
@@ -253,12 +253,12 @@ const MultiworldEngine = (function () {
         }
       }else{
         addD(w,5);w.injuryUntil=Math.max(w.injuryUntil,s.day+3);
-        log(s,w.id,"深入调查失败，分身受伤3个后续游戏日，世界毁灭+5。","warning");
+        log(s,w.id,"深入调查失败，分身受伤3个后续游戏日，世界风险+5。","warning");
       }
     }else if(choice==="safe"){
       addProgress(s,w,2);
       startCautiousInvestigation(w,s.day);
-      log(s,w.id,"谨慎保留线索：P+2，未来4日自然毁灭增长每天减少0.2。","minor");
+      log(s,w.id,"谨慎保留线索：P+2，未来4日自然风险增长每天减少0.2。","minor");
     }else if(choice==="decline"){
       log(s,w.id,"主动放弃本次线索，没有额外收益或惩罚。","minor");
     }
@@ -272,15 +272,15 @@ const MultiworldEngine = (function () {
     w.pendingEvent=null;w.threat.status="cleared";w.flags.bossDefeated=true;
     produce(s,w,"xp",8);produce(s,w,"resource",3);addProgress(s,w,3);addD(w,-5);
     w.memoryCandidates.push("elite");
-    log(s,w.id,"三波清剿完成，击败巢群首领；持续威胁已经解除。","major");
-    if(s.waves)offerBuild(s,w,"首次击败精英");
+    log(s,w.id,"三波排险完成，击退巢群核心；持续威胁已经解除。","major");
+    if(s.waves)offerBuild(s,w,"首次击退精英");
   }
   function queuedEvent(s,w){
     // Active threats take priority over optional story rewards. An unresolved
     // follow-up remains eligible and is queued after the boss is handled.
     if(!w.pendingEvent&&threatActive(w)&&(w.queuedBoss||w.threat.status==="awaiting_alpha")&&s.day>=(w.threat.retryDay||1)){
       w.queuedBoss=false;w.eventCount++;
-      w.pendingEvent={id:w.id+"/boss/"+w.eventCount,type:"boss",title:"巢群首领挑战",state:"queued",startDay:s.day+1,expiresDay:s.day+3};
+      w.pendingEvent={id:w.id+"/boss/"+w.eventCount,type:"boss",title:"巢群核心挑战",state:"queued",startDay:s.day+1,expiresDay:s.day+3};
     }
     if(!w.pendingEvent&&canQueueFollowup(w)){
       w.flags.followupQueued=true;
@@ -340,15 +340,15 @@ const MultiworldEngine = (function () {
     }else if(action==="fight"){
       if(threatActive(w)&&w.level>=2&&w.threat.progress<2){
         w.threat.progress++;produce(s,w,"xp",3);produce(s,w,"resource",1);addD(w,-0.6);
-        w.action="清剿持续威胁 "+w.threat.progress+"/2";
+        w.action="排险持续威胁 "+w.threat.progress+"/2";
         if(w.threat.progress>=2){w.queuedBoss=true;w.threat.status="awaiting_alpha";log(s,w.id,"巢群外围已肃清，首领挑战即将开启。","major");}
       }else{
-        w.action=w.id==="lingzai"?"清剿妖兽":w.id==="zombie"?"清理感染体":"狩猎异兽";
+        w.action=w.id==="lingzai"?"排险妖兽":w.id==="zombie"?"清理感染体":"巡护异兽";
         produce(s,w,"xp",w.level>=4?BALANCE.actions.maxStageCombatExperience:BALANCE.actions.combatExperience);produce(s,w,"resource",BALANCE.actions.combatResources);addD(w,-BALANCE.actions.combatDoomReduction);
       }
       if(s.waves){
         waveCombatBonus(s,w);
-        log(s,w.id,"战潮："+w.lastCombat.stages.join(" → ")+
+        log(s,w.id,"防线行动："+w.lastCombat.stages.join(" → ")+
           (w.lastCombat.evolution?" · "+w.lastCombat.evolution:"")+
           "。额外收益与减损已计入本次唯一战利品。","battle");
       }
@@ -356,28 +356,28 @@ const MultiworldEngine = (function () {
       w.action=w.id==="lingzai"?"调查灵脉":w.id==="zombie"?"追踪感染源":"追查兽王";
       addProgress(s,w,BALANCE.actions.explorationProgress);produce(s,w,"xp",0.5);optionalEvent(s,w);
     }else if(action==="rescue"){
-      w.action=w.id==="lingzai"?"准备灵脉封印":w.id==="zombie"?"准备母巢净化":"准备兽王讨伐";
+      w.action=w.id==="lingzai"?"准备灵脉封印":w.id==="zombie"?"准备母巢净化":"准备兽王应对";
       addProgress(s,w,BALANCE.actions.preparationProgress);produce(s,w,"xp",0.2);
     }else if(action==="repair"){
       w.resource-=6;w.repairUsed=true;addD(w,-12);w.action="修复安全区防线";
-      log(s,w.id,"动用6份零件进行一次性防线大修，毁灭压力降低。","major");
+      log(s,w.id,"动用6份零件进行一次性防线大修，危机压力降低。","major");
     }else if(action==="suppress"){
       w.action="压制兽王狂化";
       if(w.suppression===0){
         w.suppression=1;
         addD(w,-BALANCE.actions.beastSuppressionDoomRelief);
-        log(s,w.id,"完成第一阶段兽王压制准备，毁灭压力-"+BALANCE.actions.beastSuppressionDoomRelief+"。","minor");
+        log(s,w.id,"完成第一阶段兽王压制准备，危机压力-"+BALANCE.actions.beastSuppressionDoomRelief+"。","minor");
       }else if(w.resource>=4){
         w.resource-=4;w.suppression=2;
         addD(w,-BALANCE.actions.beastSuppressionDoomRelief);
-        log(s,w.id,"耗费结晶完成压制；兽王战斗要求降低，毁灭压力-"+BALANCE.actions.beastSuppressionDoomRelief+"。","major");
+        log(s,w.id,"耗费结晶完成压制；兽王战斗要求降低，危机压力-"+BALANCE.actions.beastSuppressionDoomRelief+"。","major");
       }else {w.action="搜集压制所需结晶";produce(s,w,"resource",3);}
     }
   }
   function worldPhase(w,day){return day>=70?"狂化":day>=35?"进化":"苏醒";}
   function worldEnd(s,w,status,reason){
     if(w.status!=="running")return;
-    w.status=status;w.action=status==="saved"?"世界获救":"世界崩溃";
+    w.status=status;w.action=status==="saved"?"世界获救":"救援未完成";
     w.pendingEvent=null;w.queuedBoss=false;w.build.pending=null;
     if(w.retreat){s.apReserved=Math.max(0,s.apReserved-1);w.retreat=null;}
     if(status==="saved"){
@@ -385,19 +385,19 @@ const MultiworldEngine = (function () {
       log(s,w.id,"世界获救！"+reason+(followupEpilogue(w)?" "+followupEpilogue(w):""),"success");
     }else{
       s.soul=clamp(s.soul-2,0,12);
-      log(s,w.id,"末日降临："+reason+"。灵魂强度-2。","danger");
+      log(s,w.id,"救援未完成："+reason+"。灵魂强度-2。","danger");
     }
   }
   function checkWorld(s,w){
     if(w.status!=="running")return;
-    if(w.d>=100)worldEnd(s,w,"failed","毁灭进度达到100%");
-    else if(s.day>=w.deadline)worldEnd(s,w,"failed","到达末日截止日");
+    if(w.d>=100)worldEnd(s,w,"failed","危机进度达到100%");
+    else if(s.day>=w.deadline)worldEnd(s,w,"failed","到达灾变截止日");
     if(s.soul<=0){
       s.worlds.forEach(function(other){
         if(other.status==="running"){
           other.status="failed";other.action="灵魂坍塌";other.pendingEvent=null;other.build.pending=null;
           if(other.retreat){s.apReserved=Math.max(0,s.apReserved-1);other.retreat=null;}
-          log(s,other.id,"灵魂归零，世界失去最后的分身。","danger");
+          log(s,other.id,"灵魂支援耗尽，分身已安全撤离。","danger");
         }
       });
     }
@@ -411,7 +411,7 @@ const MultiworldEngine = (function () {
   function finalize(s,w,bonus){
     if(!canFinal(s,w,bonus))return false;
     w.resource-=WORLDS[w.id].finalCost;
-    worldEnd(s,w,"saved",w.id==="lingzai"?"灵脉核心已被封印。":w.id==="zombie"?"母巢守卫被击败，感染核心已净化。":"兽王倒下，变异源被摧毁。");
+    worldEnd(s,w,"saved",w.id==="lingzai"?"灵脉核心已被封印。":w.id==="zombie"?"关键防线已稳定，感染源已完成处置。":"兽王威胁已平息，生态恢复工作开始。");
     return true;
   }
   function finishRun(s){
@@ -473,7 +473,7 @@ const MultiworldEngine = (function () {
             Math.min(2,w.suppression||0)*BALANCE.actions.beastSuppressionThreatMitigation:0;
           addD(w,Math.max(0,0.3-followupMitigation(w,s.day,"threat")-beastSuppressionMitigation));
         }
-        if(random(w)<0.015){addD(w,2.2);log(s,w.id,"末日环境突然恶化，毁灭压力上涨。","warning");}
+        if(random(w)<0.015){addD(w,2.2);log(s,w.id,"灾变环境突然恶化，危机压力上涨。","warning");}
         newThreat(s,w);
         if(w.d>=100)checkWorld(s,w);
         if(w.status==="running")finalize(s,w,0);
@@ -514,7 +514,7 @@ const MultiworldEngine = (function () {
     if(!s.active||!w||!w.retreat||w.status!=="running")return {ok:false,error:"没有进行中的闭关"};
     if(s.soul<=1)return {ok:false,error:"强行出关至少需要剩余1点灵魂"};
     s.soul--;addD(w,8);w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
-    log(s,id,"强行出关：灵魂强度-1，世界毁灭+8。","warning");
+    log(s,id,"强行出关：灵魂强度-1，世界风险+8。","warning");
     checkWorld(s,w);finishRun(s);return {ok:true};
   }
   function aid(s,sourceId,targetId,mode){
@@ -527,7 +527,7 @@ const MultiworldEngine = (function () {
     if(mode==="p")addProgress(s,target,preview.actualDelta);
     else addD(target,-preview.actualDelta);
     log(s,null,source.name+"支援"+target.name+"：消耗4资源、1行动点与1灵魂，"+
-      (mode==="p"?"实际拯救准备+":"实际毁灭压力-")+preview.actualDelta+"。","major");
+      (mode==="p"?"实际拯救准备+":"实际危机压力-")+preview.actualDelta+"。","major");
     return {ok:true};
   }
   function previewFusion(s,targetId,providers){

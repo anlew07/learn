@@ -15,15 +15,15 @@ export const EASTER_EGGS = Object.freeze({
   zombie: Object.freeze({
     id: "zombie/expired-coffee",
     minDay: 13,
-    title: "末日便利店",
-    message: "彩蛋「末日便利店」：废墟自动售货机还亮着灯，上面写着「末日特供咖啡，保质期：昨天」。分身决定只拍照留念。",
+    title: "避难便利店",
+    message: "彩蛋「避难便利店」：避难所自动售货机还亮着灯，上面写着「救援队专属咖啡，保质期：昨天」。分身决定只拍照留念。",
     eligible: (world) => world.level >= 2 && world.resource >= 6,
   }),
   beast: Object.freeze({
     id: "beast/dancing-beasts",
     minDay: 21,
-    title: "兽潮蹦迪夜",
-    message: "彩蛋「兽潮蹦迪夜」：远处兽群突然围着一块会发光的晶石整齐摇摆。分身默默记下：兽王的部下似乎也需要放假。",
+    title: "兽域节奏夜",
+    message: "彩蛋「兽域节奏夜」：远处兽群突然围着一块会发光的晶石整齐摇摆。分身默默记下：兽王的部下似乎也需要放假。",
     eligible: (world) => world.suppression >= 1,
   }),
 });
@@ -80,14 +80,14 @@ export const CROSSWORLD_SECRETS = Object.freeze([
   Object.freeze({
     id: "crossworld/tea-and-coffee",
     worlds: Object.freeze(["lingzai", "zombie"]),
-    title: "末日茶咖会",
-    message: "跨世界彩蛋「末日茶咖会」：修仙分身贡献灵茶，废土分身贡献过期咖啡。灵魂会议最终决定：这两样还是不要混着喝。",
+    title: "跨界茶咖会",
+    message: "跨世界彩蛋「跨界茶咖会」：修仙分身贡献灵茶，废土分身贡献纪念咖啡。灵魂会议最终决定：这两样还是不要混着喝。",
   }),
   Object.freeze({
     id: "crossworld/three-world-party",
     worlds: Object.freeze(["lingzai", "zombie", "beast"]),
     title: "三个我都不想加班",
-    message: "跨世界彩蛋「三个我都不想加班」：灵茶、咖啡和会跳舞的兽群在灵魂记忆中碰头。三位分身一致通过了末日休假提案。",
+    message: "跨世界彩蛋「三个我都不想加班」：灵茶、咖啡和会跳舞的兽群在灵魂记忆中碰头。三位分身一致通过了三界轮休提案。",
   }),
 ]);
 

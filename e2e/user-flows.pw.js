@@ -9,7 +9,7 @@ async function getSnapshot(page) {
 
 async function startFirstRun(page) {
   await page.goto("/?debug=1");
-  const newRun = page.getByRole("button", { name: /开始第 1 局/ });
+  const newRun = page.locator('[data-action="new-run"][data-onboarding="full"]');
   await expect(newRun).toBeVisible();
   await newRun.click();
   await expect(page.locator(".world")).toHaveCount(2);
@@ -19,7 +19,7 @@ async function startFirstRun(page) {
 
 test("new mobile session saves one day and restores it after refresh", async ({ page }) => {
   await startFirstRun(page);
-  await expect(page.locator(".world-title")).toHaveText(["灵灾", "尸潮"]);
+  await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
 
   await page.locator('button[data-action="step"]').click();
   await expect(page.locator(".metric").first()).toContainText("第 2 天");
@@ -116,7 +116,7 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
   await expect(page.locator(".combat-recap")).toHaveCount(1);
   await expect(page.locator(".combat-phases span:not(.combat-arrow)")).toHaveCount(3);
   await expect(page.locator(".survivor-wave")).toHaveCount(3);
-  await expect(page.locator(".survivor-score-main")).toContainText("敌群清剿");
+  await expect(page.locator(".survivor-score-main")).toContainText("异常群体已稳控");
   const replay = page.locator("[data-survivor-replay]");
   await expect(replay).toHaveCount(1);
   await expect(replay.locator("[data-replay-arena]")).toHaveClass(/is-playing/);
@@ -323,7 +323,7 @@ test("aid preview blocks wasted progress and shows real cost", async ({ page }) 
 
   const preview = page.locator("#aid-choice-preview");
   await expect(preview.getByRole("button", { name: "增加拯救准备 · P+12" })).toBeEnabled();
-  await expect(preview.getByRole("button", { name: /压制毁灭压力/ })).toBeDisabled();
+  await expect(preview.getByRole("button", { name: /压制危机压力/ })).toBeDisabled();
   await page.locator("#aid-to").selectOption("lingzai");
   await expect(preview.getByRole("button", { name: /增加拯救准备/ })).toBeDisabled();
   await expect(preview).toContainText("不同且仍在运行");
@@ -369,7 +369,7 @@ test("aid compares a partial doom reduction without offering a wasted interventi
   await page.locator('button[data-tab="soul"]').click();
   const preview = page.locator("#aid-choice-preview");
   await expect(preview.getByRole("button", { name: /增加拯救准备/ })).toBeDisabled();
-  await expect(preview.getByRole("button", { name: "压制毁灭压力 · D−5.5" })).toBeEnabled();
+  await expect(preview.getByRole("button", { name: "压制危机压力 · D−5.5" })).toBeEnabled();
   await expect(preview).toContainText("本次实际D−5.5");
 });
 
@@ -473,7 +473,7 @@ test("crisis advisory compares a legal rescue without spending or changing the w
   const panel = page.locator(".crisis-panel");
   await expect(panel).toHaveCount(1);
   await expect(panel.locator(".crisis-item")).toHaveCount(1);
-  await expect(panel).toContainText("毁灭压力已达D93");
+  await expect(panel).toContainText("危机压力已达D93");
   await expect(panel).toContainText("实际D−12");
   const before = (await getSnapshot(page)).run;
   await panel.getByRole("button", { name: "比较援助方案" }).click();
@@ -673,11 +673,11 @@ test("cross-world secret unlocks in the game and persists as a revealed collecti
   await page.locator('button[data-tab="log"]').click();
   const entry = page.locator('[data-crossworld-secret="crossworld/tea-and-coffee"]');
   await expect(entry).toHaveAttribute("data-discovered", "true");
-  await expect(entry).toContainText("末日茶咖会");
+  await expect(entry).toContainText("跨界茶咖会");
   await expect.poll(async () => (await getSnapshot(page)).run.crossworldSecrets?.length).toBe(1);
   await page.reload();
   await page.locator('button[data-tab="log"]').click();
-  await expect(entry).toContainText("末日茶咖会");
+  await expect(entry).toContainText("跨界茶咖会");
 });
 
 test("permanent archive survives restarting and refresh", async ({ page }) => {
@@ -726,13 +726,13 @@ test("earned archive title can be equipped on the home screen and survives reloa
     page.locator('[data-action="equip-title"][data-title="title/holiday-chair"]'),
   ).toBeDisabled();
   await titleButton.click();
-  await expect(page.locator("[data-equipped-title]")).toContainText("末日茶咖联络员");
+  await expect(page.locator("[data-equipped-title]")).toContainText("跨界茶咖联络员");
   await expect
     .poll(async () => (await getSnapshot(page)).profile.selectedTitle)
     .toBe("title/tea-coffee");
   await page.reload();
   await page.locator('button[data-action="home"]').click();
-  await expect(page.locator("[data-equipped-title]")).toContainText("末日茶咖联络员");
+  await expect(page.locator("[data-equipped-title]")).toContainText("跨界茶咖联络员");
   await page.locator('[data-action="equip-title"][data-title=""]').click();
   await expect(page.locator("[data-equipped-title]")).toHaveCount(0);
 });
@@ -830,7 +830,7 @@ test("real evolved zombie build unleashes the steel-rain ultimate in mobile repl
   await page.locator('button[data-action="step"]').click();
   const waves = page.locator('[data-world-card="zombie"] .attack-barrage');
   await expect(waves).toHaveCount(3);
-  await expect(waves.first()).toContainText("钢雨全域扫射");
+  await expect(waves.first()).toContainText("钢雨防线覆盖");
   await expect(waves.first()).toContainText("终极战技");
   const snapshot = await getSnapshot(page);
   const world = snapshot.run.worlds.find((item) => item.id === "zombie");
@@ -859,12 +859,56 @@ test("skill awakening reveals elite enemy counters before committing a choice", 
   });
   await page.reload();
   await expect(page.locator('[data-action="build"][data-power="blades"]')).toContainText(
-    "克制：密集敌潮",
+    "克制：密集异常群",
   );
   await expect(page.locator('[data-action="build"][data-power="arc"]')).toContainText(
-    "克制：密集敌潮、迅捷兽群",
+    "克制：密集异常群、迅捷兽影",
   );
   await expect(
     page.locator('[data-action="build"][data-power="armor"] .build-counter-hint'),
   ).toHaveCount(0);
+});
+
+test("first run defaults to a focused rescue tutorial without changing the simulation", async ({
+  page,
+}) => {
+  await page.goto("/?debug=1");
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  await expect(page.locator(".world")).toHaveCount(1);
+  await expect(page.locator(".world-title")).toHaveText("灵灾");
+  await expect(page.locator('[data-onboarding-guide="focus"]')).toContainText("救援准备");
+  await expect(page.locator("nav.footer-nav")).toHaveCount(0);
+  const initial = await getSnapshot(page);
+  expect(initial.run.worlds).toHaveLength(2);
+  expect(initial.run.onboardingFocus).toBe(true);
+
+  await page.locator('button[data-action="step"]').click();
+  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(2);
+  await page.reload();
+  await expect(page.locator(".world")).toHaveCount(1);
+  for (let index = 0; index < 7; index++) {
+    await page.locator('button[data-action="step"]').click();
+  }
+  await expect(page.locator(".world")).toHaveCount(2);
+  await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
+  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(9);
+  const completed = await getSnapshot(page);
+  expect(completed.run.worlds).toHaveLength(2);
+});
+
+test("quick start can reveal both worlds immediately without paying AP or losing progress", async ({
+  page,
+}) => {
+  await page.goto("/?debug=1");
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  const before = await getSnapshot(page);
+  await page.locator('[data-action="show-all-worlds"]').click();
+  await expect(page.locator(".world")).toHaveCount(2);
+  await expect.poll(async () => (await getSnapshot(page)).run.onboardingFocus).toBe(false);
+  const after = await getSnapshot(page);
+  expect(after.run.day).toBe(before.run.day);
+  expect(after.run.ap).toBe(before.run.ap);
+  expect(after.run.soul).toBe(before.run.soul);
+  await page.reload();
+  await expect(page.locator(".world")).toHaveCount(2);
 });
