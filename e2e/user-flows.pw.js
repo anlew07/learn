@@ -819,6 +819,7 @@ test("real evolved zombie build unleashes the steel-rain ultimate in mobile repl
     world.level = 2;
     world.resource = 12;
     world.threat = { id: "ultimate-nest", status: "active", progress: 0, retryDay: 1 };
+    world.strategy = "clear";
     world.build.attack = [{ id: "blades", lv: 2 }];
     world.build.support = [{ id: "armor", lv: 1 }];
     world.build.evolved = true;
