@@ -129,7 +129,7 @@ function worldHtml(w){
  '<div class="world-note">正在进行：<strong>'+esc(w.action)+'</strong></div>'+
  '<div class="world-note world-goal">当前目标：'+esc(stop?worldStatus(w):v.goal)+'</div>'+
  finaleHtml(w,v)+
- '<details class="world-intel"'+(w.d>=75||w.threat&&w.threat.status!=="cleared"?' open':'')+'>'+
+ '<details class="world-intel"'+(w.d>=75||w.threat&&w.threat.status!=="cleared"||cautiousAftermathSummary(w,run.day)?' open':'')+'>'+
  '<summary><span>◇ 作战情报</span><span class="intel-summary-hint">策略判断 · 状态效果</span></summary>'+
  (w.lastDecision&&!stop?'<div class="world-note"><span class="decision-label">自主判断：</span>'+esc(w.lastDecision.reason)+'</div>':'')+
  '<div class="world-extra"><span class="pill">'+esc(worldSpecific)+'</span>'+(w.threat&&w.threat.status!=="cleared"?'<span class="pill warn">活跃威胁 · 清剿 '+w.threat.progress+'/2</span>':'')+
