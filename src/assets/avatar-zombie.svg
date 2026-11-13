@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+<title>尸潮分身：废土守卫</title>
+<defs><radialGradient id="bg" cx=".38" cy=".3" r=".83"><stop stop-color="#73584A"/><stop offset="1" stop-color="#252936"/></radialGradient><linearGradient id="coat" x1="35" y1="111" x2="134" y2="159"><stop stop-color="#8B7773"/><stop offset=".5" stop-color="#495360"/><stop offset="1" stop-color="#283645"/></linearGradient><linearGradient id="visor" x1="60" y1="65" x2="109" y2="87"><stop stop-color="#FFDE9C"/><stop offset="1" stop-color="#A95949"/></linearGradient></defs>
+<circle cx="80" cy="80" r="77" fill="url(#bg)"/><circle cx="80" cy="80" r="69" stroke="#E8B98D" stroke-opacity=".27" stroke-dasharray="4 7"/>
+<path d="M25 154 35 116 61 102h39l25 14 10 38H25Z" fill="url(#coat)" stroke="#F0B98C" stroke-opacity=".35" stroke-width="2"/>
+<path d="m54 104-5 16 28 24 30-24-7-16H54Z" fill="#343E48"/><path d="m42 122 20 12m56-11-18 12" stroke="#D29C70" stroke-width="7"/>
+<path d="M46 77c0-35 11-58 35-58 25 0 40 25 37 60l-7 37-14-9-3-48-28 0-3 48-14 9-3-39Z" fill="#252F3B" stroke="#E1A67D" stroke-opacity=".5" stroke-width="2"/>
+<path d="M57 65c2-12 13-23 26-23 14 0 25 10 27 23l-3 26c-9 14-37 17-47 0l-3-26Z" fill="#C5A388"/>
+<path d="m55 68 11-11h32l12 11-5 15H60l-5-15Z" fill="url(#visor)" stroke="#F4CB9B" stroke-width="2"/>
+<path d="M62 75h42" stroke="#562F33" stroke-width="3"/><path d="m70 92 12-5 13 5-3 18H72l-2-18Z" fill="#293B47" stroke="#E5B18B" stroke-width="2"/>
+<circle cx="76" cy="99" r="3" fill="#E8C0A2"/><circle cx="88" cy="99" r="3" fill="#E8C0A2"/>
+<path d="m47 54 17-22 37 0 19 22-11 3-14-11H67l-10 11-10-3Z" fill="#45454B"/>
+<path d="m34 114 13-17m75 17-13-17" stroke="#F0AB7F" stroke-opacity=".7" stroke-width="3"/>
+<path d="M124 38h16v17h-16z" stroke="#E8B789" stroke-opacity=".65"/><path d="M132 42v9m-5-4h10" stroke="#F8D0A3" stroke-width="2"/>
+<path d="M82 119v24m-11-13h22" stroke="#F0A47B" stroke-width="3" stroke-opacity=".7"/>
+</svg>
