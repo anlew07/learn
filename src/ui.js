@@ -367,7 +367,7 @@ function homeHtml(){
  '<h1>一个灵魂。<br><em>三场末日。</em></h1>'+
  '<p>修仙、尸潮、兽王。三个世界同时倒计时，每次选择都可能改变终局。</p>'+
  '<div class="hero-actions">'+
- (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">✦ 开启第 '+(profile.runCount+1)+' 局</button>')+
+ (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':'<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+'</div></section>'+
  '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">YOUR PROGRESS</span></div>'+
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
