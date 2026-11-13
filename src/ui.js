@@ -72,11 +72,11 @@ function combatHtml(battle) {
  return '<div class="combat-recap" aria-label="最近一场战潮">'+
    '<div class="row-between"><b>最近战潮 · 第'+battle.day+'日</b>'+
    (battle.evolution?'<span class="pill good">✦ '+esc(battle.evolution)+'</span>':'')+'</div>'+
-   (battle.spectacle?'<div class="survivor-score" aria-label="自动战潮清剿统计">'+
+   (battle.spectacle?'<div class="survivor-score'+(battle.spectacle.frenzy?' frenzy-active':'')+'" aria-label="自动战潮清剿统计">'+
    '<div class="survivor-score-main"><strong>'+battle.spectacle.defeated+'</strong>'+
    '<span> / '+battle.spectacle.encountered+' 敌群清剿</span></div>'+
    '<span class="survivor-grade '+(battle.spectacle.fullClear?'survivor-clear':'')+'">'+
-     (battle.spectacle.burst?'✦ 进化爆发 · ':'')+esc(battle.spectacle.grade)+
+     (battle.spectacle.frenzy?'⚡ 狂热爆发 · ':battle.spectacle.burst?'✦ 进化爆发 · ':'')+esc(battle.spectacle.grade)+
      (battle.spectacle.momentum>1?' · 连战×'+battle.spectacle.momentum:'')+'</span>'+
    '<div class="survivor-wave-grid">'+battle.spectacle.waves.map(wave=>
      '<div class="survivor-wave"><span>第'+wave.wave+'波</span>'+
