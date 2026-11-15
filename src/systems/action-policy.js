@@ -49,6 +49,29 @@ export function selectAutonomousAction(world, context) {
   const combatReady = context.combatReady ?? world.level >= 2;
   const strategy = world.strategy;
 
+  // Rescue can still spend two real daily actions to neutralize a persistent
+  // beast nest when the Lv3 defender can finish its elite encounter.
+  // Unlike unconditional relief, the route trades two progress/training days
+  // for the existing boss reward and removal of ongoing nest pressure.
+  const beastNestThreshold = context.beastRescueNestPriorityDoom ?? 101;
+  if (
+    world.id === "beast" &&
+    strategy === "rescue" &&
+    world.level >= 3 &&
+    world.p >= 65 &&
+    world.d >= beastNestThreshold &&
+    (world.p < 100 || world.level < bossLevel || world.resource < reserve) &&
+    threatActive &&
+    combatReady &&
+    (world.threat?.progress ?? 2) < 2
+  ) {
+    return {
+      actionId: "fight",
+      reason: "危机较高且具备应对精英的实力，用两次主要行动解除长期巢穴威胁",
+      alternatives: ["rescue", "growth"],
+    };
+  }
+
   if (
     world.id === "zombie" &&
     !world.repairUsed &&

@@ -318,7 +318,7 @@ const MultiworldEngine = (function () {
       bossLevel:bossRequirement(w),
       threatActive:threatActive(w),
       combatReady:effectiveLevel(s,w)>=2,
-      threatUrgencyScore:BALANCE.actions.threatUrgencyScore,
+      threatUrgencyScore:BALANCE.actions.threatUrgencyScore,beastRescueNestPriorityDoom:BALANCE.actions.beastRescueNestPriorityDoom,
       nextRandom:function(){return random(w);}
     });
     w.lastDecision={
