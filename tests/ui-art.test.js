@@ -50,7 +50,7 @@ describe("small, self-contained pixel-art kit", () => {
 
   it("renders sprites using nearest-neighbor scaling and recognizes every replay attack", () => {
     expect(css).toContain("image-rendering: pixelated");
-    expect(css).toContain('background-size: 252px 28px');
+    expect(css).toContain('background-size: 288px 32px');
     for (const attack of ["basic", "chain", "pierce", "fan", "flurry", "shockwave", "storm", "barrage", "hunt"]) {
       expect(css).toContain(`.replay-wave.attack-${attack} .replay-hit`);
     }
