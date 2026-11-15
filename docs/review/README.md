@@ -17,7 +17,9 @@
 - [store-copy.md](./store-copy.md)：较温和的商店简介与开发者的话草案，尚未提交 TapTap。
 - [launch-checklist.md](./launch-checklist.md)：从内容、体验、真机、广告到资质的上线门禁。
 - [manual-audit-register.md](./manual-audit-register.md)：按源码位置追踪事件、日志、战斗、彩蛋和商店文案的人工复核状态。
-- [channel-and-policy.md](./channel-and-policy.md)：区分 GitHub Pages H5 与 TapTap 小游戏发布通道，整理官方要求及阻塞项。
+- [channel-and-policy.md](./channel-and-policy.md)：**已确认官方支持 H5 小游戏形态**，区分 H5 MCP 及普通小游戏 ZIP 规范、账号/备案与真实上传门槛。
+- [release-assets.md](./release-assets.md)：真实像素风截图、图标、横图、方图与视频规格清单。
+- [privacy-and-accounts.md](./privacy-and-accounts.md)：只能由开发者主体确认的认证、隐私、授权、备案与平台技术接入事项。
 
 ## 新增：动态句式候选导出
 
@@ -30,6 +32,23 @@
 ## 本轮核验基线
 
 2026-11-13 主线 `2a357892` 的 CI 产出静态候选 **498 行 / 19 文件**、动态模板 **119 条**；#33 已合并且其历史格式检查失败已经修复。本轮新增五类人工风险筛选词，使静态候选中另 **14 行**标为重点复核（不代表自动判违规）。平台通道核验、逐项风险台账见上述两份新文档。合并其他功能 PR 后需重新导出，不能沿用旧基线行号。
+
+## 第二阶段统一人工复核表（2026-11-13）
+
+执行 `npm run text:review` 会复用现有静态 `collectTextLines()` 与动态 `collectRuntimeTemplates()`，生成本地 `docs/review/human-review-worklist.csv`。CI 会将该表与 `runtime-templates.csv` 打包为 `runtime-text-review` 工件，供审核人下载另存表格、逐条审定。**生成器只收集候选，人工填写栏全部留空。** 包含源码/注释/变量，占位符不等于玩家实见全文；提交平台前仍必须还原每一条真实分支与旧档历史文本、经过人工签署。详见 `manual-audit-register.md`。
+
+目前主线静态扫描为 **499 行、19 个文件**（以 `main@5583493f` 的 `game-text.csv` 为依据）；新的动态及联合总量以本 PR CI 日志为准。合并其他功能变动应重新下载新版本审核工作表。
+
+## 并行分支合并后的候选重导出门禁（2026-11-14）
+
+当前 499 条静态、121 条动态候选是 `main@5583493f` 对应的**旧基线**，不能视作未来合并 PR #41/#42 后的最新统计，更不代表全部实见文本已经通过人工审查。
+
+- **B / PR #41**：`src/systems/action-policy.js` 新增「危机较高且具备应对精英的实力，用两次主要行动解除长期巢穴威胁」这一行动理由；`src/systems/survivor-waves.js` 行号变化。B 已在其 PR 内调整 `docs/review/game-text.csv`。本分支**不抢先覆盖**那份静态底稿；合并后必须复核新文案、三世界行动提示、战斗回放及关联分支。
+- **A / PR #42**：像素样式和相应浏览器用例调整；没有发现新增中文 CSS 文字行，但视觉/触控与审核截图必须基于最终 UI 实测重拍。
+- **最终集成门禁**：从合并后的新 `main` 执行 `npm run text:export`、`npm run text:check`、`npm run text:runtime`、`npm run text:review`，记录主线 SHA、生成时间和候选总数。对比旧工作表的候选指纹、源码行和真实运行文字，标出新增/修改/撤回的审阅项，再由人工补完整句和证据。
+- **审核档不可逆风险**：`human-review-worklist.csv` 为自动生成文件，重跑时会被覆盖；已经签署、改写、填证据的人工审核副本**不得作为生成器目标文件**。候选指纹不再包含行号，减少代码插行造成的无意义 ID 变化；同一文件完全重复的候选仍需结合源码行和实际场景分辨。
+
+没有真机、平台后台和人工签署结果时，审核工件仍然只是准备材料。
 
 ## 人工复核流程
 
