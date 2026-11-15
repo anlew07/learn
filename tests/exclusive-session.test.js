@@ -81,4 +81,21 @@ describe("single-writer session ownership", () => {
     await session.release();
     expect(lost).toBe(1);
   });
+  it("passes an exclusive lock through three contenders without overlap", async () => {
+    const locks = mockLockManager();
+    const sessions = Array.from({ length: 3 }, () => createExclusiveSession({ locks }));
+    expect(await sessions[0].acquire()).toBe(true);
+    expect(await Promise.all([sessions[1].acquire(), sessions[2].acquire()])).toEqual([
+      false,
+      false,
+    ]);
+    await sessions[0].release();
+    expect(await sessions[1].acquire()).toBe(true);
+    expect(await sessions[2].acquire()).toBe(false);
+    await sessions[1].release();
+    expect(await sessions[2].acquire()).toBe(true);
+    await sessions[2].release();
+    expect(sessions.every((session) => !session.isOwner)).toBe(true);
+  });
+
 });
