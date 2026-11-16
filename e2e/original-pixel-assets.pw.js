@@ -11,12 +11,15 @@ test("the original character sprites load and render at an identifiable size", a
       ["supply-chest.svg", "补给箱"],
     ];
     const images = await Promise.all(
-      sprites.map(([file]) => new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error("Sprite did not load: " + file));
-        image.src = "/src/assets/original/" + file;
-      })),
+      sprites.map(
+        ([file]) =>
+          new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error("Sprite did not load: " + file));
+            image.src = "/src/assets/original/" + file;
+          }),
+      ),
     );
 
     const canvas = document.createElement("canvas");
@@ -39,7 +42,12 @@ test("the original character sprites load and render at an identifiable size", a
     });
     return { png: canvas.toDataURL("image/png"), imageSizes };
   });
-  expect(gallery.imageSizes).toEqual([[48, 64], [44, 60], [56, 60], [38, 34]]);
+  expect(gallery.imageSizes).toEqual([
+    [48, 64],
+    [44, 60],
+    [56, 60],
+    [38, 34],
+  ]);
   mkdirSync("test-results/camp-ui", { recursive: true });
   writeFileSync(
     "test-results/camp-ui/original-character-lineup.png",
