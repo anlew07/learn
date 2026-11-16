@@ -78,3 +78,52 @@ test("strategy command and reload return to pixel stage", async ({ page }) => {
   await expect(page.locator("[data-stage-canvas]")).toBeVisible();
   expect((await snapshot(page)).run.worlds[0].strategy).toBe("clear");
 });
+
+test("decisions from another world appear without leaving the fixed scene", async ({ page }) => {
+  await page.goto("/");
+  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await expect.poll(async () => (await snapshot(page)).run?.worlds.length).toBe(2);
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { default: Engine } = await import("/src/engine.js");
+    const state = await saveRepository.load();
+    state.run.worlds[1].build.pending = {
+      due: state.run.day + 2,
+      options: Engine.POWERS.zombie.slice(0, 3).map((power) => power.id),
+    };
+    await saveRepository.enqueueSave(state.run, state.profile);
+  });
+  await page.reload();
+  await expect(page.locator("[data-game-stage]")).toBeVisible();
+  await expect(page.locator(".stage-caption")).toContainText("灵灾");
+  await expect(page.locator('.stage-worlds [data-world="zombie"]')).toContainText("!");
+  await expect(page.locator('.stage-actions [data-panel="event"]')).toContainText("待处理 1");
+  await page.locator('.stage-actions [data-panel="event"]').click();
+  await expect(page.getByRole("dialog")).toContainText("废土救援 · 战技觉醒");
+  await expect(page.locator("[data-game-stage]")).toBeVisible();
+});
+
+test("drawer keeps keyboard focus and scroll during strategy changes", async ({ page }) => {
+  await page.goto("/");
+  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  const opener = page.locator('.stage-actions [data-panel="strategy"]');
+  await opener.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator('.stage-sheet-head [data-action="scene-close"]')).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(dialog.locator('select[data-action="strategy"]')).toBeFocused();
+
+  await page.addStyleTag({ content: ".stage-sheet-body { max-height: 120px !important; }" });
+  const body = page.locator(".stage-sheet-body");
+  await body.evaluate((node) => { node.scrollTop = 70; });
+  expect(await body.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  const strategy = dialog.locator('select[data-action="strategy"]');
+  await strategy.selectOption("clear");
+  await expect.poll(async () => (await snapshot(page)).run.worlds[0].strategy).toBe("clear");
+  expect(await body.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  await expect(strategy).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(opener).toBeFocused();
+});
