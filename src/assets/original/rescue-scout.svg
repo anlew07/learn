@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="60" viewBox="0 0 44 60" shape-rendering="crispEdges" aria-label="背着药包、提灯的救援同伴">
+  <!-- Original 44x60 travelling scout in cream tunic -->
+  <path fill="#161c2a" d="M8 47h12v10H6v-5h2zm19 0h11v10H26z"/>
+  <path fill="#615146" d="M8 49h12v7H8zm19 0h10v7H27z"/>
+  <path fill="#bba486" d="M6 55h15v4H5v-3h1zm20 0h14v4H25v-3h1z"/>
+  <path fill="#1d2732" d="M8 23h27v6h4v16l3 8H4l3-10V29h1z"/>
+  <path fill="#ccb68d" d="M10 24h24v22l4 5H8l3-9z"/>
+  <path fill="#e7d3a9" d="M13 28h19v21H12z"/>
+  <path fill="#dbaa72" d="M10 26h5v22h-5zm20 2h5v20h-5z"/>
+  <path fill="#668d78" d="M15 27h17v4H15zm1 14h18v5H16z"/>
+  <path fill="#483d38" d="M13 43h21v5H13z"/>
+  <path fill="#e6c67f" d="M21 43h7v5h-7z"/>
+  <path fill="#48776f" d="M24 44h3v3h-3z"/>
+  <path fill="#1b2932" d="M4 30h8v17H4zm31 0h8v19h-8z"/>
+  <path fill="#d49a78" d="M6 41h6v6H6zm30 0h5v5h-5z"/>
+  <!-- face and brown hair -->
+  <path fill="#171f2a" d="M12 7h21v4h4v16h-4v7H11v-7H8V14h4z"/>
+  <path fill="#5b4439" d="M12 9h23v18h-5V14H16v13h-5V13h1z"/>
+  <path fill="#efbc97" d="M16 15h14v14H16z"/>
+  <path fill="#ffdab5" d="M17 16h12v8H17z"/>
+  <path fill="#a7695c" d="M17 25h12v3H17z"/>
+  <path fill="#212531" d="M17 22h3v2h-3zm10 0h3v2h-3z"/>
+  <path fill="#658b8a" d="M19 22h1v1h-1zm9 0h1v1h-1z"/>
+  <path fill="#704e40" d="M11 9h22v5H11zm2 8h4v11h-4z"/>
+  <path fill="#a89165" d="M12 7h20v4H12z"/>
+  <!-- light carried in hand; brighter than clothing -->
+  <path fill="#382e32" d="M36 31h6v13h-6z"/>
+  <path fill="#c0a776" d="M37 33h5v10h-5z"/>
+  <path fill="#fff0aa" d="M38 35h3v7h-3z"/>
+  <path fill="#f3bb66" d="M37 37h1v4h-1zm4 0h1v4h-1z"/>
+  <path fill="#3d574b" d="M36 29h6v3h-6z"/>
+  <!-- medical cross on field satchel -->
+  <path fill="#496b57" d="M3 34h13v15H3z"/>
+  <path fill="#cbd3b4" d="M7 37h5v9H7z"/>
+  <path fill="#6ea48c" d="M5 40h10v4H5z"/>
+  <path fill="#eed2a4" d="M7 43h5v2H7z"/>
+</svg>
