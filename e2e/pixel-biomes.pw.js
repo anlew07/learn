@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 test("three worlds use different readable pixel artwork at mobile size", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -41,11 +41,20 @@ test("three worlds use different readable pixel artwork at mobile size", async (
       return hash >>> 0;
     });
     signatures.push(signature);
-    await canvas.screenshot({
-      path: "test-results/camp-ui/pixel-biome-" + id + ".png",
-    });
+    // Save the actual canvas pixels, not unrelated HTML captions from another
+    // world that overlap the canvas during these isolated rendering fixtures.
+    const pixelsPng = await canvas.evaluate((element) => element.toDataURL("image/png").split(",")[1]);
+    writeFileSync(
+      "test-results/camp-ui/pixel-biome-" + id + ".png",
+      Buffer.from(pixelsPng, "base64"),
+    );
   }
   expect(new Set(signatures).size).toBe(3);
   await page.reload();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
+  await expect(page.locator(".stage-caption")).toContainText("灵灾");
+  await page.screenshot({ path: "test-results/camp-ui/real-world-lingzai-390.png" });
+  await page.locator('[data-action="scene-world"][data-world="zombie"]').click();
+  await expect(page.locator(".stage-caption")).toContainText("废土救援");
+  await page.screenshot({ path: "test-results/camp-ui/real-world-zombie-390.png" });
 });
