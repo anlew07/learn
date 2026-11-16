@@ -384,7 +384,7 @@
 "src/ui.js","260","动态拼接/需复原","常规核对","mostAtRisk?mostAtRisk.name+"" · 危机压力 ""+n(mostAtRisk.d)+""%"":""所有世界的救援已结束"";"
 "src/ui.js","262","动态拼接/需复原","重点复核","'<div class=""brand"">同时穿越</div><div class=""micro"">末日营地 · 救援手记</div></div></div>'+"
 "src/ui.js","263","动态拼接/需复原","常规核对","'<button class=""home-link"" data-action=""home"">⌂ 首页</button></header>'+"
-"src/ui.js","264","动态拼接/需复原","常规核对","'<section class=""run-dashboard"" aria-label=""本局总览"" data-rescue-board>'+"
+"src/ui.js","264","动态拼接/需复原","常规核对","'<section class=""run-dashboard'+(tab===""world""?"""":"" run-dashboard-compact"")+'"" aria-label=""本局总览"" data-rescue-board>'+"
 "src/ui.js","265","动态拼接/需复原","常规核对","'<div class=""dashboard-heading""><div><span class=""eyebrow"">营地任务 · 三界救援</span>'+"
 "src/ui.js","266","动态拼接/需复原","常规核对","'<h1>第 '+run.day+' 天 <span class=""dashboard-subtitle"">/ 同步推进</span></h1></div>'+"
 "src/ui.js","267","动态拼接/需复原","常规核对","'<span class=""run-live"">'+(run.active?(run.paused?'Ⅱ 已暂停':'▶ 自动进行中'):'◆ 本局结束')+'</span></div>'+"
