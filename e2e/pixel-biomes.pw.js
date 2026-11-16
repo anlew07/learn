@@ -26,10 +26,7 @@ test("three worlds use different readable pixel artwork at mobile size", async (
         deadline: 80,
         action: "巡视",
       };
-      const view = getStageView(
-        { worlds: [world], day: 8, paused: true, active: true },
-        worldId,
-      );
+      const view = getStageView({ worlds: [world], day: 8, paused: true, active: true }, worldId);
       paintPixelStage(document.querySelector("[data-stage-canvas]"), view);
     }, id);
 
