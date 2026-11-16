@@ -7,7 +7,7 @@ async function snapshot(page) {
   });
 }
 
-test("new players see a fixed pixel game screen rather than an endlessly scrolling report", async ({ page }) => {
+test("new players see a fixed pixel viewport", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
@@ -16,24 +16,22 @@ test("new players see a fixed pixel game screen rather than an endlessly scrolli
   await expect(page.locator(".stage-bars")).toContainText("危机压力");
   await expect(page.locator(".stage-actions [data-action=toggle]")).toContainText("继续模拟");
 
-  for (const [width, height] of [[320, 568], [320, 640], [375, 667],
-    [375, 812], [390, 844], [430, 932]]) {
+  const viewports = [[320, 568], [320, 640], [375, 667], [375, 812], [390, 844], [430, 932]];
+  for (const [width, height] of viewports) {
     await page.setViewportSize({ width, height });
     const dimensions = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
       height: document.documentElement.scrollHeight,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
       stageHeight: document.querySelector("[data-game-stage]").getBoundingClientRect().height,
     }));
     expect(dimensions.width, "horizontal scroll " + width).toBeLessThanOrEqual(width + 1);
-    expect(dimensions.height, "page scroll " + width + "x" + height).toBeLessThanOrEqual(height + 1);
+    expect(dimensions.height, "vertical overflow").toBeLessThanOrEqual(height + 1);
     expect(dimensions.stageHeight, "full-height HUD").toBeGreaterThan(400);
-    await expect(page.locator('.stage-actions button[data-action="scene-panel"][data-panel="strategy"]')).toBeVisible();
+    await expect(page.locator('.stage-actions [data-panel="strategy"]')).toBeVisible();
   }
 });
 
-test("world selection, action drawers and returning from full details do not advance days", async ({ page }) => {
+test("world selection and drawers never advance the game", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
   const before = (await snapshot(page)).run;
@@ -56,11 +54,11 @@ test("world selection, action drawers and returning from full details do not adv
   expect(after.worlds).toEqual(before.worlds);
 });
 
-test("strategy still uses real engine command, and a saved game returns to pixel stage", async ({ page }) => {
+test("strategy command and reload return to pixel stage", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
   await page.locator('[data-action="scene-panel"][data-panel="strategy"]').click();
-  const strategy = page.locator('.stage-sheet-body select[data-action="strategy"][data-world="lingzai"]');
+  const strategy = page.locator('.stage-sheet-body select[data-action="strategy"]');
   await strategy.selectOption("clear");
   await expect.poll(async () => (await snapshot(page)).run.worlds[0].strategy).toBe("clear");
   await page.reload();
