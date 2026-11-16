@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-test("three worlds use different readable pixel artwork at mobile size", async ({ page }) => {
+test(
+  "three worlds use different readable pixel artwork at mobile size",
+  async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
@@ -67,7 +69,8 @@ test("three worlds use different readable pixel artwork at mobile size", async (
     .locator('[data-action="scene-world"][data-world="zombie"]')
     .click();
   await expect(page.locator(".stage-caption")).toContainText("废土救援");
-  await page.screenshot({
-    path: "test-results/camp-ui/real-world-zombie-390.png",
-  });
-});
+    await page.screenshot({
+      path: "test-results/camp-ui/real-world-zombie-390.png",
+    });
+  },
+);
