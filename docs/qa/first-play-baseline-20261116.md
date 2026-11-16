@@ -73,7 +73,9 @@
 
 ## 页面收口增量验收（2026-11-16，待执行）
 
-此节补充[页面职责合同与首局教学闭环](../product/04-page-contract-and-first-session.md)，不重写上面六项真人试玩任务。状态基线：main 68d044e4；[#51](https://github.com/anlew07/learn/pull/51) 仍为 Draft，**以下新 HUD 的结果不能填“已通过”**。
+此节补充[页面职责合同与首局教学闭环](../product/04-page-contract-and-first-session.md)，不重写上面六项真人试玩任务。以下原始 IA 表格以 `main@68d044e4` 为**历史审计基线**，不能拿当时的「未实现」等同今天的正式状态。
+
+> **自动验收增量（2026-11-16）**：#54 已合并（产品验收合同），#51 已合并（固定主屏）。[#58 总集成](https://github.com/anlew07/learn/pull/58) 在联合集成头 `f0b21743` 的 [CI #43856380394](https://github.com/anlew07/learn/actions/runs/43856380394) 通过 Vitest 253 / Playwright 71，包括首页无档帮助、字号设置、刷新持久化、继续存档返回固定 HUD、320–430px 多视口与世界切换。对应实图见 [截图附件](https://github.com/anlew07/learn/actions/runs/43856380394/artifacts/14220219231)。**这只给 IA-01/02/03/04/09 部分自动证据；下面的真人观察栏与真实设备栏仍保持未验证，不可填「玩家看懂」或「TapTap 通过」。** 其他细节见 [QA 集成台账](abc-fixed-hud-integration-20261116.md)。
 
 | 证据编号 | 待验收路径 | 自动化断言/人工任务 | 当前记录 |
 | --- | --- | --- | --- |
