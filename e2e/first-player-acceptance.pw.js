@@ -18,9 +18,7 @@ async function start(page, mode = "full") {
   await expect.poll(async () => (await saved(page)).run?.day).toBe(1);
 }
 
-test("first player observes hidden worlds and skips focus safely", async ({
-  page,
-}) => {
+test("first player observes hidden worlds and skips focus safely", async ({ page }) => {
   await page.goto("/?debug=1");
   await expect(page.locator(".hero")).toContainText("守护三个世界");
   await expect(page.locator(".progression-panel")).toContainText("世界碎片");
@@ -155,9 +153,7 @@ test("a real build choice leads to a visible three-wave report without replay re
   await page.reload();
   await expect(page.locator(".build-panel")).toBeVisible();
   await page.locator('button[data-action="build"][data-power="armor"]').click();
-  await expect
-    .poll(async () => (await saved(page)).run.worlds[1].build.support.length)
-    .toBe(1);
+  await expect.poll(async () => (await saved(page)).run.worlds[1].build.support.length).toBe(1);
   await page.locator('button[data-action="step"]').click();
   await expect(page.locator('[data-world-card="zombie"] .combat-recap')).toBeVisible();
   await expect(page.locator(".survivor-wave")).toHaveCount(3);
@@ -167,15 +163,16 @@ test("a real build choice leads to a visible three-wave report without replay re
   await page.locator('button[data-action="replay-wave"]').click();
   expect(await saved(page)).toEqual(before);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  const animation = await page.locator(".replay-hit").first().evaluate((el) => {
-    return getComputedStyle(el).animationName;
-  });
+  const animation = await page
+    .locator(".replay-hit")
+    .first()
+    .evaluate((el) => {
+      return getComputedStyle(el).animationName;
+    });
   expect(animation).toBe("none");
 });
 
-test("completed engine runs settle rewards once and can start again", async ({
-  page,
-}) => {
+test("completed engine runs settle rewards once and can start again", async ({ page }) => {
   await start(page);
   await page.locator('button[data-action="step"]').click();
   await expect.poll(async () => (await saved(page)).run?.day).toBe(2);
