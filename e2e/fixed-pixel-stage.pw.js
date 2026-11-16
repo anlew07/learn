@@ -16,7 +16,14 @@ test("new players see a fixed pixel viewport", async ({ page }) => {
   await expect(page.locator(".stage-bars")).toContainText("危机压力");
   await expect(page.locator(".stage-actions [data-action=toggle]")).toContainText("继续模拟");
 
-  const viewports = [[320, 568], [320, 640], [375, 667], [375, 812], [390, 844], [430, 932]];
+  const viewports = [
+    [320, 568],
+    [320, 640],
+    [375, 667],
+    [375, 812],
+    [390, 844],
+    [430, 932],
+  ];
   for (const [width, height] of viewports) {
     await page.setViewportSize({ width, height });
     const dimensions = await page.evaluate(() => ({
