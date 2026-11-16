@@ -18,11 +18,6 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci --no-audit --no-fund
-      # Temporary formatting diagnostic; removed before final review.
-      - name: QA temporary prettier diff
-        run: |
-          npx prettier --write e2e/first-player-acceptance.pw.js
-          git diff -- e2e/first-player-acceptance.pw.js
       - run: npm run lint
       - run: npm run format:check
       - run: npm run text:check
