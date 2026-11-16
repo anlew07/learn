@@ -455,6 +455,7 @@ function homeHtml(){
  '<h1>守住营火，<br><em>救回三个世界。</em></h1>'+
  '<p class="home-story">你是连接不同世界的守望者。修仙异变、废土危机与兽潮围城同时发生，分身们正在等待救援。</p>'+ 
  '<p class="hint">'+esc(opening.automatic)+' '+esc(opening.playerRole)+'</p>'+
+ (profile.runCount===0?'<p class="hint home-first-run">首局是两个世界同时演化；推荐新手先看灵灾，废土仍在行动。兽潮世界后续解锁。</p>':'')+
  '<div class="home-scene" role="img" aria-label="像素营地和通往三个世界的传送门">'+
  '<span>营地记录 · 第 '+(profile.runCount+1)+' 次远征</span></div>'+
  '<div class="hero-actions">'+
