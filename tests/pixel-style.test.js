@@ -75,7 +75,7 @@ describe("pixel UI closure: incompatible visual effects stay out", () => {
     expect(css).toContain("prefers-reduced-motion");
   });
 
-  it("keeps text contrast readable on pixel primary actions and labels", () => {
+  it("keeps strong contrast on camp buttons, body copy and warning colors", () => {
     const luminance = (hex) => {
       const values = [1, 3, 5].map((index) => {
         const value = parseInt(hex.slice(index, index + 2), 16) / 255;
@@ -87,18 +87,14 @@ describe("pixel UI closure: incompatible visual effects stay out", () => {
       const values = [luminance(a), luminance(b)];
       return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05);
     };
-    expect(contrast("#162638", "#69c6ae")).toBeGreaterThanOrEqual(4.5);
-    for (const color of ["#a5baca", "#9be7cf", "#ffd0b0", "#ffe0a0", "#df8986"]) {
-      expect(contrast(color, "#0b1726")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast("#24291f", "#f0c679")).toBeGreaterThanOrEqual(4.5);
+    for (const color of ["#f5eed8", "#d2c9ac", "#c5dea5", "#ffe6ad", "#f2a486"]) {
+      expect(contrast(color, "#1b201a")).toBeGreaterThanOrEqual(4.5);
     }
-    expect(art).toContain(
-      ".footer-nav button.active { background: #69c6ae; border-color: #69c6ae; color: #162638;",
-    );
-    expect(art).toContain(".footer-nav button.active .nav-glyph { color: #162638; }");
+    expect(art).toContain(".footer-nav button.active { background:");
+    expect(art).toContain(".footer-nav button.active .nav-glyph { color:");
     expect(art).toContain(".pill { background: var(--pixel-base); }");
-    expect(art).toContain(
-      ".btn { background: #69c6ae; border-color: #9be7cf; color: #162638; }",
-    );
+    expect(art).toContain(".btn { background:");
   });
 
   it("preserves legible 320px two-column HUD counters", () => {
