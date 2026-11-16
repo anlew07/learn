@@ -1,5 +1,7 @@
-import "./style.css"; import "./art-direction.css";
+import "./style.css"; import "./art-direction.css"; import "./stage-shell.css";
 import Engine from "./engine.js";
+import { getStageView } from "./presentation/stage-view.js";
+import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
 import { getOpeningBrief, getWorldGuidance, getTutorialGuidance, getOutcomeGuidance } from "./presentation/player-guidance.js";
 import { ATTACK_PATTERNS } from "./systems/attack-patterns.js";
 import { counteredEliteWaveLabels } from "./systems/survivor-waves.js";
@@ -12,7 +14,9 @@ import { createExclusiveSession } from "./services/exclusive-session.js";
 const app = document.querySelector("#app");
 const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
-let run = null, profile = {runCount:0,shards:0}, tab = "world", tickStarted = performance.now();
+const isDebug = new URLSearchParams(location.search).has("debug");
+let run = null, profile = {runCount:0,shards:0}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
+let sceneWorldId = "lingzai", scenePanel = "";
 let saveError = false, restoreError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
@@ -263,7 +267,7 @@ function controls(){
  mostAtRisk?(mostAtRisk.d>0?mostAtRisk.name+" · 危机压力 "+n(mostAtRisk.d)+"%":"暂无紧急危机，可继续模拟观察分身行动"):"所有世界的救援已结束";
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
  '<div class="brand">同时穿越</div><div class="micro">末日营地 · 救援手记</div></div></div>'+
- '<button class="home-link" data-action="home">⌂ 首页</button></header>'+
+ '<div class="stage-return-links"><button class="home-link" data-action="scene-return">▣ 游戏画面</button><button class="home-link" data-action="home">⌂ 首页</button></div></header>'+
  '<section class="run-dashboard'+(tab==="world"?"":" run-dashboard-compact")+'" aria-label="本局总览" data-rescue-board>'+
  '<div class="dashboard-heading"><div><span class="eyebrow">营地任务 · 三界救援</span>'+
  '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 同步推进</span></h1></div>'+
@@ -558,8 +562,97 @@ function partyHtml() {
  }).join('')+'</div>';
 }
 
+
+function stagePanelHtml(view) {
+ if (!scenePanel) return "";
+ const selected = run.worlds.find(w => w.id === view.worldId) || run.worlds[0];
+ const titles = { strategy:"世界档案与策略", event:"待处理事件与战技", aid:"跨世界援助",
+  team:"队伍与战技", report:"战斗记录", guide:"生存手册", all:"全部世界", menu:"更多功能" };
+ let content = "";
+ if (scenePanel === "strategy") content = worldHtml(selected);
+ if (scenePanel === "event") content = (selected.pendingEvent?.state==="active" ? eventHtml(selected) : "") +
+  (selected.build?.pending ? buildHtml(selected) : "") +
+  (!(selected.pendingEvent?.state==="active" || selected.build?.pending) ?
+  '<p class="hint">当前没有待处理的关键选择，分身会继续自主行动。</p>' : "");
+ if (scenePanel === "aid") content = soulHtml();
+ if (scenePanel === "team") content = partyHtml();
+ if (scenePanel === "report") content = selected.lastCombat ?
+  combatHtml(selected.lastCombat) : '<p class="hint">本世界暂时没有战斗记录。</p>';
+ if (scenePanel === "guide") content = playerGuideHtml();
+ if (scenePanel === "all") content = run.worlds.map(worldOverviewHtml).join("");
+ if (scenePanel === "menu") content =
+  '<p>这是自动生存模拟。你选择策略和关键干预，分身每天自主行动。</p>'+
+  '<button data-action="scene-panel" data-panel="guide">玩法帮助</button>'+
+  '<button data-action="scene-panel" data-panel="all">全部世界档案</button>'+
+  '<button data-action="scene-classic">传统详细视图</button>'+
+  '<p class="hint">存档保存在当前浏览器。尚未加入云同步或独立设置系统。</p>';
+ return '<div class="stage-modal" role="presentation" data-stage-modal>'+
+  '<button class="stage-shade" aria-label="关闭面板" data-action="scene-close"></button>'+
+  '<section class="stage-sheet" role="dialog" aria-modal="true" aria-label="'+
+  esc(titles[scenePanel]||"详细信息")+'">'+
+  '<div class="stage-sheet-head"><strong>'+esc(titles[scenePanel]||"详细信息")+
+  '</strong><button data-action="scene-close" aria-label="关闭面板">✕</button></div>'+
+  '<div class="stage-sheet-body">'+content+'</div></section></div>';
+}
+function sceneHtml() {
+ const view = getStageView(run,sceneWorldId);
+ if (!view) return "";
+ const canExplore = !inQuickStart();
+ const visibleWorlds = canExplore ? view.worlds : view.worlds.filter(w=>w.id==="lingzai");
+ const selected = run.worlds.find(w=>w.id===view.worldId);
+ const pending = view.hasEvent || view.hasBuild;
+ return '<main class="stage-game" aria-label="固定游戏主屏" data-game-stage>'+
+  '<header class="stage-top"><span class="stage-brand">同时穿越 <small>· 救援远征</small></span>'+
+  '<span class="stage-day">第 '+view.day+' 天</span>'+
+  '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能">☰</button></header>'+
+  '<div class="stage-counters" aria-label="全局状态">'+
+  '<span>获救 <b>'+view.saved+'/'+view.total+'</b></span>'+
+  '<span>干预点 <b>'+view.ap+'</b></span>'+
+  '<span>灵魂 <b>'+view.soul+'</b></span>'+
+  '<span class="stage-state">'+(view.paused?'Ⅱ 暂停':'▶ 进行中')+'</span></div>'+
+  '<nav class="stage-worlds" aria-label="选择世界">'+
+  visibleWorlds.map(w =>
+   '<button data-action="scene-world" data-world="'+esc(w.id)+'"'+
+   (w.id===view.worldId?' aria-current="page" class="active"':'')+
+   '><b>'+esc(w.title)+'</b><span>'+ (w.event?'!':w.status==="saved"?'✓':w.status==="failed"?'×':'')+
+   Math.round(w.danger)+'%</span></button>').join("")+
+  (canExplore?'':'<button data-action="show-all-worlds">其他世界 ↗</button>')+
+  '</nav>'+
+  '<section class="stage-window" aria-label="像素世界现场">'+
+  '<canvas data-stage-canvas width="320" height="208" role="img" aria-label="'+
+  esc(view.title+'像素场景：分身正在'+view.action+',危机压力'+view.danger+'%')+'"></canvas>'+
+  '<div class="stage-caption"><b>'+esc(view.title)+'</b><span>'+
+  esc(view.status)+' · Lv'+view.level+' · 剩余'+view.deadline+'天</span></div>'+
+  '<div class="stage-action-line" aria-live="polite">今日行动：'+esc(view.action)+'</div>'+
+  '</section>'+
+  '<section class="stage-bars" aria-label="当前世界状况">'+
+  '<div><span>救援准备</span><progress max="100" value="'+view.rescue+'"></progress><b>'+Math.round(view.rescue)+'</b></div>'+
+  '<div><span>危机压力</span><progress class="danger" max="100" value="'+view.danger+'"></progress><b>'+Math.round(view.danger)+'</b></div>'+
+  '</section>'+
+  '<section class="stage-actions" aria-label="主要游戏操作">'+
+  '<button class="primary" data-action="toggle"'+(!view.active?' disabled':'')+'>'+
+  (view.paused?'▶ 继续模拟':'Ⅱ 暂停模拟')+'</button>'+
+  '<label class="stage-speed">速度 <select aria-label="模拟速度" data-action="speed">'+
+  [1,2,4].map(speed=>'<option value="'+speed+'"'+(run.speed===speed?' selected':'')+'>'+speed+'×</option>').join("")+
+  '</select></label>'+
+  '<button data-action="scene-panel" data-panel="strategy">策略 / 档案</button>'+
+  '<button data-action="scene-panel" data-panel="event"'+(pending?' class="has-event"':'')+'>'+
+  (pending?'! 待处理':'事件')+'</button>'+
+  '<button data-action="scene-panel" data-panel="aid">跨界援助</button>'+
+  '<button data-action="scene-panel" data-panel="team">队伍</button>'+
+  '<button data-action="scene-panel" data-panel="report">战报</button>'+
+  '<button data-action="scene-panel" data-panel="guide">帮助</button>'+
+  (isDebug?'<button data-action="step">调试：+1天</button>':'')+
+  '</section>'+
+  stagePanelHtml(view)+
+  '<p id="toast" class="notice stage-toast" hidden></p>'+
+  '</main>';
+}
+
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
+ app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene"));
+ if (tab!=="scene" || !run?.active) stopPixelStage();
  const banner=sessionBanner();
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
@@ -568,6 +661,11 @@ function render(){
    '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
    outcomeGuidanceHtml()+statsHtml()+run.worlds.map(worldOverviewHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
+ }
+ if(tab==="scene"){
+  app.innerHTML=banner+sceneHtml()+persistenceBanner();
+  startPixelStage(app.querySelector("[data-stage-canvas]"),getStageView(run,sceneWorldId));
+  return;
  }
  const focus=inQuickStart();
  const worlds=focus?[run.worlds[0]]:run.worlds;
@@ -621,13 +719,18 @@ function confirmNew(mode="full"){
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
  run=Engine.fresh(seed,profile.runCount+1,waves);
  run.onboardingFocus=mode==="focus"&&profile.runCount===0;
- tab="world";queueSave();render();return true;
+ tab=isDebug?"world":"scene";sceneWorldId="lingzai";scenePanel="";queueSave();render();return true;
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
  if(action==="retry-session"){claimSession();return;}
  if(action==="retry-save"){if(session.isOwner&&!commandBusy)queueSave();return;}
- if(action==="home"){tab="home";render();return;}
+ if(action==="scene-return"){tab="scene";scenePanel="";render();return;}
+ if(action==="scene-classic"){tab="world";scenePanel="";render();return;}
+ if(action==="scene-world"){if(run?.worlds.some(w=>w.id===id)&&!inQuickStart()){sceneWorldId=id;scenePanel="";render();}return;}
+ if(action==="scene-panel"){scenePanel=target.dataset.panel||"";render();return;}
+ if(action==="scene-close"){scenePanel="";render();return;}
+ if(action==="home"){scenePanel="";tab="home";render();return;}
  if(action==="guide-seen"&&run){const current=getTutorialGuidance(run,{seenIds:[...tutorialSeen],skipped:tutorialSkipped}).current;if(current)tutorialSeen.add(current.id);render();return;}
  if(action==="guide-skip"){tutorialSkipped=true;render();return;}
  if(action==="guide-resume"){tutorialSkipped=false;render();return;}
@@ -713,7 +816,7 @@ document.addEventListener("visibilitychange",()=>{
  if(document.hidden&&run&&session.isOwner&&!run.paused){run.paused=true;tickStarted=performance.now();queueSave();}
 });
 window.addEventListener("pagehide",()=>{if(run&&session.isOwner)queueSave();});
-window.addEventListener("keydown",e=>{if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}});
+window.addEventListener("keydown",e=>{if(e.key==="Escape"&&scenePanel){scenePanel="";render();return;}if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}});
 setInterval(()=>{
  if(!session.isOwner||commandBusy||saveError||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
  const now=performance.now();
@@ -745,7 +848,7 @@ async function claimSession() {
    }else{
      run=null;
    }
-   if(acquired){tab="world";saveError=false;restoreError=false;}
+   if(acquired){tab=isDebug?"world":"scene";saveError=false;restoreError=false;}
  }catch(error){
    restoreError=true;
    console.error("恢复存档失败",error);
