@@ -69,8 +69,8 @@ test(
       .locator('[data-action="scene-world"][data-world="zombie"]')
       .click();
     await expect(page.locator(".stage-caption")).toContainText("废土救援");
-      await page.screenshot({
-        path: "test-results/camp-ui/real-world-zombie-390.png",
-      });
+    await page.screenshot({
+      path: "test-results/camp-ui/real-world-zombie-390.png",
+    });
   },
 );
