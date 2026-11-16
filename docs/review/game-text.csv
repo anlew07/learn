@@ -508,7 +508,7 @@
 "src/ui.js","510","动态拼接/需复原","常规核对","return '<div class=""stack party-page""><div class=""section-banner""><div><span class=""eyebrow"">远征队伍</span><h2>分身与防线</h2></div></div>'+"
 "src/ui.js","511","动态拼接/需复原","常规核对","'<section class=""panel""><p class=""muted"">各世界分身独立成长，自动搜集物资与战斗。战技随行动觉醒，无需手动攻击。</p></section>'+"
 "src/ui.js","518","动态拼接/需复原","常规核对","'<p class=""party-equipment""><b>已装备战技</b>　'+(powers.length?"
-"src/ui.js","519","动态拼接/需复原","常规核对","powers.map(p=>esc(p.name)+' Lv'+p.lv).join(' / '):'尚未觉醒')+'</p>'+"
+"src/ui.js","519","动态拼接/需复原","常规核对","powers.map(p=>esc(Engine.POWERS[w.id]?.find(item=>item.id===p.id)?.name||p.id)+' Lv'+p.lv).join(' / '):'尚未觉醒')+'</p>'+"
 "src/ui.js","520","动态拼接/需复原","常规核对","(w.build?.evolved?'<p class=""pill good"">已进化：'+esc(w.build.evolutionName)+'</p>':'')+"
 "src/ui.js","521","静态/待复核","常规核对","(run.waves&&w.lastCombat?combatHtml(w.lastCombat):'<p class=""hint"">暂无防线记录，分身会自主应战。</p>')+"
 "src/ui.js","532","动态拼接/需复原","常规核对","'<section class=""panel result""><h2>本轮救援行动已结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+"
