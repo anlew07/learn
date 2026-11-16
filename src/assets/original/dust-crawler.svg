@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="60" viewBox="0 0 56 60" shape-rendering="crispEdges" aria-label="四足、装甲背甲、琥珀眼的废土异兽">
+  <!-- Original pixel silhouette: low quadruped, plated back, broad muzzle. -->
+  <path fill="#1a2425" d="M5 43h45v8H4v-5h1zm5 5h11v11H7v-5h3zm27 0h13v11H35v-5h2z"/>
+  <path fill="#576255" d="M9 48h13v8H8zm28 0h12v8H37z"/>
+  <path fill="#ac9877" d="M6 55h16v4H5v-3h1zm31 0h15v4H36v-3h1z"/>
+  <path fill="#242d2e" d="M12 23h37v5h5v19H8V29h4z"/>
+  <path fill="#586558" d="M12 24h35v20H11z"/>
+  <path fill="#899178" d="M14 25h29v6H14z"/>
+  <path fill="#ac9e7b" d="M18 27h21v2H18z"/>
+  <path fill="#353f3e" d="M15 32h30v9H15z"/>
+  <path fill="#708174" d="M15 33h5v10h-5zm24 0h4v10h-4z"/>
+  <path fill="#222b2f" d="M6 16h30v6h5v18H4V21h2z"/>
+  <path fill="#5f6d62" d="M7 17h27v18H7z"/>
+  <path fill="#a9ae92" d="M9 19h24v5H9z"/>
+  <path fill="#222c30" d="M5 26h32v12H4v-8h1z"/>
+  <path fill="#c9ab7b" d="M10 28h11v5H10zm16 0h10v5H26z"/>
+  <path fill="#e9d08b" d="M12 29h6v3h-6zm16 0h6v3h-6z"/>
+  <path fill="#212c2a" d="M15 29h3v5h-3zm13 0h3v5h-3z"/>
+  <path fill="#977c5e" d="M17 35h20v6H17z"/>
+  <path fill="#d8c69c" d="M21 39h16v3H21z"/>
+  <path fill="#45534a" d="M2 33h7v13H1v-8h1zm39 0h11v13H42z"/>
+  <path fill="#d4b58a" d="M2 43h5v6H2zm47 0h5v6h-5z"/>
+  <path fill="#222f30" d="M12 14h7v5h-7zm12-5h9v9h-9z"/>
+  <path fill="#a18b74" d="M13 13h5v7h-5zm13-6h5v12h-5z"/>
+  <path fill="#c6b999" d="M13 15h2v5h-2zm14-5h2v7h-2z"/>
+  <path fill="#20272a" d="M46 32h7v11h3v5h-8v-5h-2z"/>
+</svg>
