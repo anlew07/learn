@@ -115,7 +115,9 @@ test("drawer keeps keyboard focus and scroll during strategy changes", async ({ 
 
   await page.addStyleTag({ content: ".stage-sheet-body { max-height: 120px !important; }" });
   const body = page.locator(".stage-sheet-body");
-  await body.evaluate((node) => { node.scrollTop = 70; });
+  await body.evaluate((node) => {
+    node.scrollTop = 70;
+  });
   expect(await body.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
   const strategy = dialog.locator('select[data-action="strategy"]');
   await strategy.selectOption("clear");
