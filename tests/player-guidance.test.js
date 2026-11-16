@@ -19,6 +19,7 @@ describe("player guidance: first-time learning", () => {
     expect(start.opening.automatic).toContain("自主");
     expect(start.opening.playerRole).toContain("当前已开放");
     expect(start.opening.playerRole).not.toContain("借力");
+    expect(start.opening.stageHint).toContain("分身自动行动");
     expect(start.opening.continuation).toContain("第三局");
     expect(start.opening.shardNote).toContain("不提供");
     expect(start.overview).toBeNull();
