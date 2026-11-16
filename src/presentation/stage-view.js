@@ -43,13 +43,18 @@ export function getWorldSceneState(world, day = 1) {
     world.lastCombat.day <= day;
   const activeThreat = Boolean(world.threat && world.threat.status !== "cleared");
   const hasEvent = world.pendingEvent?.state === "active";
+  const hasBuild = Boolean(world.build?.pending);
   const summary =
     phase === "restored"
       ? "救援成功 · 局势恢复"
       : phase === "lost"
         ? "救援未完成 · 世界失守"
-        : phase === "critical"
-          ? "高危 · 请关注局势"
+        : hasEvent
+          ? "重大事件 · 等待决策"
+          : hasBuild
+            ? "战技机会 · 可以选择"
+            : phase === "critical"
+              ? "高危 · 请关注局势"
           : phase === "warning"
             ? "危机上升 · 留意事件"
             : progressTier >= 2
@@ -64,6 +69,7 @@ export function getWorldSceneState(world, day = 1) {
     recentCombat,
     activeThreat,
     hasEvent,
+    hasBuild,
     rescue,
     danger,
     summary,
