@@ -23,6 +23,7 @@ for (const width of [320, 375, 390, 430]) {
     await expect(page.locator(".world-fold").first()).not.toHaveAttribute("open", "");
     await expect(page.locator('nav[aria-label="主要导航"] button')).toHaveCount(4);
     await expect(page.locator(".mission-line")).toContainText("分身自动");
+    await expect(page.locator(".camp-alert")).toContainText("暂无紧急危机");
     await expect(page.locator(".no-decisions")).toContainText("无需每天手动操作");
 
     const audit = await page.evaluate(() => {
