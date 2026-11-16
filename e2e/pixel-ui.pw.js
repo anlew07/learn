@@ -1,10 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 async function openRun(page) {
-  await page.goto("/?debug=1");
+  await page.goto("/");
   const action = page.locator('[data-action="new-run"][data-onboarding="full"]');
   await expect(action).toBeVisible();
   await action.click();
+  await page.locator('[data-action="scene-panel"][data-panel="menu"]').click();
+  await page.locator('[data-action="scene-classic"]').click();
   await expect(page.locator(".world")).toHaveCount(2);
 }
 
@@ -12,7 +14,7 @@ for (const width of [320, 375, 390, 430]) {
   test(`pixel art material and touch layout at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 820 });
     await openRun(page);
-    await expect(page.locator(".topbar .home-link")).toHaveCSS("white-space", "nowrap");
+    await expect(page.locator('.topbar [data-action="home"]')).toHaveCSS("white-space", "nowrap");
     if (width <= 350) {
       const columns = await page.locator(".run-dashboard .metrics").evaluate((element) => {
         return getComputedStyle(element).gridTemplateColumns.split(" ").length;
