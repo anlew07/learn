@@ -211,6 +211,7 @@ export function getRunOverview(state, rules) {
 }
 
 function eventCost(type, id, summary) {
+  if (id === "safe" || id === "decline" || id === "retreat") return "不额外消耗干预点或材料。";
   if (id === "push") return "消耗1干预点；失败还有受伤和危机上升风险。";
   if (id === "boost") return "消耗1干预点与4份本世界材料，仅增强本次战斗。";
   if (id === "commit") return "消耗1干预点与3份本世界材料。";
