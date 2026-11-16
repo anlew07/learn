@@ -254,24 +254,31 @@ function buildHtml(w){
 }
 
 function controls(){
+ const advice=Engine.advise(run)[0];
+ const mostAtRisk=run.worlds.filter(w=>w.status==="running").sort((a,b)=>b.d-a.d)[0];
+ const concern=advice?advice.worldName+" · "+advice.notes[0]:
+ mostAtRisk?mostAtRisk.name+" · 危机压力 "+n(mostAtRisk.d)+"%":"所有世界的救援已结束";
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
- '<div class="brand">同时穿越</div><div class="micro">MULTIVERSE · 多世界救援计划</div></div></div>'+
+ '<div class="brand">同时穿越</div><div class="micro">末日营地 · 救援手记</div></div></div>'+
  '<button class="home-link" data-action="home">⌂ 首页</button></header>'+
- '<section class="run-dashboard" aria-label="本局总览">'+
- '<div class="dashboard-heading"><div><span class="eyebrow">SURVIVAL OPERATION</span>'+
- '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 多世界行动</span></h1></div>'+
- '<span class="run-live">'+(run.active?'● 进行中':'◆ 本局结束')+'</span></div>'+
- '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>◷ 全局游戏日</span></div>'+
- '<div class="metric"><b>'+run.soul+'</b><span>◈ 灵魂强度</span></div>'+
- '<div class="metric"><b>'+Engine.availableAP(run)+'<small> / '+run.apMax+'</small></b><span>✧ 可用行动点</span></div>'+
- '<div class="metric"><b>'+win()+'<small> / '+run.worlds.length+'</small></b><span>✓ 已拯救世界</span></div></div>'+
- '<div class="controls"><button class="btn run-toggle" data-action="toggle">'+(run.paused?'▶ 继续模拟':'Ⅱ 暂停模拟')+'</button>'+
+ '<section class="run-dashboard" aria-label="本局总览" data-rescue-board>'+
+ '<div class="dashboard-heading"><div><span class="eyebrow">营地任务 · 三界救援</span>'+
+ '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 同步推进</span></h1></div>'+
+ '<span class="run-live">'+(run.active?(run.paused?'Ⅱ 已暂停':'▶ 自动进行中'):'◆ 本局结束')+'</span></div>'+
+ '<p class="mission-line">你的目标：在各世界的截止日前完成救援。分身自动成长、采集、排险；你负责观察危机、决定策略与支援。</p>'+
+ '<div class="metrics"><div class="metric"><b>'+win()+' / '+run.worlds.length+'</b><span>已完成救援</span></div>'+
+ '<div class="metric"><b>'+Engine.availableAP(run)+' / '+run.apMax+'</b><span>可用支援点 AP</span></div>'+
+ '<div class="metric"><b>'+run.soul+'</b><span>灵魂储备</span></div>'+
+ '<div class="metric"><b>'+run.worlds.filter(w=>w.status==="running").length+'</b><span>仍在行动</span></div></div>'+
+ '<div class="camp-alert"><span class="alert-symbol" aria-hidden="true">!</span><div><b>最需要关注</b><p>'+esc(concern)+'</p></div></div>'+
+ '<div class="controls"><button class="btn run-toggle" data-action="toggle"'+(!run.active?' disabled':'')+'>'+
+ (run.paused?'▶ 继续自动模拟':'Ⅱ 暂停自动模拟')+'</button>'+
  '<label class="speed-control"><span>模拟速度</span><select aria-label="模拟速度" data-action="speed">'+
  '<option value="1" '+(run.speed===1?"selected":"")+'>1× · 20秒/日</option>'+
  '<option value="2" '+(run.speed===2?"selected":"")+'>2× · 10秒/日</option>'+
  '<option value="4" '+(run.speed===4?"selected":"")+'>4× · 5秒/日</option></select></label>'+
  (new URLSearchParams(location.search).has("debug")?'<button data-action="step">调试：+1天</button>':'')+
- '</div></section>';
+ '</div><p class="hint camp-rule">不必每天点击行动。重大事件若不手动干预，将按事件提示自动结算。</p></section>';
 }
 function aidChoicesHtml(fromId,toId){
  const from=run.worlds.find(w=>w.id===fromId);
@@ -427,29 +434,33 @@ function profileArchiveHtml(){
 }
 function homeHtml(){
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
- '<div class="micro">MULTIVERSE · 多世界救援计划</div></div></div><span class="pill">EARLY ACCESS · V0.2</span></header>'+
- '<section class="hero"><div class="hero-orb" aria-hidden="true"><span>✧</span></div>'+
- '<div class="eyebrow">THREE WORLDS · ONE SOUL</div>'+
+ '<div class="micro">末日营地 · 救援手记</div></div></div><span class="pill">开发中 · V0.2</span></header>'+
+ '<section class="hero camp-home" aria-label="游戏开始">'+
+ '<span class="eyebrow">三个世界 · 同一个守望者</span>'+
  (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
- '<h1>一个灵魂。<br><em>守护三个世界。</em></h1>'+
- '<p>修仙、废土、兽王。三个世界同时倒计时，每次选择都可能改变终局。</p>'+
+ '<h1>守住营火，<br><em>救回三个世界。</em></h1>'+
+ '<p class="home-story">你是连接不同世界的守望者。修仙异变、废土危机与兽潮围城同时发生，分身们正在等待救援。</p>'+
+ '<div class="home-scene" role="img" aria-label="像素营地和通往三个世界的传送门">'+
+ '<span>营地记录 · 第 '+(profile.runCount+1)+' 次远征</span></div>'+
  '<div class="hero-actions">'+
- (run?'<button class="btn" data-action="continue">▶ 继续穿越 · 第'+run.day+'天</button>':
-   profile.runCount===0?
-   '<button class="btn" data-action="new-run" data-onboarding="focus">✦ 开始第 1 局 · 快速体验</button>'+
-   '<button class="btn-soft" data-action="new-run" data-onboarding="full">深入模式 · 同时照看双世界</button>':
-   '<button class="btn" data-action="new-run">✦ 开始第 '+(profile.runCount+1)+' 局</button>')+
+ (run?'<button class="btn" data-action="continue">▶ 返回营地 · 第'+run.day+'天</button>':
+  profile.runCount===0?
+  '<button class="btn" data-action="new-run" data-onboarding="focus">▶ 开始救援 · 推荐新手</button>'+
+  '<button class="btn-soft" data-action="new-run" data-onboarding="full">完整开局 · 同时照看双世界</button>':
+  '<button class="btn" data-action="new-run">▶ 开始第 '+(profile.runCount+1)+' 局</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+'</div></section>'+
- '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">YOUR PROGRESS</span></div>'+
+ '<section class="panel how-to-play"><h2>你需要做什么？</h2><div class="how-steps">'+
+ '<div><b>01 · 观察世界</b><p>分身每天自主探索、采集、成长和迎战。</p></div>'+
+ '<div><b>02 · 处理危机</b><p>重大事件可以干预，长期策略和跨界援助由你决定。</p></div>'+
+ '<div><b>03 · 等待救援结算</b><p>在倒计时结束前积累准备，争取救回更多世界。</p></div>'+
+ '</div><p class="hint">首次游玩会先聚焦一个世界，其他分身仍自动行动。</p></section>'+
+ '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">保存在本机</span></div>'+
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
  '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
  '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
- (profile.runCount===0&&!run?'<p class="muted">建议先体验灵灾分身的成长与救援，再逐步展开其他世界。</p>':
- '<p class="muted">多个世界会自主行动，你可以通过关键决策组织救援。</p>')+
  '<details class="advanced-settings"><summary>进阶设置 · 防线行动</summary>'+
  '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 启用三波防线行动与战技构筑</label></details></section>'+
- profileArchiveHtml()+
- '<p class="hint footnote">开发中版本 · 游戏进度仅保存在当前浏览器</p>';
+ profileArchiveHtml()+'<p class="hint footnote">开发中版本 · 进度仅保存在当前浏览器</p>';
 }
 function inQuickStart(){
  return Boolean(run?.onboardingFocus && run.active && run.day<9);
