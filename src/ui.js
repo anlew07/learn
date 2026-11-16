@@ -637,7 +637,6 @@ function sceneHtml() {
   '<div class="stage-caption"><b>'+esc(view.title)+'</b><span>'+
   esc(view.status)+' · Lv'+view.level+' · 剩余'+view.deadline+'天</span></div>'+
   '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+esc(inQuickStart()?getOpeningBrief(profile).automatic:view.scene.summary+" · 今日："+view.action)+'</div>'+
-  ''+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div><span>救援准备</span><progress max="100" value="'+view.rescue+'"></progress><b>'+Math.round(view.rescue)+'</b></div>'+
