@@ -11,8 +11,9 @@ const mainCss = readFileSync(resolve(root, "src/style.css"), "utf8");
 describe("mobile pixel UI presentation contract", () => {
   it("loads the art layer exactly once after the base stylesheet", () => {
     const firstLine = ui.split("\n", 1)[0];
-    expect(firstLine).toBe('import "./style.css"; import "./art-direction.css";');
+    expect(firstLine).toBe('import "./style.css"; import "./art-direction.css"; import "./stage-shell.css";');
     expect(ui.match(/art-direction\.css/g)).toHaveLength(1);
+    expect(ui.match(/stage-shell\.css/g)).toHaveLength(1);
   });
 
   it("keeps real major-event, aid and crisis commands owned by the main UI", () => {
