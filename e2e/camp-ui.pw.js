@@ -7,7 +7,7 @@ mkdirSync(captures, { recursive: true });
 for (const width of [320, 375, 390, 430]) {
   test(`camp mission hierarchy and touch navigation at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto("/?debug=1");
+    await page.goto("/");
     await expect(page.getByRole("heading", { name: /守住营火/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: "你需要做什么？" })).toBeVisible();
     await page.screenshot({
@@ -17,6 +17,8 @@ for (const width of [320, 375, 390, 430]) {
     });
 
     await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+    await page.locator('[data-action="scene-panel"][data-panel="menu"]').click();
+    await page.locator('[data-action="scene-classic"]').click();
     await expect(page.locator("[data-rescue-board]")).toBeVisible();
     await expect(page.locator("[data-decision-board]")).toBeVisible();
     await expect(page.locator("[data-world-overview]")).toHaveCount(2);
