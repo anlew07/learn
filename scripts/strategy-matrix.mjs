@@ -28,9 +28,7 @@ function simulateProfile(runNumber, profile, worldIds, samples) {
   let unknownFailures = 0;
   const savedByWorld = Object.fromEntries(worldIds.map((id) => [id, 0]));
   const actionsByWorld = Object.fromEntries(worldIds.map((id) => [id, {}]));
-  const outcomesByWorld = Object.fromEntries(
-    worldIds.map((id) => [id, { saved: 0, failed: {} }]),
-  );
+  const outcomesByWorld = Object.fromEntries(worldIds.map((id) => [id, { saved: 0, failed: {} }]));
   const endDayTotalsByWorld = Object.fromEntries(worldIds.map((id) => [id, 0]));
   const endDayCountsByWorld = Object.fromEntries(worldIds.map((id) => [id, 0]));
   const actionTotals = {};
@@ -67,8 +65,7 @@ function simulateProfile(runNumber, profile, worldIds, samples) {
     for (const world of state.worlds) {
       const outcomes = outcomesByWorld[world.id];
       const terminal =
-        terminalByWorld[world.id] ??
-        readWorldTerminal(world, state.logs, state.result.endedDay);
+        terminalByWorld[world.id] ?? readWorldTerminal(world, state.logs, state.result.endedDay);
 
       if (world.status === "saved") {
         savedByWorld[world.id]++;
@@ -167,9 +164,7 @@ function runMatrix(samples) {
     const defaults = Object.fromEntries(template.worlds.map((world) => [world.id, world.strategy]));
     const defaultProfileId = profileId(worldIds, defaults);
     const profiles = buildStrategyProfiles(worldIds);
-    const rows = profiles.map((profile) =>
-      simulateProfile(runNumber, profile, worldIds, samples),
-    );
+    const rows = profiles.map((profile) => simulateProfile(runNumber, profile, worldIds, samples));
     const baseline = rows.find((row) => row.profileId === defaultProfileId);
 
     if (!baseline) {
