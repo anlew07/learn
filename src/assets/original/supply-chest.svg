@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="38" height="34" viewBox="0 0 38 34" shape-rendering="crispEdges" aria-label="木质金边补给箱">
+  <!-- Original compact supply chest -->
+  <path fill="#15212b" d="M2 7h34v6h2v19H0V13h2z"/>
+  <path fill="#79543d" d="M4 7h30v8H4z"/>
+  <path fill="#be8b52" d="M5 9h27v5H5z"/>
+  <path fill="#d7ad69" d="M6 8h25v2H6z"/>
+  <path fill="#493326" d="M3 15h32v13H3z"/>
+  <path fill="#906343" d="M4 16h29v13H4z"/>
+  <path fill="#c09256" d="M6 18h26v9H6z"/>
+  <path fill="#654632" d="M8 19h21v6H8z"/>
+  <path fill="#cd9b62" d="M10 20h19v4H10z"/>
+  <path fill="#d0a66c" d="M5 15h4v14H5zm25 0h4v14h-4z"/>
+  <path fill="#e9c789" d="M6 16h2v12H6zm24 0h2v12h-2z"/>
+  <path fill="#493c31" d="M16 14h8v15h-8z"/>
+  <path fill="#f0d289" d="M17 15h6v12h-6z"/>
+  <path fill="#a17545" d="M19 17h3v6h-3z"/>
+  <path fill="#fef4bf" d="M19 17h1v2h-1z"/>
+  <path fill="#302823" d="M5 30h5v3H5zm23 0h5v3h-5z"/>
+</svg>

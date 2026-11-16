@@ -17,6 +17,8 @@ for (const width of [320, 375, 390, 430]) {
     });
 
     await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+    await page.locator('[data-action="scene-panel"][data-panel="menu"]').click();
+    await page.locator('[data-action="scene-classic"]').click();
     await expect(page.locator("[data-rescue-board]")).toBeVisible();
     await expect(page.locator("[data-decision-board]")).toBeVisible();
     await expect(page.locator("[data-world-overview]")).toHaveCount(2);
