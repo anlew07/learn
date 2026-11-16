@@ -23,7 +23,7 @@
     "compare:interventions": "node scripts/intervention-compare.mjs --seeds=60",
     "compare:interventions:check": "node scripts/intervention-compare.mjs --seeds=40 --assert",
     "balance:matrix": "node scripts/strategy-matrix.mjs --seeds=100",
-    "balance:matrix:check": "node scripts/strategy-matrix.mjs --seeds=60 --assert"
+    "balance:matrix:check": "node scripts/strategy-matrix.mjs --seeds=100 --assert"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",
