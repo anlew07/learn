@@ -13,7 +13,9 @@ test("help works before creating a save and returns to first-session entry", asy
   await expect(page.locator('[data-action="new-run"][data-onboarding="focus"]')).toBeVisible();
 });
 
-test("settings uses actual persistent text-size preference and returns to the same game", async ({ page }) => {
+test("settings uses actual persistent text-size preference and returns to the same game", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.locator('[data-action="open-settings"]').click();
@@ -51,7 +53,9 @@ test("settings uses actual persistent text-size preference and returns to the sa
   await expect(page.locator("html")).toHaveAttribute("data-text-size", "large");
 });
 
-test("large text does not introduce main HUD scroll at the narrowest viewport", async ({ page }) => {
+test("large text does not introduce main HUD scroll at the narrowest viewport", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
   await page.locator('[data-action="open-settings"]').click();
