@@ -599,7 +599,6 @@ function sceneHtml() {
  if (!view) return "";
  const canExplore = !inQuickStart();
  const visibleWorlds = canExplore ? view.worlds : view.worlds.filter(w=>w.id==="lingzai");
- const selected = run.worlds.find(w=>w.id===view.worldId);
  const pending = view.hasEvent || view.hasBuild;
  return '<main class="stage-game" aria-label="固定游戏主屏" data-game-stage>'+
   '<header class="stage-top"><span class="stage-brand">同时穿越 <small>· 救援远征</small></span>'+
@@ -642,7 +641,6 @@ function sceneHtml() {
   '<button data-action="scene-panel" data-panel="team">队伍</button>'+
   '<button data-action="scene-panel" data-panel="report">战报</button>'+
   '<button data-action="scene-panel" data-panel="guide">帮助</button>'+
-  (isDebug?'<button data-action="step">调试：+1天</button>':'')+
   '</section>'+
   stagePanelHtml(view)+
   '<p id="toast" class="notice stage-toast" hidden></p>'+
