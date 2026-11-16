@@ -1,0 +1,93 @@
+/* Self-contained help/settings surfaces; no additional gameplay engine or global UI theme. */
+.support-page {
+  width: min(100%, 660px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: calc(14px + env(safe-area-inset-top)) 12px calc(26px + env(safe-area-inset-bottom));
+  color: #f4ebd0;
+  background: #1f2b2c;
+  box-sizing: border-box;
+}
+.support-page * { box-sizing: border-box; }
+.support-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 3px solid #bdac78;
+  padding: 11px;
+  background: #3d473f;
+}
+.support-heading h1 { margin: 0; font-size: clamp(18px,5.2vw,23px); color: #f9d994; }
+.support-page button,
+.home-utility button {
+  min-height: 44px;
+  border: 2px solid #c7b989;
+  border-radius: 0;
+  background: #47574b;
+  color: #fff1cb;
+  padding: 7px 13px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.support-page button:focus-visible,
+.home-utility button:focus-visible {
+  outline: 3px solid #fce1a1;
+  outline-offset: 2px;
+}
+.support-page button:active { transform: translateY(1px); }
+.support-lead {
+  padding: 10px;
+  border-inline: 3px solid #96865e;
+  background: #303d39;
+  line-height: 1.6;
+}
+.support-grid { display: grid; gap: 12px; }
+.support-grid section {
+  padding: 14px;
+  border: 3px solid #aa9b74;
+  background: #303b37;
+  box-shadow: inset 0 0 0 2px #1b2929;
+}
+.support-grid h2 {
+  margin: 0 0 8px;
+  color: #ecd39f;
+  font-size: 17px;
+}
+.support-grid p { margin: 6px 0; line-height: 1.65; overflow-wrap: anywhere; }
+.support-grid strong { color: #ffebb9; }
+.support-options { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.support-options button[aria-pressed="true"] {
+  background: #728366;
+  color: #10241c;
+  border-color: #f2dd99;
+}
+.support-page footer { padding: 20px 0 4px; }
+.home-utility {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 7px 0 15px;
+}
+html[data-text-size="large"] .app-shell:not(.stage-mode) { font-size: 18px; }
+html[data-text-size="large"] .support-page,
+html[data-text-size="large"] .support-grid p { font-size: 18px; }
+html[data-text-size="large"] .support-grid h2 { font-size: 20px; }
+html[data-text-size="large"] .stage-game { font-size: 15px; }
+html[data-text-size="large"] .stage-counters,
+html[data-text-size="large"] .stage-worlds button span { font-size: 12px; }
+html[data-text-size="large"] .stage-worlds button,
+html[data-text-size="large"] .stage-bars span,
+html[data-text-size="large"] .stage-action-line { font-size: 13px; }
+html[data-text-size="large"] .stage-caption span { font-size: 12px; }
+html[data-text-size="large"] .stage-actions > button,
+html[data-text-size="large"] .stage-actions > label { font-size: clamp(11px, 3.3vw, 14px); }
+@media (max-width: 350px) {
+  .support-heading { align-items: flex-start; }
+  .support-page { padding-inline: 8px; }
+  .support-grid section { padding: 10px; }
+}
