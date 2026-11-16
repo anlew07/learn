@@ -329,3 +329,226 @@ body { background:var(--pixel-void); }
   .replay-arena.is-playing .replay-frenzy,
   .replay-arena.is-playing .replay-hit { animation: none !important; }
 }
+
+/* Camp interface v3: visual hierarchy follows mission -> decisions -> worlds.
+   Flat woodland pigments only; use existing tiny SVG sprites and no blur/gradients. */
+:root {
+  --pixel-void:#1b201a; --pixel-base:#24291f; --pixel-surface:#35372a;
+  --pixel-raised:#474333; --pixel-line:#a28a62; --pixel-shadow:#12170f;
+  --pixel-text:#f5eed8; --pixel-muted:#d2c9ac; --pixel-mint:#b7d09a;
+  --pixel-gold:#f0c679; --pixel-danger:#f2a486;
+  --surface:#2b3127; --surface-raised:#35372a; --line:#897c60;
+  --text:#f5eed8; --muted:#d2c9ac; --accent:#b7d09a; --amber:#f0c679;
+  background:#1b201a; color:#f5eed8; color-scheme:dark;
+}
+body { background:#1b201a; color:#f5eed8; }
+.app-shell { max-width:760px; padding-top:10px; padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
+.topbar { padding:8px 2px 12px; margin-bottom:14px; border-bottom:3px solid #6c644c; }
+.brand { letter-spacing:.025em; font-size:1.08rem; color:#f5eed8; }
+.micro { color:#c9c3a9; }
+.brand-mark { background-color:#35372a; border-color:#a28a62; }
+.topbar>.pill { color:#f0c679; border-color:#a28a62; }
+.eyebrow { color:#f0c679; letter-spacing:.09em; }
+h1,h2,h3 { color:#f5eed8; }
+h2 { font-size:1.15rem; }
+.panel,.world,.info-card,.run-dashboard,.metric,.hero {
+  border:2px solid #786d52; background:#35372a;
+  box-shadow:4px 4px 0 #12170f; color:#f5eed8;
+}
+.panel p,.hero p,.world-note,.muted { color:#d6ceb6; }
+.hint { color:#c4b99b; }
+button,select,input,summary { min-height:44px; border-radius:0; }
+button { color:#f5eed8; background:#4d4a38; border:2px solid #98835d; box-shadow:2px 2px 0 #12170f; }
+button:hover:not(:disabled) { background:#625940; color:#fff4da; }
+.btn,.hero-actions .btn,.run-toggle {
+  color:#262719; background:#e1b76b; border-color:#fae0a2;
+  font-weight:850; box-shadow:3px 3px 0 #12170f;
+}
+.btn:hover:not(:disabled),.hero-actions .btn:hover:not(:disabled),
+.run-toggle:hover:not(:disabled) { background:#f0c679; color:#262719; border-color:#fff0bd; }
+.btn-soft { background:#3b4436; color:#f5eed8; }
+select,input { background:#292d25; color:#f5eed8; border:2px solid #877856; }
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible {
+  outline:3px solid #f0c679; outline-offset:3px;
+}
+.pill { background:#2d3228; color:#dfd5b8; border:1px solid #85765a; }
+.pill.good { color:#c7e1ad; border-color:#91af7c; }
+.pill.warn { color:#ffe0a5; border-color:#c39a63; }
+.pill.bad { color:#ffb9a1; border-color:#b17b61; }
+.progress-track { height:10px; background:#23271f; border:1px solid #69604a; }
+.progress-fill.p { background:#a6c38b; box-shadow:none; }
+.progress-fill.d { background:#ca7a63; box-shadow:none; }
+.resource,.success-text { color:#c7e1ad; }
+.warning { color:#f0c679; }
+.notice { background:#554432; border-color:#c39a63; color:#ffe0a5; }
+
+/* Landing: a camp invitation rather than a futuristic dashboard. */
+.camp-home { min-height:0; padding:22px 20px 18px; background:#464331; }
+.camp-home::after,.camp-home::before { content:none; }
+.camp-home h1 { font-size:clamp(1.9rem,6.7vw,2.9rem); line-height:1.22; letter-spacing:0; margin:12px 0; }
+.camp-home h1 em { color:#c5dea5; font-style:normal; }
+.camp-home .home-story { max-width:550px; font-size:.94rem; line-height:1.8; color:#eee3c9; }
+.home-scene {
+  height:155px; margin-top:16px; border:3px solid #a28a62;
+  position:relative; background:#282e25 url("./assets/soul-portal.svg") 88% center / 150px 150px no-repeat;
+  image-rendering:pixelated;
+}
+.home-scene::before {
+  content:""; position:absolute; inset:0 auto 0 0; width:52%;
+  background:#393e2d url("./assets/world-lingzai.svg") left bottom / 230px auto no-repeat;
+  image-rendering:pixelated;
+}
+.home-scene span {
+  position:absolute; left:8px; bottom:8px; background:#262d22; border:1px solid #a28a62;
+  padding:4px 8px; color:#f0c679; font-size:.73rem;
+}
+.camp-home .hero-actions { display:grid; gap:9px; margin-top:16px; }
+.camp-home .hero-actions button { width:100%; min-height:50px; }
+.how-to-play h2 { font-size:1.15rem; margin:0 0 12px; }
+.how-steps { display:grid; gap:8px; }
+.how-steps>div { background:#2b3127; border-left:4px solid #a6b888; padding:10px 12px; }
+.how-steps b { color:#f0c679; }
+.how-steps p { margin:4px 0 0; font-size:.85rem; }
+.progression-panel,.how-to-play { background:#333b2e; }
+.progress-summary>div { background:#262c23; border:1px solid #86795f; }
+.progress-summary strong { color:#f0c679; }
+.progress-summary>div:nth-child(2) strong { color:#c7e1ad; }
+.progress-summary>div:nth-child(3) strong { color:#e9d1a0; }
+
+/* Main mission board: first glance must say day, goal, crisis, next action. */
+.run-dashboard { padding:17px 16px 15px; background:#403e2e; border-color:#b19a6d; }
+.dashboard-heading { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.dashboard-heading h1 { font-size:clamp(1.5rem,5vw,2.1rem); letter-spacing:0; line-height:1.2; margin:3px 0 0; }
+.dashboard-subtitle { font-size:.85rem; font-weight:600; color:#d6c9ac; letter-spacing:0; }
+.run-live { background:#344c32; border:1px solid #91af7c; color:#d9edbf; padding:5px 9px; font-size:.76rem; }
+.run-live::before { background:#c1dc9b; }
+.mission-line { margin:13px 0; font-size:.9rem; line-height:1.75; color:#f0e6cf; border-top:1px solid #7c6c50; padding-top:12px; }
+.run-dashboard .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:10px 0 13px; }
+.run-dashboard .metric { background:#292f26; border:1px solid #8c7c5f; padding:10px 8px; text-align:left; box-shadow:none; }
+.run-dashboard .metric b { color:#f0c679; font-size:1.22rem; line-height:1.35; }
+.run-dashboard .metric:nth-child(2) b { color:#c5dea5; }
+.run-dashboard .metric:nth-child(3) b { color:#f0c679; }
+.run-dashboard .metric:nth-child(4) b { color:#c5dea5; }
+.run-dashboard .metric span { color:#d2c9ac; font-size:.76rem; }
+.camp-alert { display:flex; gap:10px; align-items:center; padding:10px; margin:10px 0 12px; border:2px solid #ab8656; background:#554431; }
+.camp-alert .alert-symbol { display:grid; place-items:center; flex:0 0 28px; height:28px; border:2px solid #e0b66f; font-weight:900; color:#ffe6ad; }
+.camp-alert b { font-size:.78rem; color:#f0c679; }
+.camp-alert p { color:#f5eed8; margin:2px 0 0; font-size:.83rem; line-height:1.5; overflow-wrap:anywhere; }
+.run-dashboard .controls { align-items:stretch; gap:8px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.run-dashboard .controls .run-toggle { min-height:52px; line-height:1.35; }
+.run-dashboard .controls .speed-control { display:grid; gap:3px; color:#d8ccaf; font-size:.75rem; }
+.run-dashboard .controls .speed-control select { width:100%; font-size:.78rem; }
+.run-dashboard .controls button[data-action="step"] { grid-column:span 2; }
+.camp-rule { margin:9px 0 0; line-height:1.5; }
+
+/* Compact world map: scene / risk / today / goal, detail on demand. */
+.decision-board,.world-map { display:grid; gap:10px; }
+.section-banner { display:flex; align-items:end; justify-content:space-between; gap:10px; margin:14px 0 2px; }
+.section-banner h2 { margin:0; font-size:1.25rem; }
+.section-hint { font-size:.75rem; color:#d2c9ac; text-align:right; max-width:145px; line-height:1.5; }
+.no-decisions { background:#313c2d; border-left:5px solid #a7bd87; padding:13px 14px; }
+.no-decisions b { color:#d8ebbd; }
+.no-decisions p { font-size:.83rem; margin:5px 0 0; line-height:1.65; }
+.world-brief { border:3px solid #796c53; box-shadow:4px 4px 0 #11170f; background:#39382b; min-width:0; overflow:hidden; }
+.world-brief.world-lingzai { --brief-accent:#c1c78d; }
+.world-brief.world-zombie { --brief-accent:#d3ad78; }
+.world-brief.world-beast { --brief-accent:#b4af8e; }
+.world-brief .brief-scene { height:105px; background:#2d362a var(--scene-image) center 52% / cover no-repeat; border-bottom:3px solid var(--brief-accent); image-rendering:pixelated; }
+.brief-head { padding:11px 13px 3px; display:flex; justify-content:space-between; align-items:start; gap:8px; flex-wrap:wrap; }
+.brief-head h3 { margin:0; font-size:1.15rem; }
+.brief-head .pill { white-space:normal; text-align:center; }
+.brief-progress { padding:6px 13px 2px; display:grid; gap:3px; }
+.brief-progress .bar-head { margin-top:4px; color:#e3dbc5; }
+.brief-activity { margin:8px 13px 3px; color:#f0c679; font-size:.86rem; font-weight:700; }
+.brief-goal { margin:0 13px 12px; font-size:.8rem; line-height:1.6; color:#ddd3b7; }
+.world-fold { border-top:2px solid #7f7052; background:#2e3429; }
+.world-fold>summary { list-style:none; cursor:pointer; min-height:46px; display:flex; align-items:center; padding:10px 13px; font-weight:700; color:#e7d4ab; }
+.world-fold>summary::before { content:"▸"; margin-right:8px; color:#f0c679; }
+.world-fold[open]>summary::before { content:"▾"; }
+.world-fold>summary::-webkit-details-marker { display:none; }
+.world-fold .world { border:0; border-top:2px solid #837558; box-shadow:none; margin:0; background:#34382b; }
+.world-fold .world::after,.world-fold .world::before { content:none; }
+.world-fold .world .world-meta { background:#292e24; border:1px solid #877659; color:#e3dac5; }
+.world-fold .world .world-note,.world-fold .world-goal { color:#d6c9ac; }
+.world-fold .world .world-note strong { color:#c5dea5; }
+.world-fold .world-intel,.world-fold .combat-recap { background:#293126; border-color:#7b7658; }
+.world-fold .select-row { border-color:#8a7c62; }
+.world-fold .world-intel summary { color:#f0deb6; }
+.world-fold .combat-phases>span:not(.combat-arrow) { background:#3c4030; border-color:#84785c; }
+.world-fold .combat-phases,.world-fold .combat-recap .hint { color:#d3c9b1; }
+.world-fold .combat-arrow { color:#f0c679; }
+.world-fold .world-head .pill { background:#252b22; }
+
+/* Decisions are real game commands, distinct from information cards. */
+.crisis-panel { background:#514434; border-color:#b49462; border-left:5px solid #e2ad69; }
+.crisis-item { background:#3b392b; border:1px solid #8e7453; }
+.crisis-blockers,.crisis-reasons,.event-choice-detail,.aid-option .hint { color:#e2d7bd; }
+.crisis-action .hint { color:#cfc1a2; }
+.event { background:#554032; border-color:#b08358; border-left:5px solid #e0ae72; }
+.event h3 { color:#ffe1ab; }
+.event-choice { background:#35382c; border-color:#887859; }
+.event-default { background:#334536; border-color:#91a777; color:#e6f1d7; }
+.build-panel { background:#3c4536; border-color:#9baa7c; }
+.build-combo { background:#2c342b; border-color:#93a37a; color:#e6d9bd; }
+.aid-option { background:#2c3329; border-color:#887859; }
+.finale-preview { background:#2d352c; border-color:#887859; }
+.finale-preview summary { color:#f0c679; }
+.finale-check.ready { color:#c5dea5; }
+.finale-check.missing { color:#f0c679; }
+
+/* Secondary destinations and fixed single-thumb navigation. */
+.party-card { border-left:5px solid #9a9c78; }
+.party-head { display:flex; gap:12px; align-items:center; padding-bottom:10px; border-bottom:1px solid #877659; }
+.party-avatar { display:block; width:64px; height:64px; flex:0 0 64px; background:#2c3429 var(--avatar-image) center / 64px 64px no-repeat; border:2px solid #b4a178; image-rendering:pixelated; }
+.party-head h3 { font-size:1.05rem; margin:0 0 3px; }
+.party-head p { margin:0; }
+.party-equipment { font-size:.85rem; line-height:1.7; margin:12px 0; overflow-wrap:anywhere; }
+.party-equipment b { color:#f0c679; }
+.party-card .combat-recap,.party-card .survivor-wave { background:#2b3328; border-color:#8c7756; }
+.party-card .survivor-score { background:#354634; border-color:#849c77; }
+.party-card .replay-head,.party-card .replay-arena { background:#334232; }
+.party-card .replay-wave { background:#3a3e30; }
+.party-card .combat-rewards .pill { background:#313c2c; }
+.session-stats .stats-world { border-color:#6e6c56; }
+.session-stats .stats-world b,.log b { color:#f0c679; }
+.log { border-color:#626852; color:#ddd3b9; }
+.log.major,.log.success { color:#c5dea5; }
+.log.warning { color:#f0c679; }
+.log.danger { color:#f2a486; }
+.footer-nav { border:2px solid #a28a62; border-bottom:0; background:#242c22; padding:7px 10px calc(7px + env(safe-area-inset-bottom)); box-shadow:0 -3px 0 #12170f; }
+.footer-nav button { background:#31382c; border-color:#716f55; min-width:0; min-height:54px; box-shadow:none; padding:5px 2px; font-size:.79rem; }
+.footer-nav button.active { background:#c5aa72; color:#25291f; border-color:#f0d79b; }
+.footer-nav button.active .nav-glyph { color:#25291f; }
+.footer-nav button:not(.active):hover { background:#474b35; }
+.footer-nav .nav-glyph { display:block; font-size:1.25rem; line-height:1.25; margin-bottom:3px; color:#e8cc8e; }
+
+@media (min-width:680px) {
+  .how-steps { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .camp-home .hero-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .world-map { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+  .world-map>.section-banner { grid-column:1 / -1; }
+}
+@media (max-width:400px) {
+  .app-shell { padding-inline:11px; }
+  .camp-home { padding:19px 13px 15px; }
+  .camp-home h1 { font-size:2rem; }
+  .run-dashboard { padding:14px 11px; }
+  .dashboard-heading { gap:5px; }
+  .dashboard-heading h1 { font-size:1.55rem; }
+  .run-dashboard .metrics { gap:6px; }
+  .run-dashboard .metric { padding:8px 7px; }
+  .run-dashboard .metric span { font-size:.72rem; }
+  .run-dashboard .controls .speed-control select { font-size:.72rem; padding:5px 3px; }
+  .footer-nav { gap:5px; padding-inline:7px; }
+  .footer-nav button { font-size:.76rem; }
+  .section-hint { max-width:112px; }
+}
+@media (max-width:350px) {
+  .app-shell { padding-inline:9px; }
+  .camp-home h1 { font-size:1.85rem; }
+  .run-dashboard .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .run-dashboard .metric b { font-size:1.06rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+ .world-brief *, .camp-home *, .party-page *, .run-dashboard * { animation:none !important; transition:none !important; }
+}
