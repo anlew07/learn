@@ -4,10 +4,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 test("three worlds use distinct pixel scenes", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  const startButton = page.locator(
-    '[data-action="new-run"][data-onboarding="full"]',
-  );
-  await startButton.click();
+  await page.locator("[data-action=new-run][data-onboarding=full]").click();
   const canvas = page.locator("[data-stage-canvas]");
   await expect(canvas).toBeVisible();
 
@@ -17,7 +14,6 @@ test("three worlds use distinct pixel scenes", async ({ page }) => {
     await page.evaluate(async (worldId) => {
       const stage = await import("/src/ui/pixel-stage.js");
       const stageView = await import("/src/presentation/stage-view.js");
-      // Display-only fixtures never touch the saved RunState.
       const world = {
         id: worldId,
         name: worldId,
@@ -29,21 +25,21 @@ test("three worlds use distinct pixel scenes", async ({ page }) => {
         deadline: 80,
         action: "巡视",
       };
-      const view = stageView.getStageView(
-        { worlds: [world], day: 8, paused: true, active: true },
-        worldId,
-      );
-      stage.paintPixelStage(
-        document.querySelector("[data-stage-canvas]"),
-        view,
-      );
+      const state = {
+        worlds: [world],
+        day: 8,
+        paused: true,
+        active: true,
+      };
+      const view = stageView.getStageView(state, worldId);
+      const element = document.querySelector("[data-stage-canvas]");
+      stage.paintPixelStage(element, view);
     }, id);
 
     await page.waitForTimeout(150);
     const signature = await canvas.evaluate((element) => {
-      const data = element
-        .getContext("2d")
-        .getImageData(0, 0, 320, element.height).data;
+      const context = element.getContext("2d");
+      const data = context.getImageData(0, 0, 320, element.height).data;
       let hash = 2166136261;
       for (let i = 0; i < data.length; i += 37) {
         hash = Math.imul(hash ^ data[i], 16777619);
@@ -51,13 +47,13 @@ test("three worlds use distinct pixel scenes", async ({ page }) => {
       return hash >>> 0;
     });
     signatures.push(signature);
-    const pixelsPng = await canvas.evaluate((element) =>
-      element.toDataURL("image/png").split(",")[1],
-    );
-    writeFileSync(
-      "test-results/camp-ui/pixel-biome-" + id + ".png",
-      Buffer.from(pixelsPng, "base64"),
-    );
+
+    const pixelsPng = await canvas.evaluate((element) => {
+      return element.toDataURL("image/png").slice(22);
+    });
+    const filePath = "test-results/camp-ui/pixel-biome-" + id + ".png";
+    const imageBuffer = Buffer.from(pixelsPng, "base64");
+    writeFileSync(filePath, imageBuffer);
   }
 
   expect(new Set(signatures).size).toBe(3);
@@ -68,7 +64,7 @@ test("three worlds use distinct pixel scenes", async ({ page }) => {
     path: "test-results/camp-ui/real-world-lingzai-390.png",
   });
   await page
-    .locator('[data-action="scene-world"][data-world="zombie"]')
+    .locator("[data-action=scene-world][data-world=zombie]")
     .click();
   await expect(page.locator(".stage-caption")).toContainText("废土救援");
   await page.screenshot({
