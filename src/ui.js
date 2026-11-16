@@ -1,4 +1,4 @@
-import "./style.css"; import "./art-direction.css"; import "./stage-shell.css";
+import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; import "./pixel-art-language.css";
 import Engine from "./engine.js";
 import { getStageView } from "./presentation/stage-view.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
