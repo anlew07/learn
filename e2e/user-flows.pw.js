@@ -741,7 +741,7 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
   page,
 }) => {
   await startFirstRun(page);
-  await expect(page.locator(".run-dashboard")).toContainText("多世界行动");
+  await expect(page.locator(".run-dashboard")).toContainText("营地任务 · 三界救援");
   await expect(page.locator(".run-dashboard .metric")).toHaveCount(4);
   await expect(page.locator('[data-world-card="lingzai"] .world-kicker')).toContainText(
     "CULTIVATION",
