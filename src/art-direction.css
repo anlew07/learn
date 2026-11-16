@@ -438,7 +438,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .run-dashboard .controls .run-toggle { min-height:52px; line-height:1.35; }
 .run-dashboard .controls .speed-control { display:grid; gap:3px; color:#d2c9ac; font-size:.75rem; }
 .run-dashboard .controls .speed-control select { width:100%; font-size:.78rem; }
-.run-dashboard .controls button[data-action="step"] { grid-column:span 2; }
+.run-dashboard .controls > button:not(.run-toggle) { grid-column:span 2; }
 .camp-rule { margin:9px 0 0; line-height:1.5; }
 
 /* Compact world map: scene / risk / today / goal, detail on demand. */
