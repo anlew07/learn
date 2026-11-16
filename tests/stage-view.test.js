@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getStageView } from "../src/presentation/stage-view.js";
+import { getStageView, getWorldSceneState } from "../src/presentation/stage-view.js";
 
 const makeState = () => ({
   day: 12, paused: true, active: true, ap: 4, apReserved: 1, soul: 7,
@@ -50,5 +50,58 @@ describe("read-only mobile pixel HUD", () => {
     expect(view.hasEvent).toBe(false);
     expect(view.hasBuild).toBe(false);
     expect(getStageView(null, "lingzai")).toBeNull();
+  });
+});
+
+
+describe("living world scene semantics", () => {
+  it("shows calm, worsening and critical phases using real crisis levels", () => {
+    const world = makeState().worlds[0];
+    world.d = 18;
+    expect(getWorldSceneState(world, 12).phase).toBe("stable");
+    world.d = 55;
+    expect(getWorldSceneState(world, 12).phase).toBe("warning");
+    world.d = 89;
+    expect(getWorldSceneState(world, 12)).toMatchObject({
+      phase: "critical", summary: "高危 · 请关注局势",
+      activeThreat: true, hasEvent: true,
+    });
+    world.threat.status = "awaiting_alpha";
+    expect(getWorldSceneState(world, 12).activeThreat).toBe(true);
+  });
+
+  it("separates rescue preparations (P100) from a genuinely saved world", () => {
+    const world = makeState().worlds[0];
+    world.p = 100;
+    world.d = 16;
+    world.resource = 13;
+    world.level = 4;
+    const before = getWorldSceneState(world, 12);
+    expect(before).toMatchObject({
+      phase: "stable", progressTier: 3, supplyTier: 2, growthTier: 2,
+    });
+    world.status = "saved";
+    expect(getWorldSceneState(world, 12).phase).toBe("restored");
+    world.status = "failed";
+    expect(getWorldSceneState(world, 12).phase).toBe("lost");
+  });
+
+  it("shows observed actions only, recent combat only and never mutates state", () => {
+    const world = makeState().worlds[0];
+    world.lastDecision = { day: 11, actionId: "gather" };
+    world.lastCombat = { day: 10, stages: ["实际结算"] };
+    const before = JSON.stringify(world);
+    const scene = getWorldSceneState(world, 12);
+    expect(scene).toMatchObject({ activity: "gathering", recentCombat: true });
+    expect(getWorldSceneState(world, 14).recentCombat).toBe(false);
+    expect(JSON.stringify(world)).toBe(before);
+  });
+
+  it("handles invalid optional data without inventing events or danger", () => {
+    expect(getWorldSceneState(null, 1)).toBeNull();
+    expect(getWorldSceneState({status:"running",d:NaN,p:Infinity,level:1},1)).toMatchObject({
+      phase: "stable", progressTier: 0, supplyTier: 0, growthTier: 0,
+      activeThreat: false, hasEvent: false,
+    });
   });
 });
