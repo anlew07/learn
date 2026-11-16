@@ -418,7 +418,7 @@ function tutorialCatalog(state) {
     {
       id: "first-day", available: Boolean(state && worlds.length && number(state.day) >= 1),
       title: "第一天：观察自主行动",
-      text: "每天每个分身会自己训练、调查、采集或排险。你调整的是长期策略，重大事件和跨界援助才需要权衡是否干预。",
+      text: "每天每个分身会自主选择训练、调查、采集或排险。你调整的是长期策略，重大事件和跨界援助才需要权衡是否干预。",
       actionHint: "查看任一世界的「正在进行」和「自主判断」，再决定是否更换策略。",
     },
     {
