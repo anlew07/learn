@@ -20,6 +20,12 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run format:check
+      - name: Temporary generated UI text inventory
+        run: |
+          npm run text:export
+          echo AUDIT_BEGIN
+          base64 -w256 docs/review/game-text.csv
+          echo AUDIT_END
       - run: npm run text:check
       - run: npm run text:runtime
       - run: npm run text:review
