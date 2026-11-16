@@ -36,10 +36,7 @@ test("the same world has visibly different calm, critical and rescued pixel scen
         lastCombat: variant === "critical" ? { day: 7 } : null,
         build: { attack: [], support: [] },
       };
-      const view = getStageView(
-        { day: 8, paused: true, active: true, worlds: [world] },
-        "lingzai",
-      );
+      const view = getStageView({ day: 8, paused: true, active: true, worlds: [world] }, "lingzai");
       const element = document.querySelector("[data-stage-canvas]");
       paintPixelStage(element, view, 0);
       const pixels = element.getContext("2d").getImageData(0, 0, 320, 208).data;
