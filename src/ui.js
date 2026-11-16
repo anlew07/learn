@@ -257,7 +257,7 @@ function controls(){
  const advice=Engine.advise(run)[0];
  const mostAtRisk=run.worlds.filter(w=>w.status==="running").sort((a,b)=>b.d-a.d)[0];
  const concern=advice?advice.worldName+" · "+advice.notes[0]:
- mostAtRisk?mostAtRisk.name+" · 危机压力 "+n(mostAtRisk.d)+"%":"所有世界的救援已结束";
+ mostAtRisk?(mostAtRisk.d>0?mostAtRisk.name+" · 危机压力 "+n(mostAtRisk.d)+"%":"暂无紧急危机，可继续模拟观察分身行动"):"所有世界的救援已结束";
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
  '<div class="brand">同时穿越</div><div class="micro">末日营地 · 救援手记</div></div></div>'+
  '<button class="home-link" data-action="home">⌂ 首页</button></header>'+
