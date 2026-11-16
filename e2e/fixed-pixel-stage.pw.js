@@ -83,8 +83,6 @@ test("decisions from another world appear without leaving the fixed scene", asyn
   await page.goto("/");
   await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
   await expect.poll(async () => (await snapshot(page)).run?.worlds.length).toBe(2);
-  // Edit the saved state after leaving the app so its pagehide save cannot overwrite the fixture.
-  await page.goto("/src/services/persistence.js");
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
@@ -95,7 +93,7 @@ test("decisions from another world appear without leaving the fixed scene", asyn
     };
     await saveRepository.enqueueSave(state.run, state.profile);
   });
-  await page.goto("/");
+  await page.reload();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
   await expect(page.locator(".stage-caption")).toContainText("灵灾");
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toContainText("!");
