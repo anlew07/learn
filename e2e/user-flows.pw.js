@@ -741,13 +741,13 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
   page,
 }) => {
   await startFirstRun(page);
-  await expect(page.locator(".run-dashboard")).toContainText("多世界行动");
+  await expect(page.locator(".run-dashboard")).toContainText("营地任务 · 三界救援");
   await expect(page.locator(".run-dashboard .metric")).toHaveCount(4);
   await expect(page.locator('[data-world-card="lingzai"] .world-kicker')).toContainText(
     "CULTIVATION",
   );
   await expect(page.locator('[data-world-card="zombie"] .world-kicker')).toContainText("OUTBREAK");
-  await expect(page.locator('[aria-label="主要导航"] button')).toHaveCount(3);
+  await expect(page.locator('[aria-label="主要导航"] button')).toHaveCount(4);
   await page.locator('button[data-tab="soul"]').click();
   await expect(page.locator('button[data-tab="soul"]')).toHaveAttribute("aria-current", "page");
   await page.locator('button[data-tab="world"]').click();
