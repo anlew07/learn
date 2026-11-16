@@ -516,7 +516,7 @@ function partyHtml() {
  '<div class="party-head"><span class="party-avatar" aria-hidden="true"></span><div>'+
  '<h3>'+esc(w.name)+' · Lv'+w.level+'</h3><p class="muted">'+esc(info.stage)+' · '+worldStatus(w)+'</p></div></div>'+
  '<p class="party-equipment"><b>已装备战技</b>　'+(powers.length?
- powers.map(p=>esc(p.name)+' Lv'+p.lv).join(' / '):'尚未觉醒')+'</p>'+
+ powers.map(p=>esc(Engine.POWERS[w.id]?.find(item=>item.id===p.id)?.name||p.id)+' Lv'+p.lv).join(' / '):'尚未觉醒')+'</p>'+
  (w.build?.evolved?'<p class="pill good">已进化：'+esc(w.build.evolutionName)+'</p>':'')+
  (run.waves&&w.lastCombat?combatHtml(w.lastCombat):'<p class="hint">暂无防线记录，分身会自主应战。</p>')+
  '</section>';
