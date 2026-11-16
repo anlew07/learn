@@ -629,14 +629,14 @@ function sceneHtml() {
    (w.id===view.worldId?' aria-current="page" class="active"':'')+
    '><b>'+esc(w.title)+'</b><span>'+ (w.event||w.build?'!':w.status==="saved"?'✓':w.status==="failed"?'×':'')+
    Math.round(w.danger)+'%</span></button>').join("")+
-  (canExplore?'':view.worlds.filter(w=>w.id!==view.worldId).map(w=>'<button data-action="show-all-worlds" aria-label="展开全部世界"><b>'+esc(w.title)+'</b><span>查看 ↗</span></button>').join(""))+
+  (canExplore?'':view.worlds.filter(w=>w.id!==view.worldId).map(w=>'<button data-action="show-all-worlds" aria-label="展开全部世界"><b>'+esc(w.title)+'</b><span>'+(view.paused?'继续后同步行动':'正在同步行动')+'</span></button>').join(""))+
   '</nav>'+
   '<section class="stage-window" aria-label="像素世界现场">'+
   '<canvas data-stage-canvas width="320" height="208" role="img" aria-label="'+
   esc(view.title+'像素场景：分身正在'+view.action+',危机压力'+view.danger+'%')+'"></canvas>'+
   '<div class="stage-caption"><b>'+esc(view.title)+'</b><span>'+
   esc(view.status)+' · Lv'+view.level+' · 剩余'+view.deadline+'天</span></div>'+
-  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+esc(inQuickStart()?getOpeningBrief(profile).automatic+" "+getOpeningBrief(profile).playerRole:view.scene.summary+" · 今日："+view.action)+'</div>'+
+  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+esc(inQuickStart()?getOpeningBrief(profile).stageHint:view.scene.summary+" · 今日："+view.action)+'</div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div><span>救援准备</span><progress max="100" value="'+view.rescue+'"></progress><b>'+Math.round(view.rescue)+'</b></div>'+
