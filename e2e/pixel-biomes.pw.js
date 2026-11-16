@@ -26,14 +26,19 @@ test("three worlds use different readable pixel artwork at mobile size", async (
         deadline: 80,
         action: "巡视",
       };
-      const view = getStageView({ worlds: [world], day: 8, paused: true, active: true }, worldId);
+      const view = getStageView(
+        { worlds: [world], day: 8, paused: true, active: true },
+        worldId,
+      );
       paintPixelStage(document.querySelector("[data-stage-canvas]"), view);
     }, id);
 
     // Wait for the browser image decoder and asynchronous sprite onload repaint.
     await page.waitForTimeout(150);
     const signature = await canvas.evaluate((element) => {
-      const data = element.getContext("2d").getImageData(0, 0, 320, element.height).data;
+      const data = element
+        .getContext("2d")
+        .getImageData(0, 0, 320, element.height).data;
       let hash = 2166136261;
       for (let i = 0; i < data.length; i += 37) {
         hash = Math.imul(hash ^ data[i], 16777619);
@@ -58,7 +63,9 @@ test("three worlds use different readable pixel artwork at mobile size", async (
   await page.screenshot({
     path: "test-results/camp-ui/real-world-lingzai-390.png",
   });
-  await page.locator('[data-action="scene-world"][data-world="zombie"]').click();
+  await page
+    .locator('[data-action="scene-world"][data-world="zombie"]')
+    .click();
   await expect(page.locator(".stage-caption")).toContainText("废土救援");
   await page.screenshot({
     path: "test-results/camp-ui/real-world-zombie-390.png",
