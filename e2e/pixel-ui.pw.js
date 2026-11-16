@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 async function openRun(page) {
-  await page.goto("/");
+  await page.goto("/?debug=1");
   const action = page.locator('[data-action="new-run"][data-onboarding="full"]');
   await expect(action).toBeVisible();
   await action.click();
