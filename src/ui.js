@@ -878,7 +878,7 @@ setInterval(()=>{
    if(newUrgent&&run.speed===4){
     run.paused=true;
     if(tab==="scene"){
-     sceneWorldId=newUrgent.id;
+     if(!inQuickStart()||newUrgent.id==="lingzai")sceneWorldId=newUrgent.id;
      scenePanel="event";
     }else{
      tab="world";
