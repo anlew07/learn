@@ -1,3 +1,75 @@
+const clampPercent = (value) =>
+  Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
+
+/**
+ * Pure visual vocabulary for a world. These are only presentation tiers:
+ * they do not invent buildings, enemies, rewards, or a second simulation.
+ */
+export function getWorldSceneState(world, day = 1) {
+  if (!world) return null;
+  const danger = clampPercent(world.d);
+  const rescue = clampPercent(world.p);
+  const status = world.status;
+  const phase =
+    status === "saved"
+      ? "restored"
+      : status === "failed"
+        ? "lost"
+        : danger >= 75
+          ? "critical"
+          : danger >= 40
+            ? "warning"
+            : "stable";
+  const progressTier = rescue >= 100 ? 3 : rescue >= 65 ? 2 : rescue >= 30 ? 1 : 0;
+  const supplyTier = world.resource >= 12 ? 2 : world.resource >= 6 ? 1 : 0;
+  const growthTier = world.level >= 4 ? 2 : world.level >= 2 ? 1 : 0;
+  const actionId = world.lastDecision?.day >= day - 1 ? world.lastDecision.actionId : "";
+  const action = String(world.action || "");
+  const activity =
+    actionId === "growth" || /吸纳|修炼|训练|感悟|闭关/.test(action)
+      ? "training"
+      : actionId === "gather" || /寻找|搜刮|搜集|采集/.test(action)
+        ? "gathering"
+        : actionId === "fight" || /排险|清理|巡护|战斗/.test(action)
+          ? "defending"
+          : actionId === "rescue" || /准备|救援|封印/.test(action)
+            ? "rescuing"
+            : actionId === "explore" || /调查|追踪|追查/.test(action)
+              ? "exploring"
+              : "observing";
+  const recentCombat =
+    Number.isFinite(world.lastCombat?.day) &&
+    world.lastCombat.day >= day - 2 &&
+    world.lastCombat.day <= day;
+  const activeThreat = Boolean(world.threat && world.threat.status !== "cleared");
+  const hasEvent = world.pendingEvent?.state === "active";
+  const summary =
+    phase === "restored"
+      ? "救援成功 · 局势恢复"
+      : phase === "lost"
+        ? "救援未完成 · 世界失守"
+        : phase === "critical"
+          ? "高危 · 请关注局势"
+          : phase === "warning"
+            ? "危机上升 · 留意事件"
+            : progressTier >= 2
+              ? "准备推进 · 继续守护"
+              : "局势平稳 · 分身行动中";
+  return {
+    phase,
+    progressTier,
+    supplyTier,
+    growthTier,
+    activity,
+    recentCombat,
+    activeThreat,
+    hasEvent,
+    rescue,
+    danger,
+    summary,
+  };
+}
+
 /**
  * Read-only summary for the compact mobile game stage.
  * Never advances the simulation, consumes RNG, or mutates RunState.
@@ -7,10 +79,11 @@ export function getStageView(run, selectedWorldId) {
   const selected = worlds.find((world) => world.id === selectedWorldId) || worlds[0];
   if (!selected) return null;
   const number = (value) => Number.isFinite(value) ? value : 0;
-  const percent = (value) => Math.max(0, Math.min(100, number(value)));
+  const percent = clampPercent;
   const status = selected.status === "saved" ? "救援完成" :
     selected.status === "failed" ? "救援未完成" : "正在求生";
   return {
+    scene: getWorldSceneState(selected, number(run.day)),
     worldId: selected.id,
     title: selected.name || selected.id,
     status,
@@ -32,7 +105,7 @@ export function getStageView(run, selectedWorldId) {
     hasEvent: selected.pendingEvent?.state === "active",
     hasBuild: Boolean(selected.build?.pending),
     hasCombat: Boolean(selected.lastCombat),
-    threatActive: selected.threat?.status === "active",
+    threatActive: Boolean(selected.threat && selected.threat.status !== "cleared"),
     threatProgress: number(selected.threat?.progress),
     worlds: worlds.map((world) => ({
       id: world.id,
