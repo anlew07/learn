@@ -39,7 +39,8 @@ test("the same world has visibly different calm, critical and rescued pixel scen
       const view = getStageView({ day: 8, paused: true, active: true, worlds: [world] }, "lingzai");
       const element = document.querySelector("[data-stage-canvas]");
       paintPixelStage(element, view, 0);
-      const pixels = element.getContext("2d").getImageData(0, 0, element.width, element.height).data;
+      const context = element.getContext("2d");
+      const pixels = context.getImageData(0, 0, element.width, element.height).data;
       let signature = 2166136261;
       for (let index = 0; index < pixels.length; index += 47) {
         signature = Math.imul(signature ^ pixels[index], 16777619);
