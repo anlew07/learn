@@ -552,3 +552,18 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 @media (prefers-reduced-motion: reduce) {
  .world-brief *, .camp-home *, .party-page *, .run-dashboard * { animation:none !important; transition:none !important; }
 }
+
+/* Four equal bottom actions: no second row at 320–430px. */
+.footer-nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; }
+.footer-nav button { width:100%; min-width:0; padding:6px 1px; font-size:.76rem; }
+@media (max-width:350px) { .footer-nav { gap:3px; padding-inline:4px; } .footer-nav button { font-size:.7rem; } }
+/* Let the dedicated party, logistics and journal content appear above the fold. */
+.run-dashboard-compact { padding:11px 14px; }
+.run-dashboard-compact .mission-line,
+.run-dashboard-compact .metrics,
+.run-dashboard-compact .camp-alert,
+.run-dashboard-compact .camp-rule { display:none; }
+.run-dashboard-compact .dashboard-heading { align-items:center; }
+.run-dashboard-compact .dashboard-heading h1 { font-size:1.25rem; }
+.run-dashboard-compact .controls { margin:9px 0 0 !important; }
+.run-dashboard-compact .controls .run-toggle { min-height:44px; }
