@@ -138,8 +138,8 @@ test("first-run focus guidance is visible on the default fixed game screen", asy
   await expect(page.locator("[data-game-stage]")).toBeVisible();
   await expect(page.locator(".stage-day")).toContainText("已暂停");
   const hint = page.locator(".stage-onboarding-hint");
-  await expect(hint).toContainText("每个游戏日自主完成主要行动");
-  await expect(hint).toContainText("你决定长期策略");
+  await expect(hint).toContainText("分身自动行动");
+  await expect(hint).toContainText("你负责策略、事件与援助");
   const hintFits = await hint.evaluate(
     (element) => element.scrollHeight <= element.clientHeight + 1,
   );
@@ -150,6 +150,7 @@ test("first-run focus guidance is visible on the default fixed game screen", asy
 
   const expandWorlds = page.locator('.stage-worlds [data-action="show-all-worlds"]');
   await expect(expandWorlds).toContainText("废土救援");
+  await expect(expandWorlds).toContainText("继续后同步行动");
   await expect(expandWorlds).toHaveAttribute("aria-label", "展开全部世界");
 
   const before = (await snapshot(page)).run;
