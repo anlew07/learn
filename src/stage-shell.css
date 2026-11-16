@@ -165,6 +165,10 @@
   font-size: 12px;
   pointer-events: none;
 }
+.stage-action-line.stage-onboarding-hint {
+  padding: 5px 7px;
+  font-size: 11px;
+}
 .stage-bars {
   display: grid;
   grid-template-rows: 1fr 1fr;

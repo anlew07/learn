@@ -615,7 +615,7 @@ function sceneHtml() {
  const pending = view.pendingCount > 0;
  return '<main class="stage-game" aria-label="固定游戏主屏" data-game-stage>'+
   '<header class="stage-top"><span class="stage-brand">同时穿越 <small>· 救援远征</small></span>'+
-  '<span class="stage-day">第 '+view.day+' 天</span>'+
+  '<span class="stage-day">第 '+view.day+' 天 · '+(view.paused?'已暂停':'自动进行中')+'</span>'+
   '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能">☰</button></header>'+
   '<div class="stage-counters" aria-label="全局状态">'+
   '<span>获救 <b>'+view.saved+'/'+view.total+'</b></span>'+
@@ -629,15 +629,14 @@ function sceneHtml() {
    (w.id===view.worldId?' aria-current="page" class="active"':'')+
    '><b>'+esc(w.title)+'</b><span>'+ (w.event||w.build?'!':w.status==="saved"?'✓':w.status==="failed"?'×':'')+
    Math.round(w.danger)+'%</span></button>').join("")+
-  (canExplore?'':'<button data-action="show-all-worlds">其他世界 ↗</button>')+
+  (canExplore?'':view.worlds.filter(w=>w.id!==view.worldId).map(w=>'<button data-action="show-all-worlds" aria-label="展开全部世界"><b>'+esc(w.title)+'</b><span>'+(view.paused?'继续后同步行动':'正在同步行动')+'</span></button>').join(""))+
   '</nav>'+
   '<section class="stage-window" aria-label="像素世界现场">'+
   '<canvas data-stage-canvas width="320" height="208" role="img" aria-label="'+
   esc(view.title+'像素场景：分身正在'+view.action+',危机压力'+view.danger+'%')+'"></canvas>'+
   '<div class="stage-caption"><b>'+esc(view.title)+'</b><span>'+
   esc(view.status)+' · Lv'+view.level+' · 剩余'+view.deadline+'天</span></div>'+
-  '<div class="stage-action-line" aria-live="polite" aria-label="世界状态与当前行动">'+
-  esc(view.scene.summary)+' · 今日：'+esc(view.action)+'</div>'+
+  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+esc(inQuickStart()?getOpeningBrief(profile).stageHint:view.scene.summary+" · 今日："+view.action)+'</div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div><span>救援准备</span><progress max="100" value="'+view.rescue+'"></progress><b>'+Math.round(view.rescue)+'</b></div>'+

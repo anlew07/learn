@@ -129,3 +129,44 @@ test("drawer keeps keyboard focus and scroll during strategy changes", async ({ 
   await expect(dialog).toHaveCount(0);
   await expect(opener).toBeFocused();
 });
+
+test("first-run focus guidance is visible on the default fixed game screen", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/");
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+
+  await expect(page.locator("[data-game-stage]")).toBeVisible();
+  await expect(page.locator(".stage-day")).toContainText("已暂停");
+  const hint = page.locator(".stage-onboarding-hint");
+  await expect(hint).toContainText("分身自动行动");
+  await expect(hint).toContainText("你负责策略、事件与援助");
+  const hintFits = await hint.evaluate(
+    (element) => element.scrollHeight <= element.clientHeight + 1,
+  );
+  expect(hintFits).toBe(true);
+  await page.screenshot({ path: "test-results/camp-ui/pixel-stage-first-run-320.png" });
+  await expect(page.locator('.stage-worlds [data-world="lingzai"]')).toBeVisible();
+  await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
+
+  const expandWorlds = page.locator('.stage-worlds [data-action="show-all-worlds"]');
+  await expect(expandWorlds).toContainText("废土救援");
+  await expect(expandWorlds).toContainText("继续后同步行动");
+  await expect(expandWorlds).toHaveAttribute("aria-label", "展开全部世界");
+
+  const before = (await snapshot(page)).run;
+  await expandWorlds.click();
+  await expect(page.locator('.stage-worlds [data-world="zombie"]')).toBeVisible();
+  const after = (await snapshot(page)).run;
+  expect(after.onboardingFocus).toBe(false);
+  expect(after.day).toBe(before.day);
+  expect(after.ap).toBe(before.ap);
+  expect(after.soul).toBe(before.soul);
+  expect(after.worlds).toEqual(before.worlds);
+
+  const dimensions = await page.evaluate(() => ({
+    width: document.documentElement.scrollWidth,
+    height: document.documentElement.scrollHeight,
+  }));
+  expect(dimensions.width).toBeLessThanOrEqual(321);
+  expect(dimensions.height).toBeLessThanOrEqual(569);
+});

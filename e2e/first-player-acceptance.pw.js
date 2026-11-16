@@ -17,7 +17,7 @@ async function start(page, mode = "full") {
   await expect.poll(async () => (await saved(page)).run?.day).toBe(1);
 }
 
-test("first player observes hidden worlds and skips focus safely", async ({ page }) => {
+test("legacy detailed view retains first-run guidance and safe focus skip", async ({ page }) => {
   await page.goto("/?debug=1");
   await expect(page.locator(".hero")).toContainText("救回三个世界");
   await expect(page.locator(".progression-panel")).toContainText("世界碎片");
