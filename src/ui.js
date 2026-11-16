@@ -466,27 +466,81 @@ function quickStartHtml(){
    '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看全部世界</button>'+
    '</section>';
 }
+
+function worldOverviewHtml(w) {
+ const info=Engine.info(run,w);
+ const risk=w.status!=="running"?worldStatus(w):w.d>=75?"高危 · 尽快关注":w.d>=50?"风险上升":"持续推进";
+ return '<article class="world-brief world-'+esc(w.id)+'" data-world-overview="'+esc(w.id)+'">'+
+ '<div class="brief-scene" aria-hidden="true"></div>'+
+ '<div class="brief-head"><div><span class="eyebrow">世界 '+(w.id==="lingzai"?"01":w.id==="zombie"?"02":"03")+'</span>'+
+ '<h3>'+esc(w.name)+'</h3></div><span class="pill '+pill(w.status)+'">'+risk+'</span></div>'+
+ '<div class="brief-progress"><div class="bar-head"><span>救援准备</span><b>'+n(w.p)+'%</b></div>'+
+ '<div class="progress-track"><div class="progress-fill p" style="width:'+Math.max(0,Math.min(100,w.p))+'%"></div></div>'+
+ '<div class="bar-head"><span>危机压力</span><b>'+n(w.d)+'%</b></div>'+
+ '<div class="progress-track"><div class="progress-fill d" style="width:'+Math.max(0,Math.min(100,w.d))+'%"></div></div></div>'+
+ '<p class="brief-activity">今天：'+esc(w.action)+'</p>'+
+ '<p class="brief-goal">当前目标：'+esc(w.status==="running"?info.goal:worldStatus(w))+'</p>'+
+ '<details class="world-fold"><summary>展开策略、世界档案与防线记录</summary>'+worldHtml(w)+'</details></article>';
+}
+function decisionQueueHtml() {
+ const pending=run.worlds.filter(w=>w.status==="running"&&(w.pendingEvent?.state==="active"||w.build?.pending));
+ const entries=pending.flatMap(w=>[
+ ...(w.pendingEvent?.state==="active"?[eventHtml(w)]:[]),
+ ...(w.build?.pending?[buildHtml(w)]:[])
+ ]);
+ return '<section class="decision-board" aria-label="当前需要处理的事情" data-decision-board>'+
+ '<div class="section-banner"><div><span class="eyebrow">营地告示板</span><h2>现在需要留意</h2></div>'+
+ '<span class="section-hint">'+(entries.length?entries.length+' 项可主动处理':'暂无必须处理的选择')+'</span></div>'+
+ (entries.length?entries.join(''):'<div class="panel no-decisions"><b>分身正在自主行动</b>'+
+ '<p>无需每天手动操作。可以继续模拟，展开世界档案调整策略，或前往「调度」提供跨界援助。</p></div>')+
+ crisisHtml()+'</section>';
+}
+function partyHtml() {
+ return '<div class="stack party-page"><div class="section-banner"><div><span class="eyebrow">远征队伍</span><h2>分身与防线</h2></div></div>'+
+ '<section class="panel"><p class="muted">各世界分身独立成长，自动搜集物资与战斗。战技随行动觉醒，无需手动攻击。</p></section>'+
+ run.worlds.map(w=>{
+ const info=Engine.info(run,w);
+ const powers=[...(w.build?.attack||[]),...(w.build?.support||[])];
+ return '<section class="panel party-card world-'+esc(w.id)+'" data-party-world="'+esc(w.id)+'">'+
+ '<div class="party-head"><span class="party-avatar" aria-hidden="true"></span><div>'+
+ '<h3>'+esc(w.name)+' · Lv'+w.level+'</h3><p class="muted">'+esc(info.stage)+' · '+worldStatus(w)+'</p></div></div>'+
+ '<p class="party-equipment"><b>已装备战技</b>　'+(powers.length?
+ powers.map(p=>esc(p.name)+' Lv'+p.lv).join(' / '):'尚未觉醒')+'</p>'+
+ (w.build?.evolved?'<p class="pill good">已进化：'+esc(w.build.evolutionName)+'</p>':'')+
+ (run.waves&&w.lastCombat?combatHtml(w.lastCombat):'<p class="hint">暂无防线记录，分身会自主应战。</p>')+
+ '</section>';
+ }).join('')+'</div>';
+}
+
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
- const banner = sessionBanner();
+ const banner=sessionBanner();
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
-  const content=tab==="log"?statsHtml()+logsHtml():
+  const content=tab==="log"?statsHtml()+logsHtml():tab==="party"?partyHtml():
    '<section class="panel result"><h2>本轮救援行动已结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
    '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
-   statsHtml()+run.worlds.map(worldHtml).join("");
+   statsHtml()+run.worlds.map(worldOverviewHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
  const focus=inQuickStart();
- app.innerHTML=banner+controls()+(tab==="world"?'<div class="stack game-content"><div class="section-banner"><div><span class="eyebrow">WORLD STATUS</span><h2>'+(focus?'灵脉救援入门':'平行世界')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
-  (focus?quickStartHtml():(run.onboardingFocus&&run.day===9?'<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">双世界视图已经解锁。你可以继续观察，或使用灵魂联结提供支援。</p></section>':'')+crisisHtml())+
-  (focus?worldHtml(run.worlds[0]):run.worlds.map(worldHtml).join(""))+
-  (focus?'':interventionHtml(2))+'</div>':tab==="soul"?soulHtml():statsHtml()+logsHtml())+footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
+ const worlds=focus?[run.worlds[0]]:run.worlds;
+ app.innerHTML=banner+controls()+
+ (tab==="world"?'<main class="stack game-content">'+
+ (focus?quickStartHtml():(run.onboardingFocus&&run.day===9?
+  '<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">现在可以查看所有世界，或使用「调度」提供支援。</p></section>':'')+decisionQueueHtml())+
+ '<section class="world-map" aria-label="世界总览"><div class="section-banner"><div><span class="eyebrow">三界地图</span><h2>'+(focus?'第一站 · 灵脉救援':'世界总览')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
+ worlds.map(worldOverviewHtml).join('')+'</section></main>':
+ tab==="soul"?soulHtml():tab==="party"?partyHtml():statsHtml()+logsHtml())+
+ footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
-function footer(){if(inQuickStart())return "";return '<nav class="footer-nav" aria-label="主要导航">'+
- '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">◇</span><span>灾变世界</span></button>'+
- '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">✧</span><span>灵魂联结</span></button>'+
- '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>战报图鉴</span></button></nav>';}
+function footer(){
+ return '<nav class="footer-nav" aria-label="主要导航">'+
+ '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">⌂</span><span>营地</span></button>'+
+ '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">↔</span><span>调度</span></button>'+
+ '<button data-action="tab" data-tab="party" class="'+(tab==="party"?"active":"")+'"'+(tab==="party"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">♜</span><span>队伍</span></button>'+
+ '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>手记</span></button></nav>';
+}
 async function execute(type,args){
  if(!session.isOwner || commandBusy || saveError || !run) return;
  commandBusy=true;
