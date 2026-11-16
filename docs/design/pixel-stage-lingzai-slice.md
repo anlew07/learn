@@ -41,7 +41,7 @@
 - 浏览器截图：`e2e/living-world-scene.pw.js` 在一张真实 Canvas 上绘制三种**隔离的固定状态样例**（stable / critical / restored），验证像素结果不同并保存截图。**这些是受控状态样例，不是宣称已经有真人游玩达到这些状态的录像。**
 
 **用户新增“事件切换幸存者式战斗地图”想法**已另行归档在设计 PR #50 的
-[`docs/product/02-event-combat-view-modes-proposal.md`](../../docs/product/02-event-combat-view-modes-proposal.md)。
+[`docs/product/02-event-combat-view-modes-proposal.md`](https://github.com/anlew07/learn/blob/design/fixed-hud-reference-20261116/docs/product/02-event-combat-view-modes-proposal.md)。
 其三种观察/跳过方式和奖励选择全部是**未来候选设计**，本轮没有增加新战斗、掉落或操作指令。
 
 ## 必须验证
