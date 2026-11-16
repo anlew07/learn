@@ -1,0 +1,103 @@
+/* Shared stone-and-parchment pixel grammar for the active game stage.
+   Keep the palette and border primitives here; world variants override accents only. */
+.stage-game {
+  --px-ink: #111b21;
+  --px-deep: #202b2d;
+  --px-panel: #343b36;
+  --px-raised: #4d5548;
+  --px-edge: #9b9277;
+  --px-light: #d2be90;
+  --px-paper: #f3e8cc;
+  --px-success: #8fbf91;
+  --px-warning: #e3b46e;
+  --px-danger: #ce8374;
+  --px-accent: #92c8b1;
+  --px-step: 2px;
+  color: var(--px-paper);
+  background: var(--px-ink);
+  border-inline-color: var(--px-edge);
+  box-shadow: inset 3px 0 var(--px-deep), inset -3px 0 var(--px-deep);
+}
+.stage-game:has(.stage-worlds button.active[data-world="zombie"]) { --px-accent: #d2a76b; }
+.stage-game:has(.stage-worlds button.active[data-world="beast"]) { --px-accent: #d9a1a0; }
+.stage-top, .stage-worlds, .stage-bars, .stage-actions {
+  background: var(--px-deep);
+  border-color: var(--px-edge);
+}
+.stage-counters {
+  background: var(--px-panel);
+  border-color: var(--px-edge);
+  box-shadow: inset 0 2px var(--px-ink);
+}
+.stage-game button, .stage-game select, .stage-speed {
+  border: 2px solid var(--px-edge);
+  border-radius: 0;
+  background: var(--px-panel);
+  color: var(--px-paper);
+  box-shadow: inset 2px 2px 0 #707866, inset -2px -2px 0 var(--px-ink), 0 2px 0 var(--px-ink);
+  text-shadow: 1px 1px var(--px-ink);
+  transition: none;
+}
+.stage-game button:active:not(:disabled) {
+  box-shadow: inset 2px 2px 0 var(--px-ink);
+  transform: translateY(1px);
+}
+.stage-game button:disabled { opacity: .55; filter: grayscale(.35); }
+.stage-worlds button {
+  background: #333f3b;
+  border-color: #727d70;
+  box-shadow: inset 2px 2px #576b5c, inset -2px -2px #182622;
+}
+.stage-worlds button.active {
+  background: #59684f;
+  border-color: var(--px-light);
+  box-shadow: inset 2px 2px #82906a, inset -2px -2px #293529, 0 2px var(--px-ink);
+}
+.stage-window { border-color: var(--px-edge); background: #243a3e; }
+.stage-caption, .stage-action-line, .stage-sheet, .stage-toast {
+  border: 2px solid var(--px-light);
+  background: var(--px-deep);
+  box-shadow: inset 0 0 0 2px var(--px-ink), 0 3px 0 var(--px-ink);
+}
+.stage-caption {
+  border-color: var(--px-edge);
+  background: rgba(26, 34, 31, .94);
+  box-shadow: inset 0 0 0 2px #3a463d;
+}
+.stage-action-line { background: rgba(24, 31, 29, .94); }
+.stage-bars progress {
+  border: 2px solid var(--px-ink);
+  box-shadow: 0 0 0 1px var(--px-edge);
+  background: var(--px-ink);
+}
+.stage-actions .primary {
+  background: #8da975;
+  border-color: #e2d7a5;
+  color: #16251b;
+  text-shadow: none;
+  box-shadow: inset 2px 2px #bfd5a2, inset -2px -2px #4b6347, 0 2px var(--px-ink);
+}
+.stage-actions .has-event {
+  background: #956347;
+  border-color: #e3bc7e;
+}
+.stage-sheet { background: #2a342e; }
+.stage-sheet-head {
+  background: var(--px-raised);
+  border-bottom: 3px solid var(--px-light);
+  color: var(--px-paper);
+}
+.stage-sheet-body .panel, .stage-sheet-body .world, .stage-sheet-body .event {
+  border: 2px solid var(--px-edge);
+  border-radius: 0;
+  box-shadow: inset 2px 2px #535a4c, inset -2px -2px var(--px-ink);
+}
+.stage-sheet-body h2, .stage-sheet-body h3 { color: var(--px-paper); }
+.stage-game button:focus-visible, .stage-game select:focus-visible {
+  outline: 3px solid var(--px-warning);
+  outline-offset: 1px;
+}
+@media (prefers-contrast: more) {
+  .stage-game { --px-edge: #e4d7b9; --px-paper: #fff6db; }
+  .stage-caption, .stage-action-line { background: #111b19; }
+}
