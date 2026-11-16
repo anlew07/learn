@@ -541,7 +541,7 @@ function render(){
  (focus?quickStartHtml()+decisionQueueHtml(worlds):(run.onboardingFocus&&run.day===9?
   '<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">现在可以查看所有世界，或使用「调度」提供支援。</p></section>':'')+decisionQueueHtml())+
  '<section class="world-map" aria-label="世界总览"><div class="section-banner"><div><span class="eyebrow">三界地图</span><h2>'+(focus?'第一站 · 灵脉救援':'世界总览')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
- worlds.map(worldOverviewHtml).join('')+'</section></main>':
+ worlds.map(worldOverviewHtml).join('')+'</section>'+interventionHtml(2)+'</main>':
  tab==="soul"?soulHtml():tab==="party"?partyHtml():statsHtml()+logsHtml())+
  footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
