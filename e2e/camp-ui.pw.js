@@ -39,11 +39,15 @@ for (const width of [320, 375, 390, 430]) {
           .map((node) => node.outerHTML.slice(0, 120)),
         missionTop: document.querySelector("[data-rescue-board]").getBoundingClientRect().top,
         worldsTop: document.querySelector(".world-map").getBoundingClientRect().top,
+        navRows: [...document.querySelectorAll(".footer-nav button")].map((node) =>
+          Math.round(node.getBoundingClientRect().top),
+        ),
       };
     });
     expect(audit.documentWidth).toBeLessThanOrEqual(audit.viewportWidth + 1);
     expect(audit.smallTargets).toEqual([]);
     expect(audit.missionTop).toBeLessThan(audit.worldsTop);
+    expect(new Set(audit.navRows).size).toBe(1);
 
     await page.screenshot({
       path: `${captures}/camp-${width}.png`,
@@ -53,6 +57,9 @@ for (const width of [320, 375, 390, 430]) {
 
     await page.locator('button[data-tab="party"]').click();
     await expect(page.locator("[data-party-world]")).toHaveCount(2);
+    await expect(page.locator(".run-dashboard")).toHaveClass(/run-dashboard-compact/);
+    await expect(page.locator(".run-dashboard .metrics")).toBeHidden();
+    expect((await page.locator("[data-party-world]").first().boundingBox()).y).toBeLessThan(600);
     if (width === 390) {
       await page.screenshot({
         path: captures + "/party-390.png",
