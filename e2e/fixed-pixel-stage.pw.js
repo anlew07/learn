@@ -35,7 +35,12 @@ test("new players see a fixed pixel viewport", async ({ page }) => {
     expect(dimensions.height, "vertical overflow").toBeLessThanOrEqual(height + 1);
     expect(dimensions.stageHeight, "full-height HUD").toBeGreaterThan(400);
     await expect(page.locator('.stage-actions [data-panel="strategy"]')).toBeVisible();
+    if (width === 320 && height === 568) {
+      await page.screenshot({ path: "test-results/camp-ui/pixel-stage-320.png" });
+    }
   }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "test-results/camp-ui/pixel-stage-390.png" });
 });
 
 test("world selection and drawers never advance the game", async ({ page }) => {
