@@ -1,14 +1,13 @@
 
 import { paintWorldSceneDetails } from "./world-scene-details.js";
-import atlasUrl from "../assets/tiny-dungeon/tiny-dungeon.png";
-import heroUrl from "../assets/tiny-dungeon/hero.png";
-import foeUrl from "../assets/tiny-dungeon/monster.png";
-import allyUrl from "../assets/tiny-dungeon/npc.png";
-import chestUrl from "../assets/tiny-dungeon/chest.png";
+import heroUrl from "../assets/original/clone-cultivator.svg";
+import foeUrl from "../assets/original/rift-beast.svg";
+import allyUrl from "../assets/original/rescue-scout.svg";
+import chestUrl from "../assets/original/supply-chest.svg";
 
 const WIDTH = 320;
 const HEIGHT = 208;
-const sources = { atlas: atlasUrl, hero: heroUrl, foe: foeUrl, ally: allyUrl, chest: chestUrl };
+const sources = { hero: heroUrl, foe: foeUrl, ally: allyUrl, chest: chestUrl };
 const images = new Map();
 let animationId = 0;
 
@@ -47,10 +46,16 @@ function sprite(ctx, name, x, y, w = 16, h = 16, repaint = () => {}) {
     ctx.drawImage(image, x | 0, y | 0, w, h);
   }
 }
-function atlas(ctx, col, row, x, y, scale = 1, repaint = () => {}) {
-  const image = getImage("atlas", repaint);
-  if (image?.complete && image.naturalWidth) {
-    ctx.drawImage(image, col * 16, row * 16, 16, 16, x | 0, y | 0, 16 * scale, 16 * scale);
+function stoneBrick(ctx, x, y, w = 16, h = 14) {
+  // Original hand-authored stone textures: no asset packs and no RNG.
+  const base = noise(x, y, 7) > .5 ? "#879090" : "#717f83";
+  rect(ctx, "#29383f", x - 1, y - 1, w + 2, h + 2);
+  rect(ctx, base, x, y, w, h);
+  rect(ctx, "#b9bdad", x + 2, y + 2, Math.max(1, w - 6), 2);
+  rect(ctx, "#586769", x + w - 4, y + 4, 3, h - 5);
+  if (w >= 14) {
+    rect(ctx, "#465760", x + Math.floor(w / 2), y + 6, 2, 5);
+    rect(ctx, "#60716c", x + Math.floor(w / 2) - 2, y + 9, 5, 2);
   }
 }
 function sparkle(ctx, x, y, color) {
@@ -83,17 +88,17 @@ function landscape(ctx, palette) {
   rect(ctx, palette.ground, 0, 121, WIDTH, 87);
   trees(ctx, palette);
 }
-function drawRuins(ctx, palette, repaint) {
-  // Off-centre stone gate with cracked lintel and masonry from Kenney CC0.
+function drawRuins(ctx, palette) {
+  // Broken stone gate, hand-painted pixel masonry.
   rect(ctx, "#111a27", 215, 82, 66, 55);
   rect(ctx, palette.wallShade, 216, 77, 18, 59);
   rect(ctx, palette.wallShade, 267, 77, 18, 59);
   rect(ctx, palette.wallShade, 211, 68, 78, 13);
   for (let n = 0; n < 4; n++) {
-    atlas(ctx, 1, 0, 214, 73 + n * 14, 1, repaint);
-    atlas(ctx, 1, 0, 267, 73 + n * 14, 1, repaint);
+    stoneBrick(ctx, 214, 73 + n * 14);
+    stoneBrick(ctx, 267, 73 + n * 14);
   }
-  for (let n = 0; n < 5; n++) atlas(ctx, 1, 0, 208 + n * 16, 60, 1, repaint);
+  for (let n = 0; n < 5; n++) stoneBrick(ctx, 208 + n * 16, 60);
   rect(ctx, "#273744", 236, 77, 29, 55);
   points(ctx, "#21445a", [[237, 125], [237, 91], [251, 79], [263, 91], [263, 125]]);
   rect(ctx, palette.rift, 249, 88, 3, 31);
@@ -127,8 +132,11 @@ function ground(ctx, palette, repaint) {
     rect(ctx, "#728b87", x + 2, y - 4, 11, 5);
     rect(ctx, "#a2aca3", x + 4, y - 4, 4, 1);
   }
-  atlas(ctx, 2, 0, 17, 152, 1, repaint);
-  sprite(ctx, "chest", 42, 170, 20, 20, repaint);
+  // Visible, recognizable supply crate instead of a tiny generic icon.
+  rect(ctx, "#3b3738", 20, 165, 20, 5);
+  rect(ctx, "#846f53", 24, 159, 13, 8);
+  rect(ctx, "#b9a27b", 25, 160, 11, 2);
+  sprite(ctx, "chest", 39, 168, 33, 29, repaint);
 }
 function drawCamp(ctx, frame) {
   // Timber frame, canvas tent, torch and fire embers.
@@ -175,7 +183,7 @@ function environment(ctx, view, frame, repaint) {
     wallShade: "#727d7e", rift: "#66eacb",
   };
   landscape(ctx, palette);
-  drawRuins(ctx, palette, repaint);
+  drawRuins(ctx, palette);
   ground(ctx, palette, repaint);
   drawCamp(ctx, frame);
   if (dark) {
@@ -192,21 +200,22 @@ function characters(ctx, view, frame, repaint) {
   const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
   const activity = scene?.activity;
   const heroX =
-    activity === "gathering" ? 57 : activity === "rescuing" ? 198 :
-    activity === "exploring" ? 166 : activity === "defending" ? 152 : 125;
-  const heroY = activity === "rescuing" ? 116 : 130;
-  rect(ctx, "#1c3034", heroX + 1, heroY + 32, 32, 5);
-  sprite(ctx, "hero", heroX, heroY - bob, 34, 34, repaint);
-  // The same hero visually changes location with its actual autonomous action.
-  rect(ctx, "#d4d4b8", heroX + 31, heroY + 10 - bob, 2, 18);
-  rect(ctx, "#74c8c5", heroX + 31, heroY + 5 - bob, 3, 5);
-  if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 30, heroY - 3, "#79e7c5");
-  if ((scene?.growthTier || 0) >= 2) sparkle(ctx, heroX + 2, heroY - 6, "#e8c888");
-  sprite(ctx, "ally", scene?.phase === "restored" ? 103 : 91, 135 + bob, 21, 22, repaint);
+    activity === "gathering" ? 64 : activity === "rescuing" ? 198 :
+    activity === "exploring" ? 156 : activity === "defending" ? 148 : 123;
+  const heroY = activity === "rescuing" ? 103 : activity === "gathering" ? 121 : 111;
+  rect(ctx, "#1c3034", heroX + 5, heroY + 57, 40, 4);
+  sprite(ctx, "hero", heroX, heroY - bob, 46, 62, repaint);
+  // One readable character with actual sword and cloak replaces a stretched tiny sprite.
+  if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 38, heroY + 3, "#79e7c5");
+  if ((scene?.growthTier || 0) >= 2) sparkle(ctx, heroX + 9, heroY - 5, "#e8c888");
+  const allyX = scene?.phase === "restored" ? 105 : 91;
+  rect(ctx, "#202d32", allyX + 3, 169, 26, 3);
+  sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint);
   if (scene?.phase !== "restored" && (scene?.activeThreat || view.danger > 45)) {
-    sprite(ctx, "foe", 290, 139 + (frame % 31 > 15 ? 1 : 0), 28, 28, repaint);
-    rect(ctx, "#ca7779", 288, 133, 28, 3);
-    rect(ctx, "#ebae79", 288, 133, 28 * Math.min(1, view.danger / 100), 3);
+    rect(ctx, "#273139", 275, 177, 41, 4);
+    sprite(ctx, "foe", 268, 125 + (frame % 31 > 15 ? 1 : 0), 48, 53, repaint);
+    rect(ctx, "#492b37", 272, 120, 43, 5);
+    rect(ctx, "#d28a7b", 274, 121, 39 * Math.min(1, view.danger / 100), 3);
   }
   if (scene?.hasEvent) sparkle(ctx, 263, 89 + bob, "#f5d392");
   if (scene?.recentCombat) sparkle(ctx, 176, 120 - bob, "#f3e29a");
