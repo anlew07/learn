@@ -63,9 +63,13 @@ describe("living world scene semantics", () => {
     expect(getWorldSceneState(world, 12).phase).toBe("warning");
     world.d = 89;
     expect(getWorldSceneState(world, 12)).toMatchObject({
-      phase: "critical", summary: "高危 · 请关注局势",
+      phase: "critical", summary: "重大事件 · 等待决策",
       activeThreat: true, hasEvent: true,
     });
+    world.pendingEvent = null;
+    expect(getWorldSceneState(world, 12).summary).toBe("高危 · 请关注局势");
+    world.build.pending = { options: ["a"] };
+    expect(getWorldSceneState(world, 12).summary).toBe("战技机会 · 可以选择");
     world.threat.status = "awaiting_alpha";
     expect(getWorldSceneState(world, 12).activeThreat).toBe(true);
   });
