@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 
+// Keep the long browser acceptance flow readable without formatter reflow.
+// prettier-ignore
 test("three worlds use distinct pixel scenes", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
