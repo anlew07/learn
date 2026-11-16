@@ -144,6 +144,7 @@ test("first-run focus guidance is visible on the default fixed game screen", asy
     (element) => element.scrollHeight <= element.clientHeight + 1,
   );
   expect(hintFits).toBe(true);
+  await page.screenshot({ path: "test-results/camp-ui/pixel-stage-first-run-320.png" });
   await expect(page.locator('.stage-worlds [data-world="lingzai"]')).toBeVisible();
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
 
