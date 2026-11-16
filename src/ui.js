@@ -1,5 +1,6 @@
 import "./style.css"; import "./art-direction.css";
 import Engine from "./engine.js";
+import { getOpeningBrief, getWorldGuidance, getTutorialGuidance, getOutcomeGuidance } from "./presentation/player-guidance.js";
 import { ATTACK_PATTERNS } from "./systems/attack-patterns.js";
 import { counteredEliteWaveLabels } from "./systems/survivor-waves.js";
 import { cautiousAftermathSummary } from "./systems/clue-aftermath.js";
@@ -17,6 +18,8 @@ let sessionStatus = "starting";
 let commandBusy = false;
 let aidSourceId = null;
 let aidTargetId = null;
+const tutorialSeen = new Set();
+let tutorialSkipped = false;
 const session = createExclusiveSession({
   onLost() {
     sessionStatus = "readonly";
@@ -433,13 +436,15 @@ function profileArchiveHtml(){
  ).join('')+'</div></details></section>';
 }
 function homeHtml(){
+ const opening = getOpeningBrief(profile);
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
  '<div class="micro">末日营地 · 救援手记</div></div></div><span class="pill">开发中 · V0.2</span></header>'+
  '<section class="hero camp-home" aria-label="游戏开始">'+
  '<span class="eyebrow">三个世界 · 同一个守望者</span>'+
  (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
  '<h1>守住营火，<br><em>救回三个世界。</em></h1>'+
- '<p class="home-story">你是连接不同世界的守望者。修仙异变、废土危机与兽潮围城同时发生，分身们正在等待救援。</p>'+
+ '<p class="home-story">你是连接不同世界的守望者。修仙异变、废土危机与兽潮围城同时发生，分身们正在等待救援。</p>'+ 
+ '<p class="hint">'+esc(opening.automatic)+' '+esc(opening.playerRole)+'</p>'+
  '<div class="home-scene" role="img" aria-label="像素营地和通往三个世界的传送门">'+
  '<span>营地记录 · 第 '+(profile.runCount+1)+' 次远征</span></div>'+
  '<div class="hero-actions">'+
@@ -480,6 +485,7 @@ function quickStartHtml(){
 
 function worldOverviewHtml(w) {
  const info=Engine.info(run,w);
+ const guide=getWorldGuidance(run,w,Engine);
  const risk=w.status!=="running"?worldStatus(w):w.d>=75?"高危 · 尽快关注":w.d>=50?"风险上升":"持续推进";
  return '<article class="world-brief world-'+esc(w.id)+'" data-world-overview="'+esc(w.id)+'">'+
  '<div class="brief-scene" aria-hidden="true"></div>'+
@@ -490,9 +496,38 @@ function worldOverviewHtml(w) {
  '<div class="bar-head"><span>危机压力</span><b>'+n(w.d)+'%</b></div>'+
  '<div class="progress-track"><div class="progress-fill d" style="width:'+Math.max(0,Math.min(100,w.d))+'%"></div></div></div>'+
  '<p class="brief-activity">今天：'+esc(w.action)+'</p>'+
- '<p class="brief-goal">当前目标：'+esc(w.status==="running"?info.goal:worldStatus(w))+'</p>'+
+ '<p class="brief-goal">当前目标：'+esc(w.status==="running"?info.goal:worldStatus(w))+'</p>'+ 
+ '<p class="brief-advice hint">'+esc(guide?.headline||'')+'</p>'+
  '<details class="world-fold"'+(new URLSearchParams(location.search).has("debug")?' open':'')+'><summary>展开策略、世界档案与防线记录</summary>'+worldHtml(w)+'</details></article>';
 }
+
+function playerGuideHtml() {
+ const tutorial = getTutorialGuidance(run, { seenIds:[...tutorialSeen], skipped:tutorialSkipped });
+ const current = tutorial.current;
+ return '<section class="panel player-guide" aria-label="玩法说明与引导" data-player-guidance>'+
+  '<div class="row-between"><strong>生存手册</strong><span class="pill">随时可查看</span></div>'+
+  (current ? '<div class="guide-tip" data-guide-tip><b>'+esc(current.title)+'</b><p>'+esc(current.text)+'</p>'+
+   '<p class="hint">'+esc(current.actionHint)+'</p><div class="event-actions">'+
+   '<button data-action="guide-seen">明白了</button><button data-action="guide-skip">暂时跳过</button></div></div>' :
+   '<p class="hint">当前没有需要提示的新内容。你仍可查看全部玩法说明。</p>')+
+  '<details class="guide-reference"><summary>查看全部玩法说明</summary>'+
+  tutorial.steps.map(step => '<section class="hint"><b>'+esc(step.title)+'</b><p>'+esc(step.text)+'</p></section>').join('')+
+  '</details>'+
+  (tutorialSkipped ? '<button data-action="guide-resume">恢复教学提示</button>' : '')+
+  '</section>';
+}
+function outcomeGuidanceHtml() {
+ const outcome=getOutcomeGuidance(run,profile,Engine);
+ if(!outcome)return '';
+ return '<section class="panel outcome-guidance" aria-label="结算解释" data-outcome-guidance><h2>本局复盘 · 为什么会这样</h2>'+
+  '<p class="hint">'+esc(outcome.summary)+'</p>'+
+  outcome.worlds.map(w => '<section class="outcome-world"><h3>'+esc(w.name)+' · '+esc(w.result)+'</h3>'+
+   '<p>'+esc(w.mainFactor)+'</p>'+
+   w.observedGaps.map(g=>'<p class="hint">'+esc(g)+'</p>').join('')+
+   '<p><b>下一局建议：</b>'+esc(w.nextTry[0]||'复盘本局行动记录。')+'</p></section>').join('')+
+  '</section>';
+}
+
 function decisionQueueHtml(worlds=run.worlds) {
  const pending=worlds.filter(w=>w.status==="running"&&(w.pendingEvent?.state==="active"||w.build?.pending));
  const entries=pending.flatMap(w=>[
@@ -531,15 +566,15 @@ function render(){
   const content=tab==="log"?statsHtml()+logsHtml():tab==="party"?partyHtml():
    '<section class="panel result"><h2>本轮救援行动已结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
    '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
-   statsHtml()+run.worlds.map(worldOverviewHtml).join("");
+   outcomeGuidanceHtml()+statsHtml()+run.worlds.map(worldOverviewHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
  const focus=inQuickStart();
  const worlds=focus?[run.worlds[0]]:run.worlds;
  app.innerHTML=banner+controls()+
  (tab==="world"?'<main class="stack game-content">'+
- (focus?quickStartHtml()+decisionQueueHtml(worlds):(run.onboardingFocus&&run.day===9?
-  '<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">现在可以查看所有世界，或使用「调度」提供支援。</p></section>':'')+decisionQueueHtml())+
+ (focus?quickStartHtml()+playerGuideHtml()+decisionQueueHtml(worlds):(run.onboardingFocus&&run.day===9?
+  '<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">现在可以查看所有世界，或使用「调度」提供支援。</p></section>':'')+playerGuideHtml()+decisionQueueHtml())+
  '<section class="world-map" aria-label="世界总览"><div class="section-banner"><div><span class="eyebrow">三界地图</span><h2>'+(focus?'第一站 · 灵脉救援':'世界总览')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
  worlds.map(worldOverviewHtml).join('')+'</section>'+interventionHtml(2)+'</main>':
  tab==="soul"?soulHtml():tab==="party"?partyHtml():statsHtml()+logsHtml())+
@@ -580,6 +615,7 @@ function reward(){
 function confirmNew(mode="full"){
  if(!session.isOwner || commandBusy || saveError)return false;
  if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
+ tutorialSeen.clear();tutorialSkipped=false;
  profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
@@ -592,6 +628,9 @@ function handleClick(target){
  if(action==="retry-session"){claimSession();return;}
  if(action==="retry-save"){if(session.isOwner&&!commandBusy)queueSave();return;}
  if(action==="home"){tab="home";render();return;}
+ if(action==="guide-seen"&&run){const current=getTutorialGuidance(run,{seenIds:[...tutorialSeen],skipped:tutorialSkipped}).current;if(current)tutorialSeen.add(current.id);render();return;}
+ if(action==="guide-skip"){tutorialSkipped=true;render();return;}
+ if(action==="guide-resume"){tutorialSkipped=false;render();return;}
  if(action==="continue"){tab="world";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
  if(action==="replay-wave"){
