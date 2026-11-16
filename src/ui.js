@@ -596,6 +596,7 @@ function stagePanelHtml(view) {
   '<button data-action="scene-panel" data-panel="all">全部世界档案</button>'+
   '<button data-action="scene-classic">传统详细视图</button>'+
   '<button data-action="open-settings">设置与本机数据</button>'+
+  '<button data-action="home">返回首页</button>'+
   '<p class="hint">存档仅在当前浏览器。设置支持字号调整，不提供云同步。</p>';
  return '<div class="stage-modal" role="presentation" data-stage-modal>'+
   '<button class="stage-shade" aria-label="关闭面板" data-action="scene-close"></button>'+
