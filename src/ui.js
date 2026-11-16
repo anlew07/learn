@@ -1,4 +1,7 @@
 import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; import "./pixel-visual-language.css";
+import "./support-pages.css";
+import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
+applyTextSize();
 import Engine from "./engine.js";
 import { getStageView } from "./presentation/stage-view.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
@@ -16,7 +19,7 @@ const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 const isDebug = new URLSearchParams(location.search).has("debug");
 let run = null, profile = {runCount:0,shards:0}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
-let sceneWorldId = "lingzai", scenePanel = "";
+let sceneWorldId = "lingzai", scenePanel = "", infoPage = "";
 let saveError = false, restoreError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
@@ -443,6 +446,9 @@ function homeHtml(){
  const opening = getOpeningBrief(profile);
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
  '<div class="micro">末日营地 · 救援手记</div></div></div><span class="pill">开发中 · V0.2</span></header>'+
+ '<nav class="home-utility" aria-label="游戏帮助与设置">'+
+ '<button data-action="open-help">? 玩法帮助</button>'+
+ '<button data-action="open-settings">⚙ 设置与本机数据</button></nav>'+
  '<section class="hero camp-home" aria-label="游戏开始">'+
  '<span class="eyebrow">三个世界 · 同一个守望者</span>'+
  (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
@@ -589,7 +595,8 @@ function stagePanelHtml(view) {
   '<button data-action="scene-panel" data-panel="guide">玩法帮助</button>'+
   '<button data-action="scene-panel" data-panel="all">全部世界档案</button>'+
   '<button data-action="scene-classic">传统详细视图</button>'+
-  '<p class="hint">存档保存在当前浏览器。尚未加入云同步或独立设置系统。</p>';
+  '<button data-action="open-settings">设置与本机数据</button>'+
+  '<p class="hint">存档仅在当前浏览器。设置支持字号调整，不提供云同步。</p>';
  return '<div class="stage-modal" role="presentation" data-stage-modal>'+
   '<button class="stage-shade" aria-label="关闭面板" data-action="scene-close"></button>'+
   '<section class="stage-sheet" data-stage-panel="'+esc(scenePanel)+'" role="dialog" aria-modal="true" aria-label="'+
@@ -655,9 +662,16 @@ function sceneHtml() {
 
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
- app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene"));
- if (tab!=="scene" || !run?.active) stopPixelStage();
+ app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene" && !infoPage));
+ if (tab!=="scene" || !run?.active || infoPage) stopPixelStage();
  const banner=sessionBanner();
+ if(infoPage){
+  app.innerHTML=banner+supportPageHtml(infoPage,{
+   textSize:readTextSize(), hasRun:Boolean(run), readonly:!session.isOwner,
+   saveFailed:saveError,
+  })+persistenceBanner();
+  return;
+ }
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
   const content=tab==="log"?statsHtml()+logsHtml():tab==="party"?partyHtml():
@@ -745,6 +759,12 @@ function confirmNew(mode="full"){
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
+ if(action==="open-help"||action==="open-settings"){
+  infoPage=action==="open-help"?"help":"settings";
+  scenePanel="";render();return;
+ }
+ if(action==="support-back"){infoPage="";render();return;}
+ if(action==="text-size"){setTextSize(target.dataset.value);render();return;}
  if(action==="retry-session"){claimSession();return;}
  if(action==="retry-save"){if(session.isOwner&&!commandBusy)queueSave();return;}
  if(action==="scene-return"){tab="scene";scenePanel="";render();return;}
@@ -761,7 +781,7 @@ function handleClick(target){
  if(action==="guide-seen"&&run){const current=getTutorialGuidance(run,{seenIds:[...tutorialSeen],skipped:tutorialSkipped}).current;if(current)tutorialSeen.add(current.id);render();return;}
  if(action==="guide-skip"){tutorialSkipped=true;render();return;}
  if(action==="guide-resume"){tutorialSkipped=false;render();return;}
- if(action==="continue"){tab="world";render();return;}
+ if(action==="continue"){tab=isDebug?"world":"scene";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
  if(action==="replay-wave"){
    const arena=target.closest("[data-survivor-replay]")?.querySelector("[data-replay-arena]");
@@ -791,18 +811,22 @@ function handleClick(target){
    const selected=choices.find(item=>item.worldId===id)?.actions.find(item=>
      item.kind==="aid"&&item.sourceId===target.dataset.from&&item.mode===mode);
    if(!selected){render();return;}
-   aidSourceId=selected.sourceId;aidTargetId=id;tab="soul";render();return;
+   aidSourceId=selected.sourceId;aidTargetId=id;if(tab==="scene"){scenePanel="aid";}else{tab="soul";}render();return;
  }
  if(action==="crisis-fusion"){
    if(!Engine.previewFusion(run,id).available){render();return;}
-   tab="soul";render();return;
+   if(tab==="scene"){scenePanel="aid";}else{tab="soul";}render();return;
  }
  if(action==="crisis-event"){
    if(!Engine.previewMajorEvent(run,Engine.byId(run,id))){render();return;}
-   tab="world";render();
-   document.querySelector('.event[data-world="'+id+'"]')?.scrollIntoView({
-     behavior:"smooth",block:"center"
-   });
+   if(tab==="scene"){
+    sceneWorldId=id;scenePanel="event";render();
+   }else{
+    tab="world";render();
+    document.querySelector('.event[data-world="'+id+'"]')?.scrollIntoView({
+      behavior:"smooth",block:"center"
+    });
+   }
    return;
  }
  if(action==="toggle"){run.paused=!run.paused;tickStarted=performance.now();queueSave();render();return;}
