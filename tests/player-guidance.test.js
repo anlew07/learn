@@ -13,6 +13,7 @@ import {
 
 describe("player guidance: first-time learning", () => {
   it("describes the real autonomous loop and delayed three-world unlock without claiming a villain", () => {
+    expect(getOpeningBrief({ runCount: 0 }).genre).toContain("多世界自动");
     const start = getPlayerGuidance(null, { runCount: 0 }, Engine);
     expect(start.opening.genre).toContain("多世界自动");
     expect(start.opening.automatic).toContain("自主");
