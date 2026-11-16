@@ -1,4 +1,7 @@
-import "./style.css"; import "./art-direction.css"; import "./stage-shell.css";
+import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; import "./pixel-visual-language.css";
+import "./support-pages.css";
+import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
+applyTextSize();
 import Engine from "./engine.js";
 import { getStageView } from "./presentation/stage-view.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
@@ -16,7 +19,7 @@ const TEMPOS = {1:20000,2:10000,4:5000};
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 const isDebug = new URLSearchParams(location.search).has("debug");
 let run = null, profile = {runCount:0,shards:0}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
-let sceneWorldId = "lingzai", scenePanel = "";
+let sceneWorldId = "lingzai", scenePanel = "", infoPage = "";
 let saveError = false, restoreError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
@@ -443,12 +446,16 @@ function homeHtml(){
  const opening = getOpeningBrief(profile);
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
  '<div class="micro">末日营地 · 救援手记</div></div></div><span class="pill">开发中 · V0.2</span></header>'+
+ '<nav class="home-utility" aria-label="游戏帮助与设置">'+
+ '<button data-action="open-help">? 玩法帮助</button>'+
+ '<button data-action="open-settings">⚙ 设置与本机数据</button></nav>'+
  '<section class="hero camp-home" aria-label="游戏开始">'+
  '<span class="eyebrow">三个世界 · 同一个守望者</span>'+
  (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
  '<h1>守住营火，<br><em>救回三个世界。</em></h1>'+
  '<p class="home-story">你是连接不同世界的守望者。修仙异变、废土危机与兽潮围城同时发生，分身们正在等待救援。</p>'+ 
  '<p class="hint">'+esc(opening.automatic)+' '+esc(opening.playerRole)+'</p>'+
+ (profile.runCount===0?'<p class="hint home-first-run">首局是两个世界同时演化；推荐新手先看灵灾，废土仍在行动。兽潮世界后续解锁。</p>':'')+
  '<div class="home-scene" role="img" aria-label="像素营地和通往三个世界的传送门">'+
  '<span>营地记录 · 第 '+(profile.runCount+1)+' 次远征</span></div>'+
  '<div class="hero-actions">'+
@@ -570,10 +577,14 @@ function stagePanelHtml(view) {
   team:"队伍与战技", report:"战斗记录", guide:"生存手册", all:"全部世界", menu:"更多功能" };
  let content = "";
  if (scenePanel === "strategy") content = worldHtml(selected);
- if (scenePanel === "event") content = (selected.pendingEvent?.state==="active" ? eventHtml(selected) : "") +
-  (selected.build?.pending ? buildHtml(selected) : "") +
-  (!(selected.pendingEvent?.state==="active" || selected.build?.pending) ?
-  '<p class="hint">当前没有待处理的关键选择，分身会继续自主行动。</p>' : "");
+ if (scenePanel === "event") {
+  const decisions = run.worlds.filter(w=>w.status==="running").flatMap(w=>[
+    ...(w.pendingEvent?.state==="active"?['<h3 class="stage-pending-world">'+esc(w.name)+'</h3>'+eventHtml(w)]:[]),
+    ...(w.build?.pending?[buildHtml(w)]:[]),
+  ]);
+  content = decisions.length?decisions.join(""):
+    '<p class="hint">当前没有待处理的关键选择，分身会继续自主行动。</p>';
+ }
  if (scenePanel === "aid") content = soulHtml();
  if (scenePanel === "team") content = partyHtml();
  if (scenePanel === "report") content = selected.lastCombat ?
@@ -585,10 +596,12 @@ function stagePanelHtml(view) {
   '<button data-action="scene-panel" data-panel="guide">玩法帮助</button>'+
   '<button data-action="scene-panel" data-panel="all">全部世界档案</button>'+
   '<button data-action="scene-classic">传统详细视图</button>'+
-  '<p class="hint">存档保存在当前浏览器。尚未加入云同步或独立设置系统。</p>';
+  '<button data-action="open-settings">设置与本机数据</button>'+
+  '<button data-action="home">返回首页</button>'+
+  '<p class="hint">存档仅在当前浏览器。设置支持字号调整，不提供云同步。</p>';
  return '<div class="stage-modal" role="presentation" data-stage-modal>'+
   '<button class="stage-shade" aria-label="关闭面板" data-action="scene-close"></button>'+
-  '<section class="stage-sheet" role="dialog" aria-modal="true" aria-label="'+
+  '<section class="stage-sheet" data-stage-panel="'+esc(scenePanel)+'" role="dialog" aria-modal="true" aria-label="'+
   esc(titles[scenePanel]||"详细信息")+'">'+
   '<div class="stage-sheet-head"><strong>'+esc(titles[scenePanel]||"详细信息")+
   '</strong><button data-action="scene-close" aria-label="关闭面板">✕</button></div>'+
@@ -599,7 +612,7 @@ function sceneHtml() {
  if (!view) return "";
  const canExplore = !inQuickStart();
  const visibleWorlds = canExplore ? view.worlds : view.worlds.filter(w=>w.id==="lingzai");
- const pending = view.hasEvent || view.hasBuild;
+ const pending = view.pendingCount > 0;
  return '<main class="stage-game" aria-label="固定游戏主屏" data-game-stage>'+
   '<header class="stage-top"><span class="stage-brand">同时穿越 <small>· 救援远征</small></span>'+
   '<span class="stage-day">第 '+view.day+' 天</span>'+
@@ -608,12 +621,13 @@ function sceneHtml() {
   '<span>获救 <b>'+view.saved+'/'+view.total+'</b></span>'+
   '<span>干预点 <b>'+view.ap+'</b></span>'+
   '<span>灵魂 <b>'+view.soul+'</b></span>'+
-  '<span class="stage-state">'+(view.paused?'Ⅱ 暂停':'▶ 进行中')+'</span></div>'+
+  '<span>'+esc(Engine.info(run,run.worlds.find(w=>w.id===view.worldId)).resourceName)+
+  ' <b>'+view.resource+'</b></span></div>'+
   '<nav class="stage-worlds" aria-label="选择世界">'+
   visibleWorlds.map(w =>
    '<button data-action="scene-world" data-world="'+esc(w.id)+'"'+
    (w.id===view.worldId?' aria-current="page" class="active"':'')+
-   '><b>'+esc(w.title)+'</b><span>'+ (w.event?'!':w.status==="saved"?'✓':w.status==="failed"?'×':'')+
+   '><b>'+esc(w.title)+'</b><span>'+ (w.event||w.build?'!':w.status==="saved"?'✓':w.status==="failed"?'×':'')+
    Math.round(w.danger)+'%</span></button>').join("")+
   (canExplore?'':'<button data-action="show-all-worlds">其他世界 ↗</button>')+
   '</nav>'+
@@ -637,7 +651,7 @@ function sceneHtml() {
   '</select></label>'+
   '<button data-action="scene-panel" data-panel="strategy">策略 / 档案</button>'+
   '<button data-action="scene-panel" data-panel="event"'+(pending?' class="has-event"':'')+'>'+
-  (pending?'! 待处理':'事件')+'</button>'+
+  (pending?'! 待处理 '+view.pendingCount:'事件')+'</button>'+
   '<button data-action="scene-panel" data-panel="aid">跨界援助</button>'+
   '<button data-action="scene-panel" data-panel="team">队伍</button>'+
   '<button data-action="scene-panel" data-panel="report">战报</button>'+
@@ -650,9 +664,16 @@ function sceneHtml() {
 
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
- app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene"));
- if (tab!=="scene" || !run?.active) stopPixelStage();
+ app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene" && !infoPage));
+ if (tab!=="scene" || !run?.active || infoPage) stopPixelStage();
  const banner=sessionBanner();
+ if(infoPage){
+  app.innerHTML=banner+supportPageHtml(infoPage,{
+   textSize:readTextSize(), hasRun:Boolean(run), readonly:!session.isOwner,
+   saveFailed:saveError,
+  })+persistenceBanner();
+  return;
+ }
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
   const content=tab==="log"?statsHtml()+logsHtml():tab==="party"?partyHtml():
@@ -662,7 +683,25 @@ function render(){
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
  if(tab==="scene"){
+  // The world continues evolving while a drawer is open. Keep its scroll position
+  // and the active action reachable instead of resetting the sheet each game day.
+  const oldSheet=app.querySelector(".stage-sheet");
+  const sameSheet=oldSheet?.dataset.stagePanel===scenePanel;
+  const oldScroll=sameSheet?app.querySelector(".stage-sheet-body")?.scrollTop??0:0;
+  const activeElement=oldSheet?.contains(document.activeElement)?document.activeElement:null;
+  const focusKey=sameSheet&&activeElement?.dataset.action?[
+    activeElement.dataset.action,activeElement.dataset.world,
+    activeElement.dataset.mode,activeElement.dataset.power,
+  ]:null;
   app.innerHTML=banner+sceneHtml()+persistenceBanner();
+  const sheet=app.querySelector(".stage-sheet");
+  if(sheet){
+   sheet.querySelector(".stage-sheet-body").scrollTop=oldScroll;
+   const matching=focusKey?[...sheet.querySelectorAll("[data-action]")].find(element=>
+     [element.dataset.action,element.dataset.world,element.dataset.mode,
+      element.dataset.power].every((value,index)=>value===focusKey[index])):null;
+   (matching||sheet.querySelector(".stage-sheet-head button"))?.focus({preventScroll:true});
+  }
   startPixelStage(app.querySelector("[data-stage-canvas]"),getStageView(run,sceneWorldId));
   return;
  }
@@ -722,18 +761,29 @@ function confirmNew(mode="full"){
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
+ if(action==="open-help"||action==="open-settings"){
+  infoPage=action==="open-help"?"help":"settings";
+  scenePanel="";render();return;
+ }
+ if(action==="support-back"){infoPage="";render();return;}
+ if(action==="text-size"){setTextSize(target.dataset.value);render();return;}
  if(action==="retry-session"){claimSession();return;}
  if(action==="retry-save"){if(session.isOwner&&!commandBusy)queueSave();return;}
  if(action==="scene-return"){tab="scene";scenePanel="";render();return;}
  if(action==="scene-classic"){tab="world";scenePanel="";render();return;}
  if(action==="scene-world"){if(run?.worlds.some(w=>w.id===id)&&!inQuickStart()){sceneWorldId=id;scenePanel="";render();}return;}
  if(action==="scene-panel"){scenePanel=target.dataset.panel||"";render();return;}
- if(action==="scene-close"){scenePanel="";render();return;}
+ if(action==="scene-close"){
+  const closingPanel=scenePanel;
+  scenePanel="";render();
+  app.querySelector('[data-action="scene-panel"][data-panel="'+closingPanel+'"]')?.focus({preventScroll:true});
+  return;
+ }
  if(action==="home"){scenePanel="";tab="home";render();return;}
  if(action==="guide-seen"&&run){const current=getTutorialGuidance(run,{seenIds:[...tutorialSeen],skipped:tutorialSkipped}).current;if(current)tutorialSeen.add(current.id);render();return;}
  if(action==="guide-skip"){tutorialSkipped=true;render();return;}
  if(action==="guide-resume"){tutorialSkipped=false;render();return;}
- if(action==="continue"){tab="world";render();return;}
+ if(action==="continue"){tab=isDebug?"world":"scene";render();return;}
  if(action==="tab"){tab=target.dataset.tab;render();return;}
  if(action==="replay-wave"){
    const arena=target.closest("[data-survivor-replay]")?.querySelector("[data-replay-arena]");
@@ -763,18 +813,22 @@ function handleClick(target){
    const selected=choices.find(item=>item.worldId===id)?.actions.find(item=>
      item.kind==="aid"&&item.sourceId===target.dataset.from&&item.mode===mode);
    if(!selected){render();return;}
-   aidSourceId=selected.sourceId;aidTargetId=id;tab="soul";render();return;
+   aidSourceId=selected.sourceId;aidTargetId=id;if(tab==="scene"){scenePanel="aid";}else{tab="soul";}render();return;
  }
  if(action==="crisis-fusion"){
    if(!Engine.previewFusion(run,id).available){render();return;}
-   tab="soul";render();return;
+   if(tab==="scene"){scenePanel="aid";}else{tab="soul";}render();return;
  }
  if(action==="crisis-event"){
    if(!Engine.previewMajorEvent(run,Engine.byId(run,id))){render();return;}
-   tab="world";render();
-   document.querySelector('.event[data-world="'+id+'"]')?.scrollIntoView({
-     behavior:"smooth",block:"center"
-   });
+   if(tab==="scene"){
+    sceneWorldId=id;scenePanel="event";render();
+   }else{
+    tab="world";render();
+    document.querySelector('.event[data-world="'+id+'"]')?.scrollIntoView({
+      behavior:"smooth",block:"center"
+    });
+   }
    return;
  }
  if(action==="toggle"){run.paused=!run.paused;tickStarted=performance.now();queueSave();render();return;}
@@ -812,21 +866,50 @@ app.addEventListener("change",event=>{
  if(action==="speed"){run.speed=Number(t.value)||1;tickStarted=performance.now();queueSave();render();}
 });
 document.addEventListener("visibilitychange",()=>{
- if(document.hidden&&run&&session.isOwner&&!run.paused){run.paused=true;tickStarted=performance.now();queueSave();}
+ if(document.hidden&&run&&session.isOwner&&!run.paused){run.paused=true;tickStarted=performance.now();queueSave();render();}
 });
 window.addEventListener("pagehide",()=>{if(run&&session.isOwner)queueSave();});
-window.addEventListener("keydown",e=>{if(e.key==="Escape"&&scenePanel){scenePanel="";render();return;}if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}});
+window.addEventListener("keydown",e=>{
+ if(scenePanel&&tab==="scene"){
+  if(e.key==="Escape"){
+   const closingPanel=scenePanel;
+   scenePanel="";render();
+   app.querySelector('[data-action="scene-panel"][data-panel="'+closingPanel+'"]')?.focus({preventScroll:true});
+   e.preventDefault();return;
+  }
+  if(e.key==="Tab"){
+   const dialog=app.querySelector(".stage-sheet");
+   const focusable=[...(dialog?.querySelectorAll('button:not(:disabled),select:not(:disabled),input:not(:disabled),a[href],summary,[tabindex]:not([tabindex="-1"])')||[])].filter(node=>node.getClientRects().length);
+   const first=focusable[0],last=focusable[focusable.length-1];
+   if(first&&(e.shiftKey?(document.activeElement===first||!dialog.contains(document.activeElement)):
+      document.activeElement===last)){
+    e.preventDefault();
+    (e.shiftKey?last:first).focus();
+   }
+  }
+  return;
+ }
+ if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}
+});
 setInterval(()=>{
  if(!session.isOwner||commandBusy||saveError||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
  const now=performance.now();
  if(now-tickStarted >= (TEMPOS[run.speed] || TEMPOS[1])){
    // Single day maximum per timer tick: never batch unseen days after background throttling.
    tickStarted=now;
-   const priorActive=new Set(run.worlds.filter(w=>w.pendingEvent?.state==="active").map(w=>w.pendingEvent.id));
+   const priorActive=new Set(run.worlds.filter(w=>w.pendingEvent?.state==="active").map(w=>w.id+":"+w.pendingEvent.id));
    const result=Engine.step(run);
    if(!result.ok){run.paused=true;}
-   const newUrgent=run.worlds.some(w=>w.pendingEvent?.state==="active"&&!priorActive.has(w.pendingEvent.id));
-   if(newUrgent&&run.speed===4){run.paused=true;tab="world";}
+   const newUrgent=run.worlds.find(w=>w.pendingEvent?.state==="active"&&!priorActive.has(w.id+":"+w.pendingEvent.id));
+   if(newUrgent&&run.speed===4){
+    run.paused=true;
+    if(tab==="scene"){
+     if(!inQuickStart()||newUrgent.id==="lingzai")sceneWorldId=newUrgent.id;
+     scenePanel="event";
+    }else{
+     tab="world";
+    }
+   }
    if(!run.active)reward();
    queueSave();render();
  }

@@ -9,6 +9,10 @@ const sprites = [
   "rescue-scout.svg",
   "rift-beast.svg",
   "supply-chest.svg",
+  "wasteland-runner.svg",
+  "dust-crawler.svg",
+  "beast-warden.svg",
+  "horned-hunter.svg",
 ];
 
 describe("recognizable project-owned pixel scene art", () => {
@@ -30,9 +34,9 @@ describe("recognizable project-owned pixel scene art", () => {
   });
 
   it("renders three distinct functional silhouettes at legible scales", () => {
-    expect(scene).toContain('sprite(ctx, "hero", heroX, heroY - bob, 46, 62, repaint)');
+    expect(scene).toContain('sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint)');
     expect(scene).toContain('sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint)');
-    expect(scene).toContain('sprite(ctx, "foe", 268, 125 +');
+    expect(scene).toContain('sprite(ctx, art.foe, 268, 125 +');
     expect(scene).not.toContain("function atlas(");
   });
 });
