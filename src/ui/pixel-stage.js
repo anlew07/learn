@@ -1,14 +1,28 @@
 
 import { paintWorldSceneDetails } from "./world-scene-details.js";
+import { paintWorldArchitecture, paintWorldSkyDetails, paintWorldForeground } from "./pixel-biomes.js";
 import heroUrl from "../assets/original/clone-cultivator.svg";
 import foeUrl from "../assets/original/rift-beast.svg";
 import allyUrl from "../assets/original/rescue-scout.svg";
 import chestUrl from "../assets/original/supply-chest.svg";
+import wastelandHeroUrl from "../assets/original/wasteland-runner.svg";
+import wastelandFoeUrl from "../assets/original/dust-crawler.svg";
+import beastHeroUrl from "../assets/original/beast-warden.svg";
+import beastFoeUrl from "../assets/original/horned-hunter.svg";
 
 const WIDTH = 320;
 const MAP_HEIGHT = 208;
 const HEIGHT = 208;
-const sources = { hero: heroUrl, foe: foeUrl, ally: allyUrl, chest: chestUrl };
+const sources = {
+  hero: heroUrl, foe: foeUrl, ally: allyUrl, chest: chestUrl,
+  wastelandHero: wastelandHeroUrl, wastelandFoe: wastelandFoeUrl,
+  beastHero: beastHeroUrl, beastFoe: beastFoeUrl,
+};
+const worldSprites = {
+  lingzai: { hero: "hero", foe: "foe" },
+  zombie: { hero: "wastelandHero", foe: "wastelandFoe" },
+  beast: { hero: "beastHero", foe: "beastFoe" },
+};
 const images = new Map();
 let animationId = 0;
 let resizeObserver = null;
@@ -84,6 +98,7 @@ function pixelSky(ctx, view, topHeight, frame) {
     }
   }
   // Tall broken tower is an environmental landmark, not a constructed facility.
+  if (isLing) {
   const towerTop = Math.max(7, topHeight - 49);
   rect(ctx, "#162b38", 29, towerTop + 12, 22, Math.min(54, topHeight - towerTop));
   rect(ctx, "#395460", 34, towerTop + 5, 13, 36);
@@ -91,6 +106,9 @@ function pixelSky(ctx, view, topHeight, frame) {
   rect(ctx, "#9ca398", 37, towerTop + 7, 8, 2);
   rect(ctx, "#162936", 38, towerTop + 18, 5, 15);
   rect(ctx, critical ? "#c57381" : "#7bd2b5", 40, towerTop + 20, 2, 11);
+  } else {
+    paintWorldSkyDetails(ctx, view, topHeight);
+  }
   // Energy drops near the scene connect both sky and rift visually.
   if (view.scene?.progressTier >= 2) {
     sparkle(ctx, 208, Math.max(12, topHeight - 48), "#9de0bb");
@@ -245,9 +263,11 @@ function environment(ctx, view, frame, repaint) {
     wallShade: "#727d7e", rift: "#66eacb",
   };
   landscape(ctx, palette);
-  drawRuins(ctx, palette);
+  if (view.worldId === "lingzai") drawRuins(ctx, palette);
+  else paintWorldArchitecture(ctx, view);
   ground(ctx, palette, repaint);
   drawCamp(ctx, frame);
+  paintWorldForeground(ctx, view, frame);
   if (dark) {
     rect(ctx, "rgba(59,19,39,.2)", 0, 0, WIDTH, HEIGHT);
     for (let i = 0; i < 8; i++) {
@@ -258,6 +278,7 @@ function environment(ctx, view, frame, repaint) {
 }
 function characters(ctx, view, frame, repaint) {
   const scene = view.scene;
+  const art = worldSprites[view.worldId] || worldSprites.lingzai;
   if (scene?.phase === "lost") return;
   const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
   const activity = scene?.activity;
@@ -266,7 +287,7 @@ function characters(ctx, view, frame, repaint) {
     activity === "exploring" ? 156 : activity === "defending" ? 148 : 123;
   const heroY = activity === "rescuing" ? 103 : activity === "gathering" ? 121 : 111;
   rect(ctx, "#1c3034", heroX + 5, heroY + 57, 40, 4);
-  sprite(ctx, "hero", heroX, heroY - bob, 46, 62, repaint);
+  sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint);
   // One readable character with actual sword and cloak replaces a stretched tiny sprite.
   if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 38, heroY + 3, "#79e7c5");
   if ((scene?.growthTier || 0) >= 2) sparkle(ctx, heroX + 9, heroY - 5, "#e8c888");
@@ -275,7 +296,7 @@ function characters(ctx, view, frame, repaint) {
   sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint);
   if (scene?.phase !== "restored" && (scene?.activeThreat || view.danger > 45)) {
     rect(ctx, "#273139", 275, 177, 41, 4);
-    sprite(ctx, "foe", 268, 125 + (frame % 31 > 15 ? 1 : 0), 48, 53, repaint);
+    sprite(ctx, art.foe, 268, 125 + (frame % 31 > 15 ? 1 : 0), 48, 53, repaint);
     rect(ctx, "#492b37", 272, 120, 43, 5);
     rect(ctx, "#d28a7b", 274, 121, 39 * Math.min(1, view.danger / 100), 3);
   }

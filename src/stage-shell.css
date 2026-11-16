@@ -23,7 +23,7 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: calc(38px + env(safe-area-inset-top)) 30px 44px minmax(110px, 1fr) 68px calc(110px + env(safe-area-inset-bottom));
+  grid-template-rows: calc(48px + env(safe-area-inset-top)) 30px 44px minmax(110px, 1fr) 68px calc(110px + env(safe-area-inset-bottom));
   overflow: hidden;
   isolation: isolate;
   background: #131f28;
@@ -50,7 +50,7 @@
 .stage-game button:disabled { opacity: .44; }
 .stage-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 42px;
+  grid-template-columns: minmax(0, 1fr) auto 44px;
   gap: 6px;
   align-items: center;
   padding: env(safe-area-inset-top) 7px 0;
@@ -58,7 +58,7 @@
   border-bottom: 3px solid #9e8164;
   min-height: 0;
 }
-.stage-top button { width: 38px; height: 32px; line-height: 1; }
+.stage-top button { width: 44px; height: 44px; line-height: 1; }
 .stage-brand {
   min-width: 0;
   overflow: hidden;
@@ -74,7 +74,7 @@
 .stage-day { font-variant-numeric: tabular-nums; color: #f3e4c4; font-size: 12px; }
 .stage-counters {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: 1px;
   padding: 2px 6px;
@@ -86,7 +86,7 @@
   white-space: nowrap;
 }
 .stage-counters b { color: #fff0c7; font-variant-numeric: tabular-nums; }
-.stage-state { color: #ffe0a1; padding-right: 3px; }
+.stage-counters span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .stage-worlds {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
@@ -276,6 +276,14 @@
 .stage-sheet-body .event { max-width: 100%; }
 .stage-sheet-body select, .stage-sheet-body button { min-height: 44px; }
 .stage-sheet-body h2, .stage-sheet-body h3 { overflow-wrap: anywhere; }
+.stage-pending-world {
+  margin: 12px 0 5px;
+  padding: 5px 8px;
+  border-left: 4px solid #e9c48c;
+  background: #35423b;
+  color: #f7e9ba;
+  font-size: 13px;
+}
 .app-shell.stage-mode > .notice,
 .stage-toast {
   position: absolute;
@@ -294,7 +302,7 @@
 @media(max-width:350px) {
  .stage-brand small { display: none; }
  .stage-top { gap: 3px; }
- .stage-game { grid-template-rows: calc(36px + env(safe-area-inset-top)) 28px 40px minmax(100px,1fr) 62px calc(102px + env(safe-area-inset-bottom)); }
+ .stage-game { grid-template-rows: calc(46px + env(safe-area-inset-top)) 28px 40px minmax(100px,1fr) 62px calc(102px + env(safe-area-inset-bottom)); }
  .stage-worlds button { font-size: 11px; }
  .stage-counters { font-size: 10px; }
  .stage-caption b { font-size: 12px; }

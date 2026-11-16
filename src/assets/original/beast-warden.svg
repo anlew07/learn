@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64" shape-rendering="crispEdges" aria-label="持长枪和木盾、披兽皮斗篷的兽潮守卫">
+  <!-- Original pixel silhouette: spear, round shield, horned helm. -->
+  <path fill="#191c21" d="M11 50h12v12H7v-5h4zm20-1h10v13H27v-5h4z"/>
+  <path fill="#625244" d="M12 51h11v7H12zm19-1h8v8h-8z"/>
+  <path fill="#d3b27f" d="M8 59h15v4H7v-3h1zm20 0h14v4H27v-3h1z"/>
+  <path fill="#24292b" d="M10 25h27v6h5v22H7V32h3z"/>
+  <path fill="#816747" d="M12 27h25v24H10z"/>
+  <path fill="#ba9564" d="M14 28h19v9H14z"/>
+  <path fill="#e5c08b" d="M17 29h14v4H17z"/>
+  <path fill="#594e42" d="M15 38h20v12H15z"/>
+  <path fill="#a87d54" d="M12 43h10v11H9z"/>
+  <path fill="#d7b57f" d="M23 45h9v4h-9z"/>
+  <path fill="#232c29" d="M6 31h10v22H4V37h2zm31 0h7v22h-7z"/>
+  <path fill="#d3a078" d="M9 42h6v6H9zm29-1h5v6h-5z"/>
+  <path fill="#1d262a" d="M14 9h21v5h4v14h-5v5H12v-5H9V14h5z"/>
+  <path fill="#655644" d="M14 11h22v6H14zm-2 6h5v14h-5zm21 0h5v14h-5z"/>
+  <path fill="#e5b58c" d="M17 18h16v12H17z"/>
+  <path fill="#f0caa0" d="M19 18h12v9H19z"/>
+  <path fill="#2e3030" d="M18 22h6v2h-6zm10 0h5v2h-5z"/>
+  <path fill="#d3b07c" d="M12 8h8v3h-8zM32 7h7v4h-7z"/>
+  <path fill="#e8cf9d" d="M12 3h3v7h-3zm23 0h3v8h-3z"/>
+  <path fill="#292d2c" d="M19 12h15v5H19z"/>
+  <path fill="#ab7b56" d="M19 29h14v3H19z"/>
+  <path fill="#20292a" d="M2 30h17v22H2z"/>
+  <path fill="#c29e6e" d="M4 32h13v18H4z"/>
+  <path fill="#ead39c" d="M6 34h9v2H6z"/>
+  <path fill="#6b7654" d="M7 38h7v9H7z"/>
+  <path fill="#d3b579" d="M10 40h2v5h-2z"/>
+  <path fill="#1b292d" d="M42 7h4v50h-4z"/>
+  <path fill="#e6d2a1" d="M43 1h2v42h-2z"/>
+  <path fill="#d1b279" d="M39 8h9v4h-9z"/>
+  <path fill="#795638" d="M42 43h4v17h-4z"/>
+</svg>

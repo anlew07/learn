@@ -38,6 +38,27 @@ describe("read-only mobile pixel HUD", () => {
     expect(JSON.stringify(run)).toBe(before);
   });
 
+  it("keeps decisions in other worlds visible without changing the selected world", () => {
+    const run = makeState();
+    run.worlds[0].pendingEvent = null;
+    run.worlds[1].status = "running";
+    run.worlds[1].build.pending = { options: ["example"], due: 14 };
+    const before = JSON.stringify(run);
+    const view = getStageView(run, "lingzai");
+    expect(view).toMatchObject({
+      worldId: "lingzai", hasEvent: false, hasBuild: false,
+      pendingCount: 1, pendingWorldIds: ["zombie"],
+    });
+    expect(view.worlds[1].build).toBe(true);
+    expect(JSON.stringify(run)).toBe(before);
+
+    run.worlds[0].pendingEvent = { state: "active" };
+    expect(getStageView(run, "lingzai").pendingCount).toBe(2);
+    run.worlds[1].status = "saved";
+    expect(getStageView(run, "lingzai").pendingWorldIds).toEqual(["lingzai"]);
+    expect(getStageView(run, "lingzai").pendingCount).toBe(1);
+  });
+
   it("uses safe clamps for missing and corrupt optional display values", () => {
     const run = { day: 2, worlds: [{
       id: "lingzai", status: "running", p: 1000, d: -100,

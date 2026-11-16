@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="60" viewBox="0 0 56 60" shape-rendering="crispEdges" aria-label="大角、獠牙和厚重棕色鬃毛的兽潮巨兽">
+  <!-- Original pixel silhouette: huge crescent horns, broad jaw and heavy paws. -->
+  <path fill="#211f21" d="M5 46h14v10H3v-5h2zm31 0h15v10H34v-5h2z"/>
+  <path fill="#64503e" d="M7 48h12v8H6zm30 0h12v8H36z"/>
+  <path fill="#d2b480" d="M5 54h15v5H4v-3h1zm31 0h16v5H35v-3h1z"/>
+  <path fill="#29292a" d="M8 26h40v5h5v19H4V32h4z"/>
+  <path fill="#6a4e3c" d="M8 26h40v20H8z"/>
+  <path fill="#a07752" d="M12 29h32v15H12z"/>
+  <path fill="#c19a6b" d="M13 32h28v4H13z"/>
+  <path fill="#463a33" d="M10 38h36v7H10z"/>
+  <path fill="#d2a879" d="M14 44h28v3H14z"/>
+  <path fill="#28252a" d="M13 13h32v5h6v22H7V18h6z"/>
+  <path fill="#6d5542" d="M12 16h33v19H12z"/>
+  <path fill="#a47b55" d="M14 18h30v13H14z"/>
+  <path fill="#c69a67" d="M16 20h27v4H16z"/>
+  <path fill="#2b2527" d="M12 25h15v8H12zm24 0h12v8H36z"/>
+  <path fill="#e4bb7a" d="M14 25h13v5H14zm22 0h12v5H36z"/>
+  <path fill="#f9df99" d="M16 26h7v3h-7zm22 0h7v3h-7z"/>
+  <path fill="#202527" d="M19 26h3v5h-3zm19 0h3v5h-3z"/>
+  <path fill="#382c2a" d="M24 30h14v8H24z"/>
+  <path fill="#bb8d66" d="M27 34h8v5h-8z"/>
+  <path fill="#f0d6a1" d="M25 38h4v6h-4zm10 0h4v6h-4z"/>
+  <path fill="#1d2527" d="M5 6h8v13H7V9H4V3h7v6zm37 0h8v12h-5V8h-3V3h10v4z"/>
+  <path fill="#ead3a6" d="M7 3h5v15H7zm38 0h5v15h-5z"/>
+  <path fill="#b3916c" d="M8 11h5v7H8zm34 0h5v8h-5z"/>
+  <path fill="#39312f" d="M3 32h12v17H2v-8h1zm39 0h12v17H44v-7h-2z"/>
+  <path fill="#b18b66" d="M4 44h5v8H4zm6 1h4v7h-4zm34 1h4v7h-4zm6-3h4v7h-4z"/>
+  <path fill="#3b302b" d="M47 35h7v6h2v8h-6v-6h-3z"/>
+</svg>

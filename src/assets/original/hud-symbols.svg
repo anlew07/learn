@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="16" viewBox="0 0 96 16" shape-rendering="crispEdges">
+  <!-- Six original 16x16 pixel glyphs. Order: strategy, event, aid, team, report, guide. -->
+  <path fill="#182220" d="M3 1h10v14H3zM19 1h10v14H19zM33 4h12v9H33zM49 3h14v11H49zM65 1h14v14H65zM81 1h14v14H81z"/>
+  <path fill="#c6ad78" d="M4 2h8v11H4zM20 2h8v11h-8zM34 5h10v6H34zM50 8h12v5H50zM66 2h12v11H66zM82 2h12v11H82z"/>
+  <path fill="#4c5342" d="M5 4h6v1H5zm0 3h6v1H5zm0 3h4v1H5zM68 4h8v1h-8zm0 3h8v1h-8zm0 3h6v1h-6z"/>
+  <path fill="#e7ce93" d="M23 3h2v6h-2zm0 8h2v2h-2zM37 2h4v3h-4zm14 1h4v4h-4zm7 0h4v4h-4zM85 4h6v1h-6zm2-2h2v6h-2z"/>
+  <path fill="#a9c79b" d="M35 7h3v4h-3zm5 0h3v4h-3zM52 6h2v2h-2zm7 0h2v2h-2zM84 9h8v3h-8z"/>
+  <path fill="#e4a27e" d="M37 6h4v2h-4zM54 9h6v3h-6z"/>
+  <path fill="#242d29" d="M70 4h1v7h-1zm16 2h4v1h-4z"/>
+</svg>
