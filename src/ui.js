@@ -261,7 +261,7 @@ function controls(){
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
  '<div class="brand">同时穿越</div><div class="micro">末日营地 · 救援手记</div></div></div>'+
  '<button class="home-link" data-action="home">⌂ 首页</button></header>'+
- '<section class="run-dashboard" aria-label="本局总览" data-rescue-board>'+
+ '<section class="run-dashboard'+(tab==="world"?"":" run-dashboard-compact")+'" aria-label="本局总览" data-rescue-board>'+
  '<div class="dashboard-heading"><div><span class="eyebrow">营地任务 · 三界救援</span>'+
  '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 同步推进</span></h1></div>'+
  '<span class="run-live">'+(run.active?(run.paused?'Ⅱ 已暂停':'▶ 自动进行中'):'◆ 本局结束')+'</span></div>'+
