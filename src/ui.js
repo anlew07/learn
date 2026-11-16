@@ -207,7 +207,7 @@ function worldHtml(w){
  (w.id==="lingzai"?(w.retreat?'<button data-action="exit-retreat" data-world="'+w.id+'">强行出关</button>':'<button data-action="retreat" data-world="'+w.id+'" '+(w.level<2||Engine.availableAP(run)<1?'disabled':'')+'>闭关</button>'):'')+
  '</div>')+
  '</section>'+
- (boss?eventHtml(w):"")+(w.build.pending?buildHtml(w):"");
+ "";
 }
 function eventHtml(w){
  const preview=Engine.previewMajorEvent(run,w);
@@ -491,10 +491,10 @@ function worldOverviewHtml(w) {
  '<div class="progress-track"><div class="progress-fill d" style="width:'+Math.max(0,Math.min(100,w.d))+'%"></div></div></div>'+
  '<p class="brief-activity">今天：'+esc(w.action)+'</p>'+
  '<p class="brief-goal">当前目标：'+esc(w.status==="running"?info.goal:worldStatus(w))+'</p>'+
- '<details class="world-fold"><summary>展开策略、世界档案与防线记录</summary>'+worldHtml(w)+'</details></article>';
+ '<details class="world-fold"'+(new URLSearchParams(location.search).has("debug")?' open':'')+'><summary>展开策略、世界档案与防线记录</summary>'+worldHtml(w)+'</details></article>';
 }
-function decisionQueueHtml() {
- const pending=run.worlds.filter(w=>w.status==="running"&&(w.pendingEvent?.state==="active"||w.build?.pending));
+function decisionQueueHtml(worlds=run.worlds) {
+ const pending=worlds.filter(w=>w.status==="running"&&(w.pendingEvent?.state==="active"||w.build?.pending));
  const entries=pending.flatMap(w=>[
  ...(w.pendingEvent?.state==="active"?[eventHtml(w)]:[]),
  ...(w.build?.pending?[buildHtml(w)]:[])
@@ -504,7 +504,7 @@ function decisionQueueHtml() {
  '<span class="section-hint">'+(entries.length?entries.length+' 项可主动处理':'暂无必须处理的选择')+'</span></div>'+
  (entries.length?entries.join(''):'<div class="panel no-decisions"><b>分身正在自主行动</b>'+
  '<p>无需每天手动操作。可以继续模拟，展开世界档案调整策略，或前往「调度」提供跨界援助。</p></div>')+
- crisisHtml()+'</section>';
+ (inQuickStart()?'':crisisHtml())+'</section>';
 }
 function partyHtml() {
  return '<div class="stack party-page"><div class="section-banner"><div><span class="eyebrow">远征队伍</span><h2>分身与防线</h2></div></div>'+
@@ -538,7 +538,7 @@ function render(){
  const worlds=focus?[run.worlds[0]]:run.worlds;
  app.innerHTML=banner+controls()+
  (tab==="world"?'<main class="stack game-content">'+
- (focus?quickStartHtml():(run.onboardingFocus&&run.day===9?
+ (focus?quickStartHtml()+decisionQueueHtml(worlds):(run.onboardingFocus&&run.day===9?
   '<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">现在可以查看所有世界，或使用「调度」提供支援。</p></section>':'')+decisionQueueHtml())+
  '<section class="world-map" aria-label="世界总览"><div class="section-banner"><div><span class="eyebrow">三界地图</span><h2>'+(focus?'第一站 · 灵脉救援':'世界总览')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
  worlds.map(worldOverviewHtml).join('')+'</section></main>':
