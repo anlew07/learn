@@ -1,4 +1,3 @@
-@import "./pixel-art-language.css";
 
 /* Pixel-stage vertical slice: compact, viewport-fixed game UI rather than a document page. */
 .app-shell.stage-mode {
