@@ -1,5 +1,7 @@
 # AGENTS.md — 同时穿越·末日模拟器
 
+> **文档导航：**完整功能与页面规格见 [产品设计总纲](docs/product/00-game-product-blueprint.md)；从需求到交付的实际执行门禁见 [开发规范与交付门禁](docs/engineering/00-development-standard.md)。
+>
 > 本文件约束在本仓库内工作的 AI 编程助手（包括 ChatGPT、OpenCode 等），作用范围为仓库根目录及所有子目录。项目开发细则见 [CONTRIBUTING.md](CONTRIBUTING.md)；二者冲突时先核对当前代码与用户最新要求，不要自行猜测。
 
 ## 1. 唯一仓库与项目定位
