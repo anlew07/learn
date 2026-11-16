@@ -126,6 +126,7 @@ export function getStageView(run, selectedWorldId) {
       status: world.status,
       danger: percent(world.d),
       event: world.pendingEvent?.state === "active",
+      build: Boolean(world.build?.pending),
     })),
   };
 }
