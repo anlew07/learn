@@ -140,7 +140,10 @@ test("first-run focus guidance is visible on the default fixed game screen", asy
   const hint = page.locator(".stage-onboarding-hint");
   await expect(hint).toContainText("每个游戏日自主完成主要行动");
   await expect(hint).toContainText("你决定长期策略");
-  expect(await hint.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+  const hintFits = await hint.evaluate(
+    (element) => element.scrollHeight <= element.clientHeight + 1,
+  );
+  expect(hintFits).toBe(true);
   await expect(page.locator('.stage-worlds [data-world="lingzai"]')).toBeVisible();
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
 
