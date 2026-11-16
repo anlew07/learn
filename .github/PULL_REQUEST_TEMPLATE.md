@@ -29,6 +29,6 @@
 - 回滚/恢复影响：
 - 是否涉及需要用户确认的重大玩法、存档删除、付费、权限或架构变化：
 
-> 参考：[产品总纲](../docs/product/00-game-product-blueprint.md) · [开发规范](../docs/engineering/00-development-standard.md) · [AGENTS.md](../AGENTS.md)。
+> 参考：[产品总纲](https://github.com/anlew07/learn/blob/main/docs/product/00-game-product-blueprint.md) · [开发规范](https://github.com/anlew07/learn/blob/main/docs/engineering/00-development-standard.md) · [AGENTS.md](https://github.com/anlew07/learn/blob/main/AGENTS.md)。
 >
 > PR 提交与 CI 通过不等于合并、Pages 部署、真机验收或 TapTap 正式上架。请分别提供证据。
