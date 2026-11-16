@@ -758,5 +758,5 @@
 "src/ui.js","801","静态/待复核","常规核对","""\n注意：来源本局终局所需材料将变得不足。"":"""";"
 "src/ui.js","802","动态拼接/需复原","常规核对","if(!window.confirm(""本次实际""+effect+""；来源消耗4资源、1AP、1灵魂。""+reserve+""\n确认援助吗？""))return;"
 "src/ui.js","853","静态/待复核","常规核对","console.error(""恢复存档失败"",error);"
-"src/ui/pixel-stage.js","229","静态/待复核","常规核对","ctx.fillText(view.worldId === ""lingzai"" ? ""01 / 灵脉遗迹"" :"
-"src/ui/pixel-stage.js","230","静态/待复核","重点复核","view.worldId === ""zombie"" ? ""02 / 废土前哨"" : ""03 / 兽潮边界"", 8, 11);"
+"src/ui/pixel-stage.js","291","静态/待复核","常规核对","ctx.fillText(view.worldId === ""lingzai"" ? ""01 / 灵脉遗迹"" :"
+"src/ui/pixel-stage.js","292","静态/待复核","重点复核","view.worldId === ""zombie"" ? ""02 / 废土前哨"" : ""03 / 兽潮边界"", 8, 11);"
