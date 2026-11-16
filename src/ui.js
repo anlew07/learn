@@ -175,7 +175,7 @@ function worldHtml(w){
  const v=Engine.info(run,w),stop=w.status!=="running";
  const newStrategy=w.strategy==="growth"?"clear":"growth";
  const strategyPreview=Engine.previewStrategy(run,w.id,newStrategy);
- const boss=w.pendingEvent?.state==="active";
+ 
  const options = ['growth','clear','rescue'].map(k=>'<option value="'+k+'" '+(w.strategy===k?"selected":"")+'>'+labelStrategies[k]+'</option>').join("");
  const worldSpecific=w.id==="lingzai"?(w.retreat?"闭关剩余 "+w.retreat.remaining+" 天":w.level>=2?"可进行短期或深度闭关":"筑基解锁闭关"):w.id==="zombie"?(w.repairUsed?"安全区已进行过大修":"防线可在危机时消耗零件修复"):("兽王阶段："+(w.phase||"苏醒")+" · 要求 Lv"+v.bossRequirement+(w.suppression? " · 压制 "+w.suppression+"/2":""));
  const worldIdentity={lingzai:{glyph:"✦",label:"灵脉异变",category:"CULTIVATION"},zombie:{glyph:"☣",label:"失序禁区",category:"OUTBREAK"},beast:{glyph:"♜",label:"兽王领地",category:"BEASTFALL"}}[w.id]||{glyph:"◇",label:"异界",category:"WORLD"};
@@ -266,10 +266,10 @@ function controls(){
  '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 同步推进</span></h1></div>'+
  '<span class="run-live">'+(run.active?(run.paused?'Ⅱ 已暂停':'▶ 自动进行中'):'◆ 本局结束')+'</span></div>'+
  '<p class="mission-line">你的目标：在各世界的截止日前完成救援。分身自动成长、采集、排险；你负责观察危机、决定策略与支援。</p>'+
- '<div class="metrics"><div class="metric"><b>'+win()+' / '+run.worlds.length+'</b><span>已完成救援</span></div>'+
+ '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>全局游戏日</span></div>'+
+ '<div class="metric"><b>'+win()+' / '+run.worlds.length+'</b><span>已完成救援</span></div>'+
  '<div class="metric"><b>'+Engine.availableAP(run)+' / '+run.apMax+'</b><span>可用支援点 AP</span></div>'+
- '<div class="metric"><b>'+run.soul+'</b><span>灵魂储备</span></div>'+
- '<div class="metric"><b>'+run.worlds.filter(w=>w.status==="running").length+'</b><span>仍在行动</span></div></div>'+
+ '<div class="metric"><b>'+run.soul+'</b><span>灵魂储备</span></div></div>'+
  '<div class="camp-alert"><span class="alert-symbol" aria-hidden="true">!</span><div><b>最需要关注</b><p>'+esc(concern)+'</p></div></div>'+
  '<div class="controls"><button class="btn run-toggle" data-action="toggle"'+(!run.active?' disabled':'')+'>'+
  (run.paused?'▶ 继续自动模拟':'Ⅱ 暂停自动模拟')+'</button>'+
