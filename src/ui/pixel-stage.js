@@ -283,20 +283,6 @@ function characters(ctx, view, frame, repaint) {
   if (scene?.recentCombat) sparkle(ctx, 176, 120 - bob, "#f3e29a");
   if (scene?.phase === "restored") sparkle(ctx, 170, 110, "#a2f7cc");
 }
-function overlay(ctx, view) {
-  rect(ctx, "rgba(11,24,30,.88)", 0, 0, 91, 16);
-  rect(ctx, "#afcfb9", 0, 14, 91, 2);
-  ctx.fillStyle = "#f7eac8";
-  ctx.font = "bold 9px monospace";
-  ctx.fillText(view.worldId === "lingzai" ? "01 / 灵脉遗迹" :
-    view.worldId === "zombie" ? "02 / 废土前哨" : "03 / 兽潮边界", 8, 11);
-  if (view.paused) {
-    rect(ctx, "#171f2d", 265, 0, 55, 16);
-    ctx.fillStyle = "#e8d9bc";
-    ctx.fillText("Ⅱ PAUSE", 272, 11);
-  }
-}
-
 export function paintPixelStage(canvas, view, frame = 0) {
   if (!canvas || !view) return;
   if (canvas.width !== WIDTH) canvas.width = WIDTH;
@@ -318,7 +304,6 @@ export function paintPixelStage(canvas, view, frame = 0) {
   paintWorldSceneDetails(ctx, view, frame);
   characters(ctx, view, frame, repaint);
   ctx.restore();
-  overlay(ctx, view);
 }
 
 export function startPixelStage(canvas, view) {
