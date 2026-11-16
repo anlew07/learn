@@ -84,6 +84,10 @@ export function getStageView(run, selectedWorldId) {
   const worlds = Array.isArray(run?.worlds) ? run.worlds : [];
   const selected = worlds.find((world) => world.id === selectedWorldId) || worlds[0];
   if (!selected) return null;
+  const pendingWorlds = worlds.filter((world) =>
+    world.status === "running" &&
+    (world.pendingEvent?.state === "active" || world.build?.pending),
+  );
   const number = (value) => Number.isFinite(value) ? value : 0;
   const percent = clampPercent;
   const status = selected.status === "saved" ? "救援完成" :
@@ -110,6 +114,9 @@ export function getStageView(run, selectedWorldId) {
     active: Boolean(run.active),
     hasEvent: selected.pendingEvent?.state === "active",
     hasBuild: Boolean(selected.build?.pending),
+    pendingCount: pendingWorlds.reduce((count, world) =>
+      count + Number(world.pendingEvent?.state === "active") + Number(Boolean(world.build?.pending)), 0),
+    pendingWorldIds: pendingWorlds.map((world) => world.id),
     hasCombat: Boolean(selected.lastCombat),
     threatActive: Boolean(selected.threat && selected.threat.status !== "cleared"),
     threatProgress: number(selected.threat?.progress),
