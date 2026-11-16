@@ -26,12 +26,10 @@ for (const width of [320, 375, 390, 430]) {
     await expect(page.locator(".no-decisions")).toContainText("无需每天手动操作");
 
     const audit = await page.evaluate(() => {
-      const targets = [...document.querySelectorAll("button, select, summary")].filter(
-        (node) => {
+      const targets = [...document.querySelectorAll("button, select, summary")].filter((node) => {
         const style = getComputedStyle(node);
         return node.getClientRects().length > 0 && style.visibility !== "hidden";
-        },
-      );
+      });
       return {
         documentWidth: document.documentElement.scrollWidth,
         viewportWidth: innerWidth,
