@@ -381,7 +381,7 @@
 "src/ui.js","248","动态拼接/需复原","常规核对","(ATTACK_PATTERNS[id]?'<small class=""build-counter-hint"">克制：'+"
 "src/ui.js","249","静态/待复核","常规核对","esc(counteredEliteWaveLabels(ATTACK_PATTERNS[id].style).join('、')||'暂无限定敌群')+"
 "src/ui.js","251","静态/待复核","常规核对","(canEvolve?'<small class=""success-text"">✦ 选择后进化</small>':'')+"
-"src/ui.js","260","动态拼接/需复原","常规核对","mostAtRisk?mostAtRisk.name+"" · 危机压力 ""+n(mostAtRisk.d)+""%"":""所有世界的救援已结束"";"
+"src/ui.js","260","动态拼接/需复原","常规核对","mostAtRisk?(mostAtRisk.d>0?mostAtRisk.name+"" · 危机压力 ""+n(mostAtRisk.d)+""%"":""暂无紧急危机，可继续模拟观察分身行动""):""所有世界的救援已结束"";"
 "src/ui.js","262","动态拼接/需复原","重点复核","'<div class=""brand"">同时穿越</div><div class=""micro"">末日营地 · 救援手记</div></div></div>'+"
 "src/ui.js","263","动态拼接/需复原","常规核对","'<button class=""home-link"" data-action=""home"">⌂ 首页</button></header>'+"
 "src/ui.js","264","动态拼接/需复原","常规核对","'<section class=""run-dashboard'+(tab===""world""?"""":"" run-dashboard-compact"")+'"" aria-label=""本局总览"" data-rescue-board>'+"
