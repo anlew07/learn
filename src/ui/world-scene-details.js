@@ -121,9 +121,69 @@ function dailyActivity(ctx, activity, frame) {
   }
 }
 
+/**
+ * Silhouette-first world dressing. Every landmark is deliberately inert: it
+ * labels the selected world visually and never represents a constructed entity.
+ * Drawn behind state-dependent danger/progress overlays.
+ */
+function worldLandmarks(ctx, worldId, phase) {
+  if (worldId === "zombie") {
+    // Abandoned utility shelter with jagged sheet-metal roof and patched door.
+    block(ctx, "#202f32", 132, 88, 55, 55);
+    block(ctx, "#495c59", 136, 95, 47, 46);
+    block(ctx, "#9e9b7d", 131, 87, 60, 7);
+    block(ctx, "#666a62", 137, 84, 49, 5);
+    block(ctx, "#283a3d", 143, 110, 17, 31);
+    block(ctx, "#8c967f", 161, 107, 16, 15);
+    block(ctx, "#d7ba7c", 166, 111, 6, 5);
+    block(ctx, "#1d2c32", 164, 128, 12, 4);
+    block(ctx, "#665f4b", 151, 139, 39, 4);
+    // A broken road crossing creates a unique waste-world ground texture.
+    for (let index = 0; index < 4; index++) {
+      const x = 112 + index * 18;
+      block(ctx, "#313d3b", x, 184 + index % 2 * 3, 13, 4);
+      block(ctx, "#c0b18b", x + 3, 185 + index % 2 * 3, 6, 2);
+    }
+  } else if (worldId === "beast") {
+    // Horned watch totem and an earth embankment: not a real defense building.
+    block(ctx, "#30312f", 144, 108, 31, 39);
+    block(ctx, "#6c6656", 149, 99, 22, 45);
+    block(ctx, "#c5ad7a", 150, 100, 4, 17);
+    block(ctx, "#c5ad7a", 166, 100, 4, 17);
+    block(ctx, "#3d4240", 154, 111, 12, 14);
+    block(ctx, "#b18c78", 157, 113, 6, 6);
+    block(ctx, "#d6c1a0", 159, 114, 2, 3);
+    block(ctx, "#645c4c", 135, 143, 52, 5);
+    for (let index = 0; index < 5; index++) {
+      const x = 119 + index * 16;
+      block(ctx, "#4b453d", x, 179 + index % 2 * 3, 11, 4);
+      block(ctx, "#a58b63", x + 3, 176 + index % 2 * 3, 5, 3);
+    }
+  } else {
+    // Stone altar distinct from the main rift gate, with stepped moss shading.
+    block(ctx, "#273b40", 145, 131, 40, 12);
+    block(ctx, "#6f8880", 149, 126, 32, 8);
+    block(ctx, "#b8b99c", 154, 125, 23, 2);
+    block(ctx, "#46675b", 159, 116, 13, 10);
+    block(ctx, "#88c4a8", 163, 112, 5, 9);
+    block(ctx, "#d2e2b8", 165, 114, 2, 4);
+    block(ctx, "#374d44", 149, 138, 29, 2);
+  }
+  // Phase tint changes signposting without pretending to alter simulation.
+  if (phase === "critical") {
+    block(ctx, "#be7775", 138, 106, 3, 12);
+    block(ctx, "#e0a08b", 139, 107, 1, 5);
+  } else if (phase === "restored") {
+    block(ctx, "#d1c68f", 136, 100, 3, 18);
+    block(ctx, "#79b78b", 139, 100, 15, 9);
+    block(ctx, "#cbe0a9", 142, 103, 8, 3);
+  }
+}
+
 export function paintWorldSceneDetails(ctx, view, frame = 0) {
   const stage = view?.scene;
   if (!stage) return;
+  worldLandmarks(ctx, view.worldId, stage.phase);
   supplyPacks(ctx, stage.supplyTier);
   progressMarkers(ctx, stage.progressTier, frame);
   if (stage.phase === "warning" || stage.phase === "critical") {
