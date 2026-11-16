@@ -245,6 +245,6 @@ function assertMatrix(result) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = runMatrix(seeds);
-  process.stdout.write(`${JSON.stringify(result, null, 2)}\\n`);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   if (shouldAssert) assertMatrix(result);
 }
