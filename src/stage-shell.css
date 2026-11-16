@@ -166,11 +166,8 @@
   pointer-events: none;
 }
 .stage-action-line.stage-onboarding-hint {
-  white-space: normal;
-  line-height: 1.25;
-  max-height: calc(3.75em + 18px);
-  overflow: hidden;
-  text-overflow: clip;
+  padding: 5px 7px;
+  font-size: 11px;
 }
 .stage-bars {
   display: grid;
