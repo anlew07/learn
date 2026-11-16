@@ -272,7 +272,7 @@ function controls(){
  '<div class="metric"><b>'+run.soul+'</b><span>灵魂储备</span></div></div>'+
  '<div class="camp-alert"><span class="alert-symbol" aria-hidden="true">!</span><div><b>最需要关注</b><p>'+esc(concern)+'</p></div></div>'+
  '<div class="controls"><button class="btn run-toggle" data-action="toggle"'+(!run.active?' disabled':'')+'>'+
- (run.paused?'▶ 继续自动模拟':'Ⅱ 暂停自动模拟')+'</button>'+
+ (run.paused?'▶ 继续模拟 · 自动':'Ⅱ 暂停模拟 · 自动')+'</button>'+
  '<label class="speed-control"><span>模拟速度</span><select aria-label="模拟速度" data-action="speed">'+
  '<option value="1" '+(run.speed===1?"selected":"")+'>1× · 20秒/日</option>'+
  '<option value="2" '+(run.speed===2?"selected":"")+'>2× · 10秒/日</option>'+
@@ -545,7 +545,7 @@ function render(){
  tab==="soul"?soulHtml():tab==="party"?partyHtml():statsHtml()+logsHtml())+
  footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
 }
-function footer(){
+function footer(){if(inQuickStart())return "";
  return '<nav class="footer-nav" aria-label="主要导航">'+
  '<button data-action="tab" data-tab="world" class="'+(tab==="world"?"active":"")+'"'+(tab==="world"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">⌂</span><span>营地</span></button>'+
  '<button data-action="tab" data-tab="soul" class="'+(tab==="soul"?"active":"")+'"'+(tab==="soul"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">↔</span><span>调度</span></button>'+
