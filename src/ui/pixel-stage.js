@@ -6,10 +6,12 @@ import allyUrl from "../assets/original/rescue-scout.svg";
 import chestUrl from "../assets/original/supply-chest.svg";
 
 const WIDTH = 320;
+const MAP_HEIGHT = 208;
 const HEIGHT = 208;
 const sources = { hero: heroUrl, foe: foeUrl, ally: allyUrl, chest: chestUrl };
 const images = new Map();
 let animationId = 0;
+let resizeObserver = null;
 
 function getImage(name, repaint) {
   if (typeof Image === "undefined") return null;
@@ -40,6 +42,66 @@ function noise(x, y, salt = 0) {
   n = Math.imul(n, 1274126177);
   return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 }
+/**
+ * Draw an original tall pixel panorama above the 320x208 playable camp.
+ * This avoids a huge empty letterbox on 390x844 phones without stretching
+ * the characters or cropping the ruins on shorter screens.
+ */
+function pixelSky(ctx, view, topHeight, frame) {
+  if (topHeight <= 0) return;
+  const critical = view.scene?.phase === "critical";
+  const isLing = view.worldId === "lingzai";
+  const colors = isLing
+    ? ["#101827", "#17243a", "#1d2d48", "#243659"]
+    : view.worldId === "zombie"
+      ? ["#111f2c", "#1b303c", "#293d48", "#394958"]
+      : ["#251f35", "#332c4c", "#443b5c", "#554d6b"];
+  const band = Math.max(1, Math.ceil(topHeight / colors.length));
+  colors.forEach((color, i) => rect(ctx, color, 0, i * band, WIDTH, band + 1));
+
+  // A stylized crescent / guardian sigil: rectangular pixel clusters, not a bitmap.
+  const moonX = 242;
+  const moonY = Math.max(28, Math.floor(topHeight * .3));
+  const moonShape = [8, 13, 17, 20, 23, 24, 25, 26, 26, 25, 24, 23, 20, 17, 13, 8];
+  moonShape.forEach((extent, row) => {
+    rect(ctx, critical ? "#a5828f" : "#c0c2b1", moonX - extent, moonY + row * 2, extent * 2, 2);
+  });
+  rect(ctx, colors[1], moonX + 6, moonY + 5, 18, 17);
+  rect(ctx, "#e3d5b2", moonX - 10, moonY + 10, 4, 2);
+  rect(ctx, "#f9e2b7", moonX - 7, moonY + 4, 3, 2);
+
+  // Distant layered clouds / floating ruins. Each piece has a fixed position.
+  for (let i = 0; i < 13; i++) {
+    const x = Math.floor(noise(i, 47) * 340) - 15;
+    const y = Math.floor(noise(i, 93) * Math.max(12, topHeight - 22)) + 5;
+    if (i % 2 === 0) {
+      rect(ctx, "#384b5a", x - 11, y + 3, 25, 3);
+      rect(ctx, "#526270", x - 5, y, 17, 4);
+      rect(ctx, "#293f51", x + 9, y + 6, 12, 2);
+    } else {
+      rect(ctx, "#6b8390", x, y, 2, 2);
+      rect(ctx, "#d8c8a4", x + 1, y - 1, 1, 1);
+    }
+  }
+  // Tall broken tower is an environmental landmark, not a constructed facility.
+  const towerTop = Math.max(7, topHeight - 49);
+  rect(ctx, "#162b38", 29, towerTop + 12, 22, Math.min(54, topHeight - towerTop));
+  rect(ctx, "#395460", 34, towerTop + 5, 13, 36);
+  rect(ctx, "#72837d", 33, towerTop + 4, 16, 6);
+  rect(ctx, "#9ca398", 37, towerTop + 7, 8, 2);
+  rect(ctx, "#162936", 38, towerTop + 18, 5, 15);
+  rect(ctx, critical ? "#c57381" : "#7bd2b5", 40, towerTop + 20, 2, 11);
+  // Energy drops near the scene connect both sky and rift visually.
+  if (view.scene?.progressTier >= 2) {
+    sparkle(ctx, 208, Math.max(12, topHeight - 48), "#9de0bb");
+    if (frame % 32 < 16) sparkle(ctx, 220, Math.max(12, topHeight - 30), "#cce9c8");
+  }
+  if (critical) {
+    rect(ctx, "#bb7583", 225, Math.max(4, topHeight - 38), 3, 19);
+    rect(ctx, "#dc8c92", 223, Math.max(4, topHeight - 22), 5, 2);
+  }
+}
+
 function sprite(ctx, name, x, y, w = 16, h = 16, repaint = () => {}) {
   const image = getImage(name, repaint);
   if (image?.complete && image.naturalWidth) {
@@ -238,23 +300,36 @@ function overlay(ctx, view) {
 export function paintPixelStage(canvas, view, frame = 0) {
   if (!canvas || !view) return;
   if (canvas.width !== WIDTH) canvas.width = WIDTH;
-  if (canvas.height !== HEIGHT) canvas.height = HEIGHT;
+  const clientWidth = Math.max(1, canvas.clientWidth || WIDTH);
+  const clientHeight = Math.max(1, canvas.clientHeight || MAP_HEIGHT);
+  const targetHeight = Math.max(MAP_HEIGHT, Math.round((WIDTH * clientHeight) / clientWidth));
+  if (canvas.height !== targetHeight) canvas.height = targetHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.imageSmoothingEnabled = false;
   const repaint = () => {
     if (canvas.isConnected) paintPixelStage(canvas, view, frame);
   };
+  const upperHeight = canvas.height - MAP_HEIGHT;
+  pixelSky(ctx, view, upperHeight, frame);
+  ctx.save();
+  ctx.translate(0, upperHeight);
   environment(ctx, view, frame, repaint);
   paintWorldSceneDetails(ctx, view, frame);
   characters(ctx, view, frame, repaint);
+  ctx.restore();
   overlay(ctx, view);
 }
 
 export function startPixelStage(canvas, view) {
-  if (animationId) cancelAnimationFrame(animationId);
-  animationId = 0;
+  stopPixelStage();
   if (!canvas || !view) return;
+  if (typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(() => {
+      if (canvas.isConnected) paintPixelStage(canvas, view);
+    });
+    resizeObserver.observe(canvas);
+  }
   let frame = 0;
   paintPixelStage(canvas, view, frame);
   if (view.paused || !view.active || document.hidden ||
@@ -279,4 +354,6 @@ export function startPixelStage(canvas, view) {
 export function stopPixelStage() {
   if (animationId) cancelAnimationFrame(animationId);
   animationId = 0;
+  resizeObserver?.disconnect();
+  resizeObserver = null;
 }
