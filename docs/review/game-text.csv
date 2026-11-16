@@ -394,7 +394,7 @@
 "src/ui.js","271","动态拼接/需复原","常规核对","'<div class=""metric""><b>'+Engine.availableAP(run)+' / '+run.apMax+'</b><span>可用支援点 AP</span></div>'+"
 "src/ui.js","272","动态拼接/需复原","常规核对","'<div class=""metric""><b>'+run.soul+'</b><span>灵魂储备</span></div></div>'+"
 "src/ui.js","273","动态拼接/需复原","常规核对","'<div class=""camp-alert""><span class=""alert-symbol"" aria-hidden=""true"">!</span><div><b>最需要关注</b><p>'+esc(concern)+'</p></div></div>'+"
-"src/ui.js","275","动态拼接/需复原","常规核对","(run.paused?'▶ 继续自动模拟':'Ⅱ 暂停自动模拟')+'</button>'+"
+"src/ui.js","275","动态拼接/需复原","常规核对","(run.paused?'▶ 继续模拟 · 自动':'Ⅱ 暂停模拟 · 自动')+'</button>'+"
 "src/ui.js","276","动态拼接/需复原","常规核对","'<label class=""speed-control""><span>模拟速度</span><select aria-label=""模拟速度"" data-action=""speed"">'+"
 "src/ui.js","277","动态拼接/需复原","常规核对","'<option value=""1"" '+(run.speed===1?""selected"":"""")+'>1× · 20秒/日</option>'+"
 "src/ui.js","278","动态拼接/需复原","常规核对","'<option value=""2"" '+(run.speed===2?""selected"":"""")+'>2× · 10秒/日</option>'+"
