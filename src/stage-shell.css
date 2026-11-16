@@ -165,6 +165,13 @@
   font-size: 12px;
   pointer-events: none;
 }
+.stage-action-line.stage-onboarding-hint {
+  white-space: normal;
+  line-height: 1.25;
+  max-height: calc(3.75em + 18px);
+  overflow: hidden;
+  text-overflow: clip;
+}
 .stage-bars {
   display: grid;
   grid-template-rows: 1fr 1fr;
