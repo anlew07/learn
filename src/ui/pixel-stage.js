@@ -241,13 +241,18 @@ export function startPixelStage(canvas, view) {
   paintPixelStage(canvas, view, frame);
   if (view.paused || !view.active || document.hidden ||
     window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const loop = () => {
+  let previous = 0;
+  const loop = (time) => {
     if (!canvas.isConnected || document.hidden) {
       animationId = 0;
       return;
     }
-    frame = (frame + 1) % 300;
-    paintPixelStage(canvas, view, frame);
+    // Cap purely decorative canvas updates near 12 fps for mobile thermals.
+    if (time - previous >= 80) {
+      previous = time;
+      frame = (frame + 1) % 300;
+      paintPixelStage(canvas, view, frame);
+    }
     animationId = requestAnimationFrame(loop);
   };
   animationId = requestAnimationFrame(loop);
