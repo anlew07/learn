@@ -6,7 +6,9 @@ test(
   async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+    await page
+      .locator('[data-action="new-run"][data-onboarding="full"]')
+      .click();
     const canvas = page.locator("[data-stage-canvas]");
     await expect(canvas).toBeVisible();
 
@@ -15,7 +17,9 @@ test(
     for (const id of ["lingzai", "zombie", "beast"]) {
       await page.evaluate(async (worldId) => {
         const { paintPixelStage } = await import("/src/ui/pixel-stage.js");
-        const { getStageView } = await import("/src/presentation/stage-view.js");
+        const { getStageView } = await import(
+          "/src/presentation/stage-view.js"
+        );
         // Display-only fixtures; never touch the saved RunState.
         const world = {
           id: worldId,
