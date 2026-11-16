@@ -1,4 +1,5 @@
 
+import { paintWorldSceneDetails } from "./world-scene-details.js";
 import atlasUrl from "../assets/tiny-dungeon/tiny-dungeon.png";
 import heroUrl from "../assets/tiny-dungeon/hero.png";
 import foeUrl from "../assets/tiny-dungeon/monster.png";
@@ -186,23 +187,30 @@ function environment(ctx, view, frame, repaint) {
   }
 }
 function characters(ctx, view, frame, repaint) {
-  const paused = view.paused;
-  const bob = paused ? 0 : Math.floor(frame / 14) % 2;
-  rect(ctx, "#1c3034", 126, 162, 34, 5);
-  sprite(ctx, "hero", 125, 130 - bob, 34, 34, repaint);
-  // Weapon gleam and animated personal aura indicate ongoing preparation.
-  rect(ctx, "#d4d4b8", 156, 140 - bob, 2, 18);
-  rect(ctx, "#74c8c5", 156, 135 - bob, 3, 5);
-  if (view.level >= 3) sparkle(ctx, 155, 128 - bob, "#79e7c5");
-  sprite(ctx, "ally", 91, 135 + bob, 21, 22, repaint);
-  if (view.threatActive || view.danger > 45) {
+  const scene = view.scene;
+  if (scene?.phase === "lost") return;
+  const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
+  const activity = scene?.activity;
+  const heroX =
+    activity === "gathering" ? 57 : activity === "rescuing" ? 198 :
+    activity === "exploring" ? 166 : activity === "defending" ? 152 : 125;
+  const heroY = activity === "rescuing" ? 116 : 130;
+  rect(ctx, "#1c3034", heroX + 1, heroY + 32, 32, 5);
+  sprite(ctx, "hero", heroX, heroY - bob, 34, 34, repaint);
+  // The same hero visually changes location with its actual autonomous action.
+  rect(ctx, "#d4d4b8", heroX + 31, heroY + 10 - bob, 2, 18);
+  rect(ctx, "#74c8c5", heroX + 31, heroY + 5 - bob, 3, 5);
+  if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 30, heroY - 3, "#79e7c5");
+  if ((scene?.growthTier || 0) >= 2) sparkle(ctx, heroX + 2, heroY - 6, "#e8c888");
+  sprite(ctx, "ally", scene?.phase === "restored" ? 103 : 91, 135 + bob, 21, 22, repaint);
+  if (scene?.phase !== "restored" && (scene?.activeThreat || view.danger > 45)) {
     sprite(ctx, "foe", 290, 139 + (frame % 31 > 15 ? 1 : 0), 28, 28, repaint);
     rect(ctx, "#ca7779", 288, 133, 28, 3);
     rect(ctx, "#ebae79", 288, 133, 28 * Math.min(1, view.danger / 100), 3);
   }
-  if (view.hasEvent) sparkle(ctx, 263, 89 + bob, "#f5d392");
-  if (view.hasCombat) sparkle(ctx, 176, 120 - bob, "#f3e29a");
-  if (view.statusCode === "saved") sparkle(ctx, 170, 110, "#a2f7cc");
+  if (scene?.hasEvent) sparkle(ctx, 263, 89 + bob, "#f5d392");
+  if (scene?.recentCombat) sparkle(ctx, 176, 120 - bob, "#f3e29a");
+  if (scene?.phase === "restored") sparkle(ctx, 170, 110, "#a2f7cc");
 }
 function overlay(ctx, view) {
   rect(ctx, "rgba(11,24,30,.88)", 0, 0, 91, 16);
@@ -229,6 +237,7 @@ export function paintPixelStage(canvas, view, frame = 0) {
     if (canvas.isConnected) paintPixelStage(canvas, view, frame);
   };
   environment(ctx, view, frame, repaint);
+  paintWorldSceneDetails(ctx, view, frame);
   characters(ctx, view, frame, repaint);
   overlay(ctx, view);
 }
