@@ -2,13 +2,17 @@
 
 基线：`main@b665d9e3`（A、B 第三阶段尚未合并）。这里的测试环境仅指 Playwright 的 Chromium 移动视口；**没有真实 Android、iOS 或 TapTap WebView 设备证据**。请与已有 `docs/mobile-device-acceptance.md` 的 M01–M14 真机矩阵一起使用，勿将浏览器模拟结果写作设备验收通过。
 
+## 已执行的 Chromium 自动化证据
+
+[GitHub Actions #43790904574](https://github.com/anlew07/learn/actions/runs/43790904574) 在 PR #43 的非诊断版代码上执行成功：ESLint、Prettier、文案校验、Vitest（31 个文件/220 个用例）、Vite 构建、数值比较，以及 Playwright 移动触摸视口（56 个用例）均通过。新增测试实际检查 320/375/390/430 CSS px 的世界/灵魂/战报横向溢出与关键操作可达性；它不是四台真实手机的结果。
+
 ## 竖屏矩阵
 
 | 检查项 | 320 | 375 | 390 | 430 | 依据/备注 |
 | --- | --- | --- | --- | --- | --- |
-| 页面横向溢出（世界/灵魂/战报） | 待 CI 执行 | 待 CI 执行 | 待 CI 执行 | 待 CI 执行 | 新 `first-player-acceptance.pw.js` 将覆盖四个宽度；现有 `mobile-runtime.pw.js` 覆盖320/360/390/430 |
-| 关键行动可见（策略、援助目标） | 待 CI 执行 | 待 CI 执行 | 待 CI 执行 | 待 CI 执行 | 自动断言可见与可滚动；触控舒适度仍需真机 |
-| 底部导航高度/安全区 | 待 CI 执行 | 待 CI 执行 | 待 CI 执行 | 待 CI 执行 | 既有自动测试检查导航≥44 CSS px、未溢出视口；真实手势区域仍需设备 |
+| 页面横向溢出（世界/灵魂/战报） | Chromium 通过 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 新 `first-player-acceptance.pw.js` 将覆盖四个宽度；现有 `mobile-runtime.pw.js` 覆盖320/360/390/430 |
+| 关键行动可见（策略、援助目标） | Chromium 通过 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 自动断言可见与可滚动；触控舒适度仍需真机 |
+| 底部导航高度/安全区 | 局部自动覆盖 | 局部自动覆盖 | 局部自动覆盖 | 局部自动覆盖 | 既有自动测试检查导航≥44 CSS px、未溢出视口；真实手势区域仍需设备 |
 | 中文 125% / 150% 字体放大 | 待真机 | 待真机 | 待真机 | 待真机 | 自动化仅注入 `html.style.fontSize=20px`，不是 OS 字体调节 |
 | 弹窗和表单，软键盘弹起 | 待真机 | 待真机 | 待真机 | 待真机 | 援助的原生 `confirm`，策略/速度下拉；Android/iOS 行为不能由 Chromium 模拟代替 |
 | 画风是否统一像素 RPG | 待真人 | 待真人 | 待真人 | 待真人 | `pixel-ui.pw.js` 检查若干 CSS 禁项，无法判断主观风格 |
