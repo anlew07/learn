@@ -19,12 +19,6 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - name: Temporary formatting diagnostic for camp capture
-        run: |
-          echo FORMAT_BEGIN
-          npx prettier e2e/camp-ui.pw.js | base64 -w0
-          echo
-          echo FORMAT_END
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
