@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64" shape-rendering="crispEdges" aria-label="穿青绿色披风、持灵剑的修行分身">
+  <!-- Original hand-authored pixel sprite: 48x64, no copied third-party artwork -->
+  <path fill="#131b29" d="M13 51h11v11H9v-6h4zm17 0h9v7h4v5H27V52z"/>
+  <path fill="#394150" d="M13 50h9v7h-9zm17 0h8v7h-8z"/>
+  <path fill="#a28b75" d="M11 59h13v3H8v-2h3zm19 0h12v3H27v-2h3z"/>
+  <!-- cape outline and body silhouette -->
+  <path fill="#10212d" d="M12 24h24v4h5v9h-4v12h4v10H7V48h3V35H7v-8h5z"/>
+  <path fill="#275261" d="M12 27h23v6h4v16l2 7H9l2-10V33z"/>
+  <path fill="#397b78" d="M11 30h7v25H9l2-11zm22-3h4v18l3 10h-9l2-11z"/>
+  <path fill="#6bb4a5" d="M14 31h3v14h-3zm19 2h2v18h-2z"/>
+  <path fill="#e6dac4" d="M19 28h13v21H17V33z"/>
+  <path fill="#b2a48e" d="M20 29h10v16H20z"/>
+  <path fill="#294153" d="M21 31h7v13h-7z"/>
+  <path fill="#d9bc7c" d="M21 30h7v2h-7zm-4 13h17v4H17z"/>
+  <path fill="#76553e" d="M18 45h16v5H18z"/>
+  <path fill="#edc97c" d="M24 45h5v5h-5z"/>
+  <path fill="#36556a" d="M25 46h3v3h-3z"/>
+  <!-- hands and gloves -->
+  <path fill="#1b2837" d="M8 35h7v14H6V41h2zm28-2h6v18h-7v-8h1z"/>
+  <path fill="#c59072" d="M9 41h5v5H9zm28-1h5v6h-5z"/>
+  <path fill="#e7aa86" d="M10 40h4v4h-4zm28 0h3v4h-3z"/>
+  <!-- head: hair outline, skin, eyes, ponytail -->
+  <path fill="#101624" d="M16 9h20v4h3v14h-4v6H14v-6h-3V15h5z"/>
+  <path fill="#33303a" d="M17 8h18v5h3v11h-3v5h-3V13H17v17h-4V14h4z"/>
+  <path fill="#e9b88f" d="M19 15h14v13H19z"/>
+  <path fill="#f5cda6" d="M20 16h12v8H20z"/>
+  <path fill="#ba8974" d="M20 25h12v3H20z"/>
+  <path fill="#f1d1ad" d="M24 28h5v5h-5z"/>
+  <path fill="#171d2c" d="M20 13h14v4h-5v2h-9z"/>
+  <path fill="#171d2c" d="M22 21h3v2h-3zm8 0h3v2h-3z"/>
+  <path fill="#7cc7b8" d="M23 21h1v1h-1zm7 0h1v1h-1z"/>
+  <path fill="#8d564e" d="M27 26h3v1h-3z"/>
+  <path fill="#182435" d="M33 17h4v18h-3v8h-3v-9h2z"/>
+  <path fill="#6f5a55" d="M15 9h17v2H17z"/>
+  <!-- sword with readable blade and golden guard -->
+  <path fill="#182535" d="M41 10h4v35h-4z"/>
+  <path fill="#83d9d5" d="M42 8h2v30h-2z"/>
+  <path fill="#eef8dc" d="M42 10h1v23h-1z"/>
+  <path fill="#ddb86d" d="M37 36h10v4H37z"/>
+  <path fill="#6c4a34" d="M41 40h4v13h-4z"/>
+  <path fill="#f4daa0" d="M42 42h1v9h-1z"/>
+  <!-- charm glyph on shoulder -->
+  <path fill="#e4d7a2" d="M13 30h5v8h-5z"/>
+  <path fill="#5aa991" d="M15 32h2v3h-2zm-1 3h4v1h-4z"/>
+</svg>
