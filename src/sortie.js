@@ -6,8 +6,9 @@ import { SORTIE } from "./config/sortie-data.js";
 import { drawSortie } from "./ui/sortie-stage.js";
 
 const skillHints = {
-  thunder: "每" + SORTIE.skills.thunderCooldownSeconds + "秒向最多" +
-    SORTIE.skills.thunderTargets + "名附近敌人各释放1次灵雷",
+  thunder: "每" + SORTIE.skills.thunderCooldownSeconds + "秒对最多" +
+    SORTIE.skills.thunderTargets + "名附近敌人各造成" +
+    SORTIE.skills.thunderDamage + "点伤害",
   rune: "立即获得一层护盾，每" + SORTIE.skills.runeRechargeSeconds +
     "秒重新充能，抵挡一次近身接触",
 };
