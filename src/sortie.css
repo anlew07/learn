@@ -1,0 +1,78 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  color: #f5ecd6;
+  background: #131d1b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; overflow: hidden; }
+button, a { font: inherit; }
+button {
+  min-height: 42px; padding: 8px 14px; border: 2px solid #b4ae80;
+  background: #50644d; color: #fff7df; font-weight: 800; cursor: pointer;
+}
+button:focus-visible, a:focus-visible { outline: 3px solid #f7dda0; outline-offset: 2px; }
+a { color: #f3d898; }
+.sortie-root [hidden] { display: none !important; }
+.sortie-root {
+  position: fixed; inset: 0; height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column; align-items: stretch;
+  max-width: 500px; margin: 0 auto; background: #1a2823; overflow: hidden;
+}
+.sortie-head {
+  min-height: calc(54px + env(safe-area-inset-top));
+  padding: calc(7px + env(safe-area-inset-top)) 12px 7px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: #25362d; border-bottom: 3px solid #7e825c;
+}
+.sortie-head strong { font-size: 14px; }
+.sortie-head small { display: block; color: #d0c9a9; font-size: 11px; }
+.sortie-head a { white-space: nowrap; font-size: 12px; }
+.sortie-intro, .sortie-results {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  align-items: center; padding: 25px; text-align: center; gap: 12px;
+}
+.sortie-intro h1, .sortie-results h1 { margin: 0; font-size: 25px; }
+.sortie-intro p, .sortie-results p { max-width: 320px; color: #d4d6bd; line-height: 1.6; }
+.sortie-intro .sortie-warning { font-size: 12px; color: #f0c78e; }
+.sortie-cta { width: min(290px, 100%); }
+.sortie-play { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.sortie-stats {
+  min-height: 44px; display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 12px; gap: 7px; background: #34473a; font-weight: 800; font-size: 14px;
+}
+.sortie-stats span { white-space: nowrap; }
+.sortie-field {
+  flex: 1; display: grid; place-items: center; min-height: 0;
+  overflow: hidden; background: #121e1c;
+}
+.sortie-field canvas {
+  height: 100%; width: auto; max-width: 100%;
+  object-fit: contain; image-rendering: pixelated;
+}
+.sortie-controls {
+  height: calc(112px + env(safe-area-inset-bottom));
+  flex: 0 0 auto; padding: 8px 16px calc(9px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 15px; background: #26382f; border-top: 3px solid #737c57;
+}
+.sortie-joystick {
+  width: 98px; height: 98px; flex: 0 0 98px; border: 3px solid #aca67f;
+  background: #31473b; border-radius: 50%; position: relative;
+  touch-action: none; user-select: none;
+}
+.sortie-knob {
+  position: absolute; left: 50%; top: 50%; margin: -17px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #b6c39a; border: 3px solid #e2d4a4; pointer-events: none;
+}
+.sortie-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.sortie-actions button { min-width: 92px; }
+.sortie-actions small { font-size: 11px; color: #bdc5b3; }
+.sortie-feedback { font-size: 13px; color: #d8d0b1; }
+@media (max-height: 620px) {
+  .sortie-head { min-height: 44px; }
+  .sortie-controls { height: calc(93px + env(safe-area-inset-bottom)); }
+  .sortie-joystick { width: 77px; height: 77px; flex-basis: 77px; }
+  .sortie-intro, .sortie-results { padding: 12px; gap: 6px; }
+}
