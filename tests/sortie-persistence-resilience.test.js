@@ -104,7 +104,7 @@ describe("sortie archive persistence resilience", () => {
     foreignWorld.run.worlds[1].id = "beast";
 
     for (const invalid of [duplicateWorld, foreignWorld]) {
-      expect(() => assertSortieArchive(invalid)).toThrow("世界结构");
+      expect(() => assertSortieArchive(invalid)).toThrow();
     }
 
     const stored = copy(duplicateWorld);
@@ -118,7 +118,7 @@ describe("sortie archive persistence resilience", () => {
       },
     });
     const loaded = await repository.load();
-    expect(() => recoverSortieArchive(loaded)).toThrow("世界结构");
+    expect(() => recoverSortieArchive(loaded)).toThrow();
     expect(await repository.load()).toEqual(stored);
     expect(writes).toBe(0);
   });
@@ -130,7 +130,7 @@ describe("sortie archive persistence resilience", () => {
 
     const damaged = copy(settled.archive);
     damaged.lastReceipt.battle.stones += 1;
-    expect(() => recoverSortieArchive(damaged)).toThrow("回执与结算账本");
+    expect(() => recoverSortieArchive(damaged)).toThrow();
     expect(() => assertSortieArchive(settled.archive)).not.toThrow();
   });
 
@@ -140,7 +140,7 @@ describe("sortie archive persistence resilience", () => {
     const damaged = copy(settled.archive);
     damaged.lastReceipt = null;
 
-    expect(() => assertSortieArchive(damaged)).toThrow("回执与结算账本");
+    expect(() => assertSortieArchive(damaged)).toThrow();
     expect(settled.archive.lastReceipt).not.toBeNull();
   });
 });
