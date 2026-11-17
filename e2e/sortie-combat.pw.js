@@ -201,3 +201,128 @@ test("second tab is read-only while the first owns the save lock", async ({ page
   await expect(second.locator("[data-start-sortie]")).toBeEnabled();
   await second.close();
 });
+
+test("the camp forge remains accessible without page overflow at mobile sizes", async ({
+  page,
+}) => {
+  await page.goto("/?mode=sortie");
+  await expect(page.locator("[data-start-sortie]")).toBeEnabled();
+  await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "0");
+  await expect(page.locator("[data-sortie-build]")).toBeHidden();
+  for (const [width, height] of [
+    [320, 568],
+    [390, 844],
+    [430, 932],
+  ]) {
+    await page.setViewportSize({ width, height });
+    const info = await page.evaluate(() => ({
+      outerWidth: document.documentElement.scrollWidth,
+      outerHeight: document.documentElement.scrollHeight,
+      panelWidth: document.querySelector("[data-sortie-forge]").getBoundingClientRect().width,
+      rootHeight: document.querySelector("[data-sortie-root]").getBoundingClientRect().height,
+    }));
+    expect(info.outerWidth).toBeLessThanOrEqual(width + 1);
+    expect(info.outerHeight).toBeLessThanOrEqual(height + 1);
+    expect(info.panelWidth).toBeLessThanOrEqual(width);
+    expect(info.rootHeight).toBeLessThanOrEqual(height + 1);
+  }
+});
+
+test("two real battles pay for the forge and use the stronger projectile after reload", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/?mode=sortie");
+  await expect(page.locator("[data-start-sortie]")).toBeEnabled();
+
+  // Replace the throwaway unsaved fresh seed with a deterministic, unmodified
+  // new prototype run. No funds or combat flags are injected by this fixture.
+  await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    const { createSortieArchive } = await import("/src/systems/sortie-session.js");
+    await sortieRepository.enqueueSave(createSortieArchive("forge-e2e"));
+  });
+  await page.reload();
+  await expect(page.locator("[data-start-sortie]")).toBeEnabled();
+
+  async function playRound(expectedDamage) {
+    await page.locator("[data-start-sortie]").click();
+    const field = page.locator("[data-sortie-canvas]");
+    await expect(field).toBeVisible();
+    await expect(field).toHaveAttribute("data-weapon-damage", String(expectedDamage));
+    const directions = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"];
+    for (let i = 0; i < 15; i++) {
+      const results = page.locator("[data-sortie-results]");
+      if (await results.isVisible()) break;
+      const direction = directions[i % 4];
+      await page.keyboard.down(direction);
+      await page.clock.runFor(5_000);
+      await page.keyboard.up(direction);
+      const choice = page.locator("[data-sortie-choice]");
+      if (await choice.isVisible()) {
+        await choice.locator('[data-sortie-skill="thunder"]').click();
+      }
+    }
+    if (!(await page.locator("[data-sortie-results]").isVisible())) {
+      await page.clock.runFor(1_500);
+    }
+    await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "won");
+    await expect(page.locator("[data-sortie-reward-preview]")).toContainText(
+      "灵刃 " + expectedDamage + " 伤害",
+    );
+    await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute(
+      "data-day",
+      String(expectedDamage + 1),
+    );
+  }
+
+  await playRound(1);
+  const first = await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    return sortieRepository.load();
+  });
+  expect(first.run.day).toBe(2);
+  expect(first.lastReceipt.battle.stones).toBeGreaterThanOrEqual(3);
+  expect(first.run.worlds[0].resource).toBeGreaterThanOrEqual(7);
+  expect(first.run.sortieCamp.forgeLevel).toBe(0);
+  await page.locator("[data-sortie-retry]").click();
+  await expect(page.locator("[data-sortie-build]")).toBeEnabled();
+  await expect(page.locator("[data-sortie-forge-preview]")).toContainText("投入 6 灵石");
+  await page.locator("[data-sortie-build]").click();
+  await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
+  await expect(page.locator("[data-sortie-forge-preview]")).toContainText("灵刃伤害 2");
+
+  const afterForge = await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    return sortieRepository.load();
+  });
+  expect(afterForge.run.day).toBe(2);
+  expect(afterForge.run.worlds[0].resource).toBe(first.run.worlds[0].resource - 6);
+  expect(afterForge.run.worlds[1]).toEqual(first.run.worlds[1]);
+  expect(afterForge.run.sortieCamp.buildReceipt.weaponDamage).toBe(2);
+  expect(afterForge.run.sortieCamp.buildReceipt.beforeStats.defeated).toBe(
+    first.lastReceipt.battle.defeated,
+  );
+  await page.reload();
+  await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
+  await expect(page.locator("[data-sortie-build]")).toBeHidden();
+
+  await playRound(2);
+  const second = await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    const { saveRepository } = await import("/src/services/persistence.js");
+    return { prototype: await sortieRepository.load(), formal: await saveRepository.load() };
+  });
+  expect(second.prototype.run.day).toBe(3);
+  expect(second.prototype.run.sortieCamp.forgeLevel).toBe(1);
+  expect(second.prototype.lastReceipt.battle.weaponDamage).toBe(2);
+  expect(second.prototype.run.worlds[0].metrics.actions.sortie).toBe(2);
+  expect(Object.keys(second.prototype.run.sortieLedger)).toHaveLength(2);
+  expect(second.formal.run).toBeNull();
+  expect(second.formal.profile).toBeNull();
+  await page.locator("[data-sortie-retry]").click();
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("首场击退");
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("本场击退");
+});

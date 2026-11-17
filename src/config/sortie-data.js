@@ -6,6 +6,7 @@ export const SORTIE = Object.freeze({
   ticksPerSecond: 60,
   player: Object.freeze({ x: 160, y: 224, radius: 11, hp: 8, speed: 95, hurtSeconds: 1 }),
   weapon: Object.freeze({ cooldownSeconds: 0.7, range: 128, speed: 220, damage: 1, lifetimeSeconds: 1 }),
+  forge: Object.freeze({ cost: 6, maxLevel: 1, damageBonus: 1 }),
   rewards: Object.freeze({
     defeatedPerShard: 3, pickupRadius: 28, shardsPerStone: 3, maxShardStones: 2,
     baseStonesOnWin: 3, experienceOnWin: 2, progressOnWin: 2,

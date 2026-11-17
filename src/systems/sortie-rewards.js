@@ -16,6 +16,7 @@ export function previewSortieRewards(battle) {
     outcome: battle.outcome,
     survivedSeconds: battle.tick / SORTIE.ticksPerSecond,
     defeated: battle.defeated,
+    weaponDamage: battle.weaponDamage,
     collectedShards,
     uncollectedShards: battle.drops.length,
     shardStones,

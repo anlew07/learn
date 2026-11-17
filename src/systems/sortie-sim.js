@@ -26,10 +26,13 @@ function makeSchedule(danger) {
     }));
   });
 }
-export function createSortie(seed = "lingzai-demo", danger = 0) {
+export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0) {
   const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100);
+  if (!Number.isInteger(forgeLevel) || forgeLevel < 0 ||
+    forgeLevel > SORTIE.forge.maxLevel) throw new Error("Invalid forge level");
   return {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
+    forgeLevel, weaponDamage: SORTIE.weapon.damage + forgeLevel * SORTIE.forge.damageBonus,
     hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp, invulnerable: 0 },
     enemies: [], shots: [], hostileShots: [], schedule: makeSchedule(safeDanger), nextSpawn: 0,
     drops: [], collectedShards: 0,
@@ -139,7 +142,7 @@ function advanceShots(battle) {
     const victim = battle.enemies.find((enemy) =>
       enemy.hp > 0 && distance(shot, enemy) <= SORTIE.enemies[enemy.kind].radius + 3);
     if (victim) {
-      damageEnemy(battle, victim, SORTIE.weapon.damage);
+      damageEnemy(battle, victim, battle.weaponDamage);
       shot.ttl = 0;
     }
     if (shot.x < -10 || shot.x > SORTIE.width + 10 || shot.y < -10 || shot.y > SORTIE.height + 10) shot.ttl = 0;
