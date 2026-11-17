@@ -332,7 +332,7 @@
 "src/sortie.js","15","动态拼接/需复原","常规核对","thunder: ""每"" + SORTIE.skills.thunderCooldownSeconds + ""秒对最多"" +"
 "src/sortie.js","16","动态拼接/需复原","常规核对","SORTIE.skills.thunderTargets + ""名附近敌人各造成"" +"
 "src/sortie.js","17","动态拼接/需复原","常规核对","SORTIE.skills.thunderDamage + ""点伤害"","
-"src/sortie.js","18","动态拼接/需复原","常规核对","rune: ""立即获得一层护盾，每"" + SORTIE.skills.runeRechargeSeconds +"
+"src/sortie.js","18","动态拼接/需复原","重点复核","rune: ""立即获得一层护盾，每"" + SORTIE.skills.runeRechargeSeconds +"
 "src/sortie.js","19","静态/待复核","常规核对","""秒重新充能，抵挡一次近身接触"","
 "src/sortie.js","32","静态/待复核","常规核对","'<header class=""sortie-head""><div><strong>灵灾 · 雾谷试炼</strong><small>第二阶段 2D · 出击→营地建设→再出击</small></div>',"
 "src/sortie.js","33","静态/待复核","常规核对","'<a href=""./"">返回正式模拟器</a></header>',"
