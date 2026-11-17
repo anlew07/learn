@@ -83,9 +83,7 @@ test("refreshing a prototype does not use the formal save", async ({ page }) => 
   expect(existing.run).toBeNull();
   expect(existing.profile).toBeNull();
 });
-test("the 25-second skill choice freezes time and resumes with a real choice", async ({
-  page,
-}) => {
+test("the 25-second skill choice freezes time and resumes with a real choice", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/?mode=sortie");
