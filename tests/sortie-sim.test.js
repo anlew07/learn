@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { SORTIE } from "../src/config/sortie-data.js";
-import { createSortie, stepSortie, advanceSortie, DURATION_TICKS } from "../src/systems/sortie-sim.js";
+import {
+  createSortie,
+  stepSortie,
+  advanceSortie,
+  chooseSortieSkill,
+  DURATION_TICKS,
+} from "../src/systems/sortie-sim.js";
 
 describe("isolated Lingzai battle", () => {
   it("starts with 24 enemies on schedule and no official world or rewards", () => {
@@ -58,7 +64,10 @@ describe("isolated Lingzai battle", () => {
   it("wins exactly at 75 seconds when life is left", () => {
     const b = createSortie("survival");
     b.hero.invulnerable = DURATION_TICKS + 1;
-    for (let n = 0; n < DURATION_TICKS; n++) stepSortie(b);
+    for (let n = 0; n < DURATION_TICKS; n++) {
+      if (b.skillChoicePending) chooseSortieSkill(b, "rune");
+      stepSortie(b);
+    }
     expect(b.outcome).toBe("won");
     expect(b.tick).toBe(DURATION_TICKS);
     expect(b.nextSpawn).toBe(24);
@@ -68,6 +77,8 @@ describe("isolated Lingzai battle", () => {
     const still = createSortie("test-1");
     const dodging = createSortie("test-1");
     for (let n = 0; n < DURATION_TICKS; n++) {
+      if (still.skillChoicePending) chooseSortieSkill(still, "thunder");
+      if (dodging.skillChoicePending) chooseSortieSkill(dodging, "thunder");
       stepSortie(still);
       stepSortie(dodging, { x: Math.cos(n / 70), y: Math.sin(n / 70) });
     }
@@ -89,7 +100,10 @@ describe("isolated Lingzai battle", () => {
   it("has identical results at 30/60/120 Hz", () => {
     const run = (hz) => {
       const b = createSortie("refresh");
-      for (let n = 0; n < hz * 60; n++) advanceSortie(b, { x: 0, y: 0 }, 1000 / hz);
+      for (let n = 0; n < hz * 60; n++) {
+        if (b.skillChoicePending) chooseSortieSkill(b, "thunder");
+        advanceSortie(b, { x: 0, y: 0 }, 1000 / hz);
+      }
       return { ...b, remainderMs: Math.round(b.remainderMs * 1e6) / 1e6 };
     };
     expect(run(30)).toEqual(run(60));

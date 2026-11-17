@@ -32,6 +32,10 @@ export function createSortie(seed = "lingzai-demo", danger = 0) {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
     hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp, invulnerable: 0 },
     enemies: [], shots: [], hostileShots: [], schedule: makeSchedule(safeDanger), nextSpawn: 0,
+    drops: [], collectedShards: 0,
+    skillOffered: false, skillChoicePending: false, skillId: null,
+    thunderNextTick: 0, thunderHits: 0, flashTargets: [], flashUntil: 0,
+    runeShield: 0, runeNextTick: 0, shieldBlocks: 0,
     nextId: 1, nextShotTick: 1, fired: 0, defeated: 0, hurt: 0, outcome: "running",
   };
 }
@@ -78,14 +82,65 @@ function fire(battle) {
   battle.fired++;
   battle.nextShotTick = battle.tick + Math.round(SORTIE.weapon.cooldownSeconds * SORTIE.ticksPerSecond);
 }
+function damageEnemy(battle, enemy, damage) {
+  if (enemy.hp <= 0) return;
+  enemy.hp = Math.max(0, enemy.hp - damage);
+  if (enemy.hp === 0) {
+    battle.defeated++;
+    if (battle.defeated % SORTIE.rewards.defeatedPerShard === 0) {
+      // The actual defeated position matters: players must approach the fragment.
+      battle.drops.push({ id: enemy.id, x: enemy.x, y: enemy.y });
+    }
+  }
+}
+
+function collectFragments(battle) {
+  const uncollected = [];
+  for (const drop of battle.drops) {
+    if (distance(drop, battle.hero) <= SORTIE.rewards.pickupRadius) {
+      battle.collectedShards++;
+    } else {
+      uncollected.push(drop);
+    }
+  }
+  battle.drops = uncollected;
+}
+
+function applySkillEffects(battle) {
+  if (battle.skillId === "thunder" && battle.tick >= battle.thunderNextTick) {
+    battle.thunderNextTick += Math.round(
+      SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond,
+    );
+    const targets = battle.enemies
+      .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
+      .filter(({ enemy, range }) => enemy.hp > 0 && range <= SORTIE.skills.thunderRange)
+      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)
+      .slice(0, SORTIE.skills.thunderTargets)
+      .map(({ enemy }) => enemy);
+    if (targets.length) {
+      battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
+      battle.flashUntil = battle.tick + 15;
+      battle.thunderHits += targets.length;
+      for (const enemy of targets) damageEnemy(battle, enemy, SORTIE.skills.thunderDamage);
+      battle.enemies = battle.enemies.filter((enemy) => enemy.hp > 0);
+    }
+  }
+  if (battle.skillId === "rune" && battle.tick >= battle.runeNextTick) {
+    battle.runeNextTick += Math.round(
+      SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond,
+    );
+    battle.runeShield = 1;
+  }
+}
+
 function advanceShots(battle) {
   for (const shot of battle.shots) {
     shot.x += shot.vx; shot.y += shot.vy; shot.ttl--;
     const victim = battle.enemies.find((enemy) =>
       enemy.hp > 0 && distance(shot, enemy) <= SORTIE.enemies[enemy.kind].radius + 3);
     if (victim) {
-      victim.hp -= SORTIE.weapon.damage; shot.ttl = 0;
-      if (victim.hp <= 0) battle.defeated++;
+      damageEnemy(battle, victim, SORTIE.weapon.damage);
+      shot.ttl = 0;
     }
     if (shot.x < -10 || shot.x > SORTIE.width + 10 || shot.y < -10 || shot.y > SORTIE.height + 10) shot.ttl = 0;
   }
@@ -117,9 +172,42 @@ function advanceEnemies(battle) {
     enemy.x += dx / len * step; enemy.y += dy / len * step;
   }
 }
+/** No world-building slot is touched: this choice exists only during this sortie. */
+export function chooseSortieSkill(battle, powerId) {
+  if (!battle || battle.outcome !== "running" || !battle.skillChoicePending) {
+    return { ok: false, error: "当前没有待选择的战技" };
+  }
+  if (!SORTIE.skills.options.includes(powerId)) {
+    return { ok: false, error: "战技不在候选列表" };
+  }
+  battle.skillId = powerId;
+  battle.skillChoicePending = false;
+  if (powerId === "thunder") {
+    battle.thunderNextTick = battle.tick +
+      Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
+  }
+  if (powerId === "rune") {
+    battle.runeShield = 1;
+    battle.runeNextTick = battle.tick +
+      Math.round(SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond);
+  }
+  return { ok: true, skillId: powerId };
+}
+
+/** Manual retreat is an explicit end, unlike refreshing an uncommitted sandbox. */
+export function retreatSortie(battle) {
+  if (!battle || battle.outcome !== "running") {
+    return { ok: false, error: "战斗已经结束" };
+  }
+  battle.outcome = "retreated";
+  battle.skillChoicePending = false;
+  battle.remainderMs = 0;
+  return { ok: true };
+}
+
 /** One fixed 60 Hz simulation tick; this module never touches the official Engine. */
 export function stepSortie(battle, input = { x: 0, y: 0 }) {
-  if (battle.outcome !== "running") return battle;
+  if (battle.outcome !== "running" || battle.skillChoicePending) return battle;
   battle.tick++;
   moveHero(battle, input);
   while (battle.nextSpawn < battle.schedule.length &&
@@ -131,25 +219,48 @@ export function stepSortie(battle, input = { x: 0, y: 0 }) {
   advanceEnemies(battle);
   fire(battle);
   advanceShots(battle);
+  applySkillEffects(battle);
+  collectFragments(battle);
   const projectileContact = advanceHostileShots(battle);
+  const bodyContact = battle.enemies.some((enemy) =>
+    distance(enemy, battle.hero) < SORTIE.player.radius + SORTIE.enemies[enemy.kind].radius);
   if (battle.hero.invulnerable > 0) battle.hero.invulnerable--;
-  if (battle.hero.invulnerable === 0 && (projectileContact || battle.enemies.some((enemy) =>
-    distance(enemy, battle.hero) < SORTIE.player.radius + SORTIE.enemies[enemy.kind].radius))) {
-    battle.hero.hp--;
-    battle.hurt++;
-    battle.hero.invulnerable = Math.round(SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond);
-    if (battle.hero.hp <= 0) battle.outcome = "lost";
+  if (battle.hero.invulnerable === 0 && (bodyContact || projectileContact)) {
+    let damaged = bodyContact || projectileContact;
+    if (bodyContact && battle.runeShield > 0) {
+      battle.runeShield = 0;
+      battle.shieldBlocks++;
+      // A shielded body hit grants the same brief immunity as an ordinary hit.
+      if (!projectileContact) {
+        battle.hero.invulnerable = Math.round(SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond);
+        damaged = false;
+      }
+    }
+    if (damaged) {
+      battle.hero.hp--;
+      battle.hurt++;
+      battle.hero.invulnerable = Math.round(SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond);
+      if (battle.hero.hp <= 0) battle.outcome = "lost";
+    }
   }
   if (battle.tick >= DURATION_TICKS && battle.outcome === "running") battle.outcome = "won";
+  if (battle.outcome === "running" && !battle.skillOffered &&
+    battle.tick >= SORTIE.skills.choiceSeconds * SORTIE.ticksPerSecond) {
+    battle.skillOffered = true;
+    battle.skillChoicePending = true;
+  }
   return battle;
 }
 /** Rendering cadence never changes the fixed-tick battle result. */
 export function advanceSortie(battle, input, deltaMs) {
-  if (battle.outcome !== "running" || !Number.isFinite(deltaMs) || deltaMs <= 0) return battle;
+  if (battle.outcome !== "running" || battle.skillChoicePending ||
+    !Number.isFinite(deltaMs) || deltaMs <= 0) return battle;
   battle.remainderMs += Math.min(deltaMs, 250);
   const steps = Math.floor((battle.remainderMs + 1e-7) / TICK_MS);
   battle.remainderMs -= steps * TICK_MS;
-  for (let i = 0; i < steps && battle.outcome === "running"; i++) stepSortie(battle, input);
-  if (battle.outcome !== "running") battle.remainderMs = 0;
+  for (let i = 0; i < steps && battle.outcome === "running" && !battle.skillChoicePending; i++) {
+    stepSortie(battle, input);
+  }
+  if (battle.outcome !== "running" || battle.skillChoicePending) battle.remainderMs = 0;
   return battle;
 }

@@ -62,11 +62,35 @@ export function drawSortie(canvas, battle) {
     ctx.fillStyle = "#fff4cc";
     ctx.fillRect(Math.round(shot.x) - 1, Math.round(shot.y) - 1, 2, 2);
   }
+  for (const drop of battle.drops) {
+    const x = Math.round(drop.x), y = Math.round(drop.y);
+    ctx.fillStyle = "#e2b852";
+    ctx.fillRect(x - 4, y - 4, 8, 8);
+    ctx.fillStyle = "#fff5bc";
+    ctx.fillRect(x - 2, y - 5, 4, 5);
+  }
+  if (battle.flashUntil > battle.tick) {
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#e7f6b4";
+    for (const target of battle.flashTargets) {
+      ctx.beginPath();
+      ctx.moveTo(Math.round(battle.hero.x), Math.round(battle.hero.y));
+      ctx.lineTo(Math.round(target.x), Math.round(target.y));
+      ctx.stroke();
+    }
+  }
   for (const shot of battle.hostileShots) {
     ctx.fillStyle = "#927aba";
     ctx.fillRect(Math.round(shot.x) - 4, Math.round(shot.y) - 4, 8, 8);
     ctx.fillStyle = "#e7cafa";
     ctx.fillRect(Math.round(shot.x) - 2, Math.round(shot.y) - 2, 4, 4);
+  }
+  if (battle.runeShield > 0) {
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#a6f2d2";
+    ctx.beginPath();
+    ctx.arc(battle.hero.x, battle.hero.y, 17, 0, Math.PI * 2);
+    ctx.stroke();
   }
   const hero = getSprite("hero");
   if (battle.hero.invulnerable === 0 || battle.tick % 8 < 4) {
