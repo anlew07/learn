@@ -98,12 +98,9 @@ function damageEnemy(battle, enemy, damage) {
 }
 
 function collectFragments(battle) {
-  // Require physical overlap with the 8px fragment sprite (+1px tolerance).
-  // This changes only pickup reach; enemies, shots and damage stay unchanged.
   const uncollected = [];
   for (const drop of battle.drops) {
-    if (distance(drop, battle.hero) <= Math.min(
-      SORTIE.rewards.pickupRadius, SORTIE.player.radius + 5)) {
+    if (distance(drop, battle.hero) <= Math.min(SORTIE.rewards.pickupRadius, SORTIE.player.radius + 5)) {
       battle.collectedShards++;
     } else {
       uncollected.push(drop);
