@@ -330,7 +330,7 @@ function fixed(value, digits = 2) {
 function printReport(result) {
   console.log("\n## 2E 固定种子实验：第二场表现");
   console.log(
-      "击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
+    "击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
   );
   console.log("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
   for (const row of result.groups) {
@@ -422,9 +422,7 @@ function printReport(result) {
       result.sorties +
       " 场出击。",
   );
-  console.log(
-      "不是玩家胜率，也不代表真实手机体验。",
-  );
+  console.log("不是玩家胜率，也不代表真实手机体验。");
 }
 
 export function runSortieExperiment(seedCount = DEFAULT_SEEDS) {
