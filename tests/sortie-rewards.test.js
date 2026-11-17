@@ -64,7 +64,7 @@ describe("one-time in-combat power choice", () => {
     const rechargeTicks = Math.round(
       SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond,
     );
-    expect(SORTIE.skills.runeRechargeSeconds).toBe(18);
+    expect(SORTIE.skills.runeRechargeSeconds).toBe(25);
     expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
     expect(battle.runeNextTick).toBe(choiceTick + rechargeTicks);
     battle.nextShotTick = Number.POSITIVE_INFINITY;
