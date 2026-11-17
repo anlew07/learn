@@ -95,10 +95,11 @@ test("decisions from another world appear without leaving the fixed scene", asyn
   });
   await page.reload();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
-  await expect(page.locator(".stage-caption")).toContainText("灵灾");
+  await expect(page.locator(".stage-caption")).toContainText("废土救援");
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toContainText("!");
   await expect(page.locator('.stage-actions [data-panel="event"]')).toContainText("待处理 1");
-  await page.locator('.stage-actions [data-panel="event"]').click();
+  await expect(page.locator(".stage-day")).toContainText("已暂停");
+  await expect(page.getByRole("dialog", { name: "待处理事件与战技" })).toBeVisible();
   await expect(page.getByRole("dialog")).toContainText("废土救援 · 战技觉醒");
   await expect(page.locator("[data-game-stage]")).toBeVisible();
 });

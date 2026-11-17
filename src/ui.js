@@ -4,6 +4,8 @@ import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/
 applyTextSize();
 import Engine from "./engine.js";
 import { getStageView } from "./presentation/stage-view.js";
+import { DAY_DURATION_MS, readDayProgress } from "./presentation/day-progress.js";
+import { nextNewDecision, pendingDecisions } from "./presentation/decision-attention.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
 import { getOpeningBrief, getWorldGuidance, getTutorialGuidance, getOutcomeGuidance } from "./presentation/player-guidance.js";
 import { ATTACK_PATTERNS } from "./systems/attack-patterns.js";
@@ -15,11 +17,12 @@ import { saveRepository, assertRestorableSnapshot } from "./services/persistence
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
 const app = document.querySelector("#app");
-const TEMPOS = {1:20000,2:10000,4:5000};
+const TEMPOS = DAY_DURATION_MS;
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 const isDebug = new URLSearchParams(location.search).has("debug");
 let run = null, profile = {runCount:0,shards:0}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
 let sceneWorldId = "lingzai", scenePanel = "", infoPage = "";
+let tickHeldMs = 0;
 let saveError = false, restoreError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
@@ -481,6 +484,58 @@ function homeHtml(){
 function inQuickStart(){
  return Boolean(run?.onboardingFocus && run.active && run.day<9);
 }
+/**
+ * Interrupt only when a decision becomes newly actionable. A dismissed but
+ * unresolved choice may still follow the engine's documented automatic
+ * outcome if the player explicitly resumes the simulation.
+ */
+function resetDayClock(now=performance.now()) {
+ tickStarted=now;
+ tickHeldMs=0;
+}
+function pauseDayClock(now=performance.now()) {
+ if(!run?.paused)tickHeldMs=Math.max(0,Math.min(
+  (TEMPOS[run.speed]||TEMPOS[1])-1,now-tickStarted
+ ));
+ tickStarted=now;
+}
+function resumeDayClock(now=performance.now()) {
+ tickStarted=now-tickHeldMs;
+ tickHeldMs=0;
+}
+/** Updates only the decorative HUD: no game days, payments or RNG. */
+function updateDayClock(now=performance.now()) {
+ if(!run||tab!=="scene")return;
+ const stage=app.querySelector("[data-game-stage]");
+ if(!stage)return;
+ const elapsed=run.paused?tickHeldMs:Math.max(0,now-tickStarted);
+ const {percent,phase,label}=readDayProgress(elapsed,run.speed);
+ const track=stage.querySelector(".stage-time-progress");
+ const fill=track?.querySelector(".stage-time-fill");
+ if(track) {
+  track.setAttribute("aria-valuenow",String(percent));
+  track.setAttribute("aria-valuetext",label+" · "+percent+"%");
+ }
+ if(fill)fill.style.width=percent+"%";
+ const state=stage.querySelector("[data-stage-time-label]");
+ if(state)state.textContent=label+" · "+(run.paused?"已暂停":"自动进行中");
+ const window=stage.querySelector(".stage-window");
+ if(window)window.dataset.timePhase=phase;
+}
+function pauseForDecision(existingKeys = new Set()) {
+ if(!session.isOwner || !run?.active)return false;
+ const decision=nextNewDecision(run,existingKeys);
+ if(!decision)return false;
+ run.paused=true;
+ tickStarted=performance.now();
+ // Classic debug mode keeps its existing inline decision board, but still
+ // pauses time. Normal play always opens the actual choice drawer.
+ if(tab==="scene" || !isDebug){
+  tab="scene";infoPage="";scenePanel="event";
+  if(!inQuickStart()||decision.worldId==="lingzai")sceneWorldId=decision.worldId;
+ }
+ return true;
+}
 function quickStartHtml(){
  const phase=run.day<=4?"观察分身每天的自主成长。点击「继续模拟」，或在调试模式按天推进。":
    run.day<=6?"留意等级与救援准备的变化，战技觉醒后也可以主动选择能力。":
@@ -582,8 +637,10 @@ function stagePanelHtml(view) {
     ...(w.pendingEvent?.state==="active"?['<h3 class="stage-pending-world">'+esc(w.name)+'</h3>'+eventHtml(w)]:[]),
     ...(w.build?.pending?[buildHtml(w)]:[]),
   ]);
-  content = decisions.length?decisions.join(""):
-    '<p class="hint">当前没有待处理的关键选择，分身会继续自主行动。</p>';
+  content = decisions.length?
+    '<p class="stage-decision-alert" role="status">模拟已暂停 · 请决定如何处理。关闭面板可以稍后再选；主动继续模拟后，逾期事件会按显示的默认结果处理。</p>'+
+    decisions.join(""):
+    '<p class="hint">当前没有待处理的关键选择。可返回主屏继续模拟。</p>';
  }
  if (scenePanel === "aid") content = soulHtml();
  if (scenePanel === "team") content = partyHtml();
@@ -618,7 +675,8 @@ function sceneHtml() {
   '<header class="stage-top">'+
   '<div class="stage-brand-group"><span class="stage-brand-seal" aria-hidden="true">✦</span>'+
   '<div class="stage-brand-copy"><span class="stage-brand">同时穿越</span><small>末日救援 · 世界守望</small></div></div>'+
-  '<span class="stage-day"><b>第 '+view.day+' 天</b><small class="'+(view.paused?'is-paused':'is-running')+'">'+statusText+'</small></span>'+
+  '<span class="stage-day"><b>第 '+view.day+' 天</b><small data-stage-time-label class="'+(view.paused?'is-paused':'is-running')+'">清晨 · '+statusText+'</small>'+
+  '<span class="stage-time-progress" role="progressbar" aria-label="距下一天的计时进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="跟随真实模拟计时；日夜光照只是视觉提示"><span class="stage-time-fill"></span></span></span>'+
   '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能" title="更多功能">☰</button></header>'+
   '<div class="stage-counters" aria-label="全局状态">'+
   '<span class="stage-stat" data-stat="saved"><span>获救世界</span><b>'+view.saved+'<small>/'+view.total+'</small></b></span>'+
@@ -641,9 +699,10 @@ function sceneHtml() {
    '<span class="stage-world-info"><b>'+esc(w.title)+'</b><span class="stage-world-indicator">'+
    (view.paused?'继续后同步行动':'正在同步行动')+'</span></span></button>').join(""))+
   '</nav>'+
-  '<section class="stage-window" aria-label="像素世界现场">'+
+  '<section class="stage-window" data-time-phase="morning" aria-label="像素世界现场">'+
   '<canvas data-stage-canvas width="320" height="208" role="img" aria-label="'+
   esc(view.title+'像素场景：分身正在'+view.action+',危机压力'+view.danger+'%')+'"></canvas>'+
+  '<div class="stage-daylight" aria-hidden="true"></div>'+
   '<div class="stage-caption"><small>当前世界 · WORLD</small><b>'+esc(view.title)+'</b><span>Lv'+view.level+' · '+esc(view.status)+' · 剩余'+view.deadline+'天</span></div>'+
   '<div class="stage-scene-status" data-scene-phase="'+esc(view.scene.phase)+'"><span class="stage-status-dot"></span>'+esc(view.scene.summary)+'</div>'+
   '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+
@@ -697,8 +756,8 @@ function render(){
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
  if(tab==="scene"){
-  // The world continues evolving while a drawer is open. Keep its scroll position
-  // and the active action reachable instead of resetting the sheet each game day.
+  // Preserve drawer scroll and focus during ordinary updates. Urgent choices
+  // interrupt the simulation instead of silently evolving behind the drawer.
   const oldSheet=app.querySelector(".stage-sheet");
   const sameSheet=oldSheet?.dataset.stagePanel===scenePanel;
   const oldScroll=sameSheet?app.querySelector(".stage-sheet-body")?.scrollTop??0:0;
@@ -716,6 +775,7 @@ function render(){
       element.dataset.power].every((value,index)=>value===focusKey[index])):null;
    (matching||sheet.querySelector(".stage-sheet-head button"))?.focus({preventScroll:true});
   }
+  updateDayClock();
   startPixelStage(app.querySelector("[data-stage-canvas]"),getStageView(run,sceneWorldId));
   return;
  }
@@ -753,8 +813,12 @@ async function execute(type,args){
    return;
  }
  if(!run.active)reward();
+ const wasChoice=scenePanel==="event"&&["event","build","fusion"].includes(type);
+ const done=wasChoice&&pendingDecisions(run).length===0;
+ if(done)scenePanel="";
  const saved=queueSave();
  render();
+ if(done)report("选择已结算，模拟保持暂停。点击「继续模拟」进入下一天。");
  await saved;
  commandBusy=false;
 }
@@ -771,7 +835,8 @@ function confirmNew(mode="full"){
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
  run=Engine.fresh(seed,profile.runCount+1,waves);
  run.onboardingFocus=mode==="focus"&&profile.runCount===0;
- tab=isDebug?"world":"scene";sceneWorldId="lingzai";scenePanel="";queueSave();render();return true;
+ tab=isDebug?"world":"scene";sceneWorldId="lingzai";scenePanel="";
+ resetDayClock();queueSave();render();return true;
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
@@ -786,7 +851,13 @@ function handleClick(target){
  if(action==="scene-return"){tab="scene";scenePanel="";render();return;}
  if(action==="scene-classic"){tab="world";scenePanel="";render();return;}
  if(action==="scene-world"){if(run?.worlds.some(w=>w.id===id)&&!inQuickStart()){sceneWorldId=id;scenePanel="";render();}return;}
- if(action==="scene-panel"){scenePanel=target.dataset.panel||"";render();return;}
+ if(action==="scene-panel"){
+  const nextPanel=target.dataset.panel||"";
+  if(nextPanel==="event"&&session.isOwner&&run?.active&&!run.paused&&pendingDecisions(run).length){
+   pauseDayClock();run.paused=true;queueSave();
+  }
+  scenePanel=nextPanel;render();return;
+ }
  if(action==="scene-close"){
   const closingPanel=scenePanel;
   scenePanel="";render();
@@ -845,8 +916,16 @@ function handleClick(target){
    }
    return;
  }
- if(action==="toggle"){run.paused=!run.paused;tickStarted=performance.now();queueSave();render();return;}
- if(action==="step"){const result=Engine.step(run);if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;}
+ if(action==="toggle"){
+  if(run.paused){run.paused=false;resumeDayClock();}
+  else {pauseDayClock();run.paused=true;}
+  queueSave();render();return;
+ }
+ if(action==="step"){
+  const previous=new Set(pendingDecisions(run).map(item=>item.key));
+  const result=Engine.step(run);resetDayClock();pauseForDecision(previous);
+  if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;
+ }
  if(action==="retreat"){
    const length=window.confirm("安排6天深度闭关吗？\n取消则安排4天短闭关。")?6:4;
    execute("retreat",[id,length]);return;
@@ -877,10 +956,19 @@ app.addEventListener("change",event=>{
  if(!run||!session.isOwner||commandBusy||saveError)return;
  if(t.id==="aid-from"||t.id==="aid-to"){updateAidChoices();return;}
  if(action==="strategy"){execute("strategy",[t.dataset.world,t.value]);return;}
- if(action==="speed"){run.speed=Number(t.value)||1;tickStarted=performance.now();queueSave();render();}
+ if(action==="speed"){
+  const now=performance.now(),priorDuration=TEMPOS[run.speed]||TEMPOS[1];
+  const elapsed=run.paused?tickHeldMs:Math.max(0,now-tickStarted);
+  run.speed=Number(t.value)||1;
+  const nextDuration=TEMPOS[run.speed]||TEMPOS[1];
+  const carried=Math.min(nextDuration-1,elapsed*nextDuration/priorDuration);
+  if(run.paused)tickHeldMs=carried;
+  else tickStarted=now-carried;
+  queueSave();render();
+ }
 });
 document.addEventListener("visibilitychange",()=>{
- if(document.hidden&&run&&session.isOwner&&!run.paused){run.paused=true;tickStarted=performance.now();queueSave();render();}
+ if(document.hidden&&run&&session.isOwner&&!run.paused){pauseDayClock();run.paused=true;queueSave();render();}
 });
 window.addEventListener("pagehide",()=>{if(run&&session.isOwner)queueSave();});
 window.addEventListener("keydown",e=>{
@@ -910,22 +998,15 @@ setInterval(()=>{
  const now=performance.now();
  if(now-tickStarted >= (TEMPOS[run.speed] || TEMPOS[1])){
    // Single day maximum per timer tick: never batch unseen days after background throttling.
-   tickStarted=now;
-   const priorActive=new Set(run.worlds.filter(w=>w.pendingEvent?.state==="active").map(w=>w.id+":"+w.pendingEvent.id));
+   resetDayClock(now);
+   const previous=new Set(pendingDecisions(run).map(item=>item.key));
    const result=Engine.step(run);
-   if(!result.ok){run.paused=true;}
-   const newUrgent=run.worlds.find(w=>w.pendingEvent?.state==="active"&&!priorActive.has(w.id+":"+w.pendingEvent.id));
-   if(newUrgent&&run.speed===4){
-    run.paused=true;
-    if(tab==="scene"){
-     if(!inQuickStart()||newUrgent.id==="lingzai")sceneWorldId=newUrgent.id;
-     scenePanel="event";
-    }else{
-     tab="world";
-    }
-   }
+   if(!result.ok)run.paused=true;
+   pauseForDecision(previous);
    if(!run.active)reward();
    queueSave();render();
+ }else{
+   updateDayClock(now);
  }
 },300);
 async function claimSession() {
@@ -939,19 +1020,28 @@ async function claimSession() {
    assertRestorableSnapshot({run:saved,profile:account},Engine.VERSION);
    if(account&&typeof account.runCount==="number")profile=account;
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
+     const hadUnpausedSave=!saved.paused;
+     const needsReward=Boolean(acquired&&saved.result&&!saved.rewarded);
      run=saved;run.paused=true;
-     if(acquired&&run.result&&!run.rewarded){reward();queueSave();}
+     if(needsReward)reward();
+     if(acquired&&(hadUnpausedSave||needsReward))queueSave();
    }else{
      run=null;
    }
-   if(acquired){tab=isDebug?"world":"scene";saveError=false;restoreError=false;}
+   if(acquired){
+    tab=isDebug?"world":"scene";saveError=false;restoreError=false;
+    scenePanel="";
+    // Older saves may already contain a choice that was never surfaced.
+    // Reopening the dialog must not re-run the choice or advance a day.
+    pauseForDecision();
+   }
  }catch(error){
    restoreError=true;
    console.error("恢复存档失败",error);
    if(acquired)await session.release();
    sessionStatus="readonly";
  }
- tickStarted=performance.now();
+ resetDayClock();
  render();
 }
 claimSession();

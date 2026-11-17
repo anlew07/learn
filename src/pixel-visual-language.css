@@ -62,6 +62,27 @@
 .stage-brand-copy small { color: #b7c8b4; font-size: 9px; letter-spacing: 0.07em; }
 .stage-day b { color: var(--px-light); font-size: 15px; line-height: 1.3; }
 .stage-day small { color: var(--px-muted); font-size: 10px; }
+/* A visible day timer uses the exact interval of the active simulation speed. */
+.stage-time-progress {
+  display: block;
+  width: min(100%, 106px);
+  height: 7px;
+  margin-top: 3px;
+  overflow: hidden;
+  background: #111f19;
+  border: 1px solid #a68f65;
+  box-shadow: inset 0 1px 0 #0a1711;
+}
+.stage-time-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  background: #f0cd89;
+  box-shadow: inset 0 1px 0 #fff0c1;
+}
+.stage-day:has(.is-paused) .stage-time-fill { background: #9aab91; }
+.stage-game:has(.stage-window[data-time-phase="dusk"]) .stage-time-fill { background: #e9a378; }
+.stage-game:has(.stage-window[data-time-phase="night"]) .stage-time-fill { background: #afbfe3; }
 .stage-day .is-running { color: #bde3a8; }
 .stage-day .is-paused { color: #f0ce91; }
 .stage-day .is-running::before,
@@ -149,6 +170,23 @@
   background: #203e43;
   border-block: 3px solid #172723;
   box-shadow: inset 0 0 0 3px #78916e;
+}
+/* Light cues follow the same day progress, never an independent animation. */
+.stage-daylight {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(249 188 116 / 15%);
+}
+.stage-window[data-time-phase="day"] .stage-daylight {
+  background: rgb(255 226 173 / 3%);
+}
+.stage-window[data-time-phase="dusk"] .stage-daylight {
+  background: rgb(179 97 78 / 26%);
+}
+.stage-window[data-time-phase="night"] .stage-daylight {
+  background: rgb(8 19 47 / 48%);
 }
 .stage-window::before, .stage-window::after {
   content: "";
@@ -316,6 +354,16 @@
 }
 .stage-sheet-body :is(.hint, .muted, .world-meta) { color: #c5d0bb; }
 .stage-sheet-body h2 { color: #fbe5b3; }
+.stage-sheet-body .stage-decision-alert {
+  color: #fff0c1;
+  background: #594333;
+  border: 2px solid #edc183;
+  box-shadow: inset 2px 2px 0 #7d5c3f;
+  padding: 9px 11px;
+  margin: 0 0 12px;
+  line-height: 1.55;
+  font-size: 12px;
+}
 .stage-pending-world {
   background: #40523b;
   border-left: 4px solid #f6d593;

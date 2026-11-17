@@ -118,7 +118,7 @@ function paintSkyLandmarks(ctx, view, topHeight, frame) {
  * This avoids a huge empty letterbox on 390x844 phones without stretching
  * the characters or cropping the ruins on shorter screens.
  */
-function pixelSky(ctx, view, topHeight, frame) {
+function pixelSky(ctx, view, topHeight, frame, daylight = "morning") {
   if (topHeight <= 0) return;
   const critical = view.scene?.phase === "critical";
   const isLing = view.worldId === "lingzai";
@@ -130,16 +130,28 @@ function pixelSky(ctx, view, topHeight, frame) {
   const band = Math.max(1, Math.ceil(topHeight / colors.length));
   colors.forEach((color, i) => rect(ctx, color, 0, i * band, WIDTH, band + 1));
 
-  // A stylized crescent / guardian sigil: rectangular pixel clusters, not a bitmap.
-  const moonX = 242;
-  const moonY = Math.max(28, Math.floor(topHeight * .3));
-  const moonShape = [8, 13, 17, 20, 23, 24, 25, 26, 26, 25, 24, 23, 20, 17, 13, 8];
-  moonShape.forEach((extent, row) => {
-    rect(ctx, critical ? "#a5828f" : "#c0c2b1", moonX - extent, moonY + row * 2, extent * 2, 2);
-  });
-  rect(ctx, colors[1], moonX + 6, moonY + 5, 18, 17);
-  rect(ctx, "#e3d5b2", moonX - 10, moonY + 10, 4, 2);
-  rect(ctx, "#f9e2b7", moonX - 7, moonY + 4, 3, 2);
+  // The actual simulation timer chooses the visual light phase; the celestial
+  // body never creates a new calendar, event trigger or combat modifier.
+  const orbX = 242;
+  const orbY = Math.max(28, Math.floor(topHeight * .3));
+  if (daylight === "night") {
+    const moonShape = [8, 13, 17, 20, 23, 24, 25, 26, 26, 25, 24, 23, 20, 17, 13, 8];
+    moonShape.forEach((extent, row) => {
+      rect(ctx, critical ? "#a5828f" : "#c0c2b1", orbX - extent, orbY + row * 2, extent * 2, 2);
+    });
+    rect(ctx, colors[1], orbX + 6, orbY + 5, 18, 17);
+    rect(ctx, "#e3d5b2", orbX - 10, orbY + 10, 4, 2);
+  } else {
+    const sunColor = daylight === "morning" ? "#f1be83" :
+      daylight === "dusk" ? "#e7a27a" : "#ffe5ac";
+    const sunShape = [7, 12, 15, 17, 19, 20, 20, 19, 17, 15, 12, 7];
+    sunShape.forEach((extent, row) => {
+      rect(ctx, sunColor, orbX - extent, orbY + row * 2, extent * 2, 2);
+    });
+    for (const [x, y] of [[0, -8], [0, 29], [-27, 11], [25, 11]]) {
+      rect(ctx, "#f4ddb1", orbX + x - 2, orbY + y, 4, 4);
+    }
+  }
 
   // Distant layered clouds / floating ruins. Each piece has a fixed position.
   for (let i = 0; i < 13; i++) {
@@ -376,7 +388,8 @@ export function paintPixelStage(canvas, view, frame = 0) {
     if (canvas.isConnected) paintPixelStage(canvas, view, frame);
   };
   const upperHeight = canvas.height - MAP_HEIGHT;
-  pixelSky(ctx, view, upperHeight, frame);
+  const daylight = canvas.closest(".stage-window")?.dataset.timePhase || "morning";
+  pixelSky(ctx, view, upperHeight, frame, daylight);
   ctx.save();
   ctx.translate(0, upperHeight);
   environment(ctx, view, frame, repaint);
