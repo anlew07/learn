@@ -472,7 +472,8 @@ function homeHtml(){
  '<div><b>01 · 观察世界</b><p>分身每天自主探索、采集、成长和迎战。</p></div>'+
  '<div><b>02 · 处理危机</b><p>重大事件可以干预，长期策略和跨界援助由你决定。</p></div>'+
  '<div><b>03 · 等待救援结算</b><p>在倒计时结束前积累准备，争取救回更多世界。</p></div>'+
- '</div><p class="hint">首次游玩会先聚焦一个世界，其他分身仍自动行动。</p></section>'+
+ '</div><p class="hint">首次游玩会先聚焦一个世界，其他分身仍自动行动。</p>'+ 
+  '<p class="hint"><a href="?mode=sortie" data-sortie-link>▶ 灵灾战斗试玩（独立沙盒 · 不存档）</a></p></section>'+
  '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">保存在本机</span></div>'+
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
  '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
