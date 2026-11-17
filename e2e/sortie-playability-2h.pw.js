@@ -35,8 +35,7 @@ async function capture(page, size, phase) {
 
 async function checkBattleLayout(page, size) {
   const layout = await page.evaluate(() => {
-    const box = (selector) =>
-      document.querySelector(selector).getBoundingClientRect().toJSON();
+    const box = (selector) => document.querySelector(selector).getBoundingClientRect().toJSON();
     return {
       scrollWidth: document.documentElement.scrollWidth,
       scrollHeight: document.documentElement.scrollHeight,
@@ -60,9 +59,7 @@ async function checkBattleLayout(page, size) {
 }
 
 for (const size of screens) {
-  test("2H-D newcomer sortie, forge and return at " + size.width + "x" + size.height, async ({
-    page,
-  }) => {
+  test("2H-D full loop " + size.width, async ({ page }) => {
     test.setTimeout(90_000);
     await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
     await page.setViewportSize(size);
@@ -187,66 +184,64 @@ for (const size of screens) {
 }
 
 for (const size of screens) {
-  test("2H-D touch reverse, cancel and accidental tap at " + size.width + "x" + size.height,
-    async ({ page }) => {
-      await page.setViewportSize(size);
-      await page.goto("/?mode=sortie");
-      await expect(page.locator("[data-start-sortie]")).toBeEnabled();
-      await startBattle(page);
-      const canvas = page.locator("[data-sortie-canvas]");
-      const joystick = page.locator("[data-sortie-joystick]");
-      await expect(joystick).toHaveCSS("touch-action", "none");
-      const bounds = await joystick.boundingBox();
-      const x = bounds.x + bounds.width / 2;
-      const y = bounds.y + bounds.height / 2;
-      const client = await page.context().newCDPSession(page);
-      const dispatch = (type, dx) =>
-        client.send("Input.dispatchTouchEvent", {
-          type,
-          touchPoints: type === "touchCancel" || type === "touchEnd"
-            ? []
-            : [{ x: x + dx, y, id: 1 }],
-        });
-      try {
-        await dispatch("touchStart", 0);
-        await dispatch("touchMove", 28);
-        await expect.poll(async () => Number(await canvas.getAttribute("data-hero-x")))
-          .toBeGreaterThan(160);
-        const right = Number(await canvas.getAttribute("data-hero-x"));
-        await dispatch("touchMove", -28);
-        await expect.poll(async () => Number(await canvas.getAttribute("data-hero-x")))
-          .toBeLessThan(right);
-        await dispatch("touchCancel", -28);
-        expect(
-          await joystick.locator("[data-sortie-knob]").evaluate((node) => node.style.transform),
-        ).toBe("translate(0px, 0px)");
-        const stopped = await canvas.getAttribute("data-hero-x");
-        await page.waitForTimeout(150);
-        expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
-        const field = await canvas.boundingBox();
-        await page.touchscreen.tap(field.x + field.width / 2, field.y + 25);
-        await page.waitForTimeout(100);
-        expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
-        const view = await page.evaluate(() => ({
-          x: window.scrollX,
-          y: window.scrollY,
-          width: document.documentElement.scrollWidth,
-          height: document.documentElement.scrollHeight,
-        }));
-        expect(view.x).toBe(0);
-        expect(view.y).toBe(0);
-        expect(view.width).toBeLessThanOrEqual(size.width + 1);
-        expect(view.height).toBeLessThanOrEqual(size.height + 1);
-      } finally {
-        await client.detach();
+  test("2H-D touch controls " + size.width, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto("/?mode=sortie");
+    await expect(page.locator("[data-start-sortie]")).toBeEnabled();
+    await startBattle(page);
+    const canvas = page.locator("[data-sortie-canvas]");
+    const joystick = page.locator("[data-sortie-joystick]");
+    await expect(joystick).toHaveCSS("touch-action", "none");
+    const bounds = await joystick.boundingBox();
+    const x = bounds.x + bounds.width / 2;
+    const y = bounds.y + bounds.height / 2;
+    const client = await page.context().newCDPSession(page);
+    const dispatch = (type, dx) => {
+      const touchPoints = [];
+      if (type === "touchStart" || type === "touchMove") {
+        touchPoints.push({ x: x + dx, y, id: 1 });
       }
-    },
-  );
+      return client.send("Input.dispatchTouchEvent", { type, touchPoints });
+    };
+    try {
+      await dispatch("touchStart", 0);
+      await dispatch("touchMove", 28);
+      await expect
+        .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
+        .toBeGreaterThan(160);
+      const right = Number(await canvas.getAttribute("data-hero-x"));
+      await dispatch("touchMove", -28);
+      await expect
+        .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
+        .toBeLessThan(right);
+      await dispatch("touchCancel", -28);
+      expect(
+        await joystick.locator("[data-sortie-knob]").evaluate((node) => node.style.transform),
+      ).toBe("translate(0px, 0px)");
+      const stopped = await canvas.getAttribute("data-hero-x");
+      await page.waitForTimeout(150);
+      expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
+      const field = await canvas.boundingBox();
+      await page.touchscreen.tap(field.x + field.width / 2, field.y + 25);
+      await page.waitForTimeout(100);
+      expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
+      const view = await page.evaluate(() => ({
+        x: window.scrollX,
+        y: window.scrollY,
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      expect(view.x).toBe(0);
+      expect(view.y).toBe(0);
+      expect(view.width).toBeLessThanOrEqual(size.width + 1);
+      expect(view.height).toBeLessThanOrEqual(size.height + 1);
+    } finally {
+      await client.detach();
+    }
+  });
 }
 
-test("2H-D reload discards a half-played battle but keeps a single committed receipt", async ({
-  page,
-}) => {
+test("2H-D interruption remains isolated", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?mode=sortie");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
