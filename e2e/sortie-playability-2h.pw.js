@@ -179,15 +179,12 @@ for (const size of screens) {
     await page.reload();
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 3 日");
     await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
-    // The separate known-defect test owns the 320px viewport gate.
-    if (size.width !== 320) {
-      expect(returnBottom).toBeLessThanOrEqual(size.height + 1);
-    }
+    // The return action must be visible without Playwright auto-scrolling on every viewport.
+    expect(returnBottom).toBeLessThanOrEqual(size.height + 1);
   });
 }
 
-test("2H-D 320px settlement return action visibility (known defect)", async ({ page }) => {
-  test.fail(true, "Known QA blocker: 320x568 settlement clips the return-to-camp button");
+test("2H-D 320px settlement return action remains fully visible", async ({ page }) => {
   test.setTimeout(60_000);
   await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
   await page.setViewportSize({ width: 320, height: 568 });
