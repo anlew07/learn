@@ -179,12 +179,43 @@ for (const size of screens) {
     await page.reload();
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 3 日");
     await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
-    if (size.width === 320) {
-      test.fail(true, "Known blocker: 320x568 settlement clips the return-to-camp button");
+    // The separate known-defect test owns the 320px viewport gate.
+    if (size.width !== 320) {
+      expect(returnBottom).toBeLessThanOrEqual(size.height + 1);
     }
-    expect(returnBottom).toBeLessThanOrEqual(size.height + 1);
   });
 }
+
+
+test("2H-D 320px settlement return action visibility (known defect)", async ({ page }) => {
+  test.fail(true, "Known QA blocker: 320x568 settlement clips the return-to-camp button");
+  test.setTimeout(60_000);
+  await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/?mode=sortie");
+  await expect(page.locator("[data-start-sortie]")).toBeEnabled();
+  await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    const { createSortieArchive } = await import("/src/systems/sortie-session.js");
+    await sortieRepository.enqueueSave(createSortieArchive("forge-e2e"));
+  });
+  await page.reload();
+  await startBattle(page);
+  await page.clock.runFor(25_700);
+  const choice = page.getByRole("dialog", { name: "战技觉醒 · 选择一项" });
+  await expect(choice).toBeVisible();
+  await choice.locator('[data-sortie-skill="thunder"]').click();
+  const directions = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"];
+  for (let i = 0; i < 15; i++) {
+    if (await page.locator("[data-sortie-results]").isVisible()) break;
+    await page.keyboard.down(directions[i % 4]);
+    await page.clock.runFor(5_000);
+    await page.keyboard.up(directions[i % 4]);
+  }
+  await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "won");
+  const button = await page.locator("[data-sortie-retry]").boundingBox();
+  expect(button.y + button.height).toBeLessThanOrEqual(568 + 1);
+});
 
 for (const size of screens) {
   test("2H-D touch controls " + size.width, async ({ page }) => {
