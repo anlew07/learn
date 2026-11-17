@@ -36,6 +36,8 @@ jobs:
       - run: npm run balance:check
       - run: npm run balance:matrix:check
       - run: npm run compare:interventions:check
+      - name: Evaluate the isolated sortie core loop with paired fixed seeds
+        run: npm run sortie:matrix:check
       - name: Install Chromium for browser acceptance tests
         run: npx playwright install --with-deps chromium
       - name: Verify real mobile-viewport Chromium flows
