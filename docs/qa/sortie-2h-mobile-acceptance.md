@@ -21,11 +21,12 @@
 | 战场误触 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 非摇杆区域触摸不得带来角色方向漂移 |
 | 25 秒技能暂停 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 真实 tick 到 1500、弹窗定位、雷/阵纹说明、额外 1.5 秒不推进 |
 | 75 秒结算与拾取反馈 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 真实动画帧/移动路径、胜利、掉落总量守恒、拾取计数对应结算、世界日 +1 |
+| 结算后「返回营地」按钮完整可见 | **已确认不通过 / known xfail** | Chromium 通过 | Chromium 通过 | 320×568 截屏仅见按钮上边框；专属预期失败用例，独立于三尺寸完整闭环回归 |
 | 剑台与再次出击 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 首场原始收益→扣 6 灵石→伤害 1→2→刷新保留→再次出击→撤离 |
 | 手动暂停/撤离取消/确认 | Chromium 通过 | Chromium 通过 | Chromium 通过 | 冻结 tick、继续、先取消撤离再确认、仅结算一次 |
 | 中断刷新与独立存档 | 由 390 独立流程覆盖 | Chromium 通过 | 由 390 独立流程覆盖 | 未完成战斗回退、正式 Run/Profile 空、唯一战斗回执；原有 E2E 也覆盖三尺寸基础布局 |
 
-**新增视觉可达性阻塞（320×568）：** 15 张实际截图已经在 CI [camp-ui-mobile-screenshots artifact](https://github.com/anlew07/learn/actions/runs/44084545927/artifacts/14328722660) 留存。查看 `sortie-2h-320x568-first-settlement.png`，可见「返回营地」只露出按钮上边框，下半部在固定屏幕外（根容器不滚动），不能将 Playwright 的自动滚动 `.click()` 视为手指可达。390×844 和 430×932 同阶段截图可见完整按钮。新测试使用点击前 `boundingBox` 核查底部边界，对 320 已知问题使用 `test.fail` 标记工程层面的**预期失败 / 待 UI 修复**，而非虚报全尺寸通过。已在 PR #74 留下协调评论；本分支不改共享 UI 文件。
+**新增视觉可达性阻塞（320×568）：** 15 张实际截图已经在 CI [camp-ui-mobile-screenshots artifact](https://github.com/anlew07/learn/actions/runs/44084545927/artifacts/14328722660) 留存。查看 `sortie-2h-320x568-first-settlement.png`，可见「返回营地」只露出按钮上边框，下半部在固定屏幕外（根容器不滚动），不能将 Playwright 的自动滚动 `.click()` 视为手指可达。390×844 和 430×932 同阶段截图可见完整按钮。新测试使用点击前 `boundingBox` 核查底部边界，对 320 已知问题使用**独立的** `test.fail` 专项用例标记工程层面的**预期失败 / 待 UI 修复**，不让预期失败吞掉三尺寸完整闭环用例中的其他回归；此处属于产品验收失败，而非全尺寸通过。已在 PR #74 留下协调评论；本分支不改共享 UI 文件。
 
 ### 可验证结果与不可验证结果
 
