@@ -9,7 +9,12 @@ test("isolated sortie opens with a clear action and fits mobile viewports", asyn
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
   await expect(page.locator("[data-sortie-hp]")).toContainText("生命 8/8");
 
-  for (const [width, height] of [[320, 568], [390, 844], [430, 932]]) {
+  const viewports = [
+    [320, 568],
+    [390, 844],
+    [430, 932],
+  ];
+  for (const [width, height] of viewports) {
     await page.setViewportSize({ width, height });
     const dims = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
