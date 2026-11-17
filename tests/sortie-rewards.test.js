@@ -58,9 +58,15 @@ describe("one-time in-combat power choice", () => {
     expect(battle.enemies).toHaveLength(1);
   });
 
-  it("rune immediately blocks one body hit and recharges every ten seconds", () => {
+  it("rune blocks immediately and recharges at the configured 2G interval", () => {
     const battle = reachSkillChoice("rune");
+    const choiceTick = battle.tick;
+    const rechargeTicks = Math.round(
+      SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond,
+    );
+    expect(SORTIE.skills.runeRechargeSeconds).toBe(18);
     expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+    expect(battle.runeNextTick).toBe(choiceTick + rechargeTicks);
     battle.nextShotTick = Number.POSITIVE_INFINITY;
     battle.enemies.push({ id: 101, kind: "wolf", x: 160, y: 224, hp: 999 });
     stepSortie(battle);
@@ -68,9 +74,14 @@ describe("one-time in-combat power choice", () => {
     expect(battle.shieldBlocks).toBe(1);
     expect(battle.runeShield).toBe(0);
     battle.enemies = [];
-    for (let i = 0; i < 10 * SORTIE.ticksPerSecond; i++) stepSortie(battle);
+    for (let i = 0; i < rechargeTicks - 2; i++) stepSortie(battle);
+    expect(battle.tick).toBe(choiceTick + rechargeTicks - 1);
+    expect(battle.runeShield).toBe(0);
+    stepSortie(battle);
+    expect(battle.tick).toBe(choiceTick + rechargeTicks);
     expect(battle.runeShield).toBe(1);
     expect(battle.shieldBlocks).toBe(1);
+    expect(battle.runeNextTick).toBe(choiceTick + rechargeTicks * 2);
   });
 
   it("is deterministic across 30, 60 and 120 Hz even with a skill pause", () => {
