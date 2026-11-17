@@ -316,6 +316,16 @@
 }
 .stage-sheet-body :is(.hint, .muted, .world-meta) { color: #c5d0bb; }
 .stage-sheet-body h2 { color: #fbe5b3; }
+.stage-sheet-body .stage-decision-alert {
+  color: #fff0c1;
+  background: #594333;
+  border: 2px solid #edc183;
+  box-shadow: inset 2px 2px 0 #7d5c3f;
+  padding: 9px 11px;
+  margin: 0 0 12px;
+  line-height: 1.55;
+  font-size: 12px;
+}
 .stage-pending-world {
   background: #40523b;
   border-left: 4px solid #f6d593;
