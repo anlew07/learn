@@ -15,11 +15,14 @@ export function sortieSeed(run) {
  * Re-evaluate each fixed movement tick from a new battlefield and the recorded
  * one-time skill choice/retreat. Invalid traces never reach the world engine.
  */
-export function replaySortieTrace(seed, danger, actions) {
+export function replaySortieTrace(seed, danger, actions, forgeLevel = 0) {
   if (!Array.isArray(actions) || actions.length < 1 || actions.length > MAX_TRACE_ACTIONS) {
     return { ok: false, error: "出击记录长度不合法" };
   }
-  const battle = createSortie(seed, danger);
+  if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
+    return { ok: false, error: "护灵剑台状态不合法" };
+  }
+  const battle = createSortie(seed, danger, forgeLevel);
   let moveCount = 0;
   for (const action of actions) {
     if (!Array.isArray(action) || !["tick", "skill", "retreat"].includes(action[0])) {

@@ -1,6 +1,7 @@
 import seedrandom from "seedrandom";
 import { replaySortieTrace, sortieIdentity, sortieSeed, sortieTraceFingerprint } from "./systems/sortie-trace.js";
 import { previewSortieRewards } from "./systems/sortie-rewards.js";
+import { SORTIE } from "./config/sortie-data.js";
 import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.js";
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
@@ -547,7 +548,10 @@ const MultiworldEngine = (function () {
       request.sortieId!==sortieIdentity(s)){
       return {ok:false,error:"当前世界无法结算本次出击"};
     }
-    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions);
+    var forgeLevel=s.sortieCamp?.forgeLevel??0;
+    if(!Number.isInteger(forgeLevel)||forgeLevel<0||forgeLevel>SORTIE.forge.maxLevel)
+      return {ok:false,error:"护灵剑台状态不合法"};
+    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel);
     if(!verified.ok)return {ok:false,error:verified.error};
     var reward=previewSortieRewards(verified.battle);
     if(!reward)return {ok:false,error:"战斗未完成"};
