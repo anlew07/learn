@@ -111,6 +111,7 @@ let writeBusy = false;
 let pendingWrite = null;
 let writeError = null;
 let restoreError = null;
+let recoveryMessage = "";
 
 const session = createExclusiveSession({
   onLost() {
@@ -141,18 +142,31 @@ function updateCamp() {
     !writeBusy && !writeError && !restoreError;
   startButton.disabled = !ready;
   if (restoreError) {
-    sessionNotice.textContent = "读取独立试验档失败或结构不兼容：已禁止写入，不覆盖旧数据。";
+    sessionNotice.replaceChildren();
+    const warning = document.createElement("span");
+    warning.textContent = "读取独立试验档失败或结构不兼容：已禁止写入，不覆盖旧数据。";
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "重新读取";
+    retry.dataset.sortieRetryLoad = "";
+    retry.addEventListener("click", initializeSession);
+    sessionNotice.append(warning, retry);
   } else if (writeError) {
     sessionNotice.replaceChildren();
     const text = document.createElement("span");
-    text.textContent = "试验档保存失败，战斗已冻结；请勿刷新，以免丢失本次临时结果。";
-    const retry = document.createElement("button");
-    retry.type = "button";
-    retry.textContent = "重试保存";
-    retry.dataset.sortieRetrySave = "";
-    retry.disabled = !session.isOwner || writeBusy;
-    retry.addEventListener("click", retryPendingSave);
-    sessionNotice.append(text, retry);
+    text.textContent = pendingWrite ?
+      "试验档保存失败，战斗已冻结；请勿刷新，以免丢失本次临时结果。" :
+      "结算验证失败，未发放任何奖励；可刷新返回出击前营地。";
+    sessionNotice.append(text);
+    if (pendingWrite) {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = "重试保存";
+      retry.dataset.sortieRetrySave = "";
+      retry.disabled = !session.isOwner || writeBusy;
+      retry.addEventListener("click", retryPendingSave);
+      sessionNotice.append(retry);
+    }
   } else if (sessionMode === "readonly") {
     sessionNotice.replaceChildren();
     const warning = document.createElement("span");
@@ -167,7 +181,7 @@ function updateCamp() {
     sessionNotice.textContent = "正在保存独立试验档，请勿重复操作……";
   } else {
     sessionNotice.textContent = sessionMode === "owner" ?
-      "独立试验档已就绪；返回正式模拟器不会继承此处资源。" :
+      (recoveryMessage || "独立试验档已就绪；返回正式模拟器不会继承此处资源。") :
       "正在检查独占写入权与独立试验档……";
   }
 }
@@ -182,6 +196,7 @@ async function persistCandidate(candidate, onSaved) {
     await sortieRepository.enqueueSave(candidate);
     if (!session.isOwner) throw new Error("保存期间失去写入权");
     archive = candidate;
+    recoveryMessage = "";
     pendingWrite = null;
     writeError = null;
     writeBusy = false;
@@ -215,14 +230,14 @@ async function initializeSession() {
   try {
     const saved = await sortieRepository.load();
     const recovered = saved ? recoverSortieArchive(saved) : null;
+    if (!session.isOwner) throw new Error("读取时失去独占锁");
     archive = recovered?.archive ?? createSortieArchive("sortie-camp-" + Date.now());
     sessionMode = "owner";
     restoreError = null;
     writeError = null;
     pendingWrite = null;
-    if (recovered?.interrupted) {
-      sessionNotice.textContent = "上次出击未完成提交，已回退到出击前营地；没有发奖或推进世界日。";
-    }
+    recoveryMessage = recovered?.interrupted ?
+      "上次出击未完成提交，已回退到出击前营地；没有发奖或推进世界日。" : "";
   } catch (error) {
     console.error("独立试验档读取失败", error);
     restoreError = error;
@@ -334,7 +349,7 @@ function loop(now) {
 }
 
 function resume() {
-  if (phase !== "battle" || !paused) return;
+  if (phase !== "battle" || !paused || !session.isOwner || writeError || restoreError) return;
   paused = false;
   pauseButton.textContent = "暂停";
   lastFrame = null;
@@ -395,7 +410,7 @@ pauseButton.addEventListener("click", () => {
 });
 
 function pickSkill(id) {
-  if (phase !== "choice" || document.hidden) return;
+  if (phase !== "choice" || document.hidden || !session.isOwner || writeError) return;
   const choice = chooseSortieSkill(battle, id);
   if (!choice.ok) return;
   actions.push(["skill", id]);
@@ -414,7 +429,7 @@ app.querySelector("[data-sortie-default]").addEventListener("click", () => {
 });
 
 app.querySelector("[data-sortie-retreat]").addEventListener("click", () => {
-  if (phase !== "battle") return;
+  if (phase !== "battle" || !session.isOwner || writeError) return;
   retreatWasPaused = paused;
   if (!paused) pause();
   retreatOverlay.hidden = false;
