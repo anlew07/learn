@@ -186,7 +186,6 @@ for (const size of screens) {
   });
 }
 
-
 test("2H-D 320px settlement return action visibility (known defect)", async ({ page }) => {
   test.fail(true, "Known QA blocker: 320x568 settlement clips the return-to-camp button");
   test.setTimeout(60_000);
