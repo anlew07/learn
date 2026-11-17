@@ -337,16 +337,19 @@ function pairedSkillContrasts(records) {
   }
   return [...pairs.entries()].map(([key, values]) => {
     const second = values.filter((pair) => pair.thunder.second && pair.rune.second);
-    const winDelta = second.map((pair) =>
-      Number(pair.thunder.second.won) - Number(pair.rune.second.won));
-    const killDelta = second.map((pair) =>
-      pair.thunder.second.defeated - pair.rune.second.defeated);
-    const hpDelta = second.map((pair) =>
-      pair.thunder.second.hp - pair.rune.second.hp);
-    const damageDelta = second.map((pair) =>
-      pair.thunder.second.damageTaken - pair.rune.second.damageTaken);
-    const pickupDelta = second.map((pair) =>
-      pair.thunder.second.collectedShards - pair.rune.second.collectedShards);
+    const winDelta = second.map(
+      (pair) => Number(pair.thunder.second.won) - Number(pair.rune.second.won),
+    );
+    const killDelta = second.map(
+      (pair) => pair.thunder.second.defeated - pair.rune.second.defeated,
+    );
+    const hpDelta = second.map((pair) => pair.thunder.second.hp - pair.rune.second.hp);
+    const damageDelta = second.map(
+      (pair) => pair.thunder.second.damageTaken - pair.rune.second.damageTaken,
+    );
+    const pickupDelta = second.map(
+      (pair) => pair.thunder.second.collectedShards - pair.rune.second.collectedShards,
+    );
     return {
       key,
       n: values.length,
@@ -377,7 +380,9 @@ function printReport(result) {
       "次场胜率（95% Wilson） | 击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | " +
       "雷击命中 | 护盾格挡 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
   );
-  console.log("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+  console.log(
+    "|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+  );
   for (const row of result.groups) {
     console.log(
       "| " +
@@ -462,7 +467,9 @@ function printReport(result) {
   }
 
   console.log("\n## 2E 配对对照：驭雷符相对聚灵阵纹");
-  console.log("| D | 建设组 | 行为脚本 | 可比较种子 | 次场胜率差 | 击退差 | 剩余生命差 | 受击差 | 拾取差 | 雷击命中均值 | 护盾格挡均值 |");
+  console.log(
+    "| D | 建设组 | 行为脚本 | 可比较种子 | 次场胜率差 | 击退差 | 剩余生命差 | 受击差 | 拾取差 | 雷击命中均值 | 护盾格挡均值 |",
+  );
   console.log("|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|");
   for (const row of result.skillContrasts) {
     console.log(
@@ -578,9 +585,14 @@ export function assertExperimentResult(result) {
   ) {
     throw new Error("Experiment matrix is incomplete");
   }
-  const expectedSorties = result.seedCount * EXPERIMENT_DANGERS.length *
-    EXPERIMENT_SKILLS.length * EXPERIMENT_MOVEMENTS.length * 3;
-  if (result.sorties !== expectedSorties) throw new Error("Experiment sortie count is inconsistent");
+  const expectedSorties =
+    result.seedCount *
+    EXPERIMENT_DANGERS.length *
+    EXPERIMENT_SKILLS.length *
+    EXPERIMENT_MOVEMENTS.length *
+    3;
+  if (result.sorties !== expectedSorties)
+    throw new Error("Experiment sortie count is inconsistent");
   const byPair = new Map();
   for (const record of result.records) {
     const key = [record.danger, record.skill, record.movement, record.seedIndex].join("|");
