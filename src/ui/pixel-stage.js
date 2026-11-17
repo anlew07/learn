@@ -57,6 +57,63 @@ function noise(x, y, salt = 0) {
   return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 }
 /**
+ * Lightweight background silhouettes: give tall mobile stages a sense of place
+ * without inventing buildings, battle targets or gameplay state.
+ * Purely visual and deterministic; the animation frame only blinks small lights.
+ */
+function paintSkyLandmarks(ctx, view, topHeight, frame) {
+  if (topHeight < 72) return;
+  const floor = topHeight - 3;
+  if (view.worldId === "lingzai") {
+    // Distant stone terraces and a broken shrine bridge behind the camp.
+    for (const [x, h, w] of [[69, 29, 28], [102, 18, 34], [145, 35, 25]]) {
+      rect(ctx, "#1b3043", x, floor - h, w, h);
+      rect(ctx, "#536f76", x + 3, floor - h + 3, w - 6, 4);
+      rect(ctx, "#91a296", x + 6, floor - h + 4, w - 13, 2);
+      rect(ctx, "#314955", x + 5, floor - h + 13, w - 10, 3);
+    }
+    rect(ctx, "#314f59", 89, floor - 22, 62, 5);
+    rect(ctx, "#9aa694", 93, floor - 23, 54, 2);
+    rect(ctx, "#aec0a6", 132, floor - 54, 2, 28);
+    rect(ctx, "#d7c89c", 130, floor - 55, 6, 3);
+  } else if (view.worldId === "zombie") {
+    // Railway silhouettes and lanterns establish a lived-in shelter.
+    rect(ctx, "#263e42", 84, floor - 20, 138, 19);
+    rect(ctx, "#71817a", 85, floor - 20, 135, 3);
+    for (const x of [90, 122, 154, 186]) {
+      rect(ctx, "#293b3a", x, floor - 46, 5, 30);
+      rect(ctx, "#a99a79", x - 3, floor - 47, 15, 3);
+    }
+    rect(ctx, "#cfac74", 186, floor - 44, 7, 5);
+    rect(ctx, "#ffe2a4", 187, floor - 43, 3, 2);
+    rect(ctx, "#9c856b", 141, floor - 61, 3, 40);
+    rect(ctx, "#c1ae86", 134, floor - 62, 17, 3);
+  } else {
+    // Tall roots and a watchpost in the ecology world.
+    for (const [x, h] of [[70, 33], [119, 51], [177, 38]]) {
+      rect(ctx, "#303b39", x + 8, floor - h, 7, h);
+      rect(ctx, "#3b4e46", x, floor - h + 4, 23, 8);
+      rect(ctx, "#667367", x + 3, floor - h, 16, 6);
+      rect(ctx, "#89937c", x + 7, floor - h + 1, 8, 2);
+    }
+    rect(ctx, "#624f45", 206, floor - 34, 6, 31);
+    rect(ctx, "#b59b6e", 202, floor - 40, 16, 9);
+    rect(ctx, "#d1b781", 204, floor - 38, 9, 2);
+  }
+  // Sparse floating ember pixels; no extra timer, random draws or asset fetches.
+  const glow = view.worldId === "zombie" ? "#ecba88" :
+    view.worldId === "beast" ? "#f6ce9c" : "#a4e2ca";
+  for (let i = 0; i < 9; i++) {
+    const x = 15 + Math.floor(noise(i, 41, 27) * 287);
+    const y = 22 + Math.floor(noise(i, 17, 91) * Math.max(12, topHeight - 66));
+    if ((frame + i * 5) % 40 < 29) {
+      rect(ctx, glow, x, y, 2, 2);
+      rect(ctx, "#304f50", x + 3, y + 2, 2, 1);
+    }
+  }
+}
+
+/**
  * Draw an original tall pixel panorama above the 320x208 playable camp.
  * This avoids a huge empty letterbox on 390x844 phones without stretching
  * the characters or cropping the ruins on shorter screens.
@@ -109,6 +166,7 @@ function pixelSky(ctx, view, topHeight, frame) {
   } else {
     paintWorldSkyDetails(ctx, view, topHeight);
   }
+  paintSkyLandmarks(ctx, view, topHeight, frame);
   // Energy drops near the scene connect both sky and rift visually.
   if (view.scene?.progressTier >= 2) {
     sparkle(ctx, 208, Math.max(12, topHeight - 48), "#9de0bb");
