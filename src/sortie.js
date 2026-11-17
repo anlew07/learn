@@ -78,11 +78,12 @@ app.innerHTML = [
   '<button data-sortie-confirm-yes>确定撤离</button></div>',
   '</section></div></section>',
   '<section class="sortie-results" data-sortie-results hidden>',
+  '<div class="sortie-results-content">',
   '<h1 data-sortie-outcome>试炼结束</h1><p class="sortie-feedback" data-sortie-summary></p>',
   '<p data-sortie-reward-preview>战斗结束，正在验证轨迹与写入独立试验档……</p>',
   '<div class="sortie-world-report" data-sortie-world-report></div>',
   '<p>收益已结算进独立试验档，仅供可玩性验证；正式存档与世界碎片不受影响。</p>',
-  '<button class="sortie-cta" data-sortie-retry>返回营地</button></section></main>',
+  '</div><button class="sortie-cta" data-sortie-retry>返回营地</button></section></main>',
 ].join("");
 
 const intro = app.querySelector("[data-sortie-intro]");
