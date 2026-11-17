@@ -775,8 +775,8 @@ function render(){
       element.dataset.power].every((value,index)=>value===focusKey[index])):null;
    (matching||sheet.querySelector(".stage-sheet-head button"))?.focus({preventScroll:true});
   }
-  startPixelStage(app.querySelector("[data-stage-canvas]"),getStageView(run,sceneWorldId));
   updateDayClock();
+  startPixelStage(app.querySelector("[data-stage-canvas]"),getStageView(run,sceneWorldId));
   return;
  }
  const focus=inQuickStart();
