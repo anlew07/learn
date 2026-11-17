@@ -11,7 +11,7 @@ app.innerHTML = [
   '<a href="./">返回正式模拟器</a></header>',
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
-  '<p>手动走位躲开妖影，灵刃会自动攻击最近的敌人。尝试生存 75 秒，观察不同的敌潮。</p>',
+  '<p>拖动走位躲避妖影发射的慢速灵息弹；灵刃会自动攻击最近的敌人。尝试生存 75 秒！</p>',
   '<button class="sortie-cta" data-start-sortie>▶ 出击雾谷</button>',
   '<p class="sortie-warning">本模式不读取或修改正式存档；暂不掉落灵石，也不推进任何世界日。</p></section>',
   '<section class="sortie-play" data-sortie-play hidden>',

@@ -62,6 +62,12 @@ export function drawSortie(canvas, battle) {
     ctx.fillStyle = "#fff4cc";
     ctx.fillRect(Math.round(shot.x) - 1, Math.round(shot.y) - 1, 2, 2);
   }
+  for (const shot of battle.hostileShots) {
+    ctx.fillStyle = "#927aba";
+    ctx.fillRect(Math.round(shot.x) - 4, Math.round(shot.y) - 4, 8, 8);
+    ctx.fillStyle = "#e7cafa";
+    ctx.fillRect(Math.round(shot.x) - 2, Math.round(shot.y) - 2, 4, 4);
+  }
   const hero = getSprite("hero");
   if (battle.hero.invulnerable === 0 || battle.tick % 8 < 4) {
     if (hero.complete && hero.naturalWidth) {

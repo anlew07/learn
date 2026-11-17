@@ -31,7 +31,7 @@ export function createSortie(seed = "lingzai-demo", danger = 0) {
   return {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
     hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp, invulnerable: 0 },
-    enemies: [], shots: [], schedule: makeSchedule(safeDanger), nextSpawn: 0,
+    enemies: [], shots: [], hostileShots: [], schedule: makeSchedule(safeDanger), nextSpawn: 0,
     nextId: 1, nextShotTick: 1, fired: 0, defeated: 0, hurt: 0, outcome: "running",
   };
 }
@@ -41,6 +41,15 @@ function spawnEnemy(battle, kind) {
   const p = edge === 0 ? { x: 12, y: pos } : edge === 1 ? { x: SORTIE.width - 12, y: pos } :
     edge === 2 ? { x: pos, y: 12 } : { x: pos, y: SORTIE.height - 12 };
   battle.enemies.push({ id: battle.nextId++, kind, ...p, hp: SORTIE.enemies[kind].hp });
+  if (kind === "shade") {
+    const dx = battle.hero.x - p.x;
+    const dy = battle.hero.y - p.y;
+    const length = Math.max(0.001, Math.hypot(dx, dy));
+    const speed = 100 / SORTIE.ticksPerSecond;
+    // Slow aimed projectile gives moving players an actual reason to dodge.
+    battle.hostileShots.push({ x: p.x, y: p.y, vx: dx / length * speed,
+      vy: dy / length * speed, ttl: 240 });
+  }
 }
 function moveHero(battle, input) {
   const dx = Number.isFinite(input?.x) ? input.x : 0;
@@ -83,6 +92,22 @@ function advanceShots(battle) {
   battle.shots = battle.shots.filter((shot) => shot.ttl > 0);
   battle.enemies = battle.enemies.filter((enemy) => enemy.hp > 0);
 }
+function advanceHostileShots(battle) {
+  let contact = false;
+  for (const shot of battle.hostileShots) {
+    shot.x += shot.vx;
+    shot.y += shot.vy;
+    shot.ttl--;
+    if (distance(shot, battle.hero) <= SORTIE.player.radius + 5) {
+      shot.ttl = 0;
+      contact = true;
+    }
+    if (shot.x < -10 || shot.x > SORTIE.width + 10 ||
+        shot.y < -10 || shot.y > SORTIE.height + 10) shot.ttl = 0;
+  }
+  battle.hostileShots = battle.hostileShots.filter((shot) => shot.ttl > 0);
+  return contact;
+}
 function advanceEnemies(battle) {
   for (const enemy of battle.enemies) {
     const dx = battle.hero.x - enemy.x;
@@ -106,9 +131,10 @@ export function stepSortie(battle, input = { x: 0, y: 0 }) {
   advanceEnemies(battle);
   fire(battle);
   advanceShots(battle);
+  const projectileContact = advanceHostileShots(battle);
   if (battle.hero.invulnerable > 0) battle.hero.invulnerable--;
-  if (battle.hero.invulnerable === 0 && battle.enemies.some((enemy) =>
-    distance(enemy, battle.hero) < SORTIE.player.radius + SORTIE.enemies[enemy.kind].radius)) {
+  if (battle.hero.invulnerable === 0 && (projectileContact || battle.enemies.some((enemy) =>
+    distance(enemy, battle.hero) < SORTIE.player.radius + SORTIE.enemies[enemy.kind].radius))) {
     battle.hero.hp--;
     battle.hurt++;
     battle.hero.invulnerable = Math.round(SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond);

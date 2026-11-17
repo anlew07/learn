@@ -64,6 +64,19 @@ describe("isolated Lingzai battle", () => {
     expect(b.nextSpawn).toBe(24);
   });
 
+  it("makes dodging meaningful against aimed shade projectiles", () => {
+    const still = createSortie("test-1");
+    const dodging = createSortie("test-1");
+    for (let n = 0; n < DURATION_TICKS; n++) {
+      stepSortie(still);
+      stepSortie(dodging, { x: Math.cos(n / 70), y: Math.sin(n / 70) });
+    }
+    expect(still.outcome).toBe("lost");
+    expect(dodging.outcome).toBe("won");
+    expect(still.hero.hp).toBe(0);
+    expect(dodging.hero.hp).toBeGreaterThan(0);
+  });
+
   it("replays identical input and seed deterministically", () => {
     const run = () => {
       const b = createSortie("repeat");
