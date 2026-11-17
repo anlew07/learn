@@ -25,6 +25,7 @@ test("RPG HUD keeps the scene dominant and the primary action reachable", async 
         documentHeight: document.documentElement.scrollHeight,
         scene: bounds(".stage-window"),
         play: bounds(".stage-play-button"),
+        menu: bounds(".stage-top > button"),
         nav: menuButtons.map((button) => button.getBoundingClientRect().toJSON()),
         action: bounds(".stage-action-line"),
         caption: bounds(".stage-caption"),
@@ -34,6 +35,8 @@ test("RPG HUD keeps the scene dominant and the primary action reachable", async 
     expect(metrics.documentWidth).toBeLessThanOrEqual(width + 1);
     expect(metrics.documentHeight).toBeLessThanOrEqual(height + 1);
     expect(metrics.scene.height).toBeGreaterThan(180);
+    expect(metrics.menu.width).toBeGreaterThanOrEqual(44);
+    expect(metrics.menu.height).toBeGreaterThanOrEqual(44);
     expect(metrics.play.width).toBeGreaterThan(100);
     expect(metrics.play.height).toBeGreaterThanOrEqual(42);
     expect(metrics.nav).toHaveLength(5);
