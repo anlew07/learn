@@ -59,7 +59,9 @@ describe("original scene biomes are read-only and visually distinct", () => {
     for (const sprite of ["wasteland-runner", "dust-crawler", "beast-warden", "horned-hunter"]) {
       expect(stage).toContain(sprite + ".svg");
     }
-    expect(css).toContain(".stage-actions > button[data-panel]");
+    expect(css).toContain('.stage-nav-action[data-panel="strategy"]::before');
+    expect(css).toContain(".stage-event-button::before");
+    expect(css).toContain(".stage-world-thumb");
     expect(css).toContain(".stage-sheet-body");
     expect(css).toContain(".app-shell:not(.stage-mode)");
     expect(css).toContain("hud-symbols.svg");
