@@ -28,17 +28,7 @@ export function assertSortieArchive(archive) {
     throw new Error("出击试验档结构或版本不兼容");
   }
   assertRestorableSnapshot({ run: archive.run, profile: null }, Engine.VERSION);
-  const run = archive.run;
-  // This archive is specifically the two-world sortie prototype, not a
-  // general RunState. Reject duplicate, missing or foreign worlds before use.
-  if (typeof run.id !== "string" || !run.id ||
-    typeof run.seed !== "string" || run.runNumber !== 1 ||
-    run.worlds.length !== 2 ||
-    run.worlds[0].id !== "lingzai" || run.worlds[1].id !== "zombie") {
-    throw new Error("出击试验档世界结构无效");
-  }
-
-  const camp = run.sortieCamp;
+  const camp = archive.run.sortieCamp;
   // Missing is valid for a prototype archive saved before the forge existed.
   if (camp !== undefined &&
     (!camp || typeof camp !== "object" || Array.isArray(camp) ||
@@ -56,57 +46,29 @@ export function assertSortieArchive(archive) {
   }
   if (archive.pending !== null &&
     (!archive.pending || typeof archive.pending.sortieId !== "string" ||
-      archive.pending.sortieId !== sortieIdentity(run) ||
-      archive.pending.day !== run.day)) {
+      archive.pending.sortieId !== sortieIdentity(archive.run) ||
+      archive.pending.day !== archive.run.day)) {
     throw new Error("未完成出击记录无效");
   }
-
-  const ledger = run.sortieLedger;
-  if (ledger !== undefined &&
-    (!ledger || typeof ledger !== "object" || Array.isArray(ledger) ||
-      Object.entries(ledger).some(([id, value]) => {
-        const receipt = value?.receipt;
-        return !value || typeof value.fingerprint !== "string" ||
-          !value.fingerprint || !receipt || typeof receipt !== "object" ||
-          Array.isArray(receipt) || receipt.sortieId !== id ||
-          !Number.isInteger(receipt.day) || receipt.day < 1 ||
-          id !== run.id + "/lingzai/day-" + receipt.day;
-      }))) {
-    throw new Error("出击结算账本无效");
-  }
-
   const last = archive.lastReceipt;
   if (last !== null &&
     (!last || typeof last.sortieId !== "string" ||
       !Number.isInteger(last.day) || last.day < 1 ||
-      !Number.isInteger(last.nextDay) ||
-      last.nextDay < last.day || last.nextDay > last.day + 1 ||
-      last.nextDay !== run.day ||
-      last.sortieId !== run.id + "/lingzai/day-" + last.day ||
-      !Array.isArray(last.worlds) || last.worlds.length !== 2 ||
-      last.worlds[0]?.id !== "lingzai" || last.worlds[1]?.id !== "zombie" ||
-      last.worlds.some((world) => !world ||
-        !["running", "saved", "failed"].includes(world.status) ||
-        !["resourceDelta", "xpDelta", "pDelta", "dDelta"].every(
-          (field) => Number.isFinite(world[field]),
-        )) ||
-      !last.battle || typeof last.battle !== "object" ||
-      Array.isArray(last.battle) ||
-      !Number.isFinite(last.battle.stones) || last.battle.stones < 0 ||
-      !Number.isFinite(last.battle.experience) || last.battle.experience < 0 ||
-      !Number.isFinite(last.battle.progress) || last.battle.progress < 0 ||
-      !Number.isInteger(last.battle.defeated) || last.battle.defeated < 0)) {
+      !Array.isArray(last.worlds) || last.worlds.length !== archive.run.worlds.length ||
+      last.worlds.some((world) => !world || typeof world.id !== "string") ||
+      !last.battle || !Number.isFinite(last.battle.stones) ||
+      !Number.isFinite(last.battle.experience) ||
+      !Number.isFinite(last.battle.progress))) {
     throw new Error("出击回执结构无效");
   }
-
-  const ledgerEntries = ledger ?? {};
-  if ((last === null && Object.keys(ledgerEntries).length > 0) ||
-    (last !== null &&
-      (!ledgerEntries[last.sortieId] ||
-        JSON.stringify(ledgerEntries[last.sortieId].receipt) !== JSON.stringify(last)))) {
-    throw new Error("出击回执与结算账本不一致");
+  const ledger = archive.run.sortieLedger;
+  if (ledger && (typeof ledger !== "object" || Array.isArray(ledger) ||
+    Object.entries(ledger).some(([id, value]) =>
+      !value || typeof value.fingerprint !== "string" ||
+      value.receipt?.sortieId !== id))) {
+    throw new Error("出击结算账本无效");
   }
-  return true;
+  return validateSortieArchiveStructure(archive);
 }
 
 /**
@@ -218,4 +180,53 @@ export function buildSortieForge(archive, operationId) {
   };
   next.run.sortieCamp = { forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
   return { ok: true, archive: next, receipt };
+}
+
+function validateSortieArchiveStructure(archive) {
+  const run = archive.run;
+  if (typeof run.id !== "string" || !run.id ||
+    typeof run.seed !== "string" || run.runNumber !== 1 ||
+    run.worlds.length !== 2 ||
+    run.worlds[0].id !== "lingzai" || run.worlds[1].id !== "zombie") {
+    throw new Error();
+  }
+
+  const ledger = run.sortieLedger;
+  if (ledger !== undefined &&
+    (!ledger || typeof ledger !== "object" || Array.isArray(ledger))) {
+    throw new Error();
+  }
+  const entries = ledger ?? {};
+  if (Object.entries(entries).some(([id, value]) =>
+    !value || !value.receipt ||
+    id !== sortieIdentity({ ...run, day: value.receipt.day }))) {
+    throw new Error();
+  }
+
+  const last = archive.lastReceipt;
+  if (last !== null &&
+    (!Number.isInteger(last.nextDay) ||
+      last.nextDay < last.day || last.nextDay > last.day + 1 ||
+      last.nextDay !== run.day ||
+      last.sortieId !== sortieIdentity({ ...run, day: last.day }) ||
+      last.worlds.length !== run.worlds.length ||
+      last.worlds.some((world, index) =>
+        world.id !== run.worlds[index].id ||
+        world.status !== run.worlds[index].status ||
+        !["resourceDelta", "xpDelta", "pDelta", "dDelta"].every(
+          (field) => Number.isFinite(world[field]),
+        )) ||
+      typeof last.battle !== "object" || Array.isArray(last.battle) ||
+      last.battle.stones < 0 || last.battle.experience < 0 ||
+      last.battle.progress < 0 ||
+      !Number.isInteger(last.battle.defeated) || last.battle.defeated < 0)) {
+    throw new Error();
+  }
+  if ((last === null && Object.keys(entries).length > 0) ||
+    (last !== null &&
+      (!entries[last.sortieId] ||
+        JSON.stringify(entries[last.sortieId].receipt) !== JSON.stringify(last)))) {
+    throw new Error();
+  }
+  return true;
 }
