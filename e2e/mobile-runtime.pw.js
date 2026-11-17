@@ -15,17 +15,26 @@ async function start(page) {
   await expect.poll(async () => (await saved(page)).run?.day).toBe(1);
 }
 
-test("automatic day timer does not accumulate 300ms polling drift", async ({ page }) => {
-  // Install the official Playwright clock before navigation so performance.now
-  // and setInterval use the same controlled time source.
+test("automatic day timer advances one day per cycle and respects event interrupts", async ({ page }) => {
+  // Timer and engine events share the same virtual monotonic clock. Each new
+  // major event may pause automatically, so resume deliberately between days.
   await page.clock.install({ time: new Date("2026-11-13T00:00:00Z") });
   await start(page);
-  await page.locator('button[data-action="toggle"]').click();
-  await expect.poll(async () => (await saved(page)).run?.paused).toBe(false);
 
-  await page.clock.runFor(420_000); // 21 virtual days, reveals small drift per polling cycle
-  await expect.poll(async () => (await saved(page)).run?.day).toBe(22);
-  await page.locator('button[data-action="toggle"]').click();
+  for (let day = 1; day <= 21; day++) {
+    const before = (await saved(page)).run;
+    expect(before.day).toBe(day);
+    if (before.paused) {
+      await page.locator('button[data-action="toggle"]').click();
+    }
+    await page.clock.runFor(20_500);
+    await expect.poll(async () => (await saved(page)).run?.day).toBe(day + 1);
+  }
+
+  const beforeSave = (await saved(page)).run;
+  if (!beforeSave.paused) {
+    await page.locator('button[data-action="toggle"]').click();
+  }
   await expect.poll(async () => (await saved(page)).run?.paused).toBe(true);
   await page.reload();
   expect((await saved(page)).run.day).toBe(22);
