@@ -24,10 +24,7 @@ const nearestDistance = (items, hero) =>
   items.length ? Math.min(...items.map((item) => distance(item, hero))) : Infinity;
 
 function routeInput(battle, route) {
-  const normal = experimentInput(
-    battle,
-    route === "kite" ? "kite" : "pickup",
-  );
+  const normal = experimentInput(battle, route === "kite" ? "kite" : "pickup");
   // One wrong-direction joystick input for 65 ticks every 9 seconds.
   // No random calls, no invented damage and no change to enemy targeting.
   if (route === "mistake" && battle.tick % 540 < 65) {
@@ -37,11 +34,7 @@ function routeInput(battle, route) {
 }
 
 function play(seedIndex, danger, skill, route) {
-  const seed =
-    "sortie-2e-fixed-" +
-    String(seedIndex).padStart(3, "0") +
-    "-danger-" +
-    danger;
+  const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") + "-danger-" + danger;
   const battle = createSortie(seed, danger, 0);
   let nearDropHurt = 0;
   let contestedPickups = 0;
@@ -100,11 +93,8 @@ const rows = [];
 for (const danger of dangers) {
   for (const skill of skills) {
     for (const route of routes) {
-      const samples = Array.from({ length: seeds }, (_, seed) =>
-        play(seed, danger, skill, route),
-      );
-      const average = (key) =>
-        samples.reduce((sum, sample) => sum + sample[key], 0) / seeds;
+      const samples = Array.from({ length: seeds }, (_, seed) => play(seed, danger, skill, route));
+      const average = (key) => samples.reduce((sum, sample) => sum + sample[key], 0) / seeds;
       rows.push({
         danger,
         skill,
@@ -115,14 +105,8 @@ for (const danger of dangers) {
         shards: average("shards"),
         stones: average("stones"),
         nearDropHurt: average("nearDropHurt"),
-        contestedPickups: samples.reduce(
-          (sum, sample) => sum + sample.contestedPickups,
-          0,
-        ),
-        projectileNearPickup: samples.reduce(
-          (sum, sample) => sum + sample.projectileNearPickup,
-          0,
-        ),
+        contestedPickups: samples.reduce((sum, sample) => sum + sample.contestedPickups, 0),
+        projectileNearPickup: samples.reduce((sum, sample) => sum + sample.projectileNearPickup, 0),
       });
     }
   }
@@ -131,9 +115,7 @@ for (const danger of dangers) {
 if (assert) {
   for (const danger of dangers) {
     for (const skill of skills) {
-      const group = rows.filter(
-        (row) => row.danger === danger && row.skill === skill,
-      );
+      const group = rows.filter((row) => row.danger === danger && row.skill === skill);
       const kite = group.find((row) => row.route === "kite");
       const pickup = group.find((row) => row.route === "pickup");
       if (pickup.shards <= kite.shards || pickup.stones < kite.stones) {
@@ -154,9 +136,7 @@ console.log(
 console.log(
   "| D | Skill | Route | Wins | HP | Hurt | Shards | Bonus stones | Hurt near drop | Pickups near enemy | Pickups near shot |",
 );
-console.log(
-  "|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
-);
+console.log("|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|");
 for (const row of rows) {
   const f = (value) => value.toFixed(2);
   console.log(
@@ -177,9 +157,5 @@ for (const row of rows) {
       " |",
   );
 }
-console.log(
-  "Near-enemy/shot samples describe proximity at pickup, not confirmed injury cause.",
-);
-console.log(
-  "Scripted battle outcomes are not human win rates or an authoritative save test.",
-);
+console.log("Near-enemy/shot samples describe proximity at pickup, not confirmed injury cause.");
+console.log("Scripted battle outcomes are not human win rates or an authoritative save test.");
