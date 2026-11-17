@@ -252,7 +252,7 @@ export function stepSortie(battle, input = { x: 0, y: 0 }) {
   return battle;
 }
 /** Rendering cadence never changes the fixed-tick battle result. */
-export function advanceSortie(battle, input, deltaMs) {
+export function advanceSortie(battle, input, deltaMs, onTick) {
   if (battle.outcome !== "running" || battle.skillChoicePending ||
     !Number.isFinite(deltaMs) || deltaMs <= 0) return battle;
   battle.remainderMs += Math.min(deltaMs, 250);
@@ -260,6 +260,7 @@ export function advanceSortie(battle, input, deltaMs) {
   battle.remainderMs -= steps * TICK_MS;
   for (let i = 0; i < steps && battle.outcome === "running" && !battle.skillChoicePending; i++) {
     stepSortie(battle, input);
+    if (onTick) onTick(battle, input);
   }
   if (battle.outcome !== "running" || battle.skillChoicePending) battle.remainderMs = 0;
   return battle;

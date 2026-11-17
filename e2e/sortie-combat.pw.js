@@ -88,6 +88,8 @@ test("the 25-second skill choice freezes time and resumes with a real choice", a
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/?mode=sortie");
   await page.locator("[data-start-sortie]").click();
+  // A battle may not begin until the pre-sortie IndexedDB checkpoint commits.
+  await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
   await page.clock.runFor(25_700);
   const choice = page.getByRole("dialog", { name: "战技觉醒 · 选择一项" });
   await expect(choice).toBeVisible();
@@ -135,4 +137,67 @@ test("retreat confirmation shows sandbox-only loss rules without touching saves"
   });
   expect(saved.run).toBeNull();
   expect(saved.profile).toBeNull();
+});
+
+test("a confirmed retreat commits exactly one world day and survives reload", async ({ page }) => {
+  await page.goto("/?mode=sortie");
+  await expect(page.locator("[data-sortie-camp]")).toContainText("第 1 日");
+  await page.locator("[data-start-sortie]").click();
+  await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
+  await page.locator("[data-sortie-retreat]").click();
+  await page.locator("[data-sortie-confirm-yes]").click();
+  await expect(page.locator("[data-sortie-world-report]")).toContainText("第 1 日结算 → 第 2 日");
+  await expect(page.locator("[data-sortie-world-report]")).toContainText("主要行动：sortie");
+  await expect(page.locator("[data-sortie-world-report]")).toContainText("废土救援");
+
+  const saved = await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    const { saveRepository } = await import("/src/services/persistence.js");
+    return { prototype: await sortieRepository.load(), formal: await saveRepository.load() };
+  });
+  expect(saved.prototype.run.day).toBe(2);
+  expect(saved.prototype.pending).toBeNull();
+  expect(saved.prototype.run.worlds[0].metrics.actions.sortie).toBe(1);
+  expect(saved.prototype.run.worlds[1].lastDecision.day).toBe(1);
+  expect(saved.prototype.lastReceipt.day).toBe(1);
+  expect(saved.formal.run).toBeNull();
+  expect(saved.formal.profile).toBeNull();
+
+  await page.locator("[data-sortie-retry]").click();
+  await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
+  await page.reload();
+  await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("已保存的第 1 日回执");
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("废土当日行动");
+});
+
+test("refresh during a pending battle rolls back to camp without awards", async ({ page }) => {
+  await page.goto("/?mode=sortie");
+  await page.locator("[data-start-sortie]").click();
+  await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
+  await page.reload();
+  await expect(page.locator("[data-sortie-intro]")).toBeVisible();
+  await expect(page.locator("[data-sortie-camp]")).toContainText("第 1 日");
+  await expect(page.locator("[data-sortie-session-notice]")).toContainText("未完成提交");
+  const data = await page.evaluate(async () => {
+    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
+    return sortieRepository.load();
+  });
+  expect(data.run.day).toBe(1);
+  expect(data.lastReceipt).toBeNull();
+  await page.locator("[data-start-sortie]").click();
+  await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
+});
+
+test("second tab is read-only while the first owns the save lock", async ({ page, context }) => {
+  await page.goto("/?mode=sortie");
+  await expect(page.locator("[data-start-sortie]")).toBeEnabled();
+  const second = await context.newPage();
+  await second.goto("/?mode=sortie");
+  await expect(second.locator("[data-sortie-session-notice]")).toContainText("只读");
+  await expect(second.locator("[data-start-sortie]")).toBeDisabled();
+  await page.close();
+  await second.locator("[data-sortie-retry-lock]").click();
+  await expect(second.locator("[data-start-sortie]")).toBeEnabled();
+  await second.close();
 });
