@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Temporary event UI formatter preview
+        run: npx prettier e2e/event-interruption.pw.js
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
