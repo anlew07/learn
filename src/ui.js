@@ -957,9 +957,10 @@ async function claimSession() {
    if(account&&typeof account.runCount==="number")profile=account;
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
      const hadUnpausedSave=!saved.paused;
+     const needsReward=Boolean(acquired&&saved.result&&!saved.rewarded);
      run=saved;run.paused=true;
-     if(acquired&&run.result&&!run.rewarded)reward();
-     if(acquired&&(hadUnpausedSave||run.rewarded&&!saved.rewarded))queueSave();
+     if(needsReward)reward();
+     if(acquired&&(hadUnpausedSave||needsReward))queueSave();
    }else{
      run=null;
    }
