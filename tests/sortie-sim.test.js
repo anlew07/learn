@@ -35,8 +35,8 @@ describe("isolated Lingzai battle", () => {
   it("has two kinds and increasing danger tiers", () => {
     const b = createSortie("schedule");
     expect(new Set(b.schedule.map((event) => event.kind))).toEqual(new Set(["wolf", "shade"]));
-    expect(createSortie("d40", 45).schedule).toHaveLength(26);
-    expect(createSortie("d75", 80).schedule).toHaveLength(28);
+    expect(createSortie("d40", 45).schedule).toHaveLength(27);
+    expect(createSortie("d75", 80).schedule).toHaveLength(30);
   });
 
   it("fires and damages a real nearby target", () => {
@@ -47,6 +47,50 @@ describe("isolated Lingzai battle", () => {
     for (let n = 0; n < 50; n++) stepSortie(b);
     expect(b.fired).toBeGreaterThanOrEqual(2);
     expect(b.defeated).toBe(1);
+  });
+
+  it("lets rune block a hostile projectile as well as body contact", () => {
+    const projectile = createSortie("rune-projectile");
+    projectile.skillId = "rune";
+    projectile.runeShield = 1;
+    projectile.runeNextTick = 999999;
+    projectile.hostileShots.push({
+      x: projectile.hero.x,
+      y: projectile.hero.y,
+      vx: 0,
+      vy: 0,
+      ttl: 5,
+    });
+    stepSortie(projectile);
+    expect(projectile.hero.hp).toBe(8);
+    expect(projectile.hurt).toBe(0);
+    expect(projectile.shieldBlocks).toBe(1);
+    expect(projectile.runeShield).toBe(0);
+    expect(projectile.hero.invulnerable).toBe(60);
+
+    const body = createSortie("rune-body");
+    body.skillId = "rune";
+    body.runeShield = 1;
+    body.runeNextTick = 999999;
+    body.enemies.push({ id: 101, kind: "wolf", x: 160, y: 224, hp: 999 });
+    stepSortie(body);
+    expect(body.hero.hp).toBe(8);
+    expect(body.hurt).toBe(0);
+    expect(body.shieldBlocks).toBe(1);
+  });
+
+  it("keeps unshielded hostile projectiles dangerous", () => {
+    const battle = createSortie("unshielded-projectile");
+    battle.hostileShots.push({
+      x: battle.hero.x,
+      y: battle.hero.y,
+      vx: 0,
+      vy: 0,
+      ttl: 5,
+    });
+    stepSortie(battle);
+    expect(battle.hero.hp).toBe(7);
+    expect(battle.hurt).toBe(1);
   });
 
   it("deals contact damage once per invulnerability period", () => {

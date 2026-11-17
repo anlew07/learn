@@ -68,7 +68,7 @@ export function assertSortieArchive(archive) {
       value.receipt?.sortieId !== id))) {
     throw new Error("出击结算账本无效");
   }
-  return true;
+  return validateSortieArchiveStructure(archive);
 }
 
 /**
@@ -180,4 +180,53 @@ export function buildSortieForge(archive, operationId) {
   };
   next.run.sortieCamp = { forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
   return { ok: true, archive: next, receipt };
+}
+
+function validateSortieArchiveStructure(archive) {
+  const run = archive.run;
+  if (typeof run.id !== "string" || !run.id ||
+    typeof run.seed !== "string" || run.runNumber !== 1 ||
+    run.worlds.length !== 2 ||
+    run.worlds[0].id !== "lingzai" || run.worlds[1].id !== "zombie") {
+    throw new Error();
+  }
+
+  const ledger = run.sortieLedger;
+  if (ledger !== undefined &&
+    (!ledger || typeof ledger !== "object" || Array.isArray(ledger))) {
+    throw new Error();
+  }
+  const entries = ledger ?? {};
+  if (Object.entries(entries).some(([id, value]) =>
+    !value || !value.receipt ||
+    id !== sortieIdentity({ ...run, day: value.receipt.day }))) {
+    throw new Error();
+  }
+
+  const last = archive.lastReceipt;
+  if (last !== null &&
+    (!Number.isInteger(last.nextDay) ||
+      last.nextDay < last.day || last.nextDay > last.day + 1 ||
+      last.nextDay !== run.day ||
+      last.sortieId !== sortieIdentity({ ...run, day: last.day }) ||
+      last.worlds.length !== run.worlds.length ||
+      last.worlds.some((world, index) =>
+        world.id !== run.worlds[index].id ||
+        world.status !== run.worlds[index].status ||
+        !["resourceDelta", "xpDelta", "pDelta", "dDelta"].every(
+          (field) => Number.isFinite(world[field]),
+        )) ||
+      typeof last.battle !== "object" || Array.isArray(last.battle) ||
+      last.battle.stones < 0 || last.battle.experience < 0 ||
+      last.battle.progress < 0 ||
+      !Number.isInteger(last.battle.defeated) || last.battle.defeated < 0)) {
+    throw new Error();
+  }
+  if ((last === null && Object.keys(entries).length > 0) ||
+    (last !== null &&
+      (!entries[last.sortieId] ||
+        JSON.stringify(entries[last.sortieId].receipt) !== JSON.stringify(last)))) {
+    throw new Error();
+  }
+  return true;
 }

@@ -7,18 +7,19 @@ export const SORTIE = Object.freeze({
   player: Object.freeze({ x: 160, y: 224, radius: 11, hp: 8, speed: 95, hurtSeconds: 1 }),
   weapon: Object.freeze({ cooldownSeconds: 0.7, range: 128, speed: 220, damage: 1, lifetimeSeconds: 1 }),
   forge: Object.freeze({ cost: 6, maxLevel: 1, damageBonus: 1 }),
+  hostileProjectile: Object.freeze({ speed: 125, ttlSeconds: 4 }),
   rewards: Object.freeze({
     defeatedPerShard: 3, pickupRadius: 28, shardsPerStone: 3, maxShardStones: 2,
     baseStonesOnWin: 3, experienceOnWin: 2, progressOnWin: 2,
   }),
   skills: Object.freeze({
     choiceSeconds: 25, options: Object.freeze(["thunder", "rune"]),
-    thunderCooldownSeconds: 4, thunderRange: 136, thunderTargets: 2, thunderDamage: 1,
+    thunderCooldownSeconds: 4, thunderRange: 136, thunderTargets: 1, thunderDamage: 1,
     runeRechargeSeconds: 10,
   }),
   enemies: Object.freeze({
-    wolf: Object.freeze({ name: "裂纹妖狼", hp: 2, speed: 34, radius: 11 }),
-    shade: Object.freeze({ name: "游离妖影", hp: 1, speed: 48, radius: 9 }),
+    wolf: Object.freeze({ name: "裂纹妖狼", hp: 2, speed: 38, radius: 11 }),
+    shade: Object.freeze({ name: "游离妖影", hp: 1, speed: 54, radius: 9 }),
   }),
   waves: Object.freeze([
     Object.freeze({ start: 0, count: 6, duration: 25, kinds: ["wolf"] }),

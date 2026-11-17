@@ -16,7 +16,7 @@ const skillHints = {
     SORTIE.skills.thunderTargets + "名附近敌人各造成" +
     SORTIE.skills.thunderDamage + "点伤害",
   rune: "立即获得一层护盾，每" + SORTIE.skills.runeRechargeSeconds +
-    "秒重新充能，抵挡一次近身接触",
+    "秒重新充能，抵挡一次受击（包括远程灵息弹）",
 };
 const powerName = (id) => POWERS.lingzai.find((power) => power.id === id)?.name ?? id;
 const skillCards = SORTIE.skills.options.map((id) =>
@@ -29,7 +29,7 @@ const app = document.querySelector("#app");
 app.className = "";
 app.innerHTML = [
   '<main class="sortie-root" data-sortie-root>',
-  '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>第二阶段 2D · 出击→营地建设→再出击</small></div>',
+  '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>移动避险 · 自动灵刃 · 战技构筑</small></div>',
   '<a href="./">返回正式模拟器</a></header>',
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
@@ -50,16 +50,19 @@ app.innerHTML = [
   '<section class="sortie-play" data-sortie-play hidden>',
   '<div class="sortie-stats"><span data-sortie-hp>生命 8/8</span>',
   '<span data-sortie-time>剩余 75 秒</span><span data-sortie-defeated>击退 0</span></div>',
+  '<div class="sortie-timebar" data-sortie-timebar role="progressbar" aria-label="试炼剩余时间" aria-valuemin="0" aria-valuemax="75" aria-valuenow="75" aria-valuetext="剩余 75 秒"><span data-sortie-time-fill></span></div>',
   '<div class="sortie-lootbar"><span data-sortie-loot>碎片 0 · 灵石兑换 0/2</span>',
   '<span data-sortie-power>战技：待觉醒</span></div>',
   '<div class="sortie-field"><canvas width="320" height="448" data-sortie-canvas role="img"',
-  ' aria-label="雾谷战场：分身、敌人和自动飞行的灵刃"></canvas></div>',
+  ' aria-label="雾谷战场：分身、敌人和自动飞行的灵刃"></canvas>',
+  '<div class="sortie-pause-overlay" data-sortie-paused hidden role="status" aria-live="polite">',
+  '<strong>试炼已暂停</strong><span>点击「继续试炼」恢复行动</span></div></div>',
   '<div class="sortie-controls"><div class="sortie-joystick" data-sortie-joystick',
-  ' role="group" aria-label="移动摇杆：按住拖动移动；键盘也支持方向键或 WASD">',
+  ' role="group" aria-label="移动摇杆：按住拖动移动；键盘也支持方向键或 WASD" aria-describedby="sortie-control-hint">',
   '<span class="sortie-knob" data-sortie-knob></span></div>',
-  '<div class="sortie-actions"><button data-sortie-pause>暂停</button>',
-  '<button data-sortie-retreat>撤离</button>',
-  '<small>左侧走位 · 自动攻击</small></div></div>',
+  '<div class="sortie-actions"><button type="button" data-sortie-pause aria-pressed="false">暂停</button>',
+  '<button type="button" data-sortie-retreat>撤离</button>',
+  '<small id="sortie-control-hint">左侧走位 · 自动攻击</small></div></div>',
   '<div class="sortie-dialog-overlay" data-sortie-choice hidden>',
   '<section class="sortie-modal" role="dialog" aria-modal="true" aria-labelledby="sortie-choice-title">',
   '<h2 id="sortie-choice-title">战技觉醒 · 选择一项</h2>',
@@ -88,6 +91,9 @@ const results = app.querySelector("[data-sortie-results]");
 const canvas = app.querySelector("[data-sortie-canvas]");
 const health = app.querySelector("[data-sortie-hp]");
 const remaining = app.querySelector("[data-sortie-time]");
+const timebar = app.querySelector("[data-sortie-timebar]");
+const timeFill = app.querySelector("[data-sortie-time-fill]");
+const pauseOverlay = app.querySelector("[data-sortie-paused]");
 const defeated = app.querySelector("[data-sortie-defeated]");
 const pauseButton = app.querySelector("[data-sortie-pause]");
 const lootText = app.querySelector("[data-sortie-loot]");
@@ -316,17 +322,26 @@ function currentInput() {
 }
 
 function resetMovement() {
+  const activePointerId = pointerId;
   pointerId = null;
   pointerVector = { x: 0, y: 0 };
   knob.style.transform = "translate(0px, 0px)";
   keys.clear();
+  if (activePointerId !== null && joystick.hasPointerCapture(activePointerId)) {
+    joystick.releasePointerCapture(activePointerId);
+  }
 }
 
 function drawStats() {
   if (!battle) return;
   health.textContent = "生命 " + battle.hero.hp + "/" + SORTIE.player.hp;
-  remaining.textContent = "剩余 " +
-    Math.max(0, Math.ceil((DURATION_TICKS - battle.tick) / SORTIE.ticksPerSecond)) + " 秒";
+  const remainingTicks = Math.max(0, DURATION_TICKS - battle.tick);
+  const secondsLeft = Math.ceil(remainingTicks / SORTIE.ticksPerSecond);
+  remaining.textContent = "剩余 " + secondsLeft + " 秒";
+  timebar.setAttribute("aria-valuenow", String(secondsLeft));
+  timebar.setAttribute("aria-valuetext", "剩余 " + secondsLeft + " 秒");
+  timeFill.style.width = (remainingTicks / DURATION_TICKS * 100).toFixed(2) + "%";
+  health.dataset.low = String(battle.hero.hp <= 2);
   defeated.textContent = "击退 " + battle.defeated;
   canvas.dataset.weaponDamage = String(battle.weaponDamage);
   lootText.textContent = "碎片 " + battle.collectedShards +
@@ -416,6 +431,8 @@ function resume() {
   if (phase !== "battle" || !paused || !session.isOwner || writeError || restoreError) return;
   paused = false;
   pauseButton.textContent = "暂停";
+  pauseButton.setAttribute("aria-pressed", "false");
+  pauseOverlay.hidden = true;
   lastFrame = null;
   frameId = requestAnimationFrame(loop);
 }
@@ -426,6 +443,8 @@ function pause() {
   resetMovement();
   cancelAnimationFrame(frameId);
   pauseButton.textContent = "继续试炼";
+  pauseButton.setAttribute("aria-pressed", "true");
+  pauseOverlay.hidden = false;
   lastFrame = null;
 }
 
@@ -457,6 +476,8 @@ function launchBattle() {
   retreatOverlay.hidden = true;
   play.hidden = false;
   pauseButton.textContent = "暂停";
+  pauseButton.setAttribute("aria-pressed", "false");
+  pauseOverlay.hidden = true;
   drawStats();
   frameId = requestAnimationFrame(loop);
 }
@@ -541,32 +562,45 @@ function moveJoystick(event) {
   const dx = event.clientX - rect.left - rect.width / 2;
   const dy = event.clientY - rect.top - rect.height / 2;
   const length = Math.hypot(dx, dy);
-  const ratio = Math.min(1, length / (rect.width / 2));
+  // Map the full usable knob travel to full movement, rather than requiring
+  // the finger to reach the joystick's outer border.
+  const maxDistance = Math.max(1, rect.width * 0.3);
+  const ratio = Math.min(1, length / maxDistance);
   pointerVector = length ? {
     x: dx / length * ratio,
     y: dy / length * ratio,
   } : { x: 0, y: 0 };
   knob.style.transform = "translate(" +
-    (pointerVector.x * rect.width * 0.3).toFixed(0) + "px, " +
-    (pointerVector.y * rect.height * 0.3).toFixed(0) + "px)";
+    (pointerVector.x * maxDistance).toFixed(0) + "px, " +
+    (pointerVector.y * maxDistance).toFixed(0) + "px)";
 }
+
 joystick.addEventListener("pointerdown", (event) => {
-  if (phase !== "battle" || paused || pointerId !== null) return;
+  if (phase !== "battle" || paused || pointerId !== null || event.isPrimary === false) return;
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  event.preventDefault();
   pointerId = event.pointerId;
-  joystick.setPointerCapture(event.pointerId);
+  try {
+    joystick.setPointerCapture(event.pointerId);
+  } catch {
+    pointerId = null;
+    return;
+  }
   moveJoystick(event);
 });
 joystick.addEventListener("pointermove", (event) => {
-  if (phase === "battle" && !paused && pointerId === event.pointerId) moveJoystick(event);
+  if (phase !== "battle" || paused || pointerId !== event.pointerId) return;
+  if (event.cancelable) event.preventDefault();
+  moveJoystick(event);
 });
+function releaseJoystick(event) {
+  if (pointerId !== event.pointerId) return;
+  pointerId = null;
+  pointerVector = { x: 0, y: 0 };
+  knob.style.transform = "translate(0px, 0px)";
+}
 for (const kind of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  joystick.addEventListener(kind, (event) => {
-    if (pointerId === event.pointerId) {
-      pointerId = null;
-      pointerVector = { x: 0, y: 0 };
-      knob.style.transform = "translate(0px, 0px)";
-    }
-  });
+  joystick.addEventListener(kind, releaseJoystick);
 }
 
 const validKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"]);

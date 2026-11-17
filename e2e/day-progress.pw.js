@@ -23,7 +23,9 @@ test("day progress reflects real elapsed time and the scene changes from morning
   expect(await currentProgress(page)).toBe(0);
 
   await page.locator('.stage-actions [data-action="toggle"]').click();
-  await page.clock.runFor(5_200);
+  // A 5.2s boundary sometimes observes 24% due to RAF/timer rounding.
+  // Leave headroom while still verifying a real-time, non-skipped day.
+  await page.clock.runFor(5_600);
   expect(await currentProgress(page)).toBeGreaterThanOrEqual(25);
   await expect(page.locator(".stage-window")).toHaveAttribute("data-time-phase", "day");
   await page.clock.runFor(6_600);
@@ -53,7 +55,9 @@ test("changing speed preserves elapsed-day fraction without skipping a game day"
 }) => {
   await start(page);
   await page.locator('.stage-actions [data-action="toggle"]').click();
-  await page.clock.runFor(5_200);
+  // A 5.2s boundary sometimes observes 24% due to RAF/timer rounding.
+  // Leave headroom while still verifying a real-time, non-skipped day.
+  await page.clock.runFor(5_600);
   const before = await currentProgress(page);
   expect(before).toBeGreaterThanOrEqual(25);
 

@@ -43,7 +43,7 @@ describe("one-time in-combat power choice", () => {
     expect(battle.skillChoicePending).toBe(false);
   });
 
-  it("thunder damages real targets and triggers the same real drops", () => {
+  it("thunder damages a real target through the normal kill path", () => {
     const battle = reachSkillChoice("thunder");
     expect(chooseSortieSkill(battle, "thunder").ok).toBe(true);
     battle.hero.invulnerable = 5000;
@@ -53,9 +53,9 @@ describe("one-time in-combat power choice", () => {
       { id: 102, kind: "wolf", x: 210, y: 224, hp: 1 },
     );
     for (let i = 0; i < 4 * SORTIE.ticksPerSecond; i++) stepSortie(battle);
-    expect(battle.thunderHits).toBe(2);
-    expect(battle.defeated).toBe(2);
-    expect(battle.enemies).toHaveLength(0);
+    expect(battle.thunderHits).toBe(1);
+    expect(battle.defeated).toBe(1);
+    expect(battle.enemies).toHaveLength(1);
   });
 
   it("rune immediately blocks one body hit and recharges every ten seconds", () => {
