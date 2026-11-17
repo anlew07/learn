@@ -202,12 +202,18 @@ test("second tab is read-only while the first owns the save lock", async ({ page
   await second.close();
 });
 
-test("the camp forge remains accessible without page overflow at mobile sizes", async ({ page }) => {
+test("the camp forge remains accessible without page overflow at mobile sizes", async ({
+  page,
+}) => {
   await page.goto("/?mode=sortie");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
   await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "0");
   await expect(page.locator("[data-sortie-build]")).toBeHidden();
-  for (const [width, height] of [[320, 568], [390, 844], [430, 932]]) {
+  for (const [width, height] of [
+    [320, 568],
+    [390, 844],
+    [430, 932],
+  ]) {
     await page.setViewportSize({ width, height });
     const info = await page.evaluate(() => ({
       outerWidth: document.documentElement.scrollWidth,
@@ -266,8 +272,10 @@ test("two real battles pay for the forge and use the stronger projectile after r
     await expect(page.locator("[data-sortie-reward-preview]")).toContainText(
       "灵刃 " + expectedDamage + " 伤害",
     );
-    await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute("data-day",
-      String(expectedDamage + 1));
+    await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute(
+      "data-day",
+      String(expectedDamage + 1),
+    );
   }
 
   await playRound(1);
