@@ -88,6 +88,8 @@ test("the 25-second skill choice freezes time and resumes with a real choice", a
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/?mode=sortie");
   await page.locator("[data-start-sortie]").click();
+  // A battle may not begin until the pre-sortie IndexedDB checkpoint commits.
+  await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
   await page.clock.runFor(25_700);
   const choice = page.getByRole("dialog", { name: "战技觉醒 · 选择一项" });
   await expect(choice).toBeVisible();
