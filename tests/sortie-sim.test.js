@@ -35,8 +35,8 @@ describe("isolated Lingzai battle", () => {
   it("has two kinds and increasing danger tiers", () => {
     const b = createSortie("schedule");
     expect(new Set(b.schedule.map((event) => event.kind))).toEqual(new Set(["wolf", "shade"]));
-    expect(createSortie("d40", 45).schedule).toHaveLength(26);
-    expect(createSortie("d75", 80).schedule).toHaveLength(28);
+    expect(createSortie("d40", 45).schedule).toHaveLength(27);
+    expect(createSortie("d75", 80).schedule).toHaveLength(30);
   });
 
   it("fires and damages a real nearby target", () => {
