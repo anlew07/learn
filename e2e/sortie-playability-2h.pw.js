@@ -58,6 +58,8 @@ async function checkBattleLayout(page, size) {
   expect(layout.buttons.right).toBeLessThanOrEqual(size.width + 1);
 }
 
+// Keep the multi-phase acceptance paths together for screenshot review.
+// prettier-ignore
 for (const size of screens) {
   test("2H-D full loop " + size.width, async ({ page }) => {
     test.setTimeout(90_000);
@@ -177,6 +179,8 @@ for (const size of screens) {
   });
 }
 
+// Keep the multi-phase acceptance paths together for screenshot review.
+// prettier-ignore
 for (const size of screens) {
   test("2H-D touch controls " + size.width, async ({ page }) => {
     await page.setViewportSize(size);
@@ -235,6 +239,7 @@ for (const size of screens) {
   });
 }
 
+// prettier-ignore
 test("2H-D interruption remains isolated", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?mode=sortie");
