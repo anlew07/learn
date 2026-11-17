@@ -240,6 +240,21 @@ async function initializeSession() {
     const recovered = saved ? recoverSortieArchive(saved) : null;
     if (!session.isOwner) throw new Error("读取时失去独占锁");
     archive = recovered?.archive ?? createSortieArchive("sortie-camp-" + Date.now());
+    // Reacquiring a previously lost lock invalidates any in-memory battle,
+    // even if it was paused: only the saved pre-sortie snapshot may survive.
+    if (phase !== "intro") {
+      cancelAnimationFrame(frameId);
+      resetMovement();
+      battle = null;
+      actions = [];
+      phase = "intro";
+      paused = false;
+      play.hidden = true;
+      results.hidden = true;
+      skillOverlay.hidden = true;
+      retreatOverlay.hidden = true;
+      intro.hidden = false;
+    }
     sessionMode = "owner";
     restoreError = null;
     writeError = null;

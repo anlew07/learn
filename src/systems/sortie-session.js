@@ -33,13 +33,22 @@ export function assertSortieArchive(archive) {
       archive.pending.day !== archive.run.day)) {
     throw new Error("未完成出击记录无效");
   }
-  if (archive.lastReceipt !== null &&
-    (!archive.lastReceipt || typeof archive.lastReceipt.sortieId !== "string" ||
-      !Array.isArray(archive.lastReceipt.worlds))) {
+  const last = archive.lastReceipt;
+  if (last !== null &&
+    (!last || typeof last.sortieId !== "string" ||
+      !Number.isInteger(last.day) || last.day < 1 ||
+      !Array.isArray(last.worlds) || last.worlds.length !== archive.run.worlds.length ||
+      last.worlds.some((world) => !world || typeof world.id !== "string") ||
+      !last.battle || !Number.isFinite(last.battle.stones) ||
+      !Number.isFinite(last.battle.experience) ||
+      !Number.isFinite(last.battle.progress))) {
     throw new Error("出击回执结构无效");
   }
-  if (archive.run.sortieLedger && (typeof archive.run.sortieLedger !== "object" ||
-    Array.isArray(archive.run.sortieLedger))) {
+  const ledger = archive.run.sortieLedger;
+  if (ledger && (typeof ledger !== "object" || Array.isArray(ledger) ||
+    Object.entries(ledger).some(([id, value]) =>
+      !value || typeof value.fingerprint !== "string" ||
+      value.receipt?.sortieId !== id))) {
     throw new Error("出击结算账本无效");
   }
   return true;

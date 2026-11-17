@@ -268,6 +268,11 @@ describe("prototype persistence and interruption safety", () => {
       { ...original, run: { ...original.run, worlds: [] } },
       { ...original, pending: { sortieId: "wrong", day: 1 } },
       { ...original, lastReceipt: "fake" },
+      { ...original, lastReceipt: { sortieId: "foo", worlds: [] } },
+      { ...original, lastReceipt: { sortieId: "foo", day: 1,
+        worlds: [{ id: "lingzai" }, { id: "zombie" }], battle: {} } },
+      { ...original, run: { ...original.run,
+        sortieLedger: { fake: { fingerprint: "x", receipt: { sortieId: "wrong" } } } } },
     ]) {
       const snapshot = copied(invalid);
       expect(() => recoverSortieArchive(invalid)).toThrow();
