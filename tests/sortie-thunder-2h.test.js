@@ -4,8 +4,8 @@ import { SORTIE as BASE_SORTIE } from "../src/config/sortie-data.js";
 const CONFIG_MODULE = "../src/config/sortie-data.js";
 const VARIANTS = Object.freeze([
   { name: "2g-control", changes: {} },
-  { name: "thunder-cooldown-2s", changes: { thunderCooldownSeconds: 2 } },
-  { name: "thunder-damage-2", changes: { thunderDamage: 2 } },
+  { name: "thunder-cooldown-1s", changes: { thunderCooldownSeconds: 1 } },
+  { name: "thunder-targets-2", changes: { thunderTargets: 2 } },
 ]);
 
 function round(value) {
