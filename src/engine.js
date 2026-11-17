@@ -1,4 +1,6 @@
 import seedrandom from "seedrandom";
+import { replaySortieTrace, sortieIdentity, sortieSeed, sortieTraceFingerprint } from "./systems/sortie-trace.js";
+import { previewSortieRewards } from "./systems/sortie-rewards.js";
 import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.js";
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
@@ -437,7 +439,9 @@ const MultiworldEngine = (function () {
       w.memoryCandidates=[];
     });
   }
-  function step(s){
+  // Keep the ordinary step unchanged; an optional validated battle replaces
+  // only Lingzai's daily main action, never a second bonus action.
+  function tickDay(s,sortie){
     if(!s||!s.active)return {ok:false,error:"本局已经结束"};
     if(s.day>1&&(s.day-1)%8===0){s.ap=Math.min(s.apMax,s.ap+2);log(s,null,"灵魂行动点恢复2点。","minor");}
     s.worlds.forEach(function(w){if(w.status==="running"){queuedEvent(s,w);activateEvents(s,w);}});
@@ -458,6 +462,24 @@ const MultiworldEngine = (function () {
           }else log(s,w.id,"闭关完成，修为有所精进。","major");
           w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
         }
+      }else if(sortie&&w.id==="lingzai"){
+        recordWorldAction(w,"sortie");
+        w.action="雾谷出击 · "+(sortie.outcome==="won"?"维持结界":"谨慎撤离");
+        w.lastDecision={
+          day:s.day,actionId:"sortie",
+          reason:"本日主要行动已由亲自出击替代，不再执行自动采集、训练或排险",
+          alternatives:[]
+        };
+        if(sortie.stones)produce(s,w,"resource",sortie.stones);
+        if(sortie.experience)produce(s,w,"xp",sortie.experience);
+        if(sortie.progress)addProgress(s,w,sortie.progress);
+        w.lastSortie={
+          day:s.day,outcome:sortie.outcome,defeated:sortie.defeated,
+          collectedShards:sortie.collectedShards,stones:sortie.stones,
+          experience:sortie.experience,progress:sortie.progress
+        };
+        log(s,w.id,"雾谷出击完成："+(sortie.outcome==="won"?"结界已维持":"已返回营地")+
+          "；拾取"+sortie.collectedShards+"碎片，实得灵石"+sortie.stones+"。","battle");
       }else doAction(s,w,chooseAction(s,w));
       const aftermath=settleCautiousAftermath(w,s.day);
       if(aftermath)log(s,w.id,aftermath,"minor");
@@ -494,6 +516,71 @@ const MultiworldEngine = (function () {
     if(s.active)s.day++;
     return {ok:true};
   }
+  function step(s){return tickDay(s,null);}
+
+  function captureSortieWorld(w) {
+    return {
+      id:w.id,status:w.status,level:w.level,xp:w.xp,
+      resource:w.resource,p:w.p,d:w.d,action:w.action,
+      decision:w.lastDecision?JSON.parse(JSON.stringify(w.lastDecision)):null
+    };
+  }
+
+  /**
+   * Validated by re-simulation; returns a *new* state for one atomic save.
+   * Caller may display the receipt only after persisting the returned state.
+   * Both same-ID and different-operation-ID replay are idempotent.
+   */
+  function settleSortie(s,request){
+    if(!s||!request||typeof request.sortieId!=="string"||
+      !Array.isArray(request.actions))return {ok:false,error:"出击结算参数无效"};
+    var fingerprint=sortieTraceFingerprint(request.actions);
+    var previously=s.sortieLedger&&s.sortieLedger[request.sortieId];
+    if(previously){
+      if(previously.fingerprint!==fingerprint){
+        return {ok:false,error:"本次出击已结算，提交内容不匹配"};
+      }
+      return {ok:true,replayed:true,run:s,receipt:previously.receipt};
+    }
+    var ling=byId(s,"lingzai");
+    if(!s.active||!ling||ling.status!=="running"||ling.retreat||
+      request.sortieId!==sortieIdentity(s)){
+      return {ok:false,error:"当前世界无法结算本次出击"};
+    }
+    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions);
+    if(!verified.ok)return {ok:false,error:verified.error};
+    var reward=previewSortieRewards(verified.battle);
+    if(!reward)return {ok:false,error:"战斗未完成"};
+    // All consequences are applied to a clone: a failed validation, including
+    // an event that closes the world before the action, changes no caller data.
+    var next=JSON.parse(JSON.stringify(s));
+    var before=next.worlds.map(captureSortieWorld);
+    var outcome=tickDay(next,reward);
+    if(!outcome.ok||!byId(next,"lingzai").lastSortie||
+      byId(next,"lingzai").lastSortie.day!==s.day){
+      return {ok:false,error:"今日事件已阻止出击结算"};
+    }
+    var after=next.worlds.map(captureSortieWorld);
+    var changes=after.map(function(w,index){
+      var original=before[index];
+      return {
+        ...w,resourceDelta:r2(w.resource-original.resource),
+        xpDelta:r2(w.xp-original.xp),pDelta:r2(w.p-original.p),
+        dDelta:r2(w.d-original.d),
+        actionId:w.decision&&w.decision.day===s.day?w.decision.actionId:null
+      };
+    });
+    var receipt={
+      sortieId:request.sortieId,day:s.day,nextDay:next.day,
+      battle:reward,
+      worlds:changes,
+      newLogs:next.logs.slice(s.logs.length).map(function(entry){return {...entry};})
+    };
+    if(!next.sortieLedger)next.sortieLedger={};
+    next.sortieLedger[request.sortieId]={fingerprint:fingerprint,receipt:receipt};
+    return {ok:true,run:next,receipt:receipt};
+  }
+
   function setStrategy(s,id,strategy){
     var preview=previewStrategyChange(s,id,strategy);
     if(!preview.available)return {ok:false,error:preview.reason};
@@ -620,7 +707,7 @@ const MultiworldEngine = (function () {
       fusion:previewFusion,aid:previewResourceAid});
   }
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
-    fresh:fresh,step:step,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
+    fresh:fresh,step:step,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
     resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
