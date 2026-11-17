@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import Engine from "../src/engine.js";
-import { SORTIE } from "../src/config/sortie-data.js";
 import { STORAGE_KEYS } from "../src/services/persistence.js";
 import { createSortieRepository } from "../src/services/sortie-persistence.js";
 import {
