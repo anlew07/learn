@@ -35,7 +35,8 @@ app.innerHTML = [
   '<p>拖动移动躲避灵息弹，灵刃自动攻击。击倒敌人会留下碎片：靠近拾取，25秒时选择一项战技！</p>',
   '<button class="sortie-cta" data-start-sortie>▶ 出击雾谷</button>',
   '<div class="sortie-camp" data-sortie-camp>',
-  '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span></div>',
+  '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span>',
+  '<p data-sortie-last-receipt>尚无已提交的出击回执</p></div>',
   '<p class="sortie-warning">本模式不读取、写入正式存档；奖励仅进入独立试验档，每次出击结束推进两个世界一天。</p></section>',
   '<section class="sortie-session-notice" data-sortie-session-notice role="status"></section>',
   '<section class="sortie-play" data-sortie-play hidden>',
@@ -88,6 +89,7 @@ const retreatOverlay = app.querySelector("[data-sortie-confirm]");
 const rewardText = app.querySelector("[data-sortie-reward-preview]");
 const worldReport = app.querySelector("[data-sortie-world-report]");
 const camp = app.querySelector("[data-sortie-camp]");
+const lastReceipt = app.querySelector("[data-sortie-last-receipt]");
 const sessionNotice = app.querySelector("[data-sortie-session-notice]");
 const startButton = app.querySelector("[data-start-sortie]");
 const joystick = app.querySelector("[data-sortie-joystick]");
@@ -136,6 +138,12 @@ function updateCamp() {
     const [ling, zombie] = run.worlds;
     camp.querySelector("strong").textContent = "营地 · 第 " + run.day + " 日（世界时间在营地冻结）";
     camp.querySelector("span").textContent = worldLine(ling) + "｜" + worldLine(zombie);
+    const prior = archive.lastReceipt;
+    lastReceipt.textContent = prior ?
+      "已保存的第 " + prior.day + " 日回执：灵石 +" + prior.battle.stones +
+      "，经验 +" + prior.battle.experience +
+      "；废土当日行动：" + (prior.worlds[1]?.actionId || "无") +
+      "。重新打开页面不会重复结算。" : "尚无已提交的出击回执";
   }
   const ready = session.isOwner && Boolean(archive?.run.active) &&
     archive.run.worlds[0].status === "running" && !archive.pending &&
@@ -241,6 +249,8 @@ async function initializeSession() {
   } catch (error) {
     console.error("独立试验档读取失败", error);
     restoreError = error;
+    // Do not monopolize the game's common Web Lock with an unreadable archive.
+    await session.release();
   }
   updateCamp();
 }

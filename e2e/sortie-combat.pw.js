@@ -165,6 +165,8 @@ test("a confirmed retreat commits exactly one world day and survives reload", as
   await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
   await page.reload();
   await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("已保存的第 1 日回执");
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("废土当日行动");
 });
 
 test("refresh during a pending battle rolls back to camp without awards", async ({ page }) => {
