@@ -613,48 +613,63 @@ function sceneHtml() {
  const canExplore = !inQuickStart();
  const visibleWorlds = canExplore ? view.worlds : view.worlds.filter(w=>w.id==="lingzai");
  const pending = view.pendingCount > 0;
- return '<main class="stage-game" aria-label="固定游戏主屏" data-game-stage>'+
-  '<header class="stage-top"><span class="stage-brand">同时穿越 <small>· 救援远征</small></span>'+
-  '<span class="stage-day">第 '+view.day+' 天 · '+(view.paused?'已暂停':'自动进行中')+'</span>'+
-  '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能">☰</button></header>'+
+ const statusText = view.paused ? "已暂停" : "自动进行中";
+ return '<main class="stage-game" data-stage-phase="'+esc(view.scene.phase)+'" aria-label="固定游戏主屏" data-game-stage>'+
+  '<header class="stage-top">'+
+  '<div class="stage-brand-group"><span class="stage-brand-seal" aria-hidden="true">✦</span>'+
+  '<div class="stage-brand-copy"><span class="stage-brand">同时穿越</span><small>末日救援 · 世界守望</small></div></div>'+
+  '<span class="stage-day"><b>第 '+view.day+' 天</b><small class="'+(view.paused?'is-paused':'is-running')+'">'+statusText+'</small></span>'+
+  '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能" title="更多功能">☰</button></header>'+
   '<div class="stage-counters" aria-label="全局状态">'+
-  '<span>获救 <b>'+view.saved+'/'+view.total+'</b></span>'+
-  '<span>干预点 <b>'+view.ap+'</b></span>'+
-  '<span>灵魂 <b>'+view.soul+'</b></span>'+
-  '<span>'+esc(Engine.info(run,run.worlds.find(w=>w.id===view.worldId)).resourceName)+
-  ' <b>'+view.resource+'</b></span></div>'+
+  '<span class="stage-stat" data-stat="saved"><span>获救世界</span><b>'+view.saved+'<small>/'+view.total+'</small></b></span>'+
+  '<span class="stage-stat" data-stat="ap"><span>干预点</span><b>'+view.ap+'</b></span>'+
+  '<span class="stage-stat" data-stat="soul"><span>灵魂</span><b>'+view.soul+'</b></span>'+
+  '<span class="stage-stat" data-stat="resource"><span>'+esc(Engine.info(run,run.worlds.find(w=>w.id===view.worldId)).resourceName)+'</span><b>'+view.resource+'</b></span></div>'+
   '<nav class="stage-worlds" aria-label="选择世界">'+
   visibleWorlds.map(w =>
    '<button data-action="scene-world" data-world="'+esc(w.id)+'"'+
    (w.id===view.worldId?' aria-current="page" class="active"':'')+
-   '><b>'+esc(w.title)+'</b><span>'+ (w.event||w.build?'!':w.status==="saved"?'✓':w.status==="failed"?'×':'')+
-   Math.round(w.danger)+'%</span></button>').join("")+
-  (canExplore?'':view.worlds.filter(w=>w.id!==view.worldId).map(w=>'<button data-action="show-all-worlds" aria-label="展开全部世界"><b>'+esc(w.title)+'</b><span>'+(view.paused?'继续后同步行动':'正在同步行动')+'</span></button>').join(""))+
+   ' aria-label="'+esc(w.title)+'，危机'+Math.round(w.danger)+'%">'+
+   '<span class="stage-world-thumb" aria-hidden="true"></span>'+
+   '<span class="stage-world-info"><b>'+esc(w.title)+'</b><span class="stage-world-indicator">'+
+   (w.event||w.build?'! 待决策 · ':w.status==="saved"?'✓ 已获救 · ':w.status==="failed"?'× 未获救 · ':'危机 ')+
+   Math.round(w.danger)+'%</span></span>'+
+   '<span class="stage-world-risk" style="--risk:'+Math.round(w.danger)+'%"></span></button>').join("")+
+  (canExplore?'':view.worlds.filter(w=>w.id!==view.worldId).map(w=>
+   '<button data-action="show-all-worlds" data-preview-world="'+esc(w.id)+'" aria-label="展开全部世界">'+
+   '<span class="stage-world-thumb" aria-hidden="true"></span>'+
+   '<span class="stage-world-info"><b>'+esc(w.title)+'</b><span class="stage-world-indicator">'+
+   (view.paused?'继续后同步行动':'正在同步行动')+'</span></span></button>').join(""))+
   '</nav>'+
   '<section class="stage-window" aria-label="像素世界现场">'+
   '<canvas data-stage-canvas width="320" height="208" role="img" aria-label="'+
   esc(view.title+'像素场景：分身正在'+view.action+',危机压力'+view.danger+'%')+'"></canvas>'+
-  '<div class="stage-caption"><b>'+esc(view.title)+'</b><span>'+
-  esc(view.status)+' · Lv'+view.level+' · 剩余'+view.deadline+'天</span></div>'+
-  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+esc(inQuickStart()?getOpeningBrief(profile).stageHint:view.scene.summary+" · 今日："+view.action)+'</div>'+
+  '<div class="stage-caption"><small>当前世界 · WORLD</small><b>'+esc(view.title)+'</b><span>Lv'+view.level+' · '+esc(view.status)+' · 剩余'+view.deadline+'天</span></div>'+
+  '<div class="stage-scene-status" data-scene-phase="'+esc(view.scene.phase)+'"><span class="stage-status-dot"></span>'+esc(view.scene.summary)+'</div>'+
+  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+
+  '<span class="stage-action-marker">今日动向</span><span class="stage-action-text">'+
+  esc(inQuickStart()?getOpeningBrief(profile).stageHint:view.action)+'</span></div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
-  '<div><span>救援准备</span><progress max="100" value="'+view.rescue+'"></progress><b>'+Math.round(view.rescue)+'</b></div>'+
-  '<div><span>危机压力</span><progress class="danger" max="100" value="'+view.danger+'"></progress><b>'+Math.round(view.danger)+'</b></div>'+
+  '<div class="stage-meter stage-meter-rescue"><div class="stage-meter-head"><span>救援准备</span><b>'+Math.round(view.rescue)+'<small>%</small></b></div>'+
+  '<progress max="100" value="'+view.rescue+'" aria-label="救援准备"></progress></div>'+
+  '<div class="stage-meter stage-meter-danger"><div class="stage-meter-head"><span>危机压力</span><b>'+Math.round(view.danger)+'<small>%</small></b></div>'+
+  '<progress class="danger" max="100" value="'+view.danger+'" aria-label="危机压力"></progress></div>'+
   '</section>'+
   '<section class="stage-actions" aria-label="主要游戏操作">'+
-  '<button class="primary" data-action="toggle"'+(!view.active?' disabled':'')+'>'+
-  (view.paused?'▶ 继续模拟':'Ⅱ 暂停模拟')+'</button>'+
-  '<label class="stage-speed">速度 <select aria-label="模拟速度" data-action="speed">'+
+  '<button class="primary stage-play-button" data-action="toggle"'+(!view.active?' disabled':'')+'>'+
+  '<span class="stage-play-icon" aria-hidden="true">'+(view.paused?'▶':'Ⅱ')+'</span>'+
+  '<span>'+(view.paused?'继续模拟':'暂停模拟')+'</span></button>'+
+  '<label class="stage-speed"><span>速度</span><select aria-label="模拟速度" data-action="speed">'+
   [1,2,4].map(speed=>'<option value="'+speed+'"'+(run.speed===speed?' selected':'')+'>'+speed+'×</option>').join("")+
   '</select></label>'+
-  '<button data-action="scene-panel" data-panel="strategy">策略 / 档案</button>'+
-  '<button data-action="scene-panel" data-panel="event"'+(pending?' class="has-event"':'')+'>'+
-  (pending?'! 待处理 '+view.pendingCount:'事件')+'</button>'+
-  '<button data-action="scene-panel" data-panel="aid">跨界援助</button>'+
-  '<button data-action="scene-panel" data-panel="team">队伍</button>'+
-  '<button data-action="scene-panel" data-panel="report">战报</button>'+
-  '<button data-action="scene-panel" data-panel="guide">帮助</button>'+
+  '<button class="stage-event-button'+(pending?' has-event':'')+'" data-action="scene-panel" data-panel="event">'+
+  (pending?'待处理 '+view.pendingCount:'关键事件')+'</button>'+
+  '<button class="stage-nav-action" data-action="scene-panel" data-panel="strategy" aria-label="策略与世界档案">策略</button>'+
+  '<button class="stage-nav-action" data-action="scene-panel" data-panel="aid" aria-label="跨世界援助">援助</button>'+
+  '<button class="stage-nav-action" data-action="scene-panel" data-panel="team">队伍</button>'+
+  '<button class="stage-nav-action" data-action="scene-panel" data-panel="report">战报</button>'+
+  '<button class="stage-nav-action" data-action="scene-panel" data-panel="guide">帮助</button>'+
   '</section>'+
   stagePanelHtml(view)+
   '<p id="toast" class="notice stage-toast" hidden></p>'+
