@@ -130,9 +130,7 @@ console.log(
     seeds +
     " paired seeds x 3 dangers x 2 skills x 3 routes; no forge",
 );
-console.log(
-  "Mistake: reverse joystick for 65 ticks per 540; enemy/projectile damage unchanged.",
-);
+console.log("Mistake: reverse joystick for 65 ticks per 540; enemy/projectile damage unchanged.");
 console.log(
   "| D | Skill | Route | Wins | HP | Hurt | Shards | Bonus stones | Hurt near drop | Pickups near enemy | Pickups near shot |",
 );
