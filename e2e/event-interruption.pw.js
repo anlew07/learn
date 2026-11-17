@@ -70,9 +70,9 @@ for (const [speed, duration] of [
 
     await dialog.getByRole("button", { name: "谨慎调查" }).click();
     await expect(dialog).toHaveCount(0);
-    await expect.poll(async () => (await snapshot(page)).run.worlds[1].p).toBe(
-      frozen.worlds[1].p + 2,
-    );
+    await expect
+      .poll(async () => (await snapshot(page)).run.worlds[1].p)
+      .toBe(frozen.worlds[1].p + 2);
     const resolved = (await snapshot(page)).run;
     expect(resolved.paused).toBe(true);
     expect(resolved.ap).toBe(frozen.ap);
@@ -101,13 +101,19 @@ test("two worlds trigger together: one pause, sequential choices, no duplicated 
   await expect.poll(async () => (await snapshot(page)).run.paused).toBe(true);
   const before = (await snapshot(page)).run;
 
-  await dialog.locator('.event[data-world="lingzai"]').getByRole("button", { name: "谨慎调查" }).click();
+  await dialog
+    .locator('.event[data-world="lingzai"]')
+    .getByRole("button", { name: "谨慎调查" })
+    .click();
   await expect(dialog.locator(".event")).toHaveCount(1);
-  await dialog.locator('.event[data-world="zombie"]').getByRole("button", { name: "谨慎调查" }).click();
+  await dialog
+    .locator('.event[data-world="zombie"]')
+    .getByRole("button", { name: "谨慎调查" })
+    .click();
   await expect(dialog).toHaveCount(0);
-  await expect.poll(async () => (await snapshot(page)).run.worlds[1].p).toBe(
-    before.worlds[1].p + 2,
-  );
+  await expect
+    .poll(async () => (await snapshot(page)).run.worlds[1].p)
+    .toBe(before.worlds[1].p + 2);
   const after = (await snapshot(page)).run;
   expect(after.worlds[0].p).toBe(before.worlds[0].p + 2);
   expect(after.day).toBe(before.day);
