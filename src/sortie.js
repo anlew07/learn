@@ -1,9 +1,14 @@
 import "./sortie.css";
 import { createSortie, advanceSortie, DURATION_TICKS, chooseSortieSkill, retreatSortie } from "./systems/sortie-sim.js";
-import { previewSortieRewards } from "./systems/sortie-rewards.js";
 import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
 import { drawSortie } from "./ui/sortie-stage.js";
+import { createExclusiveSession } from "./services/exclusive-session.js";
+import { sortieRepository } from "./services/sortie-persistence.js";
+import {
+  createSortieArchive, recoverSortieArchive,
+  prepareSortieArchive, settleSortieArchive,
+} from "./systems/sortie-session.js";
 
 const skillHints = {
   thunder: "每" + SORTIE.skills.thunderCooldownSeconds + "秒对最多" +
@@ -23,13 +28,16 @@ const app = document.querySelector("#app");
 app.className = "";
 app.innerHTML = [
   '<main class="sortie-root" data-sortie-root>',
-  '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>第二阶段 2B · 独立战斗沙盒</small></div>',
+  '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>第二阶段 2C · 独立双世界试验档</small></div>',
   '<a href="./">返回正式模拟器</a></header>',
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
   '<p>拖动移动躲避灵息弹，灵刃自动攻击。击倒敌人会留下碎片：靠近拾取，25秒时选择一项战技！</p>',
   '<button class="sortie-cta" data-start-sortie>▶ 出击雾谷</button>',
-  '<p class="sortie-warning">本模式碎片与灵石只做战斗奖励预览，不读取、写入正式存档或推进世界日。</p></section>',
+  '<div class="sortie-camp" data-sortie-camp>',
+  '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span></div>',
+  '<p class="sortie-warning">本模式不读取、写入正式存档；奖励仅进入独立试验档，每次出击结束推进两个世界一天。</p></section>',
+  '<section class="sortie-session-notice" data-sortie-session-notice role="status"></section>',
   '<section class="sortie-play" data-sortie-play hidden>',
   '<div class="sortie-stats"><span data-sortie-hp>生命 8/8</span>',
   '<span data-sortie-time>剩余 75 秒</span><span data-sortie-defeated>击退 0</span></div>',
@@ -53,15 +61,16 @@ app.innerHTML = [
   '<div class="sortie-dialog-overlay" data-sortie-confirm hidden>',
   '<section class="sortie-modal" role="dialog" aria-modal="true" aria-labelledby="sortie-retreat-title">',
   '<h2 id="sortie-retreat-title">确定撤离雾谷？</h2>',
-  '<p>撤离不获得生存基础奖励，只计算已经拾到的碎片（仍然仅预览）。</p>',
+  '<p>撤离仍消耗本日唯一行动，不获得生存基础奖；拾到的碎片会结算进独立试验档。</p>',
   '<div class="sortie-confirm-buttons"><button data-sortie-confirm-no>继续探索</button>',
   '<button data-sortie-confirm-yes>确定撤离</button></div>',
   '</section></div></section>',
   '<section class="sortie-results" data-sortie-results hidden>',
   '<h1 data-sortie-outcome>试炼结束</h1><p class="sortie-feedback" data-sortie-summary></p>',
-  '<p data-sortie-reward-preview>灵石奖励预览</p>',
-  '<p>所有奖励仅为沙盒估算：不会进入正式存档，不增加资源或推进世界日。</p>',
-  '<button class="sortie-cta" data-sortie-retry>再次挑战</button></section></main>',
+  '<p data-sortie-reward-preview>战斗结束，正在验证轨迹与写入独立试验档……</p>',
+  '<div class="sortie-world-report" data-sortie-world-report></div>',
+  '<p>收益已结算进独立试验档，仅供可玩性验证；正式存档与世界碎片不受影响。</p>',
+  '<button class="sortie-cta" data-sortie-retry>返回营地</button></section></main>',
 ].join("");
 
 const intro = app.querySelector("[data-sortie-intro]");
@@ -77,6 +86,10 @@ const powerText = app.querySelector("[data-sortie-power]");
 const skillOverlay = app.querySelector("[data-sortie-choice]");
 const retreatOverlay = app.querySelector("[data-sortie-confirm]");
 const rewardText = app.querySelector("[data-sortie-reward-preview]");
+const worldReport = app.querySelector("[data-sortie-world-report]");
+const camp = app.querySelector("[data-sortie-camp]");
+const sessionNotice = app.querySelector("[data-sortie-session-notice]");
+const startButton = app.querySelector("[data-start-sortie]");
 const joystick = app.querySelector("[data-sortie-joystick]");
 const knob = app.querySelector("[data-sortie-knob]");
 const keys = new Set();
@@ -88,8 +101,134 @@ let pointerId = null;
 let pointerVector = { x: 0, y: 0 };
 let frameId = 0;
 let lastFrame = null;
-let attempt = 0;
 let retreatWasPaused = false;
+let archive = null;
+let actions = [];
+let savedSeed = null;
+let savedDanger = 0;
+let sessionMode = "starting";
+let writeBusy = false;
+let pendingWrite = null;
+let writeError = null;
+let restoreError = null;
+
+const session = createExclusiveSession({
+  onLost() {
+    sessionMode = "readonly";
+    if (phase === "battle") pause();
+    updateCamp();
+  },
+});
+
+function worldLine(world) {
+  if (!world) return "暂无世界信息";
+  return world.id === "lingzai" ?
+    "灵灾 · " + world.status + " · Lv" + world.level +
+    " · 灵石 " + world.resource + " · 准备 " + world.p + "% · 风险 " + world.d + "%" :
+    "废土救援 · " + world.status + " · Lv" + world.level +
+    " · 零件 " + world.resource + " · 准备 " + world.p + "% · 风险 " + world.d + "%";
+}
+
+function updateCamp() {
+  if (archive?.run) {
+    const run = archive.run;
+    const [ling, zombie] = run.worlds;
+    camp.querySelector("strong").textContent = "营地 · 第 " + run.day + " 日（世界时间在营地冻结）";
+    camp.querySelector("span").textContent = worldLine(ling) + "｜" + worldLine(zombie);
+  }
+  const ready = session.isOwner && Boolean(archive?.run.active) &&
+    archive.run.worlds[0].status === "running" && !archive.pending &&
+    !writeBusy && !writeError && !restoreError;
+  startButton.disabled = !ready;
+  if (restoreError) {
+    sessionNotice.textContent = "读取独立试验档失败或结构不兼容：已禁止写入，不覆盖旧数据。";
+  } else if (writeError) {
+    sessionNotice.replaceChildren();
+    const text = document.createElement("span");
+    text.textContent = "试验档保存失败，战斗已冻结；请勿刷新，以免丢失本次临时结果。";
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "重试保存";
+    retry.dataset.sortieRetrySave = "";
+    retry.disabled = !session.isOwner || writeBusy;
+    retry.addEventListener("click", retryPendingSave);
+    sessionNotice.append(text, retry);
+  } else if (sessionMode === "readonly") {
+    sessionNotice.replaceChildren();
+    const warning = document.createElement("span");
+    warning.textContent = "另一个游戏标签页持有独占锁，本页只读。";
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "重新取得控制权";
+    retry.dataset.sortieRetryLock = "";
+    retry.addEventListener("click", initializeSession);
+    sessionNotice.append(warning, retry);
+  } else if (writeBusy) {
+    sessionNotice.textContent = "正在保存独立试验档，请勿重复操作……";
+  } else {
+    sessionNotice.textContent = sessionMode === "owner" ?
+      "独立试验档已就绪；返回正式模拟器不会继承此处资源。" :
+      "正在检查独占写入权与独立试验档……";
+  }
+}
+
+async function persistCandidate(candidate, onSaved) {
+  if (!session.isOwner || writeBusy) return;
+  pendingWrite = { candidate, onSaved };
+  writeBusy = true;
+  writeError = null;
+  updateCamp();
+  try {
+    await sortieRepository.enqueueSave(candidate);
+    if (!session.isOwner) throw new Error("保存期间失去写入权");
+    archive = candidate;
+    pendingWrite = null;
+    writeError = null;
+    writeBusy = false;
+    onSaved();
+    updateCamp();
+  } catch (error) {
+    writeBusy = false;
+    writeError = error;
+    if (phase === "battle") pause();
+    console.error("出击试验档保存失败", error);
+    updateCamp();
+  }
+}
+
+async function retryPendingSave() {
+  if (!pendingWrite || writeBusy || !session.isOwner) return;
+  const pending = pendingWrite;
+  await persistCandidate(pending.candidate, pending.onSaved);
+}
+
+async function initializeSession() {
+  if (writeBusy) return;
+  sessionMode = "starting";
+  updateCamp();
+  const owner = await session.acquire();
+  if (!owner) {
+    sessionMode = "readonly";
+    updateCamp();
+    return;
+  }
+  try {
+    const saved = await sortieRepository.load();
+    const recovered = saved ? recoverSortieArchive(saved) : null;
+    archive = recovered?.archive ?? createSortieArchive("sortie-camp-" + Date.now());
+    sessionMode = "owner";
+    restoreError = null;
+    writeError = null;
+    pendingWrite = null;
+    if (recovered?.interrupted) {
+      sessionNotice.textContent = "上次出击未完成提交，已回退到出击前营地；没有发奖或推进世界日。";
+    }
+  } catch (error) {
+    console.error("独立试验档读取失败", error);
+    restoreError = error;
+  }
+  updateCamp();
+}
 
 function currentInput() {
   if (pointerId !== null) return pointerVector;
@@ -140,13 +279,34 @@ function endBattle() {
   app.querySelector("[data-sortie-summary]").textContent =
     "存活 " + (battle.tick / SORTIE.ticksPerSecond).toFixed(1) +
     " 秒，击退 " + battle.defeated + " 只妖影，释放灵刃 " + battle.fired + " 次。";
-  const receipt = previewSortieRewards(battle);
-  rewardText.textContent = "本场奖励预览：拾取碎片 " + receipt.collectedShards +
-    "（未拾取 " + receipt.uncollectedShards + "），灵石 " + receipt.stones +
-    "（生存 " + receipt.baseStones + " + 拾取兑换 " + receipt.shardStones +
-    "），经验 +" + receipt.experience + "，救援准备 +" + receipt.progress + "。";
-  rewardText.dataset.stones = String(receipt.stones);
   results.dataset.result = battle.outcome;
+  rewardText.textContent = "正在复算真实战斗记录并提交本次唯一的双世界日结算……";
+  worldReport.textContent = "";
+  const staged = settleSortieArchive(archive, actions);
+  if (!staged.ok) {
+    writeError = new Error(staged.error);
+    rewardText.textContent = "结算已冻结：" + staged.error + "。请刷新回退本次未提交的战斗。";
+    updateCamp();
+    return;
+  }
+  void persistCandidate(staged.archive, () => {
+    const receipt = staged.receipt;
+    const reward = receipt.battle;
+    rewardText.textContent = "本场已结算：拾取碎片 " + reward.collectedShards +
+      "（未拾取 " + reward.uncollectedShards + "），灵石 " + reward.stones +
+      "（生存 " + reward.baseStones + " + 拾取兑换 " + reward.shardStones +
+      "），经验 +" + reward.experience + "，救援准备 +" + reward.progress + "。";
+    rewardText.dataset.stones = String(reward.stones);
+    const report = receipt.worlds.map((world) => worldLine(world) +
+      "；本日资源 " + (world.resourceDelta >= 0 ? "+" : "") + world.resourceDelta +
+      "、经验 " + (world.xpDelta >= 0 ? "+" : "") + world.xpDelta +
+      "、准备 " + (world.pDelta >= 0 ? "+" : "") + world.pDelta +
+      "、风险 " + (world.dDelta >= 0 ? "+" : "") + world.dDelta +
+      "；主要行动：" + (world.actionId || "未执行")).join("｜");
+    worldReport.textContent = "第 " + receipt.day + " 日结算 → 第 " +
+      receipt.nextDay + " 日：" + report;
+    worldReport.dataset.day = String(receipt.nextDay);
+  });
 }
 
 function loop(now) {
@@ -154,7 +314,9 @@ function loop(now) {
   if (lastFrame === null) lastFrame = now;
   const elapsed = Math.min(50, Math.max(0, now - lastFrame));
   lastFrame = now;
-  advanceSortie(battle, currentInput(), elapsed);
+  advanceSortie(battle, currentInput(), elapsed, (_battle, input) => {
+    actions.push(["tick", input.x, input.y]);
+  });
   drawStats();
   if (battle.skillChoicePending) {
     phase = "choice";
@@ -188,10 +350,24 @@ function pause() {
   lastFrame = null;
 }
 
-function start() {
+async function start() {
+  if (!session.isOwner || writeBusy || writeError || restoreError || phase === "battle" ||
+    phase === "choice") return;
+  const prepared = prepareSortieArchive(archive);
+  if (!prepared.ok) {
+    sessionNotice.textContent = prepared.error;
+    return;
+  }
+  savedSeed = prepared.seed;
+  savedDanger = prepared.danger;
+  await persistCandidate(prepared.archive, launchBattle);
+}
+
+function launchBattle() {
   cancelAnimationFrame(frameId);
   resetMovement();
-  battle = createSortie("lingzai-sortie-" + ++attempt);
+  actions = [];
+  battle = createSortie(savedSeed, savedDanger);
   phase = "battle";
   paused = false;
   lastFrame = null;
@@ -206,7 +382,13 @@ function start() {
 }
 
 app.querySelector("[data-start-sortie]").addEventListener("click", start);
-app.querySelector("[data-sortie-retry]").addEventListener("click", start);
+app.querySelector("[data-sortie-retry]").addEventListener("click", () => {
+  if (writeBusy || writeError || !archive || !session.isOwner) return;
+  phase = "intro";
+  results.hidden = true;
+  intro.hidden = false;
+  updateCamp();
+});
 pauseButton.addEventListener("click", () => {
   if (paused) resume();
   else pause();
@@ -216,6 +398,7 @@ function pickSkill(id) {
   if (phase !== "choice" || document.hidden) return;
   const choice = chooseSortieSkill(battle, id);
   if (!choice.ok) return;
+  actions.push(["skill", id]);
   skillOverlay.hidden = true;
   phase = "battle";
   paused = false;
@@ -245,7 +428,10 @@ app.querySelector("[data-sortie-confirm-no]").addEventListener("click", closeRet
 app.querySelector("[data-sortie-confirm-yes]").addEventListener("click", () => {
   if (phase !== "battle") return;
   const result = retreatSortie(battle);
-  if (result.ok) endBattle();
+  if (result.ok) {
+    actions.push(["retreat"]);
+    endBattle();
+  }
 });
 
 function moveJoystick(event) {
@@ -308,4 +494,10 @@ window.addEventListener("blur", () => {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) pause();
 });
-window.addEventListener("pagehide", () => cancelAnimationFrame(frameId));
+window.addEventListener("pagehide", () => {
+  cancelAnimationFrame(frameId);
+  void session.release();
+});
+
+updateCamp();
+void initializeSession();

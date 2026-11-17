@@ -112,3 +112,20 @@ a { color: #f3d898; }
   .sortie-joystick { width: 77px; height: 77px; flex-basis: 77px; }
   .sortie-intro, .sortie-results { padding: 12px; gap: 6px; }
 }
+
+.sortie-camp {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; max-width: 420px; border: 2px solid #938b64;
+  background: #2b3c32; padding: 12px; font-size: 12px;
+}
+.sortie-camp span { color: #d9d9bb; line-height: 1.6; }
+.sortie-session-notice {
+  width: 100%; font-size: 12px; line-height: 1.5; text-align: center;
+  color: #efcf92; padding: 4px 12px; min-height: 27px;
+}
+.sortie-session-notice button { margin-left: 8px; font-size: 12px; min-height: 35px; }
+.sortie-world-report {
+  max-width: 380px; font-size: 12px; line-height: 1.7;
+  padding: 10px; border: 2px solid #77845a; background: #30443a;
+}
+.sortie-cta:disabled { opacity: .5; cursor: not-allowed; }
