@@ -361,6 +361,38 @@
   border: 3px solid #d0ac73;
   box-shadow: inset 0 0 0 3px #233729;
 }
+/*
+ * Home illustration: three distinct worlds are visible immediately instead of
+ * a generic neon portal. Existing tiny in-repo biome SVGs, no asset downloads.
+ */
+.app-shell:not(.stage-mode) .home-scene {
+  overflow: hidden;
+  background: #4b4536 url("./assets/world-beast.svg") center center / cover no-repeat;
+  image-rendering: pixelated;
+}
+.app-shell:not(.stage-mode) .home-scene::before {
+  width: 34%;
+  background: #24443e url("./assets/world-lingzai.svg") center center / cover no-repeat;
+  border-right: 3px solid #d5b77a;
+}
+.app-shell:not(.stage-mode) .home-scene::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 34%;
+  width: 33%;
+  background: #5d5040 url("./assets/world-zombie.svg") center center / cover no-repeat;
+  border-right: 3px solid #d5b77a;
+  image-rendering: pixelated;
+}
+.app-shell:not(.stage-mode) .home-scene span {
+  z-index: 2;
+  color: #ffe4ac;
+  background: #243429;
+  border: 2px solid #d7b57c;
+  box-shadow: 2px 2px 0 #101b16;
+}
 .app-shell:not(.stage-mode) .how-steps > div {
   background: #24382c;
   border-left: 4px solid #b1d58e;
