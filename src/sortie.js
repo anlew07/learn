@@ -8,6 +8,7 @@ import { sortieRepository } from "./services/sortie-persistence.js";
 import {
   createSortieArchive, recoverSortieArchive,
   prepareSortieArchive, settleSortieArchive,
+  previewSortieForge, buildSortieForge,
 } from "./systems/sortie-session.js";
 
 const skillHints = {
@@ -28,7 +29,7 @@ const app = document.querySelector("#app");
 app.className = "";
 app.innerHTML = [
   '<main class="sortie-root" data-sortie-root>',
-  '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>第二阶段 2C · 独立双世界试验档</small></div>',
+  '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>第二阶段 2D · 出击→营地建设→再出击</small></div>',
   '<a href="./">返回正式模拟器</a></header>',
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
@@ -37,7 +38,14 @@ app.innerHTML = [
   '<div class="sortie-camp" data-sortie-camp>',
   '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span>',
   '<p data-sortie-last-receipt>尚无已提交的出击回执</p></div>',
-  '<p class="sortie-warning">本模式不读取、写入正式存档；奖励仅进入独立试验档，每次出击结束推进两个世界一天。</p></section>',
+  '<section class="sortie-forge" data-sortie-forge data-level="0">',
+  '<div class="sortie-forge-top"><div class="sortie-forge-pedestal" aria-hidden="true">✦</div>',
+  '<div><strong>护灵剑台 · 待修复</strong><p data-sortie-forge-state>残破的基座等待灵石修复</p></div></div>',
+  '<p data-sortie-forge-preview>初始灵刃 1 伤害，修复后 2 伤害</p>',
+  '<button type="button" data-sortie-build hidden>消耗 6 灵石 · 修复护灵剑台</button>',
+  '<small>灵石同时用于终局封印；修复后不可拆除退款。</small>',
+  '</section>',
+  '<p class="sortie-warning">本模式不读取、写入正式存档；收益和剑台仅存独立试验档。出击结束推进双世界一天，营地建设不推进世界日。</p></section>',
   '<section class="sortie-session-notice" data-sortie-session-notice role="status"></section>',
   '<section class="sortie-play" data-sortie-play hidden>',
   '<div class="sortie-stats"><span data-sortie-hp>生命 8/8</span>',
@@ -90,6 +98,10 @@ const rewardText = app.querySelector("[data-sortie-reward-preview]");
 const worldReport = app.querySelector("[data-sortie-world-report]");
 const camp = app.querySelector("[data-sortie-camp]");
 const lastReceipt = app.querySelector("[data-sortie-last-receipt]");
+const forgePanel = app.querySelector("[data-sortie-forge]");
+const forgeState = app.querySelector("[data-sortie-forge-state]");
+const forgePreview = app.querySelector("[data-sortie-forge-preview]");
+const forgeButton = app.querySelector("[data-sortie-build]");
 const sessionNotice = app.querySelector("[data-sortie-session-notice]");
 const startButton = app.querySelector("[data-start-sortie]");
 const joystick = app.querySelector("[data-sortie-joystick]");
@@ -108,6 +120,7 @@ let archive = null;
 let actions = [];
 let savedSeed = null;
 let savedDanger = 0;
+let savedForgeLevel = 0;
 let sessionMode = "starting";
 let writeBusy = false;
 let pendingWrite = null;
@@ -142,8 +155,31 @@ function updateCamp() {
     lastReceipt.textContent = prior ?
       "已保存的第 " + prior.day + " 日回执：灵石 +" + prior.battle.stones +
       "，经验 +" + prior.battle.experience +
-      "；废土当日行动：" + (prior.worlds[1]?.actionId || "无") +
+      "，灵刃 " + (prior.battle.weaponDamage ?? 1) + " 伤害，击退 " +
+      prior.battle.defeated + "；废土当日行动：" +
+      (prior.worlds[1]?.actionId || "无") +
       "。重新打开页面不会重复结算。" : "尚无已提交的出击回执";
+    const forge = previewSortieForge(archive);
+    forgePanel.dataset.level = String(forge.level);
+    forgePanel.querySelector("strong").textContent = forge.built ?
+      "护灵剑台 · 已修复" : "护灵剑台 · 待修复";
+    forgeState.textContent = forge.built ? "剑台已点亮 · 灵刃基础伤害 1 → 2" :
+      "残破的基座 · 完成首场出击后可投入灵石";
+    forgePreview.textContent = forge.built ?
+      "下次出击灵刃伤害 " + forge.nextDamage +
+      "（妖狼从 2 次命中缩短到 1 次）" :
+      (forge.available ?
+        "投入 " + forge.cost + " 灵石后剩余 " + forge.remaining +
+        "；灵刃伤害 1 → " + forge.nextDamage :
+        (forge.reason || "首次出击后解锁") + "；修复费用 " + forge.cost + " 灵石");
+    forgeButton.hidden = forge.built || !archive.lastReceipt;
+    forgeButton.disabled = !forge.available || !session.isOwner ||
+      writeBusy || Boolean(writeError) || Boolean(restoreError) || phase !== "intro";
+    const oldBattle = archive.run.sortieCamp?.buildReceipt?.beforeStats;
+    if (oldBattle && prior && prior.day > oldBattle.day) {
+      lastReceipt.textContent += "｜首场击退 " + oldBattle.defeated +
+        " → 本场击退 " + prior.battle.defeated + "（实测，不保证必然增长）";
+    }
   }
   const ready = session.isOwner && Boolean(archive?.run.active) &&
     archive.run.worlds[0].status === "running" && !archive.pending &&
@@ -292,11 +328,13 @@ function drawStats() {
   remaining.textContent = "剩余 " +
     Math.max(0, Math.ceil((DURATION_TICKS - battle.tick) / SORTIE.ticksPerSecond)) + " 秒";
   defeated.textContent = "击退 " + battle.defeated;
+  canvas.dataset.weaponDamage = String(battle.weaponDamage);
   lootText.textContent = "碎片 " + battle.collectedShards +
     " · 灵石兑换 " + Math.min(SORTIE.rewards.maxShardStones,
       Math.floor(battle.collectedShards / SORTIE.rewards.shardsPerStone)) + "/2";
-  powerText.textContent = battle.skillChoicePending ? "战技：待抉择" :
-    battle.skillId ? "战技：" + powerName(battle.skillId) : "战技：待觉醒";
+  powerText.textContent = (battle.skillChoicePending ? "战技：待抉择" :
+    battle.skillId ? "战技：" + powerName(battle.skillId) : "战技：待觉醒") +
+    " · 灵刃 " + battle.weaponDamage;
   canvas.dataset.collected = String(battle.collectedShards);
   canvas.dataset.dropped = String(battle.drops.length);
   canvas.dataset.skill = battle.skillId || "";
@@ -332,7 +370,8 @@ function endBattle() {
   void persistCandidate(staged.archive, () => {
     const receipt = staged.receipt;
     const reward = receipt.battle;
-    rewardText.textContent = "本场已结算：拾取碎片 " + reward.collectedShards +
+    rewardText.textContent = "本场已结算：灵刃 " + reward.weaponDamage +
+      " 伤害，拾取碎片 " + reward.collectedShards +
       "（未拾取 " + reward.uncollectedShards + "），灵石 " + reward.stones +
       "（生存 " + reward.baseStones + " + 拾取兑换 " + reward.shardStones +
       "），经验 +" + reward.experience + "，救援准备 +" + reward.progress + "。";
@@ -400,6 +439,7 @@ async function start() {
   }
   savedSeed = prepared.seed;
   savedDanger = prepared.danger;
+  savedForgeLevel = prepared.forgeLevel;
   await persistCandidate(prepared.archive, launchBattle);
 }
 
@@ -407,7 +447,7 @@ function launchBattle() {
   cancelAnimationFrame(frameId);
   resetMovement();
   actions = [];
-  battle = createSortie(savedSeed, savedDanger);
+  battle = createSortie(savedSeed, savedDanger, savedForgeLevel);
   phase = "battle";
   paused = false;
   lastFrame = null;
@@ -422,6 +462,28 @@ function launchBattle() {
 }
 
 app.querySelector("[data-start-sortie]").addEventListener("click", start);
+forgeButton.addEventListener("click", () => {
+  if (!archive || !session.isOwner || writeBusy || writeError || restoreError ||
+    phase !== "intro") return;
+  const operationId = "forge:" + archive.run.id + ":day-" + archive.run.day;
+  const candidate = buildSortieForge(archive, operationId);
+  if (!candidate.ok) {
+    recoveryMessage = candidate.error;
+    updateCamp();
+    return;
+  }
+  if (candidate.replayed) {
+    recoveryMessage = "护灵剑台已修复，此次操作没有重复扣费。";
+    updateCamp();
+    return;
+  }
+  void persistCandidate(candidate.archive, () => {
+    recoveryMessage = "护灵剑台修复完成！实际扣除 " + candidate.receipt.cost +
+      " 灵石，剩余 " + candidate.receipt.afterStones +
+      "。下一场灵刃伤害变为 " + candidate.receipt.weaponDamage + "。";
+    updateCamp();
+  });
+});
 app.querySelector("[data-sortie-retry]").addEventListener("click", () => {
   if (writeBusy || writeError || !archive || !session.isOwner) return;
   phase = "intro";
