@@ -12,6 +12,9 @@ export function createSortieRepository(driver = { get, set }) {
   let lastError = null;
   return {
     async load() {
+      // Keep reads behind writes issued by this repository. Otherwise a load
+      // made immediately after enqueueSave() could overtake its queued IDB put.
+      await tail;
       return (await driver.get(SORTIE_ARCHIVE_KEY)) ?? null;
     },
     enqueueSave(snapshot) {
