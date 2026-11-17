@@ -15,7 +15,9 @@ async function start(page) {
   await expect.poll(async () => (await saved(page)).run?.day).toBe(1);
 }
 
-test("automatic day timer advances one day per cycle and respects event interrupts", async ({ page }) => {
+test("automatic day timer advances one day per cycle and respects event interrupts", async ({
+  page,
+}) => {
   // Timer and engine events share the same virtual monotonic clock. Each new
   // major event may pause automatically, so resume deliberately between days.
   await page.clock.install({ time: new Date("2026-11-13T00:00:00Z") });
