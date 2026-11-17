@@ -15,7 +15,7 @@ export const SORTIE = Object.freeze({
   skills: Object.freeze({
     choiceSeconds: 25, options: Object.freeze(["thunder", "rune"]),
     thunderCooldownSeconds: 4, thunderRange: 136, thunderTargets: 1, thunderDamage: 1,
-    runeRechargeSeconds: 10,
+    runeRechargeSeconds: 18,
   }),
   enemies: Object.freeze({
     wolf: Object.freeze({ name: "裂纹妖狼", hp: 2, speed: 38, radius: 11 }),
