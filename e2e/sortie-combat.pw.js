@@ -136,4 +136,3 @@ test("retreat confirmation shows sandbox-only loss rules without touching saves"
   expect(saved.run).toBeNull();
   expect(saved.profile).toBeNull();
 });
-
