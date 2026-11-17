@@ -50,7 +50,7 @@
 
 .stage-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 42px;
+  grid-template-columns: minmax(0, 1fr) auto 44px;
   align-items: center;
   gap: 8px;
   min-height: 0;
@@ -63,7 +63,7 @@
 .stage-brand-copy small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .stage-day { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; }
 .stage-day b { font-variant-numeric: tabular-nums; }
-.stage-top > button { width: 40px; height: 39px; padding: 0; font-size: 19px; }
+.stage-top > button { width: 44px; height: 44px; padding: 0; font-size: 19px; }
 
 .stage-counters {
   display: grid;
@@ -232,7 +232,7 @@
 .stage-play-button { grid-column: span 4; gap: 7px; }
 .stage-play-icon { flex: none; }
 .stage-speed { grid-column: span 2; gap: 3px; flex-direction: column; }
-.stage-speed select { width: min(100%, 65px); min-height: 24px; padding: 0 2px; text-align: center; }
+.stage-speed select { width: min(100%, 65px); min-height: 32px; padding: 0 2px; text-align: center; }
 .stage-event-button { grid-column: span 4; gap: 7px; }
 .stage-nav-action { grid-column: span 2; flex-direction: column; gap: 2px; }
 
@@ -286,11 +286,11 @@
 @media (max-width: 350px) {
   .stage-game {
     grid-template-rows:
-      calc(46px + env(safe-area-inset-top)) 35px 56px minmax(135px, 1fr)
+      calc(50px + env(safe-area-inset-top)) 35px 56px minmax(135px, 1fr)
       68px calc(118px + env(safe-area-inset-bottom));
   }
-  .stage-top { gap: 3px; padding-inline: 5px; grid-template-columns: minmax(0, 1fr) auto 36px; }
-  .stage-top > button { width: 35px; height: 36px; }
+  .stage-top { gap: 3px; padding-inline: 5px; grid-template-columns: minmax(0, 1fr) auto 44px; }
+  .stage-top > button { width: 44px; height: 44px; }
   .stage-brand-seal { flex-basis: 27px; height: 30px; }
   .stage-brand-group { gap: 4px; }
   .stage-counters { padding-inline: 3px; gap: 2px; }
