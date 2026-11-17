@@ -12,16 +12,21 @@ import {
   simulateExperimentSortie,
 } from "./sortie-experiment.mjs";
 
+// prettier-ignore
 const clone = (value) => JSON.parse(JSON.stringify(value));
+// prettier-ignore
 const mean = (values) =>
   values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+// prettier-ignore
 const round = (value) => (value === null ? null : Math.round(value * 1000) / 1000);
+// prettier-ignore
 const resource = (archive) => Engine.byId(archive.run, "lingzai").resource;
 
 /**
  * A price-only accounting sensitivity, NOT an authoritative battle or economy replay.
  * The observed build still cost the configured six stones.
  */
+// prettier-ignore
 export function priceOnlyAccountingDelta(observedNetDelta, hypotheticalCost) {
   if (!Number.isFinite(observedNetDelta) || !Number.isFinite(hypotheticalCost) ||
     hypotheticalCost < 0) {
@@ -30,6 +35,7 @@ export function priceOnlyAccountingDelta(observedNetDelta, hypotheticalCost) {
   return observedNetDelta + SORTIE.forge.cost - hypotheticalCost;
 }
 
+// prettier-ignore
 function capture(result) {
   if (!result.available) return null;
   return {
@@ -42,6 +48,7 @@ function capture(result) {
   };
 }
 
+// prettier-ignore
 function campaign(seedIndex, danger, skill, movement, maxSorties) {
   // Reuse the exact established 2E/2G seed convention for paired comparability.
   const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") +
@@ -94,6 +101,7 @@ function campaign(seedIndex, danger, skill, movement, maxSorties) {
   };
 }
 
+// prettier-ignore
 function summary(pairs, sortieNumber) {
   const built = pairs.filter((pair) => pair.branches.forge.built);
   const matched = built.filter((pair) =>
@@ -148,6 +156,7 @@ function summary(pairs, sortieNumber) {
   };
 }
 
+// prettier-ignore
 export function runForgeRoiExperiment(seedCount = 40, maxSorties = 4) {
   if (!Number.isInteger(seedCount) || seedCount < 1 || seedCount > 500 ||
     !Number.isInteger(maxSorties) || maxSorties < 2 || maxSorties > 6) {
@@ -201,6 +210,7 @@ export function runForgeRoiExperiment(seedCount = 40, maxSorties = 4) {
   };
 }
 
+// prettier-ignore
 export function assertForgeRoiExperiment(result) {
   const expected = result.metadata.seedCount * EXPERIMENT_DANGERS.length *
     EXPERIMENT_SKILLS.length * EXPERIMENT_MOVEMENTS.length;
@@ -230,6 +240,7 @@ export function assertForgeRoiExperiment(result) {
   return true;
 }
 
+// prettier-ignore
 if (process.argv[1] && process.argv[1].endsWith("sortie-forge-roi-2h.mjs")) {
   const seeds = process.argv.find((arg) => arg.startsWith("--seeds="));
   const sorties = process.argv.find((arg) => arg.startsWith("--sorties="));
