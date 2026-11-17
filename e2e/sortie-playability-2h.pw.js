@@ -123,15 +123,11 @@ for (const size of screens) {
     expect(first.prototype.run.day).toBe(2);
     expect(first.prototype.pending).toBeNull();
     expect(battle.stones).toBeGreaterThanOrEqual(3);
-    expect(battle.collectedShards + battle.uncollectedShards).toBe(
-      Math.floor(battle.defeated / 3),
-    );
+    expect(battle.collectedShards + battle.uncollectedShards).toBe(Math.floor(battle.defeated / 3));
     await expect(page.locator("[data-sortie-reward-preview]")).toContainText(
       "拾取碎片 " + battle.collectedShards,
     );
-    await expect(page.locator("[data-sortie-reward-preview]")).toContainText(
-      "灵石 " + battle.stones,
-    );
+    await expect(page.locator("[data-sortie-reward-preview]")).toContainText("灵石 " + battle.stones);
     await capture(page, size, "first-settlement");
 
     await page.locator("[data-sortie-retry]").click();
@@ -142,9 +138,7 @@ for (const size of screens) {
     await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
     await expect(page.locator("[data-sortie-forge-preview]")).toContainText("伤害 2");
     const built = await readArchives(page);
-    expect(built.prototype.run.worlds[0].resource).toBe(
-      first.prototype.run.worlds[0].resource - 6,
-    );
+    expect(built.prototype.run.worlds[0].resource).toBe(first.prototype.run.worlds[0].resource - 6);
     expect(built.prototype.run.day).toBe(2);
     await capture(page, size, "forge-built");
     await page.reload();
