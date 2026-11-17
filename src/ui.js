@@ -636,7 +636,7 @@ function sceneHtml() {
    Math.round(w.danger)+'%</span></span>'+
    '<span class="stage-world-risk" style="--risk:'+Math.round(w.danger)+'%"></span></button>').join("")+
   (canExplore?'':view.worlds.filter(w=>w.id!==view.worldId).map(w=>
-   '<button data-action="show-all-worlds" data-world="'+esc(w.id)+'" aria-label="展开全部世界">'+
+   '<button data-action="show-all-worlds" data-preview-world="'+esc(w.id)+'" aria-label="展开全部世界">'+
    '<span class="stage-world-thumb" aria-hidden="true"></span>'+
    '<span class="stage-world-info"><b>'+esc(w.title)+'</b><span class="stage-world-indicator">'+
    (view.paused?'继续后同步行动':'正在同步行动')+'</span></span></button>').join(""))+
