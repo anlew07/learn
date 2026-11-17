@@ -851,7 +851,13 @@ function handleClick(target){
  if(action==="scene-return"){tab="scene";scenePanel="";render();return;}
  if(action==="scene-classic"){tab="world";scenePanel="";render();return;}
  if(action==="scene-world"){if(run?.worlds.some(w=>w.id===id)&&!inQuickStart()){sceneWorldId=id;scenePanel="";render();}return;}
- if(action==="scene-panel"){scenePanel=target.dataset.panel||"";render();return;}
+ if(action==="scene-panel"){
+  const nextPanel=target.dataset.panel||"";
+  if(nextPanel==="event"&&session.isOwner&&run?.active&&!run.paused&&pendingDecisions(run).length){
+   pauseDayClock();run.paused=true;queueSave();
+  }
+  scenePanel=nextPanel;render();return;
+ }
  if(action==="scene-close"){
   const closingPanel=scenePanel;
   scenePanel="";render();
