@@ -95,7 +95,7 @@ test("decisions from another world appear without leaving the fixed scene", asyn
   });
   await page.reload();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
-  await expect(page.locator(".stage-caption")).toContainText("灵灾");
+  await expect(page.locator(".stage-caption")).toContainText("废土救援");
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toContainText("!");
   await expect(page.locator('.stage-actions [data-panel="event"]')).toContainText("待处理 1");
   await expect(page.locator(".stage-day")).toContainText("已暂停");
