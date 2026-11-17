@@ -36,12 +36,22 @@ a { color: #f3d898; }
 .sortie-intro p, .sortie-results p { max-width: 320px; color: #d4d6bd; line-height: 1.6; }
 .sortie-intro .sortie-warning { font-size: 12px; color: #f0c78e; }
 .sortie-cta { width: min(290px, 100%); }
-.sortie-play { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.sortie-play { position: relative; display: flex; flex: 1; flex-direction: column; min-height: 0; }
 .sortie-stats {
   min-height: 44px; display: flex; justify-content: space-between; align-items: center;
   padding: 5px 12px; gap: 7px; background: #34473a; font-weight: 800; font-size: 14px;
 }
 .sortie-stats span { white-space: nowrap; }
+.sortie-lootbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; min-height: 30px; padding: 4px 10px;
+  background: #283c34; border-top: 1px solid #65734e;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.sortie-lootbar [data-sortie-loot] { color: #f8dc93; }
+.sortie-lootbar [data-sortie-power] {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
 .sortie-field {
   flex: 1; display: grid; place-items: center; min-height: 0;
   overflow: hidden; background: #121e1c;
@@ -66,9 +76,35 @@ a { color: #f3d898; }
   width: 34px; height: 34px; border-radius: 50%;
   background: #b6c39a; border: 3px solid #e2d4a4; pointer-events: none;
 }
-.sortie-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-.sortie-actions button { min-width: 92px; }
-.sortie-actions small { font-size: 11px; color: #bdc5b3; }
+.sortie-actions {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px; min-width: 162px; max-width: 190px;
+}
+.sortie-actions button { min-width: 0; padding: 5px 7px; }
+.sortie-actions small { grid-column: 1 / -1; text-align: right; font-size: 11px; color: #bdc5b3; }
+.sortie-dialog-overlay {
+  position: absolute; inset: 0; z-index: 7; display: flex;
+  align-items: center; justify-content: center; padding: 12px;
+  background: rgba(13, 25, 20, 0.91);
+}
+.sortie-modal {
+  width: min(100%, 380px); max-height: 100%; overflow-y: auto;
+  padding: 14px; border: 3px solid #a69d70;
+  background: #293a2d; box-shadow: 5px 5px 0 #111b16;
+}
+.sortie-modal h2 { margin: 0 0 6px; font-size: 18px; }
+.sortie-modal p { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: #d4d1af; }
+.sortie-skill-card {
+  display: flex; flex-direction: column; gap: 5px; text-align: left;
+  width: 100%; margin: 7px 0; padding: 10px; background: #465e49;
+}
+.sortie-skill-card span { font-size: 12px; line-height: 1.4; font-weight: 500; color: #faf0c7; }
+.sortie-default { margin-top: 7px; width: 100%; background: #374934; font-size: 12px; }
+.sortie-confirm-buttons { display: flex; gap: 6px; }
+.sortie-confirm-buttons button { flex: 1; font-size: 12px; }
+.sortie-results [data-sortie-reward-preview] {
+  border: 2px solid #91875b; padding: 12px; color: #ffe0a4; font-weight: 800;
+}
 .sortie-feedback { font-size: 13px; color: #d8d0b1; }
 @media (max-height: 620px) {
   .sortie-head { min-height: 44px; }
