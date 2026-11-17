@@ -18,8 +18,9 @@ test("isolated sortie opens with a clear action and fits mobile viewports", asyn
     await page.setViewportSize({ width, height });
     const dims = await page.evaluate(() => {
       const rect = (selector) => {
-        const { top, bottom, left, right, width, height } =
-          document.querySelector(selector).getBoundingClientRect();
+        const { top, bottom, left, right, width, height } = document
+          .querySelector(selector)
+          .getBoundingClientRect();
         return { top, bottom, left, right, width, height };
       };
       return {
@@ -37,6 +38,12 @@ test("isolated sortie opens with a clear action and fits mobile viewports", asyn
     expect(dims.width).toBeLessThanOrEqual(width + 1);
     expect(dims.height).toBeLessThanOrEqual(height + 1);
     expect(dims.canvas).toBeGreaterThan(250);
+    expect(dims.stats.bottom).toBeLessThanOrEqual(dims.timebar.top + 1);
+    expect(dims.timebar.bottom).toBeLessThanOrEqual(dims.lootbar.top + 1);
+    expect(dims.joystick.right).toBeLessThan(dims.actions.left);
+    expect(dims.controls.bottom).toBeLessThanOrEqual(height + 1);
+    expect(dims.joystick.bottom).toBeLessThanOrEqual(dims.controls.bottom + 1);
+    expect(dims.actions.right).toBeLessThanOrEqual(width + 1);
   }
 });
 
@@ -95,7 +102,6 @@ test("joystick pointer drag moves the hero and releases without drift", async ({
   await page.waitForTimeout(150);
   expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
 });
-
 
 test("touch joystick reverses and cancels without page scroll", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
