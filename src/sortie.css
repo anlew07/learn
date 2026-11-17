@@ -5,8 +5,9 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; overflow: hidden; }
+body { margin: 0; overflow: hidden; overscroll-behavior: none; }
 button, a { font: inherit; }
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 button {
   min-height: 42px; padding: 8px 14px; border: 2px solid #b4ae80;
   background: #50644d; color: #fff7df; font-weight: 800; cursor: pointer;
@@ -18,6 +19,7 @@ a { color: #f3d898; }
   position: fixed; inset: 0; height: 100vh; height: 100dvh;
   display: flex; flex-direction: column; align-items: stretch;
   max-width: 500px; margin: 0 auto; background: #1a2823; overflow: hidden;
+  overscroll-behavior: none;
 }
 .sortie-head {
   min-height: calc(54px + env(safe-area-inset-top));
@@ -42,6 +44,15 @@ a { color: #f3d898; }
   padding: 5px 12px; gap: 7px; background: #34473a; font-weight: 800; font-size: 14px;
 }
 .sortie-stats span { white-space: nowrap; }
+.sortie-stats [data-sortie-hp][data-low="true"] { color: #ffb28e; }
+.sortie-stats [data-sortie-time] { color: #f8dc93; }
+.sortie-timebar {
+  flex: 0 0 6px; height: 6px; padding: 0 12px; background: #283c34;
+}
+.sortie-timebar span {
+  display: block; width: 100%; height: 4px; border: 1px solid #d7c184;
+  background: #e2b852; transition: width 100ms linear;
+}
 .sortie-lootbar {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; min-height: 30px; padding: 4px 10px;
@@ -53,13 +64,21 @@ a { color: #f3d898; }
   min-width: 0; overflow: hidden; text-overflow: ellipsis;
 }
 .sortie-field {
-  flex: 1; display: grid; place-items: center; min-height: 0;
+  position: relative; flex: 1; display: grid; place-items: center; min-height: 0;
   overflow: hidden; background: #121e1c;
 }
 .sortie-field canvas {
   height: 100%; width: auto; max-width: 100%;
   object-fit: contain; image-rendering: pixelated;
 }
+.sortie-pause-overlay {
+  position: absolute; inset: 0; z-index: 2; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 16px; background: rgba(10, 20, 15, 0.72); color: #fff0bf;
+  text-align: center; pointer-events: none;
+}
+.sortie-pause-overlay strong { font-size: 20px; }
+.sortie-pause-overlay span { color: #e3dfc5; font-size: 12px; }
 .sortie-controls {
   height: calc(112px + env(safe-area-inset-bottom));
   flex: 0 0 auto; padding: 8px 16px calc(9px + env(safe-area-inset-bottom));
@@ -69,7 +88,8 @@ a { color: #f3d898; }
 .sortie-joystick {
   width: 98px; height: 98px; flex: 0 0 98px; border: 3px solid #aca67f;
   background: #31473b; border-radius: 50%; position: relative;
-  touch-action: none; user-select: none;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; overscroll-behavior: contain;
 }
 .sortie-knob {
   position: absolute; left: 50%; top: 50%; margin: -17px;

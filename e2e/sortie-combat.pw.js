@@ -16,11 +16,24 @@ test("isolated sortie opens with a clear action and fits mobile viewports", asyn
   ];
   for (const [width, height] of viewports) {
     await page.setViewportSize({ width, height });
-    const dims = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-      canvas: document.querySelector("[data-sortie-canvas]").getBoundingClientRect().height,
-    }));
+    const dims = await page.evaluate(() => {
+      const rect = (selector) => {
+        const { top, bottom, left, right, width, height } =
+          document.querySelector(selector).getBoundingClientRect();
+        return { top, bottom, left, right, width, height };
+      };
+      return {
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+        canvas: rect("[data-sortie-canvas]").height,
+        stats: rect(".sortie-stats"),
+        timebar: rect("[data-sortie-timebar]"),
+        lootbar: rect(".sortie-lootbar"),
+        controls: rect(".sortie-controls"),
+        joystick: rect("[data-sortie-joystick]"),
+        actions: rect(".sortie-actions"),
+      };
+    });
     expect(dims.width).toBeLessThanOrEqual(width + 1);
     expect(dims.height).toBeLessThanOrEqual(height + 1);
     expect(dims.canvas).toBeGreaterThan(250);
@@ -38,13 +51,21 @@ test("keyboard movement, pause and resume operate on battle ticks", async ({ pag
     .toBeGreaterThan(before);
   await page.keyboard.up("ArrowRight");
 
+  const timebar = page.locator("[data-sortie-timebar]");
+  await expect(timebar).toHaveAttribute("aria-valuenow", "75");
   await page.locator("[data-sortie-pause]").click();
   await expect(page.locator("[data-sortie-pause]")).toHaveText("继续试炼");
+  await expect(page.locator("[data-sortie-pause]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("[data-sortie-paused]")).toBeVisible();
   const frozen = await canvas.getAttribute("data-ticks");
+  const frozenTime = await timebar.getAttribute("aria-valuenow");
   await page.waitForTimeout(150);
   expect(await canvas.getAttribute("data-ticks")).toBe(frozen);
+  expect(await timebar.getAttribute("aria-valuenow")).toBe(frozenTime);
   await page.locator("[data-sortie-pause]").click();
   await expect(page.locator("[data-sortie-pause]")).toHaveText("暂停");
+  await expect(page.locator("[data-sortie-pause]")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator("[data-sortie-paused]")).toBeHidden();
   await expect
     .poll(async () => Number(await canvas.getAttribute("data-ticks")))
     .toBeGreaterThan(Number(frozen));
@@ -64,10 +85,63 @@ test("joystick pointer drag moves the hero and releases without drift", async ({
   await expect
     .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
     .toBeGreaterThan(160);
+  const movedRight = Number(await canvas.getAttribute("data-hero-x"));
+  await page.mouse.move(centerX - 36, centerY, { steps: 3 });
+  await expect
+    .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
+    .toBeLessThan(movedRight);
   await page.mouse.up();
   const stopped = await canvas.getAttribute("data-hero-x");
   await page.waitForTimeout(150);
   expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
+});
+
+
+test("touch joystick reverses and cancels without page scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/?mode=sortie");
+  await page.locator("[data-start-sortie]").click();
+  const joystick = page.locator("[data-sortie-joystick]");
+  await expect(joystick).toHaveCSS("touch-action", "none");
+  const bounds = await joystick.boundingBox();
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  const canvas = page.locator("[data-sortie-canvas]");
+  const before = Number(await canvas.getAttribute("data-hero-x"));
+  const client = await page.context().newCDPSession(page);
+  const dispatch = (type, x, y) =>
+    client.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: type === "touchCancel" || type === "touchEnd" ? [] : [{ x, y, id: 1 }],
+    });
+
+  await dispatch("touchStart", centerX, centerY);
+  await dispatch("touchMove", centerX + 28, centerY);
+  await expect
+    .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
+    .toBeGreaterThan(before);
+  const movedRight = Number(await canvas.getAttribute("data-hero-x"));
+
+  await dispatch("touchMove", centerX - 28, centerY);
+  await expect
+    .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
+    .toBeLessThan(movedRight);
+  await dispatch("touchCancel", centerX - 28, centerY);
+
+  const stopped = await canvas.getAttribute("data-hero-x");
+  await page.waitForTimeout(180);
+  expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
+  const pageMetrics = await page.evaluate(() => ({
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+    width: document.documentElement.scrollWidth,
+    height: document.documentElement.scrollHeight,
+  }));
+  expect(pageMetrics.scrollX).toBe(0);
+  expect(pageMetrics.scrollY).toBe(0);
+  expect(pageMetrics.width).toBeLessThanOrEqual(320);
+  expect(pageMetrics.height).toBeLessThanOrEqual(568);
+  await client.detach();
 });
 
 test("refreshing a prototype does not use the formal save", async ({ page }) => {

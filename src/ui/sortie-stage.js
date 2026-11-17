@@ -41,6 +41,16 @@ export function drawSortie(canvas, battle) {
     ctx.fillRect(SORTIE.width - 16, y + 34, 10, 8);
   }
   for (const enemy of battle.enemies) {
+    const markerColor = enemy.kind === "wolf" ? "#e3a27c" : "#b9c9ec";
+    ctx.fillStyle = "rgba(7, 16, 12, 0.58)";
+    ctx.beginPath();
+    ctx.ellipse(enemy.x, enemy.y + 13, enemy.kind === "wolf" ? 13 : 11, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = markerColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(enemy.x, enemy.y + 13, enemy.kind === "wolf" ? 13 : 11, 5, 0, 0, Math.PI * 2);
+    ctx.stroke();
     const image = getSprite(enemy.kind);
     if (image.complete && image.naturalWidth) {
       if (enemy.kind === "shade") ctx.globalAlpha = 0.83;
@@ -49,12 +59,16 @@ export function drawSortie(canvas, battle) {
     } else {
       ctx.fillStyle = enemy.kind === "wolf" ? "#c28d74" : "#9ba8c5";
       ctx.fillRect(Math.floor(enemy.x - 8), Math.floor(enemy.y - 8), 16, 16);
+      ctx.strokeStyle = "#101b16";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(Math.floor(enemy.x - 8), Math.floor(enemy.y - 8), 16, 16);
     }
-    if (enemy.hp < SORTIE.enemies[enemy.kind].hp) {
-      ctx.fillStyle = "#f0cf7a";
-      ctx.fillRect(Math.floor(enemy.x - 7), Math.floor(enemy.y - 16),
-        14 * enemy.hp / SORTIE.enemies[enemy.kind].hp, 2);
-    }
+    const maxHp = SORTIE.enemies[enemy.kind].hp;
+    const healthRatio = Math.max(0, Math.min(1, enemy.hp / maxHp));
+    ctx.fillStyle = "#111b16";
+    ctx.fillRect(Math.floor(enemy.x - 11), Math.floor(enemy.y - 24), 22, 4);
+    ctx.fillStyle = markerColor;
+    ctx.fillRect(Math.floor(enemy.x - 10), Math.floor(enemy.y - 23), 20 * healthRatio, 2);
   }
   for (const shot of battle.shots) {
     ctx.fillStyle = "#9deed3";
@@ -64,8 +78,13 @@ export function drawSortie(canvas, battle) {
   }
   for (const drop of battle.drops) {
     const x = Math.round(drop.x), y = Math.round(drop.y);
+    ctx.fillStyle = "rgba(8, 16, 12, 0.55)";
+    ctx.fillRect(x - 3, y + 4, 6, 2);
     ctx.fillStyle = "#e2b852";
     ctx.fillRect(x - 4, y - 4, 8, 8);
+    ctx.strokeStyle = "#704e25";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 4, y - 4, 8, 8);
     ctx.fillStyle = "#fff5bc";
     ctx.fillRect(x - 2, y - 5, 4, 5);
   }
@@ -92,6 +111,22 @@ export function drawSortie(canvas, battle) {
     ctx.arc(battle.hero.x, battle.hero.y, 17, 0, Math.PI * 2);
     ctx.stroke();
   }
+  ctx.fillStyle = "rgba(7, 16, 12, 0.62)";
+  ctx.beginPath();
+  ctx.ellipse(battle.hero.x, battle.hero.y + 18, 12, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#f5d77c";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(battle.hero.x, battle.hero.y + 1, 14, 19, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = "#fff0a8";
+  ctx.beginPath();
+  ctx.moveTo(battle.hero.x, battle.hero.y - 32);
+  ctx.lineTo(battle.hero.x - 4, battle.hero.y - 26);
+  ctx.lineTo(battle.hero.x + 4, battle.hero.y - 26);
+  ctx.closePath();
+  ctx.fill();
   const hero = getSprite("hero");
   if (battle.hero.invulnerable === 0 || battle.tick % 8 < 4) {
     if (hero.complete && hero.naturalWidth) {
