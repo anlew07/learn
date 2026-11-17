@@ -16,7 +16,7 @@ const skillHints = {
     SORTIE.skills.thunderTargets + "名附近敌人各造成" +
     SORTIE.skills.thunderDamage + "点伤害",
   rune: "立即获得一层护盾，每" + SORTIE.skills.runeRechargeSeconds +
-    "秒重新充能，抵挡一次近身接触",
+    "秒重新充能，抵挡一次受击（包括远程灵息弹）",
 };
 const powerName = (id) => POWERS.lingzai.find((power) => power.id === id)?.name ?? id;
 const skillCards = SORTIE.skills.options.map((id) =>

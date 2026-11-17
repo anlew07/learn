@@ -19,7 +19,7 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
 function makeSchedule(danger) {
   return SORTIE.waves.flatMap((wave) => {
-    const count = wave.count + (wave.start === 50 ? (danger >= 75 ? 4 : danger >= 40 ? 2 : 0) : 0);
+    const count = wave.count + (wave.start === 50 ? (danger >= 75 ? 6 : danger >= 40 ? 3 : 0) : 0);
     return Array.from({ length: count }, (_, i) => ({
       tick: Math.round((wave.start + (i + 1) * wave.duration / (count + 1)) * SORTIE.ticksPerSecond),
       kind: wave.kinds[i % wave.kinds.length],
@@ -52,10 +52,10 @@ function spawnEnemy(battle, kind) {
     const dx = battle.hero.x - p.x;
     const dy = battle.hero.y - p.y;
     const length = Math.max(0.001, Math.hypot(dx, dy));
-    const speed = 100 / SORTIE.ticksPerSecond;
+    const speed = SORTIE.hostileProjectile.speed / SORTIE.ticksPerSecond;
     // Slow aimed projectile gives moving players an actual reason to dodge.
     battle.hostileShots.push({ x: p.x, y: p.y, vx: dx / length * speed,
-      vy: dy / length * speed, ttl: 240 });
+      vy: dy / length * speed, ttl: SORTIE.hostileProjectile.ttlSeconds * SORTIE.ticksPerSecond });
   }
 }
 function moveHero(battle, input) {
@@ -230,14 +230,14 @@ export function stepSortie(battle, input = { x: 0, y: 0 }) {
   if (battle.hero.invulnerable > 0) battle.hero.invulnerable--;
   if (battle.hero.invulnerable === 0 && (bodyContact || projectileContact)) {
     let damaged = bodyContact || projectileContact;
-    if (bodyContact && battle.runeShield > 0) {
+    if (damaged && battle.runeShield > 0) {
+      // One rune charge blocks the next damage source, including ranged projectiles.
       battle.runeShield = 0;
       battle.shieldBlocks++;
-      // A shielded body hit grants the same brief immunity as an ordinary hit.
-      if (!projectileContact) {
-        battle.hero.invulnerable = Math.round(SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond);
-        damaged = false;
-      }
+      battle.hero.invulnerable = Math.round(
+        SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond,
+      );
+      damaged = false;
     }
     if (damaged) {
       battle.hero.hp--;
