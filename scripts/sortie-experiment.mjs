@@ -62,7 +62,7 @@ export function experimentInput(battle, movement) {
     vy = drop.item.y - hero.y;
   } else {
     // A repeatable 24-second orbit is the non-pickup movement control.
-    const angle = battle.tick / (SORTIE.ticksPerSecond * 24) * Math.PI * 2;
+    const angle = (battle.tick / (SORTIE.ticksPerSecond * 24)) * Math.PI * 2;
     const targetX = SORTIE.width / 2 + 100 * Math.cos(angle);
     const targetY = SORTIE.height / 2 + 145 * Math.sin(angle);
     vx = targetX - hero.x;
@@ -158,13 +158,8 @@ function makeInitialArchive(seed, danger) {
 }
 
 function oneCampaign(seedIndex, danger, skill, movement) {
-  const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") +
-    "-danger-" + danger;
-  const first = simulateExperimentSortie(
-    makeInitialArchive(seed, danger),
-    skill,
-    movement,
-  );
+  const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") + "-danger-" + danger;
+  const first = simulateExperimentSortie(makeInitialArchive(seed, danger), skill, movement);
   if (!first.available) throw new Error("The first sortie unexpectedly became unavailable");
 
   const branches = [];
@@ -174,7 +169,10 @@ function oneCampaign(seedIndex, danger, skill, movement) {
     let buildCost = 0;
     let buildReason = "对照组：保留灵石";
     if (buildMode === "forge") {
-      const candidate = buildSortieForge(archive, "2e:forge:" + seed + ":" + skill + ":" + movement);
+      const candidate = buildSortieForge(
+        archive,
+        "2e:forge:" + seed + ":" + skill + ":" + movement,
+      );
       if (candidate.ok && !candidate.replayed) {
         archive = candidate.archive;
         built = true;
@@ -215,25 +213,26 @@ function mean(values) {
 function sampleStdDev(values) {
   if (values.length < 2) return 0;
   const average = mean(values);
-  return Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
-    (values.length - 1));
+  return Math.sqrt(
+    values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1),
+  );
 }
 
 function wilson(wins, count) {
   if (!count) return [0, 0];
   const z = 1.96;
   const p = wins / count;
-  const denominator = 1 + z * z / count;
-  const center = (p + z * z / (2 * count)) / denominator;
-  const margin = z * Math.sqrt(p * (1 - p) / count + z * z / (4 * count * count)) /
-    denominator;
+  const denominator = 1 + (z * z) / count;
+  const center = (p + (z * z) / (2 * count)) / denominator;
+  const margin =
+    (z * Math.sqrt((p * (1 - p)) / count + (z * z) / (4 * count * count))) / denominator;
   return [Math.max(0, center - margin), Math.min(1, center + margin)];
 }
 
 function meanInterval(values) {
   if (!values.length) return [0, 0];
   const average = mean(values);
-  const margin = 1.96 * sampleStdDev(values) / Math.sqrt(values.length);
+  const margin = (1.96 * sampleStdDev(values)) / Math.sqrt(values.length);
   return [average - margin, average + margin];
 }
 
@@ -265,13 +264,15 @@ function aggregate(records) {
     shieldBlocks: mean(secondRuns.map((battle) => battle.shieldBlocks)),
     lingD: mean(secondRuns.map((battle) => battle.lingDDelta)),
     otherD: mean(secondRuns.map((battle) => battle.otherDDelta)),
-    otherActionRate: secondRuns.length ?
-      secondRuns.filter((battle) => battle.otherActionId).length / secondRuns.length : 0,
+    otherActionRate: secondRuns.length
+      ? secondRuns.filter((battle) => battle.otherActionId).length / secondRuns.length
+      : 0,
     endResource: mean(records.map((record) => record.endResource)),
   };
 }
 
-const keyOf = (record) => [record.danger, record.buildMode, record.skill, record.movement].join("|");
+const keyOf = (record) =>
+  [record.danger, record.buildMode, record.skill, record.movement].join("|");
 
 function pairedContrasts(records) {
   const grouped = new Map();
@@ -290,15 +291,19 @@ function pairedContrasts(records) {
   }
   return [...pairs.entries()].map(([key, values]) => {
     const second = values.filter((pair) => pair.control.second && pair.treatment.second);
-    const winDelta = second.map((pair) =>
-      Number(pair.treatment.second.won) - Number(pair.control.second.won));
-    const killDelta = second.map((pair) =>
-      pair.treatment.second.defeated - pair.control.second.defeated);
+    const winDelta = second.map(
+      (pair) => Number(pair.treatment.second.won) - Number(pair.control.second.won),
+    );
+    const killDelta = second.map(
+      (pair) => pair.treatment.second.defeated - pair.control.second.defeated,
+    );
     const hpDelta = second.map((pair) => pair.treatment.second.hp - pair.control.second.hp);
-    const pickupDelta = second.map((pair) =>
-      pair.treatment.second.collectedShards - pair.control.second.collectedShards);
-    const resourceDelta = values.map((pair) =>
-      pair.treatment.endResource - pair.control.endResource);
+    const pickupDelta = second.map(
+      (pair) => pair.treatment.second.collectedShards - pair.control.second.collectedShards,
+    );
+    const resourceDelta = values.map(
+      (pair) => pair.treatment.endResource - pair.control.endResource,
+    );
     return {
       key,
       n: values.length,
@@ -325,45 +330,100 @@ function fixed(value, digits = 2) {
 function printReport(result) {
   console.log("\n## 2E 固定种子实验：第二场表现");
   console.log(
-    "| D | 建设组 | 战技 | 行为脚本 | 首场胜率 | 实际建造率 | 次场胜率（95% Wilson） | " +
-    "击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
+      "击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
   );
   console.log("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
   for (const row of result.groups) {
     console.log(
-      "| " + row.danger + " | " + row.buildMode + " | " + row.skill + " | " +
-      row.movement + " | " + percent(row.firstWinRate) + " | " +
-      percent(row.built / row.n) + " | " + percent(row.secondWinRate) + " [" +
-      percent(row.secondWinLow) + "–" + percent(row.secondWinHigh) + "] | " +
-      fixed(row.kills, 1) + " | " + fixed(row.shards, 1) + " | " +
-      fixed(row.stones, 2) + " | " + fixed(row.hp, 2) + " | " +
-      fixed(row.damage, 2) + " | " + fixed(row.lingD, 2) + " | " +
-      percent(row.otherActionRate) + " | " + fixed(row.otherD, 2) + " | " +
-      fixed(row.endResource, 2) + " |",
+      "| " +
+        row.danger +
+        " | " +
+        row.buildMode +
+        " | " +
+        row.skill +
+        " | " +
+        row.movement +
+        " | " +
+        percent(row.firstWinRate) +
+        " | " +
+        percent(row.built / row.n) +
+        " | " +
+        percent(row.secondWinRate) +
+        " [" +
+        percent(row.secondWinLow) +
+        "–" +
+        percent(row.secondWinHigh) +
+        "] | " +
+        fixed(row.kills, 1) +
+        " | " +
+        fixed(row.shards, 1) +
+        " | " +
+        fixed(row.stones, 2) +
+        " | " +
+        fixed(row.hp, 2) +
+        " | " +
+        fixed(row.damage, 2) +
+        " | " +
+        fixed(row.lingD, 2) +
+        " | " +
+        percent(row.otherActionRate) +
+        " | " +
+        fixed(row.otherD, 2) +
+        " | " +
+        fixed(row.endResource, 2) +
+        " |",
     );
   }
 
   console.log("\n## 2E 配对对照：修复剑台相对不建设");
-  console.log("| D | 战技 | 行为脚本 | 可比较种子 | 次场胜率差 | 击退差 | 剩余生命差 | 碎片拾取差 | 终局灵石差 | 实际建造率 |");
+  console.log(
+    "| D | 战技 | 行为脚本 | 可比较种子 | 次场胜率差 | 击退差 | 剩余生命差 | 碎片拾取差 | 终局灵石差 | 实际建造率 |",
+  );
   console.log("|---:|---|---|---:|---:|---:|---:|---:|---:|---:|");
   for (const row of result.contrasts) {
     console.log(
-      "| " + row.key.replaceAll("|", " | ") + " | " + row.comparable + "/" + row.n +
-      " | " + percent(row.winDelta) + " [" + percent(row.winCI[0]) + "–" +
-      percent(row.winCI[1]) + "] | " + fixed(row.killDelta, 2) + " | " +
-      fixed(row.hpDelta, 2) + " | " + fixed(row.pickupDelta, 2) + " | " +
-      fixed(row.resourceDelta, 2) + " | " + percent(row.builtRate) + " |",
+      "| " +
+        row.key.replaceAll("|", " | ") +
+        " | " +
+        row.comparable +
+        "/" +
+        row.n +
+        " | " +
+        percent(row.winDelta) +
+        " [" +
+        percent(row.winCI[0]) +
+        "–" +
+        percent(row.winCI[1]) +
+        "] | " +
+        fixed(row.killDelta, 2) +
+        " | " +
+        fixed(row.hpDelta, 2) +
+        " | " +
+        fixed(row.pickupDelta, 2) +
+        " | " +
+        fixed(row.resourceDelta, 2) +
+        " | " +
+        percent(row.builtRate) +
+        " |",
     );
   }
   console.log(
-    "\n样本：" + result.seedCount + " 个固定种子 × " + EXPERIMENT_DANGERS.length +
-    " 个危险档 × " + EXPERIMENT_SKILLS.length + " 个战技 × " +
-    EXPERIMENT_MOVEMENTS.length + " 个移动策略 × " + EXPERIMENT_BUILDS.length +
-    " 个建设分组；实际模拟 " + result.sorties + " 场出击。",
+    "\n样本：" +
+      result.seedCount +
+      " 个固定种子 × " +
+      EXPERIMENT_DANGERS.length +
+      " 个危险档 × " +
+      EXPERIMENT_SKILLS.length +
+      " 个战技 × " +
+      EXPERIMENT_MOVEMENTS.length +
+      " 个移动策略 × " +
+      EXPERIMENT_BUILDS.length +
+      " 个建设分组；实际模拟 " +
+      result.sorties +
+      " 场出击。",
   );
   console.log(
-    "口径：胜率区间为 Wilson 95%；建设效果为同 seed 配对差，胜率差区间为配对均值近似区间；" +
-    "不是玩家胜率，也不代表真实手机体验。",
+      "不是玩家胜率，也不代表真实手机体验。",
   );
 }
 
@@ -391,16 +451,24 @@ export function runSortieExperiment(seedCount = DEFAULT_SEEDS) {
     if (!groupMap.has(key)) groupMap.set(key, []);
     groupMap.get(key).push(record);
   }
-  const groups = [...groupMap.entries()].map(([key, values]) => {
-    const [danger, buildMode, skill, movement] = key.split("|");
-    return {
-      danger: Number(danger), buildMode, skill, movement, ...aggregate(values),
-    };
-  }).sort((a, b) =>
-    a.danger - b.danger ||
-    EXPERIMENT_BUILDS.indexOf(a.buildMode) - EXPERIMENT_BUILDS.indexOf(b.buildMode) ||
-    EXPERIMENT_SKILLS.indexOf(a.skill) - EXPERIMENT_SKILLS.indexOf(b.skill) ||
-    EXPERIMENT_MOVEMENTS.indexOf(a.movement) - EXPERIMENT_MOVEMENTS.indexOf(b.movement));
+  const groups = [...groupMap.entries()]
+    .map(([key, values]) => {
+      const [danger, buildMode, skill, movement] = key.split("|");
+      return {
+        danger: Number(danger),
+        buildMode,
+        skill,
+        movement,
+        ...aggregate(values),
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.danger - b.danger ||
+        EXPERIMENT_BUILDS.indexOf(a.buildMode) - EXPERIMENT_BUILDS.indexOf(b.buildMode) ||
+        EXPERIMENT_SKILLS.indexOf(a.skill) - EXPERIMENT_SKILLS.indexOf(b.skill) ||
+        EXPERIMENT_MOVEMENTS.indexOf(a.movement) - EXPERIMENT_MOVEMENTS.indexOf(b.movement),
+    );
 
   const result = {
     seedCount,
@@ -413,10 +481,15 @@ export function runSortieExperiment(seedCount = DEFAULT_SEEDS) {
 }
 
 export function assertExperimentResult(result) {
-  const expectedGroups = EXPERIMENT_DANGERS.length * EXPERIMENT_BUILDS.length *
-    EXPERIMENT_SKILLS.length * EXPERIMENT_MOVEMENTS.length;
-  if (result.groups.length !== expectedGroups || result.records.length !==
-    expectedGroups * result.seedCount) {
+  const expectedGroups =
+    EXPERIMENT_DANGERS.length *
+    EXPERIMENT_BUILDS.length *
+    EXPERIMENT_SKILLS.length *
+    EXPERIMENT_MOVEMENTS.length;
+  if (
+    result.groups.length !== expectedGroups ||
+    result.records.length !== expectedGroups * result.seedCount
+  ) {
     throw new Error("Experiment matrix is incomplete");
   }
   const byPair = new Map();
@@ -425,13 +498,17 @@ export function assertExperimentResult(result) {
     if (!byPair.has(key)) byPair.set(key, {});
     byPair.get(key)[record.buildMode] = record;
     if (record.endResource < 0) throw new Error("Experiment produced a negative resource balance");
-    if (record.built && (record.buildCost !== SORTIE.forge.cost ||
-      record.finalForgeLevel !== SORTIE.forge.maxLevel)) {
+    if (
+      record.built &&
+      (record.buildCost !== SORTIE.forge.cost || record.finalForgeLevel !== SORTIE.forge.maxLevel)
+    ) {
       throw new Error("Forge branch did not apply the exact configured one-time cost");
     }
-    if (record.second &&
-      record.second.weaponDamage !== SORTIE.weapon.damage +
-        (record.built ? SORTIE.forge.damageBonus : 0)) {
+    if (
+      record.second &&
+      record.second.weaponDamage !==
+        SORTIE.weapon.damage + (record.built ? SORTIE.forge.damageBonus : 0)
+    ) {
       throw new Error("Second sortie damage does not match its saved forge level");
     }
     if (record.second && record.endDay !== 3) {
