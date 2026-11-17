@@ -22,6 +22,8 @@
     "test:e2e": "playwright test",
     "compare:interventions": "node scripts/intervention-compare.mjs --seeds=60",
     "compare:interventions:check": "node scripts/intervention-compare.mjs --seeds=40 --assert",
+    "sortie:matrix": "node scripts/sortie-experiment.mjs --seeds=40",
+    "sortie:matrix:check": "node scripts/sortie-experiment.mjs --seeds=40 --assert",
     "balance:matrix": "node scripts/strategy-matrix.mjs --seeds=100",
     "balance:matrix:check": "node scripts/strategy-matrix.mjs --seeds=100 --assert"
   },
