@@ -1,117 +1,277 @@
 /*
- * One pixel material vocabulary for the fixed stage and the classic drawers.
- * Pure CSS, no remote fonts, gradients, blur, or raster package dependencies.
- * Ink -> carved frame -> beveled stone -> parchment text.
+ * RPG pixel material system shared by the fixed stage and classic detail pages.
+ * Flat, high-contrast colors and deliberately squared edges: no glassmorphism,
+ * huge blurred shadows, web fonts or third-party asset packs.
  */
 :root {
-  --px-ink: #121a1d;
-  --px-void: #192321;
-  --px-deep: #242d29;
-  --px-panel: #343b31;
-  --px-raised: #4c5342;
-  --px-edge: #877655;
-  --px-rim: #c6ad78;
-  --px-light: #e7ce93;
-  --px-text: #f5ead1;
-  --px-muted: #d6c6a6;
-  --px-positive: #b6cc92;
-  --px-alert: #e4a27e;
-  --px-shadow: #0d1417;
+  --px-ink: #111c1a;
+  --px-void: #1a2722;
+  --px-deep: #25372d;
+  --px-panel: #34483a;
+  --px-raised: #52634c;
+  --px-edge: #806f53;
+  --px-rim: #d6b679;
+  --px-light: #ffe4ae;
+  --px-text: #f9f0d9;
+  --px-muted: #c4cebc;
+  --px-positive: #acd38d;
+  --px-alert: #efa17a;
+  --px-shadow: #0a1311;
 }
-.app-shell.stage-mode { background: var(--px-ink); color: var(--px-text); }
+
+.app-shell.stage-mode {
+  color: var(--px-text);
+  background: var(--px-ink);
+}
 .stage-game {
   color: var(--px-text);
   background: var(--px-void);
   border-inline: 3px solid var(--px-edge);
   box-shadow: 4px 0 0 var(--px-shadow), -4px 0 0 var(--px-shadow);
-  grid-template-rows: calc(42px + env(safe-area-inset-top)) 30px 44px minmax(110px,1fr) 68px calc(110px + env(safe-area-inset-bottom));
 }
 .stage-game :is(button, select) {
   color: var(--px-text);
   background: var(--px-panel);
   border: 2px solid var(--px-edge);
-  border-radius: 0;
-  box-shadow: inset 2px 2px 0 var(--px-raised), inset -2px -2px 0 var(--px-ink), 2px 2px 0 var(--px-shadow);
+  box-shadow: inset 2px 2px 0 var(--px-raised), inset -2px -2px 0 var(--px-ink),
+    2px 2px 0 var(--px-shadow);
   text-shadow: none;
 }
 .stage-game button:active:not(:disabled) {
-  transform: translate(1px,1px);
+  transform: translate(1px, 1px);
   box-shadow: inset 2px 2px 0 var(--px-ink), inset -2px -2px 0 var(--px-raised);
 }
-.stage-game :is(button,select,summary):focus-visible {
+.stage-game :is(button, select, summary):focus-visible {
   outline: 3px solid var(--px-light);
   outline-offset: 1px;
 }
+
 .stage-top {
-  background: var(--px-deep);
+  background: #293a30;
   border-bottom: 3px solid var(--px-rim);
+  box-shadow: inset 0 -3px 0 #15251f;
 }
-.stage-top button {
-  width: 38px;
-  height: 36px;
-  justify-self: end;
-  font-size: 19px;
-  padding: 0;
+.stage-brand-seal {
+  color: var(--px-ink);
+  background: #e8c682;
+  font-size: 21px;
+  border: 2px solid #ffebba;
+  box-shadow: inset -3px -3px 0 #9e7950, 2px 2px 0 var(--px-shadow);
 }
-.stage-brand { color: var(--px-light); text-shadow: 2px 2px 0 var(--px-shadow); }
-.stage-brand small { color: var(--px-muted); }
-.stage-day { color: var(--px-text); }
+.stage-brand { color: var(--px-light); font-size: 16px; font-weight: 900; letter-spacing: 0.06em; line-height: 1.18; }
+.stage-brand-copy small { color: #b7c8b4; font-size: 9px; letter-spacing: 0.07em; }
+.stage-day b { color: var(--px-light); font-size: 15px; line-height: 1.3; }
+.stage-day small { color: var(--px-muted); font-size: 10px; }
+.stage-day .is-running { color: #bde3a8; }
+.stage-day .is-paused { color: #f0ce91; }
+.stage-day .is-running::before,
+.stage-day .is-paused::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  background: currentColor;
+  box-shadow: 1px 1px var(--px-ink);
+  vertical-align: 1px;
+}
+.stage-top > button {
+  color: var(--px-light);
+  background: #34483a;
+  border-color: #af986a;
+}
+
 .stage-counters {
-  color: var(--px-muted);
-  background: var(--px-deep);
-  border-bottom: 2px solid var(--px-edge);
+  background: #192a25;
+  border-bottom: 2px solid #50624e;
 }
-.stage-counters b { color: var(--px-text); }
-.stage-counters .stage-state { color: var(--px-light); }
+.stage-stat {
+  color: #bbcbb7;
+  background: #25392f;
+  border: 1px solid #445947;
+  box-shadow: inset 0 1px 0 #394b3b;
+}
+.stage-stat > span { font-size: 10px; }
+.stage-stat b { color: #ffdfaa; font-size: 15px; line-height: 1; }
+.stage-stat b small { color: var(--px-muted); margin-left: 1px; }
+.stage-stat[data-stat="saved"] b { color: #b8e0a9; }
+.stage-stat[data-stat="ap"] b { color: #f7d396; }
+.stage-stat[data-stat="soul"] b { color: #d8cee8; }
+.stage-stat[data-stat="resource"] b { color: #ffca8e; }
+
 .stage-worlds {
-  background: var(--px-void);
-  border-bottom: 2px solid var(--px-edge);
+  background: #162820;
+  border-bottom: 3px solid #a68e62;
 }
-.stage-worlds button {
-  background: var(--px-deep);
-  border-color: var(--px-edge);
-  box-shadow: inset 0 2px 0 var(--px-raised), inset 0 -2px 0 var(--px-ink);
+.stage-worlds > button {
+  background: #28392d;
+  border-color: #647052;
+  box-shadow: inset 0 2px 0 #4c5c44, inset 0 -2px 0 #141d1a;
 }
-.stage-worlds button.active {
-  background: var(--px-raised);
+.stage-worlds > button[data-world="lingzai"] { --world-tone: #85cfaa; }
+.stage-worlds > button[data-world="zombie"] { --world-tone: #e5b280; }
+.stage-worlds > button[data-world="beast"] { --world-tone: #e4a39e; }
+.stage-worlds > button.active {
   color: var(--px-text);
+  background: #46573e;
   border-color: var(--px-light);
-  box-shadow: inset 2px 2px 0 var(--px-rim), inset -2px -2px 0 var(--px-ink);
+  box-shadow: inset 2px 2px 0 #7f9268, inset -2px -2px 0 #19231d;
 }
-.stage-worlds button span { color: var(--px-light); }
-.stage-worlds button[data-world="zombie"] { border-bottom-color: #a5aa8b; }
-.stage-worlds button[data-world="beast"] { border-bottom-color: #ce996e; }
-.stage-worlds button[data-world="lingzai"] { border-bottom-color: #97b9a4; }
-.stage-window { border-block: 3px solid var(--px-ink); background: var(--px-deep); }
+.stage-worlds > button.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 11px;
+  height: 4px;
+  background: var(--world-tone, var(--px-rim));
+}
+.stage-world-thumb {
+  background-color: #293e35;
+  border: 1px solid var(--world-tone, #b7c99c);
+  background-position: center 42%;
+  background-repeat: no-repeat;
+  background-size: auto 36px;
+  image-rendering: pixelated;
+  box-shadow: 1px 1px 0 var(--px-shadow);
+}
+.stage-worlds > button[data-world="lingzai"] .stage-world-thumb { background-image: url("./assets/original/clone-cultivator.svg"); }
+.stage-worlds > button[data-world="zombie"] .stage-world-thumb { background-image: url("./assets/original/wasteland-runner.svg"); }
+.stage-worlds > button[data-world="beast"] .stage-world-thumb { background-image: url("./assets/original/beast-warden.svg"); }
+.stage-world-info b { color: var(--px-text); font-size: 12px; line-height: 1.15; }
+.stage-world-indicator { color: #c4c7b6; font-size: 10px; margin-top: 3px; }
+.stage-worlds > button.active .stage-world-info b { color: #ffe4aa; }
+.stage-world-risk { background: #19241f; }
+.stage-world-risk::after { background: var(--world-tone, var(--px-rim)); }
+
+.stage-window {
+  background: #203e43;
+  border-block: 3px solid #172723;
+  box-shadow: inset 0 0 0 3px #78916e;
+}
+.stage-window::before, .stage-window::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+.stage-window::before {
+  top: 2px;
+  left: 2px;
+  border-top: 4px solid #d7bd87;
+  border-left: 4px solid #d7bd87;
+  box-shadow: -1px -1px 0 var(--px-shadow);
+}
+.stage-window::after {
+  right: 2px;
+  bottom: 2px;
+  border-right: 4px solid #d7bd87;
+  border-bottom: 4px solid #d7bd87;
+  box-shadow: 1px 1px 0 var(--px-shadow);
+}
 .stage-caption {
   color: var(--px-text);
-  background: var(--px-deep);
-  border: 2px solid var(--px-rim);
-  box-shadow: 3px 3px 0 var(--px-ink), inset 1px 1px 0 var(--px-raised);
-  text-shadow: 1px 1px 0 var(--px-ink);
+  background: #24392f;
+  border: 2px solid #dbb981;
+  box-shadow: 3px 3px 0 #111d1a, inset 2px 2px 0 #4a5e4e;
+  text-shadow: 1px 1px 0 var(--px-shadow);
 }
-.stage-caption b { color: var(--px-light); }
-.stage-caption span { color: var(--px-muted); }
+.stage-caption small { color: #e1bd81; font-size: 9px; letter-spacing: 0.08em; }
+.stage-caption b { color: #fff0c2; font-weight: 900; }
+.stage-caption span { color: #c2d5bf; font-size: 10px; }
+.stage-scene-status {
+  color: #fff2d6;
+  background: #344237;
+  border: 1px solid #c3ab7d;
+  box-shadow: 2px 2px 0 var(--px-shadow);
+}
+.stage-status-dot { background: #abcf8d; box-shadow: 1px 1px 0 #192c20; }
+.stage-scene-status[data-scene-phase="warning"] .stage-status-dot { background: #e4c17a; }
+.stage-scene-status[data-scene-phase="critical"] .stage-status-dot,
+.stage-scene-status[data-scene-phase="lost"] .stage-status-dot { background: #f39a78; }
+.stage-scene-status[data-scene-phase="restored"] .stage-status-dot { background: #a3e6c1; }
 .stage-action-line {
   color: var(--px-text);
-  background: var(--px-deep);
-  border: 2px solid var(--px-rim);
-  box-shadow: 2px 2px 0 var(--px-ink);
+  background: #21382e;
+  border: 2px solid #c8aa73;
+  box-shadow: 3px 3px 0 var(--px-shadow), inset 2px 2px 0 #49604b;
 }
-.stage-bars { background: var(--px-panel); border-block: 2px solid var(--px-edge); }
-.stage-bars progress { border-color: var(--px-ink); background: var(--px-void); }
-.stage-bars progress::-webkit-progress-bar { background: var(--px-void); }
-.stage-bars progress::-webkit-progress-value { background: var(--px-positive); }
-.stage-bars progress::-moz-progress-bar { background: var(--px-positive); }
-.stage-bars progress.danger::-webkit-progress-value { background: var(--px-alert); }
-.stage-bars progress.danger::-moz-progress-bar { background: var(--px-alert); }
-.stage-actions { background: var(--px-void); }
-.stage-actions > button {
-  flex-direction: column;
-  gap: 1px;
-  line-height: 1.1;
+.stage-action-marker {
+  color: #242d21;
+  background: #d7b779;
+  padding: 4px 6px;
+  box-shadow: 2px 2px 0 #121b16;
 }
-.stage-actions > button[data-panel]::before {
+.stage-action-text { color: #f6edd2; font-size: 12px; font-weight: 650; }
+.stage-onboarding-hint .stage-action-text { font-size: 11px; line-height: 1.35; font-weight: 600; }
+
+.stage-bars {
+  background: #1e3027;
+  border-top: 2px solid #9d895f;
+  border-bottom: 3px solid #0d1815;
+}
+.stage-meter {
+  background: #304638;
+  border: 2px solid #66805d;
+  box-shadow: inset 1px 1px 0 #586d51;
+}
+.stage-meter-danger { background: #453c32; border-color: #8b6957; box-shadow: inset 1px 1px 0 #775c48; }
+.stage-meter-head span { color: #d7e4cb; font-weight: 700; }
+.stage-meter-head b { color: #b9e8a5; }
+.stage-meter-danger .stage-meter-head b { color: #f8b08e; }
+.stage-meter progress { border: 2px solid #14261d; background: #14231c; }
+.stage-meter progress::-webkit-progress-bar { background: #15261e; }
+.stage-meter progress::-webkit-progress-value { background: #a7d292; }
+.stage-meter progress::-moz-progress-bar { background: #a7d292; }
+.stage-meter progress.danger::-webkit-progress-value { background: #ec9978; }
+.stage-meter progress.danger::-moz-progress-bar { background: #ec9978; }
+
+.stage-actions {
+  background: #18291f;
+  border-top: 3px solid #455a45;
+  box-shadow: inset 0 3px 0 #0c1914;
+}
+.stage-actions > button, .stage-actions > label {
+  color: #f6ead0;
+  font-size: 11px;
+  font-weight: 850;
+  background: #314438;
+  border: 2px solid #778361;
+  box-shadow: inset 2px 2px 0 #52644b, inset -2px -2px 0 #18251e,
+    2px 2px 0 var(--px-shadow);
+}
+.stage-actions > button:hover:not(:disabled) { background: #435a45; }
+.stage-actions .stage-play-button {
+  color: #17261c;
+  background: #b4d58b;
+  border-color: #f9e0a9;
+  font-size: 14px;
+  font-weight: 950;
+  box-shadow: inset 2px 2px 0 #e5f5c7, inset -3px -3px 0 #769b66,
+    2px 2px 0 var(--px-shadow);
+}
+.stage-actions .stage-play-button:hover:not(:disabled) { background: #c2e6a1; }
+.stage-play-icon { color: #283c2b; font-size: 19px; }
+.stage-speed { color: #f3d6a1 !important; background: #334737 !important; }
+.stage-speed > span { font-size: 10px; line-height: 1; }
+.stage-speed select { background: #192d23; color: #fff0cb; border: 1px solid #90a478; box-shadow: none; font-size: 12px; }
+.stage-actions .stage-event-button {
+  color: #f6e1b6;
+  background: #5d4b35;
+  border-color: #ba9b64;
+  font-size: 12px;
+}
+.stage-actions .stage-event-button.has-event {
+  background: #a25743;
+  border-color: #ffe4a8;
+  color: #fff6dd;
+  box-shadow: inset 2px 2px 0 #c98060, inset -2px -2px 0 #64342a,
+    2px 2px 0 var(--px-shadow);
+}
+.stage-event-button::before,
+.stage-nav-action::before {
   content: "";
   display: block;
   flex: 0 0 16px;
@@ -120,78 +280,109 @@
   background: url("./assets/original/hud-symbols.svg") 0 0 / 96px 16px no-repeat;
   image-rendering: pixelated;
 }
-.stage-actions > button[data-panel="event"]::before { background-position: -16px 0; }
-.stage-actions > button[data-panel="aid"]::before { background-position: -32px 0; }
-.stage-actions > button[data-panel="team"]::before { background-position: -48px 0; }
-.stage-actions > button[data-panel="report"]::before { background-position: -64px 0; }
-.stage-actions > button[data-panel="guide"]::before { background-position: -80px 0; }
-.stage-actions > button.primary {
-  color: var(--px-ink);
-  background: var(--px-positive);
-  border-color: var(--px-light);
-  box-shadow: inset 2px 2px 0 var(--px-text), inset -2px -2px 0 #70845c, 2px 2px 0 var(--px-shadow);
-}
-.stage-actions > button.has-event {
-  background: #855243;
-  color: var(--px-text);
-  border-color: var(--px-light);
-}
-.stage-speed { color: var(--px-muted); border: 2px solid var(--px-edge); background: var(--px-deep); }
-.stage-speed select { color: var(--px-text); background: var(--px-panel); }
+.stage-event-button::before { background-position: -16px 0; }
+.stage-nav-action[data-panel="strategy"]::before { background-position: 0 0; }
+.stage-nav-action[data-panel="aid"]::before { background-position: -32px 0; }
+.stage-nav-action[data-panel="team"]::before { background-position: -48px 0; }
+.stage-nav-action[data-panel="report"]::before { background-position: -64px 0; }
+.stage-nav-action[data-panel="guide"]::before { background-position: -80px 0; }
+
+.stage-shade { background: rgba(9, 19, 15, 0.83) !important; }
 .stage-sheet {
   color: var(--px-text);
   background: var(--px-deep);
-  border: 3px solid var(--px-rim);
-  box-shadow: inset 0 0 0 2px var(--px-ink), 0 -5px 0 var(--px-shadow);
+  border: 3px solid #ebca8b;
+  box-shadow: inset 0 0 0 2px #12241b, 0 -7px 0 rgba(8, 16, 12, 0.7);
 }
 .stage-sheet-head {
+  color: #fff1c7;
+  background: #52644b;
+  border-bottom: 3px solid #d7b47d;
+  text-shadow: 1px 1px 0 #1a271d;
+}
+.stage-sheet-head button { background: #314637; color: #fff1d1; }
+.stage-sheet-body { color: var(--px-text); background: #273a2d; }
+.stage-sheet-body :is(.panel, .world, .event, .info-card, .metric, .build-panel) {
   color: var(--px-text);
-  background: var(--px-raised);
-  border-bottom: 3px solid var(--px-rim);
-  text-shadow: 1px 1px 0 var(--px-shadow);
+  background: #334639;
+  border: 2px solid #917e5d;
+  box-shadow: inset 2px 2px 0 #53634b, 2px 2px 0 #16241d;
 }
-.stage-sheet-body { color: var(--px-text); }
-.stage-sheet-body :is(.panel,.world,.event,.info-card,.metric,.build-panel) {
-  background: var(--px-panel);
+.stage-sheet-body :is(.event-choice, .aid-option, .combat-recap, .build-combo) {
   color: var(--px-text);
-  border: 2px solid var(--px-edge);
-  box-shadow: inset 2px 2px 0 var(--px-raised), 2px 2px 0 var(--px-ink);
+  background: #23352a;
+  border: 2px solid #867251;
 }
-.stage-sheet-body :is(.event-choice,.aid-option,.combat-recap,.build-combo) {
-  background: var(--px-deep);
-  border: 2px solid var(--px-edge);
+.stage-sheet-body :is(.hint, .muted, .world-meta) { color: #c5d0bb; }
+.stage-sheet-body h2 { color: #fbe5b3; }
+.stage-pending-world {
+  background: #40523b;
+  border-left: 4px solid #f6d593;
+  color: #ffe9b7;
+  font-weight: 850;
 }
-.stage-sheet-body :is(.hint,.muted,.world-meta) { color: var(--px-muted); }
 .stage-game .stage-toast,
 .app-shell.stage-mode > .notice {
-  background: var(--px-panel);
   color: var(--px-text);
-  border: 2px solid var(--px-light);
+  background: #4f3c2e;
+  border: 2px solid #f8d39d;
   box-shadow: 3px 3px 0 var(--px-shadow);
 }
-/* Legacy/detail mode uses the same material, not a second website theme. */
-.app-shell:not(.stage-mode) :is(.panel,.world,.info-card,.metric,.event,.build-panel) {
-  background: var(--px-panel);
-  border-color: var(--px-edge);
-  box-shadow: 2px 2px 0 var(--px-shadow);
+
+/* Home, archive and classic detail surfaces share the same RPG materials. */
+.app-shell:not(.stage-mode) :is(.panel, .world, .info-card, .metric, .event, .build-panel) {
+  background: #334338;
+  border-color: #9f8761;
+  box-shadow: 3px 3px 0 #101a14;
 }
-.app-shell:not(.stage-mode) :is(.footer-nav,.event-choice,.aid-option,.combat-recap) {
-  background: var(--px-deep);
-  border-color: var(--px-edge);
+.app-shell:not(.stage-mode) :is(.footer-nav, .event-choice, .aid-option, .combat-recap) {
+  background: #25372c;
+  border-color: #94815e;
 }
-.app-shell:not(.stage-mode) :is(.btn,.run-toggle,.footer-nav button.active) {
-  background: var(--px-positive);
-  color: var(--px-ink);
-  border-color: var(--px-light);
-  box-shadow: inset 2px 2px 0 var(--px-text), 2px 2px 0 var(--px-shadow);
+.app-shell:not(.stage-mode) :is(.btn, .run-toggle, .footer-nav button.active) {
+  background: #acd18e;
+  color: #203022;
+  border-color: #fbe6b1;
+  box-shadow: inset 2px 2px 0 #e1f4c8, 2px 2px 0 #0b1710;
 }
-.app-shell:not(.stage-mode) :is(.world-meta,.hint,.muted) { color: var(--px-muted); }
+.app-shell:not(.stage-mode) :is(.world-meta, .hint, .muted) { color: #d2d8c2; }
+.app-shell:not(.stage-mode) .camp-home {
+  background: #344538;
+  border: 3px solid #d4b47e;
+  box-shadow: inset 0 0 0 2px #1b2a23, 4px 4px 0 #0c1a14;
+}
+.app-shell:not(.stage-mode) .camp-home h1 { color: #fff0cc; text-shadow: 2px 2px 0 #18241b; }
+.app-shell:not(.stage-mode) .camp-home h1 em { color: #c6e39e; }
+.app-shell:not(.stage-mode) .camp-home .home-story { color: #e4e3d2; }
+.app-shell:not(.stage-mode) .camp-home .eyebrow { color: #f6d293; }
+.app-shell:not(.stage-mode) .camp-home .hero-actions .btn { font-weight: 900; }
+.app-shell:not(.stage-mode) .home-scene {
+  border: 3px solid #d0ac73;
+  box-shadow: inset 0 0 0 3px #233729;
+}
+.app-shell:not(.stage-mode) .how-steps > div {
+  background: #24382c;
+  border-left: 4px solid #b1d58e;
+}
+.app-shell:not(.stage-mode) .how-steps b { color: #ffdb9b; }
+
 @media (max-width: 350px) {
-  .stage-game {
-    grid-template-rows: calc(40px + env(safe-area-inset-top)) 28px 40px minmax(100px,1fr) 62px calc(102px + env(safe-area-inset-bottom));
-  }
-  .stage-actions > button { font-size: 10px; }
-  .stage-actions > button[data-panel]::before { height: 14px; }
+  .stage-brand { font-size: 14px; }
+  .stage-brand-copy small { font-size: 8px; }
+  .stage-day b { font-size: 13px; }
+  .stage-day small { font-size: 9px; }
+  .stage-stat > span { font-size: 9px; }
+  .stage-stat b { font-size: 13px; }
+  .stage-world-info b { font-size: 11px; }
+  .stage-world-indicator { font-size: 9px; }
+  .stage-world-thumb { background-size: auto 31px; }
+  .stage-scene-status { font-size: 9px; }
+  .stage-action-text { font-size: 11px; }
+  .stage-meter-head b { font-size: 15px; }
+  .stage-actions > button, .stage-actions > label { font-size: 10px; }
+  .stage-actions .stage-play-button { font-size: 12px; }
+  .stage-actions .stage-event-button { font-size: 11px; }
+  .stage-event-button::before, .stage-nav-action::before { height: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .stage-game button:active:not(:disabled) { transform: none; }
