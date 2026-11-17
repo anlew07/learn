@@ -4,6 +4,7 @@ import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/
 applyTextSize();
 import Engine from "./engine.js";
 import { getStageView } from "./presentation/stage-view.js";
+import { nextNewDecision, pendingDecisions } from "./presentation/decision-attention.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
 import { getOpeningBrief, getWorldGuidance, getTutorialGuidance, getOutcomeGuidance } from "./presentation/player-guidance.js";
 import { ATTACK_PATTERNS } from "./systems/attack-patterns.js";
@@ -481,6 +482,25 @@ function homeHtml(){
 function inQuickStart(){
  return Boolean(run?.onboardingFocus && run.active && run.day<9);
 }
+/**
+ * Interrupt only when a decision becomes newly actionable. A dismissed but
+ * unresolved choice may still follow the engine's documented automatic
+ * outcome if the player explicitly resumes the simulation.
+ */
+function pauseForDecision(existingKeys = new Set()) {
+ if(!session.isOwner || !run?.active)return false;
+ const decision=nextNewDecision(run,existingKeys);
+ if(!decision)return false;
+ run.paused=true;
+ tickStarted=performance.now();
+ // Classic debug mode keeps its existing inline decision board, but still
+ // pauses time. Normal play always opens the actual choice drawer.
+ if(tab==="scene" || !isDebug){
+  tab="scene";infoPage="";scenePanel="event";
+  if(!inQuickStart()||decision.worldId==="lingzai")sceneWorldId=decision.worldId;
+ }
+ return true;
+}
 function quickStartHtml(){
  const phase=run.day<=4?"观察分身每天的自主成长。点击「继续模拟」，或在调试模式按天推进。":
    run.day<=6?"留意等级与救援准备的变化，战技觉醒后也可以主动选择能力。":
@@ -582,8 +602,10 @@ function stagePanelHtml(view) {
     ...(w.pendingEvent?.state==="active"?['<h3 class="stage-pending-world">'+esc(w.name)+'</h3>'+eventHtml(w)]:[]),
     ...(w.build?.pending?[buildHtml(w)]:[]),
   ]);
-  content = decisions.length?decisions.join(""):
-    '<p class="hint">当前没有待处理的关键选择，分身会继续自主行动。</p>';
+  content = decisions.length?
+    '<p class="stage-decision-alert" role="status">模拟已暂停 · 请决定如何处理。关闭面板可以稍后再选；主动继续模拟后，逾期事件会按显示的默认结果处理。</p>'+
+    decisions.join(""):
+    '<p class="hint">当前没有待处理的关键选择。可返回主屏继续模拟。</p>';
  }
  if (scenePanel === "aid") content = soulHtml();
  if (scenePanel === "team") content = partyHtml();
@@ -697,8 +719,8 @@ function render(){
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
  if(tab==="scene"){
-  // The world continues evolving while a drawer is open. Keep its scroll position
-  // and the active action reachable instead of resetting the sheet each game day.
+  // Preserve drawer scroll and focus during ordinary updates. Urgent choices
+  // interrupt the simulation instead of silently evolving behind the drawer.
   const oldSheet=app.querySelector(".stage-sheet");
   const sameSheet=oldSheet?.dataset.stagePanel===scenePanel;
   const oldScroll=sameSheet?app.querySelector(".stage-sheet-body")?.scrollTop??0:0;
@@ -753,8 +775,12 @@ async function execute(type,args){
    return;
  }
  if(!run.active)reward();
+ const wasChoice=scenePanel==="event"&&["event","build","fusion"].includes(type);
+ const done=wasChoice&&pendingDecisions(run).length===0;
+ if(done)scenePanel="";
  const saved=queueSave();
  render();
+ if(done)report("选择已结算，模拟保持暂停。点击「继续模拟」进入下一天。");
  await saved;
  commandBusy=false;
 }
@@ -846,7 +872,7 @@ function handleClick(target){
    return;
  }
  if(action==="toggle"){run.paused=!run.paused;tickStarted=performance.now();queueSave();render();return;}
- if(action==="step"){const result=Engine.step(run);if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;}
+ if(action==="step"){const previous=new Set(pendingDecisions(run).map(item=>item.key));const result=Engine.step(run);pauseForDecision(previous);if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;}
  if(action==="retreat"){
    const length=window.confirm("安排6天深度闭关吗？\n取消则安排4天短闭关。")?6:4;
    execute("retreat",[id,length]);return;
@@ -911,19 +937,10 @@ setInterval(()=>{
  if(now-tickStarted >= (TEMPOS[run.speed] || TEMPOS[1])){
    // Single day maximum per timer tick: never batch unseen days after background throttling.
    tickStarted=now;
-   const priorActive=new Set(run.worlds.filter(w=>w.pendingEvent?.state==="active").map(w=>w.id+":"+w.pendingEvent.id));
+   const previous=new Set(pendingDecisions(run).map(item=>item.key));
    const result=Engine.step(run);
-   if(!result.ok){run.paused=true;}
-   const newUrgent=run.worlds.find(w=>w.pendingEvent?.state==="active"&&!priorActive.has(w.id+":"+w.pendingEvent.id));
-   if(newUrgent&&run.speed===4){
-    run.paused=true;
-    if(tab==="scene"){
-     if(!inQuickStart()||newUrgent.id==="lingzai")sceneWorldId=newUrgent.id;
-     scenePanel="event";
-    }else{
-     tab="world";
-    }
-   }
+   if(!result.ok)run.paused=true;
+   pauseForDecision(previous);
    if(!run.active)reward();
    queueSave();render();
  }
@@ -944,7 +961,13 @@ async function claimSession() {
    }else{
      run=null;
    }
-   if(acquired){tab=isDebug?"world":"scene";saveError=false;restoreError=false;}
+   if(acquired){
+    tab=isDebug?"world":"scene";saveError=false;restoreError=false;
+    scenePanel="";
+    // Older saves may already contain a choice that was never surfaced.
+    // Reopening the dialog must not re-run the choice or advance a day.
+    pauseForDecision();
+   }
  }catch(error){
    restoreError=true;
    console.error("恢复存档失败",error);
