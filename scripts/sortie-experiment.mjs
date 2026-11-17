@@ -320,6 +320,49 @@ function pairedContrasts(records) {
   });
 }
 
+function pairedSkillContrasts(records) {
+  const grouped = new Map();
+  for (const record of records) {
+    const key = [record.danger, record.buildMode, record.movement, record.seedIndex].join("|");
+    if (!grouped.has(key)) grouped.set(key, {});
+    grouped.get(key)[record.skill] = record;
+  }
+  const pairs = new Map();
+  for (const pair of grouped.values()) {
+    if (!pair.thunder || !pair.rune) continue;
+    const { danger, buildMode, movement } = pair.thunder;
+    const key = [danger, buildMode, movement].join("|");
+    if (!pairs.has(key)) pairs.set(key, []);
+    pairs.get(key).push({ thunder: pair.thunder, rune: pair.rune });
+  }
+  return [...pairs.entries()].map(([key, values]) => {
+    const second = values.filter((pair) => pair.thunder.second && pair.rune.second);
+    const winDelta = second.map((pair) =>
+      Number(pair.thunder.second.won) - Number(pair.rune.second.won));
+    const killDelta = second.map((pair) =>
+      pair.thunder.second.defeated - pair.rune.second.defeated);
+    const hpDelta = second.map((pair) =>
+      pair.thunder.second.hp - pair.rune.second.hp);
+    const damageDelta = second.map((pair) =>
+      pair.thunder.second.damageTaken - pair.rune.second.damageTaken);
+    const pickupDelta = second.map((pair) =>
+      pair.thunder.second.collectedShards - pair.rune.second.collectedShards);
+    return {
+      key,
+      n: values.length,
+      comparable: second.length,
+      winDelta: mean(winDelta),
+      winCI: meanInterval(winDelta),
+      killDelta: mean(killDelta),
+      hpDelta: mean(hpDelta),
+      damageDelta: mean(damageDelta),
+      pickupDelta: mean(pickupDelta),
+      thunderHits: mean(second.map((pair) => pair.thunder.second.thunderHits)),
+      shieldBlocks: mean(second.map((pair) => pair.rune.second.shieldBlocks)),
+    };
+  });
+}
+
 function percent(value) {
   return (value * 100).toFixed(1) + "%";
 }
@@ -330,9 +373,11 @@ function fixed(value, digits = 2) {
 function printReport(result) {
   console.log("\n## 2E 固定种子实验：第二场表现");
   console.log(
-    "击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
+    "| D | 建设组 | 战技 | 行为脚本 | 首场胜率 | 实际建造率 | 次场样本 | " +
+      "次场胜率（95% Wilson） | 击退 | 拾取碎片 | 次场灵石 | 余命 | 受击 | " +
+      "雷击命中 | 护盾格挡 | 灵灾DΔ | 废土行动率 | 废土DΔ | 末尾灵石 |",
   );
-  console.log("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+  console.log("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
   for (const row of result.groups) {
     console.log(
       "| " +
@@ -347,6 +392,10 @@ function printReport(result) {
         percent(row.firstWinRate) +
         " | " +
         percent(row.built / row.n) +
+        " | " +
+        row.secondRuns +
+        "/" +
+        row.n +
         " | " +
         percent(row.secondWinRate) +
         " [" +
@@ -363,6 +412,10 @@ function printReport(result) {
         fixed(row.hp, 2) +
         " | " +
         fixed(row.damage, 2) +
+        " | " +
+        fixed(row.thunderHits, 2) +
+        " | " +
+        fixed(row.shieldBlocks, 2) +
         " | " +
         fixed(row.lingD, 2) +
         " | " +
@@ -407,6 +460,40 @@ function printReport(result) {
         " |",
     );
   }
+
+  console.log("\n## 2E 配对对照：驭雷符相对聚灵阵纹");
+  console.log("| D | 建设组 | 行为脚本 | 可比较种子 | 次场胜率差 | 击退差 | 剩余生命差 | 受击差 | 拾取差 | 雷击命中均值 | 护盾格挡均值 |");
+  console.log("|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|");
+  for (const row of result.skillContrasts) {
+    console.log(
+      "| " +
+        row.key.replaceAll("|", " | ") +
+        " | " +
+        row.comparable +
+        "/" +
+        row.n +
+        " | " +
+        percent(row.winDelta) +
+        " [" +
+        percent(row.winCI[0]) +
+        "–" +
+        percent(row.winCI[1]) +
+        "] | " +
+        fixed(row.killDelta, 2) +
+        " | " +
+        fixed(row.hpDelta, 2) +
+        " | " +
+        fixed(row.damageDelta, 2) +
+        " | " +
+        fixed(row.pickupDelta, 2) +
+        " | " +
+        fixed(row.thunderHits, 2) +
+        " | " +
+        fixed(row.shieldBlocks, 2) +
+        " |",
+    );
+  }
+
   console.log(
     "\n样本：" +
       result.seedCount +
@@ -474,6 +561,7 @@ export function runSortieExperiment(seedCount = DEFAULT_SEEDS) {
     records,
     groups,
     contrasts: pairedContrasts(records),
+    skillContrasts: pairedSkillContrasts(records),
   };
   return result;
 }
@@ -490,6 +578,9 @@ export function assertExperimentResult(result) {
   ) {
     throw new Error("Experiment matrix is incomplete");
   }
+  const expectedSorties = result.seedCount * EXPERIMENT_DANGERS.length *
+    EXPERIMENT_SKILLS.length * EXPERIMENT_MOVEMENTS.length * 3;
+  if (result.sorties !== expectedSorties) throw new Error("Experiment sortie count is inconsistent");
   const byPair = new Map();
   for (const record of result.records) {
     const key = [record.danger, record.skill, record.movement, record.seedIndex].join("|");
