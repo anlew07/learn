@@ -50,6 +50,26 @@ test("keyboard movement, pause and resume operate on battle ticks", async ({ pag
     .toBeGreaterThan(Number(frozen));
 });
 
+test("joystick pointer drag moves the hero and releases without drift", async ({ page }) => {
+  await page.goto("/?mode=sortie");
+  await page.locator("[data-start-sortie]").click();
+  const joystick = page.locator("[data-sortie-joystick]");
+  const canvas = page.locator("[data-sortie-canvas]");
+  const bounds = await joystick.boundingBox();
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX + 36, centerY, { steps: 4 });
+  await expect
+    .poll(async () => Number(await canvas.getAttribute("data-hero-x")))
+    .toBeGreaterThan(160);
+  await page.mouse.up();
+  const stopped = await canvas.getAttribute("data-hero-x");
+  await page.waitForTimeout(150);
+  expect(await canvas.getAttribute("data-hero-x")).toBe(stopped);
+});
+
 test("refreshing a prototype does not use the formal save", async ({ page }) => {
   await page.goto("/?mode=sortie");
   await page.locator("[data-start-sortie]").click();
