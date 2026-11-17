@@ -36,7 +36,11 @@ export function assertSortieArchive(archive) {
       camp.forgeLevel < 0 || camp.forgeLevel > SORTIE.forge.maxLevel ||
       (camp.forgeLevel === 1 && (!camp.buildReceipt ||
         typeof camp.buildReceipt.operationId !== "string" ||
-        camp.buildReceipt.cost !== SORTIE.forge.cost)) ||
+        camp.buildReceipt.cost !== SORTIE.forge.cost ||
+        !Number.isInteger(camp.buildReceipt.beforeStats?.defeated) ||
+        !Number.isInteger(camp.buildReceipt.beforeStats?.day) ||
+        camp.buildReceipt.weaponDamage !== SORTIE.weapon.damage +
+          SORTIE.forge.damageBonus)) ||
       (camp.forgeLevel === 0 && camp.buildReceipt != null))) {
     throw new Error("护灵剑台试验档结构无效");
   }
@@ -168,6 +172,11 @@ export function buildSortieForge(archive, operationId) {
     operationId, day: next.run.day, cost: preview.cost,
     beforeStones: before, afterStones: world.resource,
     forgeLevel: SORTIE.forge.maxLevel, weaponDamage: preview.nextDamage,
+    beforeStats: {
+      day: archive.lastReceipt.day,
+      defeated: archive.lastReceipt.battle.defeated,
+      weaponDamage: archive.lastReceipt.battle.weaponDamage ?? SORTIE.weapon.damage,
+    },
   };
   next.run.sortieCamp = { forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
   return { ok: true, archive: next, receipt };
