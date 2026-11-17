@@ -1,13 +1,9 @@
 import { test, expect } from "@playwright/test";
 
-test("isolated sortie opens with a clear action and fits mobile viewports", async ({
-  page,
-}) => {
+test("isolated sortie opens with a clear action and fits mobile viewports", async ({ page }) => {
   await page.goto("/?mode=sortie");
   await expect(page.getByRole("heading", { name: "出击雾谷" })).toBeVisible();
-  await expect(
-    page.getByText("本模式不读取或修改正式存档", { exact: false }),
-  ).toBeVisible();
+  await expect(page.getByText("本模式不读取或修改正式存档", { exact: false })).toBeVisible();
 
   await page.locator("[data-start-sortie]").click();
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
