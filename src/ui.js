@@ -956,8 +956,10 @@ async function claimSession() {
    assertRestorableSnapshot({run:saved,profile:account},Engine.VERSION);
    if(account&&typeof account.runCount==="number")profile=account;
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
+     const hadUnpausedSave=!saved.paused;
      run=saved;run.paused=true;
-     if(acquired&&run.result&&!run.rewarded){reward();queueSave();}
+     if(acquired&&run.result&&!run.rewarded)reward();
+     if(acquired&&(hadUnpausedSave||run.rewarded&&!saved.rewarded))queueSave();
    }else{
      run=null;
    }
