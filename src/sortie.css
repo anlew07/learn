@@ -122,6 +122,18 @@ a { color: #f3d898; }
 .sortie-default { margin-top: 7px; width: 100%; background: #374934; font-size: 12px; }
 .sortie-confirm-buttons { display: flex; gap: 6px; }
 .sortie-confirm-buttons button { flex: 1; font-size: 12px; }
+.sortie-results {
+  justify-content: flex-start; min-height: 0; gap: 8px;
+  padding: 12px 12px calc(10px + env(safe-area-inset-bottom));
+}
+.sortie-results-content {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.sortie-results-content > p { margin: 0; }
+.sortie-results .sortie-world-report { overflow-wrap: anywhere; }
+.sortie-results > [data-sortie-retry] { flex: 0 0 auto; }
 .sortie-results [data-sortie-reward-preview] {
   border: 2px solid #91875b; padding: 12px; color: #ffe0a4; font-weight: 800;
 }
