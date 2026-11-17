@@ -136,7 +136,8 @@
   box-shadow: 1px 1px 0 var(--px-shadow);
 }
 .stage-worlds > button[data-world="lingzai"] .stage-world-thumb { background-image: url("./assets/original/clone-cultivator.svg"); }
-.stage-worlds > button[data-world="zombie"] .stage-world-thumb { background-image: url("./assets/original/wasteland-runner.svg"); }
+.stage-worlds > button[data-world="zombie"] .stage-world-thumb,
+.stage-worlds > button[data-preview-world="zombie"] .stage-world-thumb { background-image: url("./assets/original/wasteland-runner.svg"); }
 .stage-worlds > button[data-world="beast"] .stage-world-thumb { background-image: url("./assets/original/beast-warden.svg"); }
 .stage-world-info b { color: var(--px-text); font-size: 12px; line-height: 1.15; }
 .stage-world-indicator { color: #c4c7b6; font-size: 10px; margin-top: 3px; }
