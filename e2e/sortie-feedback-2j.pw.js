@@ -9,6 +9,7 @@ const sizes = [
   { width: 430, height: 932 },
 ];
 
+// prettier-ignore
 async function snapshot(page, size, stage) {
   const filename = `sortie-2j-${size.width}x${size.height}-${stage}.png`;
   await page.screenshot({
@@ -17,6 +18,7 @@ async function snapshot(page, size, stage) {
   });
 }
 
+// prettier-ignore
 async function tapVisible(page, selector, height) {
   const target = page.locator(selector);
   const rect = await target.boundingBox();
@@ -36,14 +38,17 @@ async function tapVisible(page, selector, height) {
   await page.touchscreen.tap(point.x, point.y);
 }
 
+// prettier-ignore
 async function textIs(page, selector, content) {
   await expect(page.locator(selector)).toContainText(content);
 }
 
+// prettier-ignore
 async function attrIs(page, selector, attribute, value) {
   await expect(page.locator(selector)).toHaveAttribute(attribute, value);
 }
 
+// prettier-ignore
 async function archives(page) {
   return page.evaluate(async () => {
     const sortie = await import("/src/services/sortie-persistence.js");
@@ -55,6 +60,7 @@ async function archives(page) {
   });
 }
 
+// prettier-ignore
 for (const size of sizes) {
   test("2J-D readable closed loop " + size.width, async ({ page }) => {
     test.setTimeout(105_000);
@@ -219,6 +225,7 @@ for (const size of sizes) {
   });
 }
 
+// prettier-ignore
 test("2J-D interrupted sortie is not silently rewarded", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?mode=sortie");
