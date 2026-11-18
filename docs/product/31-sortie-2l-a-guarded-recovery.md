@@ -60,7 +60,7 @@
 
 ## 4. 实际工程门禁与下一步
 
-1. 单独 A 源码范围只限 sim/rewards/trace/配置、Engine 出击权威结算与专属脚本、测试、报告；**不修改 B camp/session/UI，也不触动正式 Run/Profile**。
+1. A 的新玩法源码范围只限 sim/rewards/trace/配置、Engine 出击权威结算与专属脚本、测试、报告；**不修改 B camp/session/UI，也不触动正式 Run/Profile**。为通过既有回归，另同步旧 `scripts/sortie-camp-choice-2k.mjs` 的**隔离影子适配器**：在其临时源码副本中沿显式 `missionId` 后追加 `prepHp`，默认 `safe`，不修改正式规则、结算或旧负面实验的成本与条件。
 2. 提交后须以 **A 新 HEAD** 跑完整 ESLint、Prettier、Vitest、生产构建、三世界/出击矩阵、Playwright。此报告引用的 CI 来自旧实验 HEAD，接口等价清理后的新 HEAD 需额外核验，不能冒称已通过。
 3. 仅当 A 回放/收益门禁通过，才串行接入 B 的营地任务选择。B 必须明确展示高危失败风险、任务完成却战败无奖金；任务未完成不得冒领，且不买“回收信标”假效果。
 4. 之后才由 C 做 320×568、390×844、430×932 真坐标触控、第二场、刷新和正式档隔离；**不在此阶段宣布手机在线可玩**。
