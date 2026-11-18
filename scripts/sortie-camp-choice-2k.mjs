@@ -58,8 +58,8 @@ export async function openCampChoiceSandbox() {
     );
     replace(
       "src/systems/sortie-trace.js",
-      "export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe") {",
-      "export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", prepHp = 0) {",
+      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe") {',
+      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", prepHp = 0) {',
     );
     replace(
       "src/systems/sortie-trace.js",
