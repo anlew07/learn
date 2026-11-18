@@ -110,10 +110,24 @@ function collectFragments(battle) {
 }
 
 function applySkillEffects(battle) {
-  if (battle.skillId === "thunder" && battle.tick >= battle.thunderNextTick) {
-    battle.thunderNextTick += Math.round(
-      SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond,
+  // 2J-A single-variable candidate: fire a ready-soon strike up to 2s early
+  // when an approaching enemy could contact a stationary hero within 1s.
+  // Target count, damage, range and ordinary 4s cooldown remain unchanged.
+  const thunderThreat =
+    battle.skillId === "thunder" &&
+    battle.tick + 2 * SORTIE.ticksPerSecond >= battle.thunderNextTick &&
+    battle.enemies.some((enemy) =>
+      enemy.hp > 0 &&
+      distance(enemy, battle.hero) <=
+        SORTIE.player.radius +
+        SORTIE.enemies[enemy.kind].radius +
+        SORTIE.enemies[enemy.kind].speed,
     );
+  if (battle.skillId === "thunder" &&
+      (battle.tick >= battle.thunderNextTick || thunderThreat)) {
+    const early = battle.tick < battle.thunderNextTick;
+    battle.thunderNextTick = (early ? battle.tick : battle.thunderNextTick) +
+      Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
     const targets = battle.enemies
       .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
       .filter(({ enemy, range }) => enemy.hp > 0 && range <= SORTIE.skills.thunderRange)
