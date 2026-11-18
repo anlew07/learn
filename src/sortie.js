@@ -256,6 +256,10 @@ function updateCamp() {
       (recoveryMessage || "独立试验档已就绪；返回正式模拟器不会继承此处资源。") :
       "正在检查独占写入权与独立试验档……";
   }
+  // The persistent archive notice belongs to camp; leave the battlefield and
+  // settlement room for objective/changes. Still expose write/lock failures.
+  sessionNotice.hidden = phase !== "intro" && sessionMode === "owner" &&
+    !writeError && !restoreError;
 }
 
 async function persistCandidate(candidate, onSaved) {
@@ -463,19 +467,20 @@ function endBattle() {
       return item;
     }));
     gains.hidden = false;
-    const report = receipt.worlds.map((world) => worldLine(world) +
-      "；本日资源 " + (world.resourceDelta >= 0 ? "+" : "") + world.resourceDelta +
-      "、经验 " + (world.xpDelta >= 0 ? "+" : "") + world.xpDelta +
-      "、准备 " + (world.pDelta >= 0 ? "+" : "") + world.pDelta +
-      "、风险 " + (world.dDelta >= 0 ? "+" : "") + world.dDelta +
-      "；主要行动：" + (world.actionId || "未执行")).join("｜");
     worldReport.replaceChildren();
     const heading = document.createElement("strong");
-    heading.textContent = "第 " + receipt.day + " 日结算 → 第 " + receipt.nextDay + " 日";
+    heading.textContent = "双世界当日变化 · 第 " + receipt.day + " 日结算 → 第 " +
+      receipt.nextDay + " 日";
     worldReport.append(heading);
-    for (const line of report.split("｜")) {
+    const delta = (value) => (value >= 0 ? "+" : "") + value;
+    for (const world of receipt.worlds) {
       const item = document.createElement("p");
-      item.textContent = line;
+      item.textContent = (world.id === "lingzai" ? "灵灾" : "废土救援") +
+        "：资源 " + delta(world.resourceDelta) +
+        " · 经验 " + delta(world.xpDelta) +
+        " · 准备 " + delta(world.pDelta) +
+        " · 风险 " + delta(world.dDelta) +
+        "；主要行动：" + (world.actionId || "未执行");
       worldReport.append(item);
     }
     worldReport.dataset.day = String(receipt.nextDay);
