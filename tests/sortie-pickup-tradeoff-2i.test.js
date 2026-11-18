@@ -39,8 +39,8 @@ describe("2I-B pickup radius and touch tolerance", () => {
   it("short reverse and joystick drift alter directions but never invent damage", async () => {
     const engine = await loadRadiusEngine(24);
     const battle = engine.createSortie("2i-input");
-    const original = pickupRouteInput(battle, "pickup");
     battle.tick = 120;
+    const original = pickupRouteInput(battle, "pickup");
     const opposite = pickupRouteInput(battle, "short-reverse");
     expect(opposite.x).toBeCloseTo(-original.x);
     expect(opposite.y).toBeCloseTo(-original.y);
