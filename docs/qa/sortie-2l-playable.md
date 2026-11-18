@@ -45,6 +45,14 @@ Playwright 将各分辨率截图保存至 `test-results/camp-ui/sortie-2l-<宽>x
 
 最终 CI 运行号、HEAD SHA、passed/skipped、artifact 链接、失败日志与修复记录必须在运行完成后更新，禁止把“已提交测试”写成“已通过测试”。如 320 竖屏无法通过实际 swipe 点击付费，应判定真实可操作性 blocker，回报 B 修改 UI，而非在 QA 中用程序滚动蒙混过关。
 
+## 实际验证结果（2L-C QA 代码 HEAD `2df1898ebb8bfe30e6aa810698899fd371bbafc2`）
+
+- [Validate H5 #44271376989](https://github.com/anlew07/learn/actions/runs/44271376989) 已 **completed / success**：**56/56 Vitest 文件、356 passed / 5 TODO、109 Playwright passed / 4 fixme-skipped**；ESLint、Prettier、文本检查、Vite build、三世界策略矩阵与原有 40 种子出击矩阵通过。
+- 新增的 3 项 Playwright 真实手机坐标触摸用例全部通过：`320×568`、`390×844`、`430×932`，分别完成真实 **75s + 75s**，包含 25s 1500-tick 冻结、技能雷→纹、持续摇杆走位、首场真实资源结算、真付 6 石（短屏用指尖滑动后点击）、刷新重启第二场、双世界两次日结算、正式档未写入。
+- [同次 GitHub Actions 运行](https://github.com/anlew07/learn/actions/runs/44271376989) 已上传 `camp-ui-mobile-screenshots` artifact **ID 14413551186**，约 **14.6 MB**，测试文件按三种尺寸输出前述各阶段共 **27 张** 截图。截图由 CI 生成并确认证据包存在；未声称已做真人逐张评审或真机验收。
+- **失败历史如实保留：** [#44269042459](https://github.com/anlew07/learn/actions/runs/44269042459) 因 QA 文件 Prettier 检查失败；[#44269171129](https://github.com/anlew07/learn/actions/runs/44269171129) 因错误假设 240 场绕场必须全胜而失败；[#44269931563](https://github.com/anlew07/learn/actions/runs/44269931563) 356 Vitest 已通过，但 Playwright 对刷新后的**磁盘** `pending` 立即为空作了不符合现有恢复协议的断言。修订断言后最终跑通，不改生产逻辑，不用跳过这三项核心场景解决失败。
+- Playwright `fixme ×4`、Vitest `todo ×5` **仍为 2L-A/B 尚未联通的目标/回收/奖金/一次性准备风险门禁**；不可称 2L 新玩法已验收。Chromium 结果也不能替代 Android/iOS/TapTap WebView 真人试玩。
+
 ## 当前交付边界
 
 只新增 `e2e/sortie-playable-2l.pw.js`、`tests/sortie-two-run-2l.test.js`、`docs/qa/sortie-2l-playable.md`。不修改生产代码、正式档、定价、伤害、任务或部署。Draft PR 留待总控联合验收，不自行合并。
