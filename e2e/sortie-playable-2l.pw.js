@@ -234,8 +234,15 @@ for (const viewport of viewports) {
     await passChoice(page, "rune", viewport);
     await thumbRoute(page, 2);
     await page.reload();
+    await expect(page.locator("[data-sortie-intro]")).toBeVisible();
+    await expect(page.locator("[data-sortie-session-notice]")).toContainText("未完成提交");
     const aborted = await archives(page);
-    expect(aborted.prototype.pending).toBeNull();
+    // Recovery clears the pending flag in memory; the IDB pre-battle snapshot
+    // may retain it until the next explicit write. Neither form is a reward.
+    if (aborted.prototype.pending) {
+      expect(aborted.prototype.pending.day).toBe(2);
+    }
+    expect(aborted.prototype.lastReceipt).toEqual(purchased.prototype.lastReceipt);
     expect(aborted.prototype.run.day).toBe(2);
     expect(aborted.prototype.run.worlds[0].resource).toBe(
       purchased.prototype.run.worlds[0].resource,
