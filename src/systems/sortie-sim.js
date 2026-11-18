@@ -110,19 +110,19 @@ function collectFragments(battle) {
 }
 
 function applySkillEffects(battle) {
-  const imminent = battle.skillId === "thunder" && battle.tick + 2 * SORTIE.ticksPerSecond >= battle.thunderNextTick &&
-    battle.enemies.some((enemy) => enemy.hp > 0 &&
-      distance(enemy, battle.hero) <= SORTIE.player.radius +
-      SORTIE.enemies[enemy.kind].radius + SORTIE.enemies[enemy.kind].speed);
-  if (battle.skillId === "thunder" && (battle.tick >= battle.thunderNextTick || imminent)) {
-    battle.thunderNextTick = (imminent && battle.tick < battle.thunderNextTick ? battle.tick : battle.thunderNextTick) +
-      Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
+  if (battle.skillId === "thunder" && battle.tick >= battle.thunderNextTick) {
+    battle.thunderNextTick += Math.round(
+      SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond,
+    );
     const targets = battle.enemies
       .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
       .filter(({ enemy, range }) => enemy.hp > 0 && range <= SORTIE.skills.thunderRange)
-      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id).slice(0, SORTIE.skills.thunderTargets).map(({ enemy }) => enemy);
+      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)
+      .slice(0, SORTIE.skills.thunderTargets)
+      .map(({ enemy }) => enemy);
     if (targets.length) {
-      battle.flashTargets = targets.map(({ x, y }) => ({ x, y })); battle.flashUntil = battle.tick + 15;
+      battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
+      battle.flashUntil = battle.tick + 15;
       battle.thunderHits += targets.length;
       for (const enemy of targets) damageEnemy(battle, enemy, SORTIE.skills.thunderDamage);
       battle.enemies = battle.enemies.filter((enemy) => enemy.hp > 0);
