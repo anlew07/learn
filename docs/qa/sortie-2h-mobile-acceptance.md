@@ -1,5 +1,15 @@
 # 灵灾出击 2H-D：移动端 3–5 分钟核心体验 QA（2026-11-17）
 
+## 2026-11-18 补证与最新集成事实
+
+> 本节更新先前“待严格回归”措辞；旧测试中发现的 320px 缺陷及首次 CI 失败历史保留以便追溯。
+
+- 总控已将原 2H-D [PR #78](https://github.com/anlew07/learn/pull/78) 合并到**实验基线** #74（合并提交 `ca7549831eb4658fa9e0d23c8328102e61a5e433`）；原工作分支是最新 2G 的祖先。为不重写已合并分支，本次补证使用独立分支 `test/sortie-2h-mobile-playability-evidence-20261118`，PR 目标仍为 2G；不改任何游戏运行时代码。
+- 合并后的 [Validate H5 #44104831004](https://github.com/anlew07/learn/actions/runs/44104831004) 在上述准确 HEAD **success**：318/318 Vitest、102/102 Playwright；完整 workflow 包含静态检查、构建、固定种子矩阵及浏览器测试。**此数据仅代表此前的集成基线，不代表本次新增断言已经通过。**
+- 该次 [CI 截图 artifact](https://github.com/anlew07/learn/actions/runs/44104831004/artifacts/14337163996) 存有 320×568、390×844、430×932 的各 5 个阶段、合计 15 张 PNG。已复核 `sortie-2h-320x568-first-settlement.png`：独立 UI PR #81 修复后“返回营地”按钮完整位于视口内；此前被截断的历史截图仍应保留，不能误写为当时已通过。
+- 本补证仅在现有专属 Playwright 路径中增加：按按钮真实屏幕坐标做 `document.elementFromPoint` 命中检查，使用 `page.touchscreen.tap(x,y)` **直接点按**（不会自动滚动元素到视口），确认返回营地；将第二次出击开战与撤离结算增加到每个尺寸的截图。预期从每尺寸 5 张扩展到 7 张，**共 21 张**；最终数量和结论须以本 PR CI artifact 为准。
+- Playwright 的 `touchscreen.tap` 是 **Chromium 合成触摸事件**，与原 CDP 摇杆触摸一样，绝不能等同 Android/iOS 或 TapTap WebView 真机，也不代表首次玩家的 3–5 分钟理解度。相关真机与真人验收状态仍保持“未验收”。
+
 ## 总控集成补充（严格回归）
 
 - 2G 继承的旧日进度测试异常已通过 [PR #80](https://github.com/anlew07/learn/pull/80) 同步修复（2G 分支），不在本 D 分支修改共享测试。
