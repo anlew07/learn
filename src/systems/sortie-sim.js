@@ -120,9 +120,7 @@ function applySkillEffects(battle) {
       .slice(0, SORTIE.skills.thunderTargets)
       .map(({ enemy }) => enemy);
     if (targets.length) {
-      battle.thunderNextTick = battle.tick + Math.round(
-        SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond,
-      );
+      battle.thunderNextTick = battle.tick + Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
       battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
       battle.flashUntil = battle.tick + 15;
       battle.thunderHits += targets.length;
