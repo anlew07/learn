@@ -1,21 +1,14 @@
 import Engine from "../src/engine.js";
 import { sortieIdentity } from "../src/systems/sortie-trace.js";
-import {
-  assertSortieArchive,
-  previewSortieCampAllocation,
-} from "../src/systems/sortie-session.js";
-import {
-  assertForgeRoiExperiment,
-  runForgeRoiExperiment,
-} from "./sortie-forge-roi-2h.mjs";
+import { assertSortieArchive, previewSortieCampAllocation } from "../src/systems/sortie-session.js";
+import { assertForgeRoiExperiment, runForgeRoiExperiment } from "./sortie-forge-roi-2h.mjs";
 
 // This model is NEVER imported by sortie.js or the live sortie session.
 // No guarded-recovery objective exists in 2G; no purchase grants any bonus.
 export const SHADOW_BEACON_COST = 2;
 export const SHADOW_BEACON_ID = "salvage-beacon";
 const clone = (value) => JSON.parse(JSON.stringify(value));
-const validOperationId = (id) =>
-  typeof id === "string" && /^[A-Za-z0-9:_/.-]{1,128}$/.test(id);
+const validOperationId = (id) => typeof id === "string" && /^[A-Za-z0-9:_/.-]{1,128}$/.test(id);
 
 // prettier-ignore
 export function assertShadowBeaconArchive(archive) {
