@@ -1,7 +1,4 @@
-import {
-  assertForgeRoiExperiment,
-  runForgeRoiExperiment,
-} from "./sortie-forge-roi-2h.mjs";
+import { assertForgeRoiExperiment, runForgeRoiExperiment } from "./sortie-forge-roi-2h.mjs";
 
 // prettier-ignore
 const mean = (values) =>
