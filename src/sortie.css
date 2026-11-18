@@ -244,3 +244,26 @@ a { color: #f3d898; }
   .sortie-skill-card { padding: 7px; margin: 5px 0; }
   .sortie-results .sortie-result-gains > div { padding: 5px 7px; }
 }
+
+/* 2L-B: honest camp decisions, including non-interactive unverified candidates. */
+.sortie-2l-missions,
+.sortie-2l-allocation {
+  width: min(420px, 100%); display: grid; gap: 6px; padding: 10px;
+  text-align: left; border: 2px solid #8b8e66; background: #283a30;
+}
+.sortie-2l-missions > strong,
+.sortie-2l-allocation > strong { color: #f6e3ad; font-size: 14px; }
+.sortie-2l-missions p,
+.sortie-2l-allocation p {
+  margin: 0; font-size: 12px; line-height: 1.5; color: #e4dfc7;
+}
+.sortie-2l-missions button { padding: 8px; width: 100%; font-size: 12px; }
+.sortie-2l-missions button:disabled { opacity: .6; }
+.sortie-2l-missions .sortie-2l-unavailable,
+.sortie-2l-allocation .sortie-2l-unavailable {
+  color: #d6b88d; border-left: 3px solid #9a7b56; padding-left: 7px;
+}
+.sortie-2l-allocation [data-sortie-budget] { color: #f7d68b; font-weight: 800; }
+@media (max-height: 620px) {
+  .sortie-2l-missions, .sortie-2l-allocation { padding: 7px; gap: 4px; }
+}
