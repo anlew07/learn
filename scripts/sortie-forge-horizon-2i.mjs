@@ -3,8 +3,10 @@ import {
   runForgeRoiExperiment,
 } from "./sortie-forge-roi-2h.mjs";
 
+// prettier-ignore
 const mean = (values) =>
   values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+// prettier-ignore
 const round = (value) => (value === null ? null : Math.round(value * 1000) / 1000);
 
 /**
@@ -13,6 +15,7 @@ const round = (value) => (value === null ? null : Math.round(value * 1000) / 100
  * For an immediately unavailable second sortie, the forge's six-stone cost
  * has already been paid, even though stage[0] is the shared pre-build snapshot.
  */
+// prettier-ignore
 export function resourceAtHorizon(branch, sortie) {
   let resource = branch.afterBuildResource;
   for (let index = 1; index < sortie; index++) {
@@ -22,10 +25,12 @@ export function resourceAtHorizon(branch, sortie) {
   return resource;
 }
 
+// prettier-ignore
 function stage(branch, sortie) {
   return branch.stages[sortie - 1] ?? null;
 }
 
+// prettier-ignore
 function describeCohort(pairs, sortie) {
   const built = pairs.filter((pair) => pair.branches.forge.built);
   const observations = built.map((pair) => {
@@ -73,6 +78,7 @@ function describeCohort(pairs, sortie) {
 }
 
 /** All actual construction cohorts; never mix unbuilt attempts into effect estimates. */
+// prettier-ignore
 export function summarizeForgeHorizonPairs(pairs, maxSorties = 6) {
   if (!Array.isArray(pairs) || !Number.isInteger(maxSorties) ||
     maxSorties < 2 || maxSorties > 6) {
@@ -126,6 +132,7 @@ export function summarizeForgeHorizonPairs(pairs, maxSorties = 6) {
   };
 }
 
+// prettier-ignore
 export function runForgeHorizonExperiment(seedCount = 40, maxSorties = 6) {
   const reference = runForgeRoiExperiment(seedCount, maxSorties);
   assertForgeRoiExperiment(reference);
@@ -139,6 +146,7 @@ export function runForgeHorizonExperiment(seedCount = 40, maxSorties = 6) {
   };
 }
 
+// prettier-ignore
 if (process.argv[1]?.endsWith("sortie-forge-horizon-2i.mjs")) {
   const seedArg = process.argv.find((arg) => arg.startsWith("--seeds="));
   const seeds = seedArg ? Number(seedArg.slice("--seeds=".length)) : 40;
