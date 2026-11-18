@@ -83,7 +83,7 @@ describe("2L-B safe-only mission, real camp payment and shadow-only preparation"
     expect(prepareSortieArchive(recovery.archive).archive.pending.missionId).toBe("safe");
     const fake = clone(pending.archive);
     fake.pending.missionId = "salvage";
-    expect(() => assertSortieArchive(fake)).toThrow(/回放/);
+    expect(() => assertSortieArchive(fake)).toThrow(/重放|回放/);
     const tampered = clone(selected.archive);
     tampered.run.sortieCamp.missionSelection.missionId = "salvage";
     expect(() => assertSortieArchive(tampered)).toThrow(/任务选择/);
