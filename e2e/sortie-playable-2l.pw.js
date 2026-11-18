@@ -275,7 +275,6 @@ for (const viewport of viewports) {
 // prettier-ignore
 test.fixme("2L-B pending: task-specific one-time preparation and repeat payment", () => {});
 
-
 // The 2L-A+B combined slice: these tests use real finger coordinates and
 // the unmodified 60 Hz runtime. The objective is NEVER completed by direct
 // state mutation, locator.click(), or scrolling an element into view.
