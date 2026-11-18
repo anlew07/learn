@@ -18,10 +18,11 @@ const skillHints = {
   rune: "立即获得一层护盾，每" + SORTIE.skills.runeRechargeSeconds +
     "秒重新充能，抵挡一次受击（包括远程灵息弹）",
 };
+const skillRoles = { thunder: "主动进攻", rune: "防护生存" };
 const powerName = (id) => POWERS.lingzai.find((power) => power.id === id)?.name ?? id;
 const skillCards = SORTIE.skills.options.map((id) =>
   '<button type="button" class="sortie-skill-card" data-sortie-skill="' + id +
-    '"><strong>' + powerName(id) + '</strong><span>' + skillHints[id] +
+    '"><strong>' + powerName(id) + " · " + skillRoles[id] + '</strong><span>' + skillHints[id] +
     '</span></button>'
 ).join("");
 
@@ -33,7 +34,13 @@ app.innerHTML = [
   '<a href="./">返回正式模拟器</a></header>',
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
-  '<p>拖动移动躲避灵息弹，灵刃自动攻击。击倒敌人会留下碎片：靠近拾取，25秒时选择一项战技！</p>',
+  '<p class="sortie-objective"><strong>本场目标：坚持 ' + SORTIE.durationSeconds +
+    ' 秒</strong><span>左侧摇杆躲避敌人，灵刃自动攻击；倒计时归零即完成试炼。</span></p>',
+  '<p class="sortie-intro-tip">第 ' + SORTIE.skills.choiceSeconds +
+    ' 秒自动暂停选择战技。靠近金色碎片可拾取，' +
+    SORTIE.rewards.shardsPerStone + ' 片兑换 1 灵石（最多兑换 ' +
+    SORTIE.rewards.maxShardStones + ' 灵石）。</p>',
+  '<p class="sortie-entry-growth" data-sortie-entry-growth>出击获得灵石，可投入护灵剑台强化下一场灵刃。</p>',
   '<button class="sortie-cta" data-start-sortie>▶ 出击雾谷</button>',
   '<div class="sortie-camp" data-sortie-camp>',
   '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span>',
@@ -51,10 +58,12 @@ app.innerHTML = [
   '<div class="sortie-stats"><span data-sortie-hp>生命 8/8</span>',
   '<span data-sortie-time>剩余 75 秒</span><span data-sortie-defeated>击退 0</span></div>',
   '<div class="sortie-timebar" data-sortie-timebar role="progressbar" aria-label="试炼剩余时间" aria-valuemin="0" aria-valuemax="75" aria-valuenow="75" aria-valuetext="剩余 75 秒"><span data-sortie-time-fill></span></div>',
+  '<div class="sortie-goal" data-sortie-goal>目标：撑到 0 秒 · 走位避险，靠近碎片拾取</div>',
   '<div class="sortie-lootbar"><span data-sortie-loot>碎片 0 · 灵石兑换 0/2</span>',
   '<span data-sortie-power>战技：待觉醒</span></div>',
   '<div class="sortie-field"><canvas width="320" height="448" data-sortie-canvas role="img"',
   ' aria-label="雾谷战场：分身、敌人和自动飞行的灵刃"></canvas>',
+  '<div class="sortie-combat-feedback" data-sortie-feedback role="status" aria-live="polite" hidden></div>',
   '<div class="sortie-pause-overlay" data-sortie-paused hidden role="status" aria-live="polite">',
   '<strong>试炼已暂停</strong><span>点击「继续试炼」恢复行动</span></div></div>',
   '<div class="sortie-controls"><div class="sortie-joystick" data-sortie-joystick',
@@ -66,7 +75,8 @@ app.innerHTML = [
   '<div class="sortie-dialog-overlay" data-sortie-choice hidden>',
   '<section class="sortie-modal" role="dialog" aria-modal="true" aria-labelledby="sortie-choice-title">',
   '<h2 id="sortie-choice-title">战技觉醒 · 选择一项</h2>',
-  '<p>战斗时间已冻结。选定后才继续，本场有效。</p>',
+  '<p class="sortie-choice-state" data-sortie-choice-state>战斗时间已冻结，计时暂停。选择一种战技后继续，本场有效。</p>',
+  '<p class="sortie-choice-hint">偏进攻选驭雷符，偏保命选聚灵阵纹；两者只能选一个。</p>',
   skillCards,
   '<button data-sortie-default class="sortie-default">使用默认战技：驭雷符</button>',
   '</section></div>',
@@ -80,6 +90,7 @@ app.innerHTML = [
   '<section class="sortie-results" data-sortie-results hidden>',
   '<div class="sortie-results-content">',
   '<h1 data-sortie-outcome>试炼结束</h1><p class="sortie-feedback" data-sortie-summary></p>',
+  '<div class="sortie-result-gains" data-sortie-gains aria-label="本场结算收益" hidden></div>',
   '<p data-sortie-reward-preview>战斗结束，正在验证轨迹与写入独立试验档……</p>',
   '<div class="sortie-world-report" data-sortie-world-report></div>',
   '<p>收益已结算进独立试验档，仅供可玩性验证；正式存档与世界碎片不受影响。</p>',
@@ -98,6 +109,11 @@ const pauseOverlay = app.querySelector("[data-sortie-paused]");
 const defeated = app.querySelector("[data-sortie-defeated]");
 const pauseButton = app.querySelector("[data-sortie-pause]");
 const lootText = app.querySelector("[data-sortie-loot]");
+const goalText = app.querySelector("[data-sortie-goal]");
+const eventText = app.querySelector("[data-sortie-feedback]");
+const choiceState = app.querySelector("[data-sortie-choice-state]");
+const gains = app.querySelector("[data-sortie-gains]");
+const entryGrowth = app.querySelector("[data-sortie-entry-growth]");
 const powerText = app.querySelector("[data-sortie-power]");
 const skillOverlay = app.querySelector("[data-sortie-choice]");
 const retreatOverlay = app.querySelector("[data-sortie-confirm]");
@@ -134,6 +150,8 @@ let pendingWrite = null;
 let writeError = null;
 let restoreError = null;
 let recoveryMessage = "";
+let lastVisualStats = null;
+let feedbackUntilTick = -1;
 
 const session = createExclusiveSession({
   onLost() {
@@ -168,6 +186,9 @@ function updateCamp() {
       "。重新打开页面不会重复结算。" : "尚无已提交的出击回执";
     const forge = previewSortieForge(archive);
     forgePanel.dataset.level = String(forge.level);
+    entryGrowth.textContent = forge.built ?
+      "剑台已修复：下一场灵刃伤害 1 → " + forge.nextDamage + "；留意实际击退与资源回报。" :
+      "出击获得灵石，可选择投入 " + forge.cost + " 灵石修复剑台，或保留资源。";
     forgePanel.querySelector("strong").textContent = forge.built ?
       "护灵剑台 · 已修复" : "护灵剑台 · 待修复";
     forgeState.textContent = forge.built ? "剑台已点亮 · 灵刃基础伤害 1 → 2" :
@@ -335,10 +356,42 @@ function resetMovement() {
 
 function drawStats() {
   if (!battle) return;
+  if (lastVisualStats) {
+    const notices = [];
+    let kind = "defeat";
+    if (battle.defeated > lastVisualStats.defeated) {
+      notices.push("击退 +" + (battle.defeated - lastVisualStats.defeated));
+    }
+    if (battle.collectedShards > lastVisualStats.shards) {
+      notices.push("拾取碎片 +" + (battle.collectedShards - lastVisualStats.shards));
+      const conversion = (count) => Math.min(SORTIE.rewards.maxShardStones,
+        Math.floor(count / SORTIE.rewards.shardsPerStone));
+      const earned = conversion(battle.collectedShards) - conversion(lastVisualStats.shards);
+      if (earned > 0) notices.push("兑换灵石 +" + earned);
+      kind = "loot";
+    }
+    if (battle.hero.hp < lastVisualStats.hp) {
+      notices.push("受击 生命 -" + (lastVisualStats.hp - battle.hero.hp));
+      kind = "hurt";
+    }
+    if (notices.length) {
+      eventText.textContent = notices.join(" · ");
+      eventText.dataset.kind = kind;
+      feedbackUntilTick = battle.tick + SORTIE.ticksPerSecond * 2;
+    }
+  }
+  lastVisualStats = {
+    hp: battle.hero.hp, shards: battle.collectedShards, defeated: battle.defeated,
+  };
+  eventText.hidden = battle.tick >= feedbackUntilTick || !eventText.textContent;
   health.textContent = "生命 " + battle.hero.hp + "/" + SORTIE.player.hp;
   const remainingTicks = Math.max(0, DURATION_TICKS - battle.tick);
   const secondsLeft = Math.ceil(remainingTicks / SORTIE.ticksPerSecond);
   remaining.textContent = "剩余 " + secondsLeft + " 秒";
+  goalText.textContent = battle.skillChoicePending ?
+    "时间已冻结 · 选择战技后继续" :
+    "目标：撑到 0 秒" + (battle.skillId ? " · " + powerName(battle.skillId) + "已生效" :
+      " · " + SORTIE.skills.choiceSeconds + " 秒时觉醒战技");
   timebar.setAttribute("aria-valuenow", String(secondsLeft));
   timebar.setAttribute("aria-valuetext", "剩余 " + secondsLeft + " 秒");
   timeFill.style.width = (remainingTicks / DURATION_TICKS * 100).toFixed(2) + "%";
@@ -368,6 +421,8 @@ function endBattle() {
   skillOverlay.hidden = true;
   retreatOverlay.hidden = true;
   results.hidden = false;
+  gains.hidden = true;
+  gains.replaceChildren();
   app.querySelector("[data-sortie-outcome]").textContent = battle.outcome === "won" ?
     "结界稳住了！" : battle.outcome === "retreated" ? "谨慎撤离雾谷" : "分身撤离 · 试炼失败";
   app.querySelector("[data-sortie-summary]").textContent =
@@ -392,14 +447,37 @@ function endBattle() {
       "（生存 " + reward.baseStones + " + 拾取兑换 " + reward.shardStones +
       "），经验 +" + reward.experience + "，救援准备 +" + reward.progress + "。";
     rewardText.dataset.stones = String(reward.stones);
+    const items = [
+      ["本场灵石", "+" + reward.stones],
+      ["经验", "+" + reward.experience],
+      ["救援准备", "+" + reward.progress],
+      ["拾取碎片", String(reward.collectedShards)],
+    ];
+    gains.replaceChildren(...items.map(([label, value]) => {
+      const item = document.createElement("div");
+      const heading = document.createElement("small");
+      const amount = document.createElement("strong");
+      heading.textContent = label;
+      amount.textContent = value;
+      item.append(heading, amount);
+      return item;
+    }));
+    gains.hidden = false;
     const report = receipt.worlds.map((world) => worldLine(world) +
       "；本日资源 " + (world.resourceDelta >= 0 ? "+" : "") + world.resourceDelta +
       "、经验 " + (world.xpDelta >= 0 ? "+" : "") + world.xpDelta +
       "、准备 " + (world.pDelta >= 0 ? "+" : "") + world.pDelta +
       "、风险 " + (world.dDelta >= 0 ? "+" : "") + world.dDelta +
       "；主要行动：" + (world.actionId || "未执行")).join("｜");
-    worldReport.textContent = "第 " + receipt.day + " 日结算 → 第 " +
-      receipt.nextDay + " 日：" + report;
+    worldReport.replaceChildren();
+    const heading = document.createElement("strong");
+    heading.textContent = "第 " + receipt.day + " 日结算 → 第 " + receipt.nextDay + " 日";
+    worldReport.append(heading);
+    for (const line of report.split("｜")) {
+      const item = document.createElement("p");
+      item.textContent = line;
+      worldReport.append(item);
+    }
     worldReport.dataset.day = String(receipt.nextDay);
   });
 }
@@ -414,6 +492,8 @@ function loop(now) {
   });
   drawStats();
   if (battle.skillChoicePending) {
+    choiceState.textContent = "战斗时间已冻结 · " + remaining.textContent +
+      "。选定战技后计时才会继续。";
     phase = "choice";
     resetMovement();
     skillOverlay.hidden = false;
@@ -479,6 +559,10 @@ function launchBattle() {
   pauseButton.textContent = "暂停";
   pauseButton.setAttribute("aria-pressed", "false");
   pauseOverlay.hidden = true;
+  lastVisualStats = null;
+  feedbackUntilTick = -1;
+  eventText.hidden = true;
+  eventText.textContent = "";
   drawStats();
   frameId = requestAnimationFrame(loop);
 }
