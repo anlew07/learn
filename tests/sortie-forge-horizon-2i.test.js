@@ -1,3 +1,5 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { SORTIE } from "../src/config/sortie-data.js";
 import {
@@ -5,6 +7,8 @@ import {
   runForgeHorizonExperiment,
   summarizeForgeHorizonPairs,
 } from "../scripts/sortie-forge-horizon-2i.mjs";
+
+const execFileAsync = promisify(execFile);
 
 const battle = (won, defeated = 10) => ({
   won,
@@ -109,8 +113,18 @@ describe("2I-C authoritative forge six-sortie horizon", () => {
     }
   }, 120_000);
 
-  it("runs 40 paired seeds across all dangers, skills and routes to sortie six", () => {
-    const report = runForgeHorizonExperiment(40, 6);
+  it("runs 40 paired seeds across all dangers, skills and routes to sortie six", async () => {
+    // A separate process keeps Vitest's RPC loop responsive while its 2H-C
+    // regression suite simultaneously runs another full 40-seed matrix.
+    const script = new URL("../scripts/sortie-forge-horizon-2i.mjs", import.meta.url).pathname;
+    const { stdout } = await execFileAsync(process.execPath, [script, "--seeds=40"], {
+      maxBuffer: 1024 * 1024,
+      timeout: 600_000,
+    });
+    const prefix = "FORGE_HORIZON_2I_JSON=";
+    const line = stdout.split("\n").find((value) => value.startsWith(prefix));
+    expect(line).toBeDefined();
+    const report = JSON.parse(line.slice(prefix.length));
     expect(report.metadata.pairs).toBe(720);
     expect(report.overall[0].built).toBe(518);
     expect(report.overall[0].matched).toBe(518);
