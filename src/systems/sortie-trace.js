@@ -1,6 +1,7 @@
 import { createSortie, stepSortie, chooseSortieSkill, retreatSortie, DURATION_TICKS } from "./sortie-sim.js";
 
 export const MAX_TRACE_ACTIONS = DURATION_TICKS + 2;
+const SORTIE_MISSION_IDS = ["safe", "salvage"];
 
 /** A deterministic identity tied to this run/day; no UI-supplied reward numbers. */
 export function sortieIdentity(run) {
@@ -15,14 +16,17 @@ export function sortieSeed(run) {
  * Re-evaluate each fixed movement tick from a new battlefield and the recorded
  * one-time skill choice/retreat. Invalid traces never reach the world engine.
  */
-export function replaySortieTrace(seed, danger, actions, forgeLevel = 0) {
+export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe") {
   if (!Array.isArray(actions) || actions.length < 1 || actions.length > MAX_TRACE_ACTIONS) {
     return { ok: false, error: "出击记录长度不合法" };
   }
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
     return { ok: false, error: "护灵剑台状态不合法" };
   }
-  const battle = createSortie(seed, danger, forgeLevel);
+  if (!SORTIE_MISSION_IDS.includes(missionId)) {
+    return { ok: false, error: "出击任务不合法" };
+  }
+  const battle = createSortie(seed, danger, forgeLevel, missionId);
   let moveCount = 0;
   for (const action of actions) {
     if (!Array.isArray(action) || !["tick", "skill", "retreat"].includes(action[0])) {

@@ -532,6 +532,17 @@ const MultiworldEngine = (function () {
    * Caller may display the receipt only after persisting the returned state.
    * Both same-ID and different-operation-ID replay are idempotent.
    */
+  function sortieMissionFromCamp(s){
+    var selection=s.sortieCamp?.missionSelection;
+    // Pre-2L archives have no mission receipt: preserve original safe sorties.
+    if(selection===undefined||selection===null)return "safe";
+    if(!selection||typeof selection!=="object"||Array.isArray(selection)||
+      !SORTIE.mission.options.includes(selection.missionId)||
+      selection.day!==s.day||typeof selection.operationId!=="string"||
+      !/^[A-Za-z0-9:_/.-]{1,128}$/.test(selection.operationId))return null;
+    return selection.missionId;
+  }
+
   function settleSortie(s,request){
     if(!s||!request||typeof request.sortieId!=="string"||
       !Array.isArray(request.actions))return {ok:false,error:"出击结算参数无效"};
@@ -551,7 +562,10 @@ const MultiworldEngine = (function () {
     var forgeLevel=s.sortieCamp?.forgeLevel??0;
     if(!Number.isInteger(forgeLevel)||forgeLevel<0||forgeLevel>SORTIE.forge.maxLevel)
       return {ok:false,error:"护灵剑台状态不合法"};
-    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel);
+    var missionId=sortieMissionFromCamp(s);
+    if(missionId===null||(request.missionId!==undefined&&request.missionId!==missionId))
+      return {ok:false,error:"出击任务记录不匹配"};
+    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId);
     if(!verified.ok)return {ok:false,error:verified.error};
     var reward=previewSortieRewards(verified.battle);
     if(!reward)return {ok:false,error:"战斗未完成"};
@@ -576,6 +590,7 @@ const MultiworldEngine = (function () {
     });
     var receipt={
       sortieId:request.sortieId,day:s.day,nextDay:next.day,
+      missionId:missionId,objectiveStones:reward.objectiveStones,
       battle:reward,
       worlds:changes,
       newLogs:next.logs.slice(s.logs.length).map(function(entry){return {...entry};})
