@@ -10,10 +10,8 @@ const sizes = [
 ];
 
 async function snapshot(page, size, stage) {
-  await page.screenshot({
-    path: folder + "/sortie-2j-" + size.width + "x" + size.height + "-" + stage + ".png",
-    animations: "disabled",
-  });
+  const filename = `sortie-2j-${size.width}x${size.height}-${stage}.png`;
+  await page.screenshot({ path: folder + "/" + filename, animations: "disabled" });
 }
 
 async function tapVisible(page, selector, height) {
@@ -22,23 +20,35 @@ async function tapVisible(page, selector, height) {
   expect(rect).not.toBeNull();
   expect(rect.x).toBeGreaterThanOrEqual(0);
   expect(rect.y).toBeGreaterThanOrEqual(0);
-  expect(rect.x + rect.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
+  const viewport = page.viewportSize();
+  expect(rect.x + rect.width).toBeLessThanOrEqual(viewport.width + 1);
   expect(rect.y + rect.height).toBeLessThanOrEqual(height + 1);
   const point = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
-  expect(
-    await page.evaluate(
-      ({ x, y, selector }) => Boolean(document.elementFromPoint(x, y)?.closest(selector)),
-      { ...point, selector },
-    ),
-  ).toBe(true);
+  const hit = await page.evaluate(
+    ({ x, y, selector }) =>
+      Boolean(document.elementFromPoint(x, y)?.closest(selector)),
+    { ...point, selector },
+  );
+  expect(hit).toBe(true);
   await page.touchscreen.tap(point.x, point.y);
+}
+
+async function textIs(page, selector, content) {
+  await expect(page.locator(selector)).toContainText(content);
+}
+
+async function attrIs(page, selector, attribute, value) {
+  await expect(page.locator(selector)).toHaveAttribute(attribute, value);
 }
 
 async function archives(page) {
   return page.evaluate(async () => {
-    const { sortieRepository } = await import("/src/services/sortie-persistence.js");
-    const { saveRepository } = await import("/src/services/persistence.js");
-    return { sortie: await sortieRepository.load(), formal: await saveRepository.load() };
+    const sortie = await import("/src/services/sortie-persistence.js");
+    const formal = await import("/src/services/persistence.js");
+    return {
+      sortie: await sortie.sortieRepository.load(),
+      formal: await formal.saveRepository.load(),
+    };
   });
 }
 
@@ -49,16 +59,18 @@ for (const size of sizes) {
     await page.setViewportSize(size);
     await page.goto("/?mode=sortie");
     await page.evaluate(async () => {
-      const { sortieRepository } = await import("/src/services/sortie-persistence.js");
-      const { createSortieArchive } = await import("/src/systems/sortie-session.js");
-      await sortieRepository.enqueueSave(createSortieArchive("forge-e2e"));
+      const persistence = await import("/src/services/sortie-persistence.js");
+      const session = await import("/src/systems/sortie-session.js");
+      await persistence.sortieRepository.enqueueSave(
+        session.createSortieArchive("forge-e2e"),
+      );
     });
     await page.reload();
     await expect(page.locator(".sortie-objective")).toContainText("坚持 75 秒");
     await expect(page.locator(".sortie-intro-tip")).toContainText("第 25 秒自动暂停");
     await expect(page.locator(".sortie-intro-tip")).toContainText("3 片兑换 1 灵石");
-    await expect(page.locator("[data-sortie-entry-growth]")).toContainText("6 灵石");
-    await expect(page.locator("[data-sortie-session-notice]")).toContainText("独立试验档");
+    await textIs(page, "[data-sortie-entry-growth]", "6 灵石");
+    await textIs(page, "[data-sortie-session-notice]", "独立试验档");
     await snapshot(page, size, "camp-objective");
     await tapVisible(page, "[data-start-sortie]", size.height);
     const canvas = page.locator("[data-sortie-canvas]");
@@ -66,14 +78,20 @@ for (const size of sizes) {
     await expect(page.locator("[data-sortie-goal]")).toContainText("撑到 0 秒");
     await expect(page.locator("[data-sortie-time]")).toContainText("剩余 75 秒");
     await expect(canvas).toHaveAttribute("data-weapon-damage", "1");
-    await expect(page.locator("[data-sortie-timebar]")).toHaveAttribute("aria-valuenow", "75");
-    const viewport = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-      joystick: document.querySelector("[data-sortie-joystick]").getBoundingClientRect().toJSON(),
-      actions: document.querySelector(".sortie-actions").getBoundingClientRect().toJSON(),
-      canvas: document.querySelector("[data-sortie-canvas]").getBoundingClientRect().toJSON(),
-    }));
+    await attrIs(page, "[data-sortie-timebar]", "aria-valuenow", "75");
+    const viewport = await page.evaluate(() => {
+      const bounds = (selector) => {
+        const element = document.querySelector(selector);
+        return element.getBoundingClientRect().toJSON();
+      };
+      return {
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+        joystick: bounds("[data-sortie-joystick]"),
+        actions: bounds(".sortie-actions"),
+        canvas: bounds("[data-sortie-canvas]"),
+      };
+    });
     expect(viewport.width).toBeLessThanOrEqual(size.width + 1);
     expect(viewport.height).toBeLessThanOrEqual(size.height + 1);
     expect(viewport.joystick.right).toBeLessThan(viewport.actions.left);
@@ -92,12 +110,17 @@ for (const size of sizes) {
       window.__sortieFeedback2J = [];
       let previous = "";
       const observe = () => {
-        if (notice.hidden || !notice.textContent || notice.textContent === previous) return;
+        if (notice.hidden || !notice.textContent || notice.textContent === previous) {
+          return;
+        }
         previous = notice.textContent;
         window.__sortieFeedback2J.push(previous);
       };
       new MutationObserver(observe).observe(notice, {
-        attributes: true, childList: true, characterData: true, subtree: true,
+        attributes: true,
+        childList: true,
+        characterData: true,
+        subtree: true,
       });
     });
     await page.clock.runFor(25_700);
@@ -129,8 +152,8 @@ for (const size of sizes) {
       await page.clock.runFor(5000);
       await page.keyboard.up(direction);
     }
-    await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "won");
-    await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute("data-day", "2");
+    await attrIs(page, "[data-sortie-results]", "data-result", "won");
+    await attrIs(page, "[data-sortie-world-report]", "data-day", "2");
     await expect(page.locator("[data-sortie-world-report] p")).toHaveCount(2);
     await expect(page.locator("[data-sortie-gains]")).toBeVisible();
     const saved = await archives(page);
@@ -143,26 +166,25 @@ for (const size of sizes) {
     if (reward.shardStones > 0) {
       expect(messages.some((msg) => msg.includes("兑换灵石 +"))).toBe(true);
     }
-    if (reward.weaponDamage !== 1) throw new Error("First sortie weapon damage unexpectedly changed");
-    await expect(page.locator("[data-sortie-gains]")).toContainText("+" + reward.stones);
-    await expect(page.locator("[data-sortie-gains]")).toContainText("+" + reward.experience);
-    await expect(page.locator("[data-sortie-reward-preview]")).toContainText(
-      "拾取碎片 " + reward.collectedShards,
-    );
-    await expect(page.locator("[data-sortie-reward-preview]")).toContainText("灵石 " + reward.stones);
+    expect(reward.weaponDamage).toBe(1);
+    await textIs(page, "[data-sortie-gains]", "+" + reward.stones);
+    await textIs(page, "[data-sortie-gains]", "+" + reward.experience);
+    await textIs(page, "[data-sortie-reward-preview]", "拾取碎片 " + reward.collectedShards);
+    await textIs(page, "[data-sortie-reward-preview]", "灵石 " + reward.stones);
     await snapshot(page, size, "settlement-resources");
     await tapVisible(page, "[data-sortie-retry]", size.height);
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
     await expect(page.locator("[data-sortie-build]")).toBeEnabled();
     await page.locator("[data-sortie-build]").scrollIntoViewIfNeeded();
     await tapVisible(page, "[data-sortie-build]", size.height);
-    await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
-    await expect(page.locator("[data-sortie-entry-growth]")).toContainText("1 → 2");
+    await attrIs(page, "[data-sortie-forge]", "data-level", "1");
+    await textIs(page, "[data-sortie-entry-growth]", "1 → 2");
     const built = await archives(page);
-    expect(built.sortie.run.worlds[0].resource).toBe(saved.sortie.run.worlds[0].resource - 6);
+    const beforeStones = saved.sortie.run.worlds[0].resource;
+    expect(built.sortie.run.worlds[0].resource).toBe(beforeStones - 6);
     await snapshot(page, size, "forge-growth");
     await page.reload();
-    await expect(page.locator("[data-sortie-entry-growth]")).toContainText("1 → 2");
+    await textIs(page, "[data-sortie-entry-growth]", "1 → 2");
     await expect(page.locator("[data-sortie-build]")).toBeHidden();
     await tapVisible(page, "[data-start-sortie]", size.height);
     await expect(canvas).toHaveAttribute("data-weapon-damage", "2");
@@ -175,9 +197,9 @@ for (const size of sizes) {
     await expect(confirm).toBeHidden();
     await tapVisible(page, "[data-sortie-retreat]", size.height);
     await tapVisible(page, "[data-sortie-confirm-yes]", size.height);
-    await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "retreated");
-    await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute("data-day", "3");
-    await expect(page.locator("[data-sortie-reward-preview]")).toContainText("生存 0");
+    await attrIs(page, "[data-sortie-results]", "data-result", "retreated");
+    await attrIs(page, "[data-sortie-world-report]", "data-day", "3");
+    await textIs(page, "[data-sortie-reward-preview]", "生存 0");
     const next = await archives(page);
     expect(Object.keys(next.sortie.run.sortieLedger)).toHaveLength(2);
     expect(next.sortie.run.sortieCamp.forgeLevel).toBe(1);
@@ -186,7 +208,7 @@ for (const size of sizes) {
     await snapshot(page, size, "retreat-settlement");
     await page.reload();
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 3 日");
-    await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
+    await attrIs(page, "[data-sortie-forge]", "data-level", "1");
   });
 }
 
@@ -198,7 +220,7 @@ test("2J-D interrupted sortie is not silently rewarded", async ({ page }) => {
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
   await page.reload();
   await expect(page.locator("[data-sortie-intro]")).toBeVisible();
-  await expect(page.locator("[data-sortie-session-notice]")).toContainText("未完成提交");
+  await textIs(page, "[data-sortie-session-notice]", "未完成提交");
   const saved = await archives(page);
   expect(saved.sortie.run.day).toBe(1);
   expect(saved.sortie.lastReceipt).toBeNull();
