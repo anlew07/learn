@@ -9,6 +9,7 @@ import {
   createSortieArchive, recoverSortieArchive,
   prepareSortieArchive, settleSortieArchive,
   previewSortieForge, buildSortieForge,
+  previewSortieCampAllocation, selectSortieCampMission,
 } from "./systems/sortie-session.js";
 
 const skillHints = {
@@ -40,8 +41,20 @@ app.innerHTML = [
     ' 秒自动暂停选择战技。靠近金色碎片可拾取，' +
     SORTIE.rewards.shardsPerStone + ' 片兑换 1 灵石（最多兑换 ' +
     SORTIE.rewards.maxShardStones + ' 灵石）。</p>',
-  '<p class="sortie-entry-growth" data-sortie-entry-growth>出击获得灵石，可投入护灵剑台强化下一场灵刃。</p>',
-  '<button class="sortie-cta" data-start-sortie>▶ 出击雾谷</button>',
+  '<p class="sortie-entry-growth" data-sortie-entry-growth>先看实际资源，再决定保留还是修剑台。</p>',
+  '<section class="sortie-2l-missions" aria-label="出击任务选择">',
+  '<strong>本场任务 · 先选择风险</strong>',
+  '<p data-sortie-safe-mission>稳妥巡护：撑满 75 秒，生存奖励 3 石；普通碎片最多换 2 石。</p>',
+  '<button type="button" data-sortie-mission-safe>选择稳妥巡护 · 无额外任务费</button>',
+  '<p class="sortie-2l-unavailable">险地回收（尚未接通）：需主动接触回收点并面对真实守卫。失败/撤离不领任务奖金；当前不可接取，也不发额外灵石。</p>',
+  '</section>',
+  '<section class="sortie-2l-allocation" aria-label="营地资源抉择">',
+  '<strong>营地资金安排</strong><p data-sortie-budget>正在读取资源与费用……</p>',
+  '<p data-sortie-keep-preview>保留全部灵石，不增加当前风险和额外收益。</p>',
+  '<p data-sortie-prepare-preview>一次性回收信标：尚未启用，不能扣费。</p>',
+  '<p class="sortie-2l-unavailable">回收信标为独立影子实验，不会出现在正式可购买按钮中。</p>',
+  '</section>',
+  '<button class="sortie-cta" data-start-sortie>▶ 保留当前灵石 · 稳妥出击</button>',
   '<div class="sortie-camp" data-sortie-camp>',
   '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span>',
   '<p data-sortie-last-receipt>尚无已提交的出击回执</p></div>',
@@ -114,6 +127,10 @@ const eventText = app.querySelector("[data-sortie-feedback]");
 const choiceState = app.querySelector("[data-sortie-choice-state]");
 const gains = app.querySelector("[data-sortie-gains]");
 const entryGrowth = app.querySelector("[data-sortie-entry-growth]");
+const campBudget = app.querySelector("[data-sortie-budget]");
+const keepPreview = app.querySelector("[data-sortie-keep-preview]");
+const prepPreview = app.querySelector("[data-sortie-prepare-preview]");
+const missionSafeButton = app.querySelector("[data-sortie-mission-safe]");
 const powerText = app.querySelector("[data-sortie-power]");
 const skillOverlay = app.querySelector("[data-sortie-choice]");
 const retreatOverlay = app.querySelector("[data-sortie-confirm]");
@@ -185,28 +202,46 @@ function updateCamp() {
       (prior.worlds[1]?.actionId || "无") +
       "。重新打开页面不会重复结算。" : "尚无已提交的出击回执";
     const forge = previewSortieForge(archive);
+    const allocation = previewSortieCampAllocation(archive);
+    const chosenSafe = archive.run.sortieCamp?.missionSelection?.day === run.day;
+    campBudget.textContent = "第 " + allocation.day + " 日 · 可用 " + allocation.stones +
+      " 灵石；剑台费用 " + allocation.forge.cost + "，付款后剩余 " +
+      allocation.forge.remaining + "。";
+    keepPreview.textContent = "保留资源：费用 0，剩余 " + allocation.keep.remaining +
+      " 灵石；下场按原规则出击，无额外增益或惩罚。";
+    prepPreview.textContent = "候选回收信标：费用 " + allocation.beacon.cost +
+      "，若购买将剩余 " + allocation.beacon.remaining + "；" +
+      allocation.beacon.effect + "。当前禁止付款：" + allocation.beacon.reason + "。";
+    missionSafeButton.textContent = chosenSafe ?
+      "已选稳妥巡护 · 记录已存档" : "选择稳妥巡护（可选，默认即此任务）";
+    missionSafeButton.disabled = !allocation.safe.available || !session.isOwner ||
+      writeBusy || Boolean(writeError) || Boolean(restoreError) || phase !== "intro";
+    startButton.textContent = "▶ 保留 " + allocation.keep.remaining + " 灵石 · 稳妥出击";
     forgePanel.dataset.level = String(forge.level);
     entryGrowth.textContent = forge.built ?
       "剑台已修复：下一场灵刃伤害 1 → " + forge.nextDamage + "；留意实际击退与资源回报。" :
-      "出击获得灵石，可选择投入 " + forge.cost + " 灵石修复剑台，或保留资源。";
+      "首场后通常已能负担 " + forge.cost + " 石剑台；请在保留资源与真实付费强化之间选择。";
     forgePanel.querySelector("strong").textContent = forge.built ?
       "护灵剑台 · 已修复" : "护灵剑台 · 待修复";
     forgeState.textContent = forge.built ? "剑台已点亮 · 灵刃基础伤害 1 → 2" :
       "残破的基座 · 完成首场出击后可投入灵石";
     forgePreview.textContent = forge.built ?
       "下次出击灵刃伤害 " + forge.nextDamage +
-      "（妖狼从 2 次命中缩短到 1 次）" :
+      "（妖狼从 2 次命中缩短到 1 次）；是否增加灵石以实际战果为准" :
       (forge.available ?
         "投入 " + forge.cost + " 灵石后剩余 " + forge.remaining +
-        "；灵刃伤害 1 → " + forge.nextDamage :
+        "；灵刃伤害 1 → " + forge.nextDamage +
+        "，但到第六场的既有试验尚未证明回本" :
         (forge.reason || "首次出击后解锁") + "；修复费用 " + forge.cost + " 灵石");
     forgeButton.hidden = forge.built || !archive.lastReceipt;
     forgeButton.disabled = !forge.available || !session.isOwner ||
       writeBusy || Boolean(writeError) || Boolean(restoreError) || phase !== "intro";
     const oldBattle = archive.run.sortieCamp?.buildReceipt?.beforeStats;
     if (oldBattle && prior && prior.day > oldBattle.day) {
-      lastReceipt.textContent += "｜首场击退 " + oldBattle.defeated +
-        " → 本场击退 " + prior.battle.defeated + "（实测，不保证必然增长）";
+      lastReceipt.textContent += "｜付费后本场武器伤害 " +
+        prior.battle.weaponDamage + "；修复前击退 " + oldBattle.defeated +
+        " → 本场击退 " + prior.battle.defeated + "；本场实得灵石 +" +
+        prior.battle.stones + "（非回本保证）";
     }
   }
   const ready = session.isOwner && Boolean(archive?.run.active) &&
@@ -573,6 +608,26 @@ function launchBattle() {
 }
 
 app.querySelector("[data-start-sortie]").addEventListener("click", start);
+missionSafeButton.addEventListener("click", () => {
+  if (!archive || !session.isOwner || writeBusy || writeError || restoreError ||
+    phase !== "intro") return;
+  const operationId = "mission:safe:" + archive.run.id + ":day-" + archive.run.day;
+  const selected = selectSortieCampMission(archive, "safe", operationId);
+  if (!selected.ok) {
+    recoveryMessage = selected.error;
+    updateCamp();
+    return;
+  }
+  if (selected.replayed) {
+    recoveryMessage = "稳妥巡护已记录，重复选择未产生费用或新奖励。";
+    updateCamp();
+    return;
+  }
+  void persistCandidate(selected.archive, () => {
+    recoveryMessage = "本日稳妥巡护已存档；额外任务奖金不可用。";
+    updateCamp();
+  });
+});
 forgeButton.addEventListener("click", () => {
   if (!archive || !session.isOwner || writeBusy || writeError || restoreError ||
     phase !== "intro") return;
