@@ -35,7 +35,7 @@ app.innerHTML = [
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
   '<p class="sortie-objective"><strong>本场目标：坚持 ' + SORTIE.durationSeconds +
-    ' 秒</strong><span>左侧摇杆躲避敌人，灵刃自动攻击；倒计时归零即完成试炼。</span></p>',
+    ' 秒</strong><span>拖动移动躲避灵息弹，灵刃自动攻击；倒计时归零即完成试炼。</span></p>',
   '<p class="sortie-intro-tip">第 ' + SORTIE.skills.choiceSeconds +
     ' 秒自动暂停选择战技。靠近金色碎片可拾取，' +
     SORTIE.rewards.shardsPerStone + ' 片兑换 1 灵石（最多兑换 ' +
