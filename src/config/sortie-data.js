@@ -12,16 +12,6 @@ export const SORTIE = Object.freeze({
     defeatedPerShard: 3, pickupRadius: 28, shardsPerStone: 3, maxShardStones: 2,
     baseStonesOnWin: 3, experienceOnWin: 2, progressOnWin: 2,
   }),
-  mission: Object.freeze({
-    options: Object.freeze(["safe", "salvage"]),
-    rewardStones: 2,
-    appearsAtSeconds: 10,
-    expiresAtSeconds: 65,
-    x: 258, y: 92,
-    collectRadius: 26,
-    collectSeconds: 1,
-    guardTriggerRadius: 102,
-  }),
   skills: Object.freeze({
     choiceSeconds: 25, options: Object.freeze(["thunder", "rune"]),
     thunderCooldownSeconds: 4, thunderRange: 136, thunderTargets: 1, thunderDamage: 1,
@@ -36,4 +26,14 @@ export const SORTIE = Object.freeze({
     Object.freeze({ start: 25, count: 8, duration: 25, kinds: ["wolf", "shade"] }),
     Object.freeze({ start: 50, count: 10, duration: 25, kinds: ["wolf", "shade"] }),
   ]),
+  mission: Object.freeze({
+    options: Object.freeze(["safe", "salvage"]),
+    rewardStones: 2,
+    appearsAtSeconds: 10,
+    expiresAtSeconds: 65,
+    x: 258, y: 92,
+    collectRadius: 26,
+    collectSeconds: 1,
+    guardTriggerRadius: 102,
+  }),
 });
