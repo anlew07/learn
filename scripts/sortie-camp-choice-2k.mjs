@@ -337,7 +337,13 @@ function campaign(env, seedIndex, danger, skill, route, maxSorties) {
 
 // prettier-ignore
 function summarize(pairs, mode, sortie) {
-  const cohort = pairs.filter((pair) => pair.branches[mode].invested);
+  // A later forge purchase must not be counted as an investment at earlier horizons.
+  const cohort = pairs.filter((pair) => {
+    const branch = pair.branches[mode];
+    const stageAtHorizon = branch.stages[sortie - 1];
+    return branch.invested && branch.spentDay !== null &&
+      (stageAtHorizon?.day ?? branch.finalDay) > branch.spentDay;
+  });
   const comparable = cohort.filter((pair) =>
     pair.branches.hold.stages[sortie - 1] &&
     pair.branches[mode].stages[sortie - 1]);
