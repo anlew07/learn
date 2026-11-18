@@ -242,7 +242,7 @@ function updateCamp() {
     forgePanel.dataset.level = String(forge.level);
     entryGrowth.textContent = forge.built ?
       "剑台已修复：下一场灵刃伤害 1 → " + forge.nextDamage + "；留意实际击退与资源回报。" :
-      "首场后通常已能负担 " + forge.cost + " 石剑台；请在保留资源与真实付费强化之间选择。";
+      "首场后通常已能负担修复剑台的 " + forge.cost + " 灵石；请在保留资源与真实付费强化之间选择。";
     forgePanel.querySelector("strong").textContent = forge.built ?
       "护灵剑台 · 已修复" : "护灵剑台 · 待修复";
     forgeState.textContent = forge.built ? "剑台已点亮 · 灵刃基础伤害 1 → 2" :
