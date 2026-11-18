@@ -12,6 +12,9 @@ export function previewSortieRewards(battle) {
     Math.floor(collectedShards / rewards.shardsPerStone));
   const won = battle.outcome === "won";
   const baseStones = won ? rewards.baseStonesOnWin : 0;
+  const mission = battle.mission;
+  const missionBonusStones = won && mission?.id === "salvage" &&
+    mission.status === "completed" ? SORTIE.mission.rewardStones : 0;
   return Object.freeze({
     outcome: battle.outcome,
     survivedSeconds: battle.tick / SORTIE.ticksPerSecond,
@@ -20,8 +23,14 @@ export function previewSortieRewards(battle) {
     collectedShards,
     uncollectedShards: battle.drops.length,
     shardStones,
+    objectiveStones: missionBonusStones,
     baseStones,
-    stones: baseStones + shardStones,
+    missionId: mission?.id ?? "safe",
+    objectiveStatus: mission?.status ?? "inactive",
+    objectiveCompletedTick: mission?.completedTick ?? null,
+    objectiveGuardCount: mission?.guardCount ?? 0,
+    objectiveGuardDamage: mission?.guardDamage ?? 0,
+    stones: baseStones + shardStones + missionBonusStones,
     experience: won ? rewards.experienceOnWin : 0,
     progress: won ? rewards.progressOnWin : 0,
   });

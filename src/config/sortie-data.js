@@ -26,4 +26,14 @@ export const SORTIE = Object.freeze({
     Object.freeze({ start: 25, count: 8, duration: 25, kinds: ["wolf", "shade"] }),
     Object.freeze({ start: 50, count: 10, duration: 25, kinds: ["wolf", "shade"] }),
   ]),
+  mission: Object.freeze({
+    options: Object.freeze(["safe", "salvage"]),
+    rewardStones: 2,
+    appearsAtSeconds: 10,
+    expiresAtSeconds: 65,
+    x: 258, y: 92,
+    collectRadius: 26,
+    collectSeconds: 1,
+    guardTriggerRadius: 102,
+  }),
 });
