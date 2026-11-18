@@ -182,15 +182,16 @@ describe("2J-A thunder: threat removal and actual offensive value", () => {
     );
   });
 
-  it("runs 40 seeds of authoritative dual-world settlement and threat diagnostics", () => {
-    const result = runThunderThreatExperiment(40);
-    expect(result.authoritativeSorties).toBe(2160);
-    expect(result.instrumentedFirstSorties).toBe(720);
+  it("runs deterministic CI smoke or explicit full 40-seed paired threat verification", () => {
+    const seedCount = process.env.SORTIE_THUNDER_FULL === "1" ? 40 : 8;
+    const result = runThunderThreatExperiment(seedCount);
+    expect(result.authoritativeSorties).toBe(seedCount * 54);
+    expect(result.instrumentedFirstSorties).toBe(seedCount * 18);
     expect(result.authoritative).toHaveLength(36);
     expect(result.diagnostic).toHaveLength(18);
     for (const row of result.diagnostic) {
       expect(row.wins).toBeGreaterThanOrEqual(0);
-      expect(row.wins).toBeLessThanOrEqual(40);
+      expect(row.wins).toBeLessThanOrEqual(seedCount);
       expect(row.strikesBeforeContact).toBeLessThanOrEqual(row.strikes);
     }
     console.log("THUNDER_THREAT_2J_JSON=" + JSON.stringify(result));
