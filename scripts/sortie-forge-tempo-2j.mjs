@@ -6,14 +6,19 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { SORTIE } from "../src/config/sortie-data.js";
 import { createSortie, stepSortie } from "../src/systems/sortie-sim.js";
+// prettier-ignore
 import { assertForgeRoiExperiment, runForgeRoiExperiment } from "./sortie-forge-roi-2h.mjs";
 import { summarizeForgeHorizonPairs } from "./sortie-forge-horizon-2i.mjs";
 
 const execFileAsync = promisify(execFile);
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// prettier-ignore
 const OLD_FORGE = "forge: Object.freeze({ cost: 6, maxLevel: 1, damageBonus: 1 })";
+// prettier-ignore
 const NEW_FORGE = "forge: Object.freeze({ cost: 6, maxLevel: 1, damageBonus: 1, attackCooldownSeconds: 0.63 })";
+// prettier-ignore
 const OLD_FIRE = "battle.nextShotTick = battle.tick + Math.round(SORTIE.weapon.cooldownSeconds * SORTIE.ticksPerSecond);";
+// prettier-ignore
 const NEW_FIRE =
   "const cooldownSeconds = battle.forgeLevel > 0 ? " +
   "SORTIE.forge.attackCooldownSeconds : SORTIE.weapon.cooldownSeconds;\n" +
@@ -35,8 +40,10 @@ export function makeTempoVariant(configSource, simSource) {
   };
 }
 
+// prettier-ignore
 const mean = (values) =>
   values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+// prettier-ignore
 const round = (value) => (value === null ? null : Math.round(value * 1000) / 1000);
 
 // prettier-ignore
@@ -92,6 +99,7 @@ export function inspectTempoVariant(seedCount = 40) {
   };
 }
 
+// prettier-ignore
 function compareReports(baseline, candidate) {
   const overall = baseline.overall.map((oldRow, index) => {
     const row = candidate.overall[index];
@@ -156,6 +164,7 @@ async function inspectCopy(root, seedCount) {
 }
 
 /** Run two full, genuinely settled campaigns in an isolated temporary tree. */
+// prettier-ignore
 export async function runForgeTempoExperiment(seedCount = 40) {
   if (!Number.isInteger(seedCount) || seedCount < 1 || seedCount > 100)
     throw new Error("seedCount must be 1..100");
