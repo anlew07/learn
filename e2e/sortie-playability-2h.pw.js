@@ -134,8 +134,19 @@ for (const size of screens) {
     // Audit before Playwright auto-scrolls the return button into view.
     const returnBox = await page.locator("[data-sortie-retry]").boundingBox();
     const returnBottom = returnBox.y + returnBox.height;
-
-    await page.locator("[data-sortie-retry]").click();
+    const returnCenter = {
+      x: returnBox.x + returnBox.width / 2,
+      y: returnBox.y + returnBox.height / 2,
+    };
+    expect(returnBox.y).toBeGreaterThanOrEqual(0);
+    expect(returnBottom).toBeLessThanOrEqual(size.height + 1);
+    const isTouchReachable = await page.evaluate(
+      ({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest("[data-sortie-retry]")),
+      returnCenter,
+    );
+    expect(isTouchReachable).toBe(true);
+    // Direct CSS-viewport touch: unlike locator.click(), this does not auto-scroll.
+    await page.touchscreen.tap(returnCenter.x, returnCenter.y);
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
     await expect(page.locator("[data-sortie-build]")).toBeEnabled();
     await expect(page.locator("[data-sortie-forge-preview]")).toContainText("投入 6 灵石");
@@ -152,6 +163,7 @@ for (const size of screens) {
 
     await startBattle(page);
     await expect(page.locator("[data-sortie-canvas]")).toHaveAttribute("data-weapon-damage", "2");
+    await capture(page, size, "second-battle");
     await page.locator("[data-sortie-pause]").click();
     await expect(page.locator("[data-sortie-paused]")).toBeVisible();
     const pausedAt = await page.locator("[data-sortie-canvas]").getAttribute("data-ticks");
@@ -168,6 +180,7 @@ for (const size of screens) {
     await confirm.locator("[data-sortie-confirm-yes]").click();
     await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "retreated");
     await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute("data-day", "3");
+    await capture(page, size, "second-settlement");
     await expect(page.locator("[data-sortie-reward-preview]")).toContainText("生存 0");
     const second = await readArchives(page);
     expect(second.prototype.run.day).toBe(3);
@@ -179,8 +192,7 @@ for (const size of screens) {
     await page.reload();
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 3 日");
     await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
-    // The return action must be visible without Playwright auto-scrolling on every viewport.
-    expect(returnBottom).toBeLessThanOrEqual(size.height + 1);
+    // Direct touch reached the camp without any programmatic scroll or click.
   });
 }
 
@@ -211,6 +223,15 @@ test("2H-D 320px settlement return action remains fully visible", async ({ page 
   await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "won");
   const button = await page.locator("[data-sortie-retry]").boundingBox();
   expect(button.y + button.height).toBeLessThanOrEqual(568 + 1);
+  const center = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
+  expect(
+    await page.evaluate(
+      ({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest("[data-sortie-retry]")),
+      center,
+    ),
+  ).toBe(true);
+  await page.touchscreen.tap(center.x, center.y);
+  await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
 });
 
 for (const size of screens) {
