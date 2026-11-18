@@ -37,6 +37,13 @@ a { color: #f3d898; }
 .sortie-intro h1, .sortie-results h1 { margin: 0; font-size: 25px; }
 .sortie-intro p, .sortie-results p { max-width: 320px; color: #d4d6bd; line-height: 1.6; }
 .sortie-intro .sortie-warning { font-size: 12px; color: #f0c78e; }
+.sortie-objective {
+  width: min(420px, 100%); margin: 0; padding: 10px 12px;
+  border: 2px solid #ac9b5b; background: #354b38; text-align: left;
+}
+.sortie-objective strong { display: block; color: #ffe09a; font-size: 16px; }
+.sortie-objective span { display: block; margin-top: 3px; font-size: 12px; line-height: 1.45; }
+.sortie-intro-tip, .sortie-entry-growth { font-size: 12px; line-height: 1.5; }
 .sortie-cta { width: min(290px, 100%); }
 .sortie-play { position: relative; display: flex; flex: 1; flex-direction: column; min-height: 0; }
 .sortie-stats {
@@ -52,6 +59,11 @@ a { color: #f3d898; }
 .sortie-timebar span {
   display: block; width: 100%; height: 4px; border: 1px solid #d7c184;
   background: #e2b852; transition: width 100ms linear;
+}
+.sortie-goal {
+  flex: 0 0 auto; padding: 4px 10px; min-height: 23px;
+  font-size: 11px; font-weight: 800; color: #f1dcaa;
+  background: #24392d; border-bottom: 1px solid #60785a; text-align: center;
 }
 .sortie-lootbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -71,6 +83,15 @@ a { color: #f3d898; }
   height: 100%; width: auto; max-width: 100%;
   object-fit: contain; image-rendering: pixelated;
 }
+.sortie-combat-feedback {
+  position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+  z-index: 1; max-width: calc(100% - 18px); padding: 6px 9px;
+  background: #2e563c; border: 2px solid #e1c780; color: #fff2ba;
+  font-size: 12px; font-weight: 800; text-align: center; pointer-events: none;
+  white-space: normal; box-shadow: 2px 2px 0 #12251c;
+}
+.sortie-combat-feedback[data-kind="hurt"] { background: #633c32; border-color: #ffb08b; }
+.sortie-combat-feedback[data-kind="loot"] { background: #544a27; border-color: #f5da88; }
 .sortie-pause-overlay {
   position: absolute; inset: 0; z-index: 2; display: flex;
   flex-direction: column; align-items: center; justify-content: center; gap: 8px;
@@ -119,6 +140,12 @@ a { color: #f3d898; }
   width: 100%; margin: 7px 0; padding: 10px; background: #465e49;
 }
 .sortie-skill-card span { font-size: 12px; line-height: 1.4; font-weight: 500; color: #faf0c7; }
+.sortie-choice-state {
+  padding: 7px; background: #42583d; border-left: 3px solid #ebd493;
+  color: #fff0b8 !important; font-weight: 800;
+}
+.sortie-choice-hint { margin: 0 0 6px !important; }
+.sortie-skill-card { min-height: 54px; }
 .sortie-default { margin-top: 7px; width: 100%; background: #374934; font-size: 12px; }
 .sortie-confirm-buttons { display: flex; gap: 6px; }
 .sortie-confirm-buttons button { flex: 1; font-size: 12px; }
@@ -134,6 +161,13 @@ a { color: #f3d898; }
 .sortie-results-content > p { margin: 0; }
 .sortie-results .sortie-world-report { overflow-wrap: anywhere; }
 .sortie-results > [data-sortie-retry] { flex: 0 0 auto; }
+.sortie-result-gains {
+  width: min(100%, 380px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px; text-align: left;
+}
+.sortie-result-gains > div { border: 2px solid #8d9768; background: #3b523d; padding: 7px 9px; }
+.sortie-result-gains small { display: block; color: #d5dbc1; font-size: 11px; }
+.sortie-result-gains strong { color: #ffdc91; font-size: 21px; }
 .sortie-results [data-sortie-reward-preview] {
   border: 2px solid #91875b; padding: 12px; color: #ffe0a4; font-weight: 800;
 }
@@ -156,6 +190,8 @@ a { color: #f3d898; }
   color: #efcf92; padding: 4px 12px; min-height: 27px;
 }
 .sortie-session-notice button { margin-left: 8px; font-size: 12px; min-height: 35px; }
+.sortie-world-report p { margin: 5px 0 0; overflow-wrap: anywhere; }
+.sortie-world-report strong { color: #f3dda0; }
 .sortie-world-report {
   max-width: 380px; font-size: 12px; line-height: 1.7;
   padding: 10px; border: 2px solid #77845a; background: #30443a;
@@ -200,4 +236,10 @@ a { color: #f3d898; }
 @media (max-height: 620px) {
   .sortie-intro { justify-content: flex-start; padding: 9px 12px; gap: 7px; }
   .sortie-forge { padding: 7px; gap: 5px; }
+  .sortie-objective { padding: 6px 9px; }
+  .sortie-objective strong { font-size: 14px; }
+  .sortie-goal { font-size: 10px; min-height: 21px; padding: 3px 7px; }
+  .sortie-modal { padding: 10px; }
+  .sortie-skill-card { padding: 7px; margin: 5px 0; }
+  .sortie-results .sortie-result-gains > div { padding: 5px 7px; }
 }
