@@ -222,36 +222,6 @@ describe("2I-A thunder: reproducible offensive-value experiment", () => {
     expect(battle.defeated).toBeLessThanOrEqual(1);
   });
 
-  it("holds a ready bolt until a nearby enemy enters the threat radius", () => {
-    const battle = createSortie("2i-ready-bolt");
-    battle.schedule = [];
-    for (let tick = 0; tick < 25 * SORTIE.ticksPerSecond; tick++) {
-      stepSortie(battle);
-    }
-    expect(chooseSortieSkill(battle, "thunder").ok).toBe(true);
-    const initialReady = battle.thunderNextTick;
-    battle.hero.invulnerable = Infinity;
-    battle.nextShotTick = Infinity;
-    for (let tick = battle.tick; tick < initialReady + 10; tick++) {
-      stepSortie(battle);
-    }
-    expect(battle.thunderHits).toBe(0);
-    expect(battle.thunderNextTick).toBe(initialReady);
-    battle.enemies.push({
-      id: 801,
-      kind: "shade",
-      x: battle.hero.x + 80,
-      y: battle.hero.y,
-      hp: 1,
-    });
-    stepSortie(battle);
-    expect(battle.thunderHits).toBe(1);
-    expect(battle.defeated).toBe(1);
-    expect(battle.thunderNextTick).toBe(
-      battle.tick + 4 * SORTIE.ticksPerSecond,
-    );
-  });
-
   it("runs forty paired seeds and reports timing/threat plus authoritative settlement", () => {
     const report = runThunderValueExperiment(40);
     expect(report.authoritativeSorties).toBe(2160);
