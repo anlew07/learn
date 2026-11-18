@@ -15,7 +15,8 @@ import {
  * Both engines are in-memory ESM copies; production battle rules remain intact.
  * The extra shardTrace property is an observation, not an input or save record.
  */
-const DROP_MARKER = "battle.drops.push({ id: enemy.id, x: enemy.x, y: enemy.y });";
+const DROP_MARKER =
+  "battle.drops.push({ id: enemy.id, x: enemy.x, y: enemy.y });";
 export const CANDIDATE = "drift-to-living-enemy-48px";
 export const PICKUP_RADIUS = 28;
 
@@ -57,7 +58,9 @@ export async function loadShardRiskEngine(candidate = false) {
     source.split(DROP_MARKER).length !== 2 ||
     !source.includes('"../config/sortie-data.js"')
   ) {
-    throw new Error("2J-B baseline changed: re-review the authorized spawn/collection logic");
+    throw new Error(
+      "2J-B baseline changed: re-review the authorized spawn/collection logic",
+    );
   }
   const traced = source.replace(
     DROP_MARKER,
@@ -120,7 +123,9 @@ export function playShardRiskBattle(
     throw new Error("2J-B fixed-tick battle did not finish");
   }
   const reward = previewSortieRewards(battle);
-  const eligible = Math.floor(battle.defeated / SORTIE.rewards.defeatedPerShard);
+  const eligible = Math.floor(
+    battle.defeated / SORTIE.rewards.defeatedPerShard,
+  );
   const spawned = battle.shardTrace?.length ?? 0;
   if (
     spawned !== eligible ||
@@ -157,7 +162,9 @@ function mean(samples, key) {
 }
 
 function summarize(samples) {
-  const feedback = samples.filter((sample) => sample.firstPickupSeconds !== null);
+  const feedback = samples.filter(
+    (sample) => sample.firstPickupSeconds !== null,
+  );
   return {
     wins: samples.reduce((sum, sample) => sum + sample.won, 0),
     hp: mean(samples, "hp"),
@@ -170,7 +177,9 @@ function summarize(samples) {
     nearDropHurt: mean(samples, "nearDropHurt"),
     contestedShards: mean(samples, "contestedShards"),
     feedbackCount: feedback.length,
-    firstPickupSeconds: feedback.length ? mean(feedback, "firstPickupSeconds") : null,
+    firstPickupSeconds: feedback.length
+      ? mean(feedback, "firstPickupSeconds")
+      : null,
   };
 }
 
@@ -181,7 +190,8 @@ function spatialSummary(traces) {
     player40: traces.filter((event) => event.heroDistance <= 40).length,
     enemy60: traces.filter((event) => event.enemyDistance <= 60).length,
     enemy96: traces.filter((event) => event.enemyDistance <= 96).length,
-    hostileShot60: traces.filter((event) => event.hostileShotDistance <= 60).length,
+    hostileShot60: traces.filter((event) => event.hostileShotDistance <= 60)
+      .length,
   };
 }
 
@@ -308,7 +318,10 @@ function show(result) {
   );
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   const raw = process.argv.find((arg) => arg.startsWith("--seeds="));
   const seeds = raw ? Number(raw.split("=")[1]) : 40;
   const forgeLevel = process.argv.includes("--forge=1") ? 1 : 0;
