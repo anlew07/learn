@@ -5,6 +5,16 @@ import { SORTIE } from "../config/sortie-data.js";
 
 export const SORTIE_ARCHIVE_VERSION = "sortie-world-v1";
 
+/**
+ * Feature gate supplied by 2L-A's task engine. On the untouched 2G branch,
+ * it is false, so no unverified salvage purchase or play can be initiated.
+ */
+export function hasAuthoritativeSortieMission() {
+  return SORTIE.mission?.options?.includes("salvage") === true &&
+    Number.isInteger(SORTIE.mission.rewardStones) &&
+    SORTIE.mission.rewardStones > 0;
+}
+
 /** Candidate only: no production purchase until 2L-A verifies guarded salvage. */
 export const SORTIE_2L_BEACON = Object.freeze({
   id: "salvage-beacon",
@@ -53,14 +63,15 @@ export function assertSortieArchive(archive) {
   }
   const mission = camp?.missionSelection;
   if (mission != null &&
-    (mission.missionId !== "safe" ||
+    (!["safe", ...(hasAuthoritativeSortieMission() ? ["salvage"] : [])].includes(mission.missionId) ||
       !Number.isInteger(mission.day) || mission.day < 1 ||
       mission.day > archive.run.day ||
       typeof mission.operationId !== "string" ||
       !/^[A-Za-z0-9:_/.-]{1,128}$/.test(mission.operationId))) {
     throw new Error("营地任务选择记录无效");
   }
-  if (archive.pending?.missionId != null && archive.pending.missionId !== "safe") {
+  if (archive.pending?.missionId != null &&
+    !["safe", ...(hasAuthoritativeSortieMission() ? ["salvage"] : [])].includes(archive.pending.missionId)) {
     throw new Error("险地任务权威重放尚未接入");
   }
   if (archive.pending !== null &&
@@ -113,10 +124,18 @@ export function prepareSortieArchive(archive) {
   const sortieId = sortieIdentity(run);
   // The legacy archive defaults to safe; only A's future verified replay can
   // enable salvage. A UI-provided mission string cannot grant reward stones.
-  const selected = run.sortieCamp?.missionSelection;
+  const next = snapshot(archive);
+  const selected = next.run.sortieCamp?.missionSelection;
+  // A's Engine rejects a previous-day selection. Missing selection means
+  // default safe; do not accidentally re-submit yesterday's salvage choice.
+  if (selected && selected.day !== run.day) {
+    delete next.run.sortieCamp.missionSelection;
+  }
+  const activeChoice = next.run.sortieCamp?.missionSelection;
+  const missionId = activeChoice?.missionId ?? "safe";
   const pending = {
-    sortieId, day: run.day, missionId: "safe",
-    missionOperationId: selected?.day === run.day ? selected.operationId : null,
+    sortieId, day: run.day, missionId,
+    missionOperationId: activeChoice?.operationId ?? null,
     preparationId: null,
   };
   return {
@@ -124,8 +143,10 @@ export function prepareSortieArchive(archive) {
     seed: sortieSeed(run),
     danger: ling.d,
     forgeLevel: run.sortieCamp?.forgeLevel ?? 0,
+    missionId,
+    preparationId: null,
     sortieId,
-    archive: { ...snapshot(archive), pending },
+    archive: { ...next, pending },
   };
 }
 
@@ -221,7 +242,7 @@ export function selectSortieCampMission(archive, missionId, operationId) {
     !/^[A-Za-z0-9:_/.-]{1,128}$/.test(operationId)) {
     return { ok: false, error: "任务选择操作 ID 不合法" };
   }
-  if (missionId === "salvage") {
+  if (missionId === "salvage" && !hasAuthoritativeSortieMission()) {
     return { ok: false, error: "险地回收的战场实体与权威回放接口尚未接通，不能接取" };
   }
   const world = Engine.byId(archive.run, "lingzai");
@@ -248,14 +269,20 @@ export function previewSortieCampAllocation(archive) {
   const world = Engine.byId(archive.run, "lingzai");
   const ready = archive.run.active && world?.status === "running" &&
     !world.retreat && !archive.pending;
+  const selected = archive.run.sortieCamp?.missionSelection;
+  const chosen = selected?.day === archive.run.day ? selected.missionId : "safe";
+  const missionReady = hasAuthoritativeSortieMission();
   return {
     day: archive.run.day,
     stones: forge.stones,
-    missionId: "safe",
+    missionId: chosen,
+    missionLocked: selected?.day === archive.run.day,
     safe: { available: Boolean(ready), cost: 0, remaining: forge.stones },
     salvage: {
-      available: false, cost: 0,
-      reason: "需先接入真实守卫、可接触回收点与权威任务回执",
+      available: Boolean(ready && missionReady),
+      cost: 0, rewardCandidate: SORTIE.mission?.rewardStones ?? 0,
+      reason: missionReady ? "需在回收点停留并成功完成 75 秒才能领任务奖金" :
+        "需先接入真实守卫、可接触回收点与权威任务回执",
     },
     keep: { cost: 0, remaining: forge.stones, available: Boolean(ready) },
     forge: {
