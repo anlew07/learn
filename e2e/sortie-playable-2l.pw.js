@@ -373,7 +373,7 @@ for (const viewport of viewports) {
     await page.clock.install({ time: new Date("2026-11-18T00:00:00Z") });
     await page.setViewportSize(viewport);
     await page.goto("/?mode=sortie");
-    await page.evaluate(async (width) => {
+    await page.evaluate(async () => {
       const { sortieRepository } = await import("/src/services/sortie-persistence.js");
       const { createSortieArchive } = await import("/src/systems/sortie-session.js");
       await sortieRepository.enqueueSave(createSortieArchive("2l-c-guard-touch-430"));
