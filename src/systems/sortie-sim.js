@@ -26,8 +26,8 @@ function makeSchedule(danger) {
     }));
   });
 }
-export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe") {
-  const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100); if (!SORTIE.mission.options.includes(missionId)) throw new Error("Invalid sortie mission");
+export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0) {
+  const missionId = typeof arguments[3] === "string" ? arguments[3] : "safe"; const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100); if (!SORTIE.mission.options.includes(missionId)) throw new Error("Invalid sortie mission");
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 ||
     forgeLevel > SORTIE.forge.maxLevel) throw new Error("Invalid forge level");
   return {
@@ -274,7 +274,7 @@ export function advanceSortie(battle, input, deltaMs, onTick) {
   return battle;
 }
 
-function createRecoveryMission(missionId) {
+export function createRecoveryMission(missionId) {
   return {
     id: missionId,
     status: missionId === "salvage" ? "scheduled" : "inactive",

@@ -551,7 +551,7 @@ const MultiworldEngine = (function () {
     var forgeLevel=s.sortieCamp?.forgeLevel??0;
     if(!Number.isInteger(forgeLevel)||forgeLevel<0||forgeLevel>SORTIE.forge.maxLevel)
       return {ok:false,error:"护灵剑台状态不合法"};
-    var missionId=sortieMissionFromCamp(s);if(missionId===null||(request.missionId!==undefined&&request.missionId!==missionId))return {ok:false,error:"Invalid sortie mission receipt"};var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId);
+    var missionId=sortieMissionFromCamp(s);if(missionId===null||(request.missionId!==undefined&&request.missionId!==missionId))return {ok:false,error:"Invalid sortie mission receipt"};var verified;if(missionId==="safe"){var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel);}else{verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId);}
     if(!verified.ok)return {ok:false,error:verified.error};
     var reward=previewSortieRewards(verified.battle);
     if(!reward)return {ok:false,error:"战斗未完成"};
