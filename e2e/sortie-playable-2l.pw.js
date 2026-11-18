@@ -90,6 +90,8 @@ async function tapCampWithFingerScroll(page, selector) {
       return;
     }
     await swipeCamp(page);
+    // Let the compositor finish the finger-scroll; tapping during inertia is cancelled on 320px.
+    await page.waitForTimeout(380);
   }
   await tapStrict(page, selector);
 }
@@ -388,8 +390,12 @@ test("2L-C completed physical salvage still pays no objective bonus on finger re
     await thumbToRecoverySite(page);
     await page.clock.runFor(3_000);
     await expect(page.locator("[data-sortie-goal]")).toContainText("回收完成");
+    // Human hand-off from a held joystick: the browser suppresses a near-simultaneous touch click.
+    await page.waitForTimeout(380);
     await tapStrict(page, "[data-sortie-retreat]");
+    await expect(page.locator("[data-sortie-confirm]")).toBeVisible();
     await tapStrict(page, "[data-sortie-confirm-yes]");
+    await expect(page.locator("[data-sortie-results]")).toBeVisible();
     const final = await archives(page);
     expect(final.prototype.lastReceipt.battle.objectiveStones).toBe(0);
     expect(final.prototype.lastReceipt.battle.baseStones).toBe(0);
