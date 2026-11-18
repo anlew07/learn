@@ -11,7 +11,10 @@ const sizes = [
 
 async function snapshot(page, size, stage) {
   const filename = `sortie-2j-${size.width}x${size.height}-${stage}.png`;
-  await page.screenshot({ path: folder + "/" + filename, animations: "disabled" });
+  await page.screenshot({
+    path: folder + "/" + filename,
+    animations: "disabled",
+  });
 }
 
 async function tapVisible(page, selector, height) {
@@ -110,9 +113,8 @@ for (const size of sizes) {
       window.__sortieFeedback2J = [];
       let previous = "";
       const observe = () => {
-        if (notice.hidden || !notice.textContent || notice.textContent === previous) {
-          return;
-        }
+        const changed = !notice.hidden && notice.textContent !== previous;
+        if (!changed || !notice.textContent) return;
         previous = notice.textContent;
         window.__sortieFeedback2J.push(previous);
       };
@@ -126,17 +128,21 @@ for (const size of sizes) {
     await page.clock.runFor(25_700);
     const dialog = page.getByRole("dialog", { name: "战技觉醒 · 选择一项" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator("[data-sortie-choice-state]")).toContainText("战斗时间已冻结");
+    const choiceState = dialog.locator("[data-sortie-choice-state]");
+    await expect(choiceState).toContainText("战斗时间已冻结");
     await expect(dialog).toContainText("偏进攻选驭雷符");
-    await expect(dialog.locator('[data-sortie-skill="thunder"]')).toContainText("主动进攻");
-    await expect(dialog.locator('[data-sortie-skill="rune"]')).toContainText("防护生存");
-    await expect(dialog.locator('[data-sortie-skill="thunder"]')).toContainText("每4秒");
-    await expect(dialog.locator('[data-sortie-skill="rune"]')).toContainText("每25秒");
+    const thunder = dialog.locator('[data-sortie-skill="thunder"]');
+    const rune = dialog.locator('[data-sortie-skill="rune"]');
+    await expect(thunder).toContainText("主动进攻");
+    await expect(rune).toContainText("防护生存");
+    await expect(thunder).toContainText("每4秒");
+    await expect(rune).toContainText("每25秒");
     const frozen = await canvas.getAttribute("data-ticks");
     expect(Number(frozen)).toBe(1500);
     const dialogRect = await dialog.boundingBox();
     expect(dialogRect.y).toBeGreaterThanOrEqual(0);
-    expect(dialogRect.y + dialogRect.height).toBeLessThanOrEqual(size.height + 1);
+    const modalBottom = dialogRect.y + dialogRect.height;
+    expect(modalBottom).toBeLessThanOrEqual(size.height + 1);
     await snapshot(page, size, "choice-frozen");
     await page.clock.runFor(1500);
     expect(await canvas.getAttribute("data-ticks")).toBe(frozen);
@@ -169,7 +175,8 @@ for (const size of sizes) {
     expect(reward.weaponDamage).toBe(1);
     await textIs(page, "[data-sortie-gains]", "+" + reward.stones);
     await textIs(page, "[data-sortie-gains]", "+" + reward.experience);
-    await textIs(page, "[data-sortie-reward-preview]", "拾取碎片 " + reward.collectedShards);
+    const pickupCaption = "拾取碎片 " + reward.collectedShards;
+    await textIs(page, "[data-sortie-reward-preview]", pickupCaption);
     await textIs(page, "[data-sortie-reward-preview]", "灵石 " + reward.stones);
     await snapshot(page, size, "settlement-resources");
     await tapVisible(page, "[data-sortie-retry]", size.height);
