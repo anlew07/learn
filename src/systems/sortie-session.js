@@ -70,9 +70,13 @@ export function assertSortieArchive(archive) {
       !/^[A-Za-z0-9:_/.-]{1,128}$/.test(mission.operationId))) {
     throw new Error("营地任务选择记录无效");
   }
-  if (archive.pending?.missionId != null &&
-    !["safe", ...(hasAuthoritativeSortieMission() ? ["salvage"] : [])].includes(archive.pending.missionId)) {
-    throw new Error("险地任务权威重放尚未接入");
+  if (archive.pending?.missionId != null) {
+    const selectedMission = mission?.day === archive.run.day ?
+      mission.missionId : "safe";
+    if (!["safe", ...(hasAuthoritativeSortieMission() ? ["salvage"] : [])].includes(archive.pending.missionId) ||
+      archive.pending.missionId !== selectedMission) {
+      throw new Error("未完成出击任务与营地已选任务不匹配");
+    }
   }
   if (archive.pending !== null &&
     (!archive.pending || typeof archive.pending.sortieId !== "string" ||
