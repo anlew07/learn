@@ -46,7 +46,8 @@ app.innerHTML = [
   '<strong>本场任务 · 先选择风险</strong>',
   '<p data-sortie-safe-mission>稳妥巡护：撑满 75 秒，生存奖励 3 石；普通碎片最多换 2 石。</p>',
   '<button type="button" data-sortie-mission-safe>选择稳妥巡护 · 无额外任务费</button>',
-  '<p class="sortie-2l-unavailable">险地回收（尚未接通）：需主动接触回收点并面对真实守卫。失败/撤离不领任务奖金；当前不可接取，也不发额外灵石。</p>',
+  '<p class="sortie-2l-unavailable" data-sortie-salvage-description>险地回收：需接触回收点、面对守卫，未完成或撤离不领额外奖金；当前未接通。</p>',
+  '<button type="button" data-sortie-mission-salvage disabled>险地回收 · 等待权威战场接入</button>',
   '</section>',
   '<section class="sortie-2l-allocation" aria-label="营地资源抉择">',
   '<strong>营地资金安排</strong><p data-sortie-budget>正在读取资源与费用……</p>',
@@ -131,6 +132,8 @@ const campBudget = app.querySelector("[data-sortie-budget]");
 const keepPreview = app.querySelector("[data-sortie-keep-preview]");
 const prepPreview = app.querySelector("[data-sortie-prepare-preview]");
 const missionSafeButton = app.querySelector("[data-sortie-mission-safe]");
+const missionSalvageButton = app.querySelector("[data-sortie-mission-salvage]");
+const salvageDescription = app.querySelector("[data-sortie-salvage-description]");
 const powerText = app.querySelector("[data-sortie-power]");
 const skillOverlay = app.querySelector("[data-sortie-choice]");
 const retreatOverlay = app.querySelector("[data-sortie-confirm]");
@@ -161,6 +164,7 @@ let actions = [];
 let savedSeed = null;
 let savedDanger = 0;
 let savedForgeLevel = 0;
+let savedMissionId = "safe";
 let sessionMode = "starting";
 let writeBusy = false;
 let pendingWrite = null;
@@ -203,20 +207,38 @@ function updateCamp() {
       "。重新打开页面不会重复结算。" : "尚无已提交的出击回执";
     const forge = previewSortieForge(archive);
     const allocation = previewSortieCampAllocation(archive);
-    const chosenSafe = archive.run.sortieCamp?.missionSelection?.day === run.day;
+    const selected = archive.run.sortieCamp?.missionSelection;
+    const selectedToday = selected?.day === run.day;
+    const chosenMission = selectedToday ? selected.missionId : "safe";
     campBudget.textContent = "第 " + allocation.day + " 日 · 可用 " + allocation.stones +
-      " 灵石；剑台费用 " + allocation.forge.cost + "，付款后剩余 " +
-      allocation.forge.remaining + "。";
+      " 灵石；剑台费用 " + allocation.forge.cost + "，" +
+      (allocation.forge.stones >= allocation.forge.cost ?
+        "付费后剩余 " + allocation.forge.remaining : "目前还差 " +
+          (allocation.forge.cost - allocation.forge.stones)) + "。";
     keepPreview.textContent = "保留资源：费用 0，剩余 " + allocation.keep.remaining +
       " 灵石；下场按原规则出击，无额外增益或惩罚。";
     prepPreview.textContent = "候选回收信标：费用 " + allocation.beacon.cost +
       "，若购买将剩余 " + allocation.beacon.remaining + "；" +
       allocation.beacon.effect + "。当前禁止付款：" + allocation.beacon.reason + "。";
-    missionSafeButton.textContent = chosenSafe ?
-      "已选稳妥巡护 · 记录已存档" : "选择稳妥巡护（可选，默认即此任务）";
-    missionSafeButton.disabled = !allocation.safe.available || !session.isOwner ||
-      writeBusy || Boolean(writeError) || Boolean(restoreError) || phase !== "intro";
-    startButton.textContent = "▶ 保留 " + allocation.keep.remaining + " 灵石 · 稳妥出击";
+    missionSafeButton.textContent = selectedToday && chosenMission === "safe" ?
+      "已选稳妥巡护 · 记录已存档" : "选择稳妥巡护（默认）";
+    missionSalvageButton.textContent = selectedToday && chosenMission === "salvage" ?
+      "已选险地回收 · 记录已存档" : allocation.salvage.available ?
+        "选择险地回收 · 候选成功奖金 +" + allocation.salvage.rewardCandidate :
+        "险地回收 · 等待权威战场接入";
+    salvageDescription.textContent = allocation.salvage.available ?
+      "险地回收有额外守卫；走到地图中的回收点停留 1 秒并活到 75 秒，才有候选奖金 +" +
+        allocation.salvage.rewardCandidate + " 灵石；未完成、失败或撤离不领任务奖金。" :
+      "险地回收：需额外走位、接触实物回收点并面对守卫。" +
+        allocation.salvage.reason + "；本分支不可启动该任务，也不发额外灵石。";
+    const locked = !session.isOwner || writeBusy || Boolean(writeError) ||
+      Boolean(restoreError) || phase !== "intro";
+    missionSafeButton.disabled = !allocation.safe.available || locked ||
+      (selectedToday && chosenMission !== "safe");
+    missionSalvageButton.disabled = !allocation.salvage.available || locked ||
+      (selectedToday && chosenMission !== "salvage");
+    startButton.textContent = "▶ 保留 " + allocation.keep.remaining + " 灵石 · " +
+      (chosenMission === "salvage" ? "险地回收" : "稳妥出击");
     forgePanel.dataset.level = String(forge.level);
     entryGrowth.textContent = forge.built ?
       "剑台已修复：下一场灵刃伤害 1 → " + forge.nextDamage + "；留意实际击退与资源回报。" :
@@ -427,9 +449,17 @@ function drawStats() {
   const remainingTicks = Math.max(0, DURATION_TICKS - battle.tick);
   const secondsLeft = Math.ceil(remainingTicks / SORTIE.ticksPerSecond);
   remaining.textContent = "剩余 " + secondsLeft + " 秒";
+  const mission = battle.mission;
+  const missionHint = mission?.id === "salvage" ?
+    mission.status === "completed" ? " · 回收完成，仍需活到 75 秒" :
+      mission.status === "expired" ? " · 回收点已过期，不得任务奖金" :
+        mission.status === "scheduled" ? " · 10 秒出现险地目标" :
+          " · 回收点：" + Math.floor(mission.progressTicks /
+            mission.requiredTicks * 100) + "%，提防守卫" : "";
   goalText.textContent = battle.skillChoicePending ?
     "时间已冻结 · 选择战技后继续" :
-    "目标：撑到 0 秒" + (battle.skillId ? " · " + powerName(battle.skillId) + "已生效" :
+    "目标：撑到 0 秒" + missionHint + (battle.skillId ?
+      " · " + powerName(battle.skillId) + "已生效" :
       " · " + SORTIE.skills.choiceSeconds + " 秒时觉醒战技");
   timebar.setAttribute("aria-valuenow", String(secondsLeft));
   timebar.setAttribute("aria-valuetext", "剩余 " + secondsLeft + " 秒");
@@ -450,6 +480,38 @@ function drawStats() {
   canvas.dataset.heroY = battle.hero.y.toFixed(2);
   canvas.dataset.ticks = String(battle.tick);
   drawSortie(canvas, battle);
+  drawCampMissionTarget(canvas, battle);
+}
+
+/** A 2L-A mission entity is rendered from real tick state, never a fake pickup. */
+function drawCampMissionTarget(targetCanvas, state) {
+  const mission = state?.mission;
+  if (!mission || mission.id !== "salvage" ||
+    !["available", "completed"].includes(mission.status)) return;
+  const ctx = targetCanvas.getContext("2d");
+  if (!ctx) return;
+  const completed = mission.status === "completed";
+  ctx.save();
+  ctx.fillStyle = completed ? "#2e6b47" : "#9a7730";
+  ctx.strokeStyle = completed ? "#aaf1b1" : "#ffe59b";
+  ctx.lineWidth = 3;
+  ctx.fillRect(mission.x - 14, mission.y - 14, 28, 28);
+  ctx.strokeRect(mission.x - 14, mission.y - 14, 28, 28);
+  ctx.fillStyle = "#ffefbc";
+  ctx.font = "bold 10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(completed ? "已取" : "回收", mission.x, mission.y + 3);
+  if (!completed) {
+    const progress = Math.max(0, Math.min(1,
+      mission.progressTicks / mission.requiredTicks));
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#a1dfb2";
+    ctx.beginPath();
+    ctx.arc(mission.x, mission.y, 22, -Math.PI / 2,
+      -Math.PI / 2 + progress * 2 * Math.PI);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function endBattle() {
@@ -480,11 +542,17 @@ function endBattle() {
   void persistCandidate(staged.archive, () => {
     const receipt = staged.receipt;
     const reward = receipt.battle;
-    rewardText.textContent = "本场已结算：灵刃 " + reward.weaponDamage +
+    const objectiveStones = Number.isFinite(reward.objectiveStones) ?
+      reward.objectiveStones : null;
+    const missionDetail = objectiveStones === null ? "" :
+      " + 险地任务 " + objectiveStones + "（状态 " + reward.objectiveStatus +
+        "，守卫造成 " + reward.objectiveGuardDamage + " 次受击；仅真实达成且胜利才发）";
+    rewardText.textContent = "本场已权威结算：灵刃 " + reward.weaponDamage +
       " 伤害，拾取碎片 " + reward.collectedShards +
       "（未拾取 " + reward.uncollectedShards + "），灵石 " + reward.stones +
       "（生存 " + reward.baseStones + " + 拾取兑换 " + reward.shardStones +
-      "），经验 +" + reward.experience + "，救援准备 +" + reward.progress + "。";
+      missionDetail + "），经验 +" + reward.experience +
+      "，救援准备 +" + reward.progress + "。";
     rewardText.dataset.stones = String(reward.stones);
     const items = [
       ["本场灵石", "+" + reward.stones],
@@ -492,6 +560,9 @@ function endBattle() {
       ["救援准备", "+" + reward.progress],
       ["拾取碎片", String(reward.collectedShards)],
     ];
+    if (objectiveStones !== null) {
+      items.push(["回收奖金（权威）", "+" + objectiveStones]);
+    }
     gains.replaceChildren(...items.map(([label, value]) => {
       const item = document.createElement("div");
       const heading = document.createElement("small");
@@ -580,6 +651,7 @@ async function start() {
   savedSeed = prepared.seed;
   savedDanger = prepared.danger;
   savedForgeLevel = prepared.forgeLevel;
+  savedMissionId = prepared.missionId;
   await persistCandidate(prepared.archive, launchBattle);
 }
 
@@ -587,7 +659,7 @@ function launchBattle() {
   cancelAnimationFrame(frameId);
   resetMovement();
   actions = [];
-  battle = createSortie(savedSeed, savedDanger, savedForgeLevel);
+  battle = createSortie(savedSeed, savedDanger, savedForgeLevel, savedMissionId);
   phase = "battle";
   paused = false;
   lastFrame = null;
@@ -608,6 +680,26 @@ function launchBattle() {
 }
 
 app.querySelector("[data-start-sortie]").addEventListener("click", start);
+missionSalvageButton.addEventListener("click", () => {
+  if (!archive || !session.isOwner || writeBusy || writeError || restoreError ||
+    phase !== "intro") return;
+  const operationId = "mission:salvage:" + archive.run.id + ":day-" + archive.run.day;
+  const selected = selectSortieCampMission(archive, "salvage", operationId);
+  if (!selected.ok) {
+    recoveryMessage = selected.error;
+    updateCamp();
+    return;
+  }
+  if (selected.replayed) {
+    recoveryMessage = "本日险地回收已记录，不重复接取或领奖金。";
+    updateCamp();
+    return;
+  }
+  void persistCandidate(selected.archive, () => {
+    recoveryMessage = "险地回收已保存；只有接触目标并胜利才可能获得任务奖金。";
+    updateCamp();
+  });
+});
 missionSafeButton.addEventListener("click", () => {
   if (!archive || !session.isOwner || writeBusy || writeError || restoreError ||
     phase !== "intro") return;
