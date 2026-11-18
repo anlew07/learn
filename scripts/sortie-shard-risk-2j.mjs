@@ -1,8 +1,14 @@
+// prettier-ignore
 import { readFile } from "node:fs/promises";
+// prettier-ignore
 import { resolve } from "node:path";
+// prettier-ignore
 import { fileURLToPath } from "node:url";
+// prettier-ignore
 import { SORTIE } from "../src/config/sortie-data.js";
+// prettier-ignore
 import { previewSortieRewards } from "../src/systems/sortie-rewards.js";
+// prettier-ignore
 import {
   DANGERS,
   ROUTES,
@@ -15,9 +21,12 @@ import {
  * Both engines are in-memory ESM copies; production battle rules remain intact.
  * The extra shardTrace property is an observation, not an input or save record.
  */
+// prettier-ignore
 const DROP_MARKER =
   "battle.drops.push({ id: enemy.id, x: enemy.x, y: enemy.y });";
+// prettier-ignore
 export const CANDIDATE = "drift-to-living-enemy-48px";
+// prettier-ignore
 export const PICKUP_RADIUS = 28;
 
 // prettier-ignore
