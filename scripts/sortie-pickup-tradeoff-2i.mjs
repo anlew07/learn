@@ -11,6 +11,7 @@ import { experimentInput } from "./sortie-experiment.mjs";
  * No production file, save, reward cap, or sim rule is modified.
  */
 export const RADII = Object.freeze([28, 24, 20, 16]);
+// prettier-ignore
 export const ROUTES = Object.freeze([
   "kite",
   "pickup",
@@ -21,6 +22,7 @@ export const ROUTES = Object.freeze([
 export const DANGERS = Object.freeze([0, 40, 75]);
 export const SKILLS = Object.freeze(["thunder", "rune"]);
 
+// prettier-ignore
 export async function loadRadiusEngine(radius) {
   if (!RADII.includes(radius))
     throw new Error("Unsupported pickup radius: " + radius);
@@ -52,6 +54,7 @@ export async function loadRadiusEngine(radius) {
 }
 
 /** Deterministic joystick mistakes, not synthetic injuries. */
+// prettier-ignore
 export function pickupRouteInput(battle, route) {
   if (!ROUTES.includes(route)) throw new Error("Unknown route: " + route);
   const normal = experimentInput(battle, route === "kite" ? "kite" : "pickup");
@@ -77,6 +80,7 @@ export function pickupRouteInput(battle, route) {
   return normal;
 }
 
+// prettier-ignore
 function nearestDistance(items, hero) {
   let min = Infinity;
   for (const item of items)
@@ -84,6 +88,7 @@ function nearestDistance(items, hero) {
   return min;
 }
 
+// prettier-ignore
 export function playRadiusBattle(
   engine,
   { seedIndex, danger, skill, route, forgeLevel = 0 },
@@ -147,10 +152,12 @@ export function playRadiusBattle(
   };
 }
 
+// prettier-ignore
 function aggregate(samples, key) {
   return samples.reduce((sum, sample) => sum + sample[key], 0) / samples.length;
 }
 
+// prettier-ignore
 export async function runPickupTradeoff({
   seedCount = 40,
   radii = RADII,
@@ -215,6 +222,7 @@ export async function runPickupTradeoff({
   return { seedCount, sorties: rows.length * seedCount, rows };
 }
 
+// prettier-ignore
 export function assertPickupTradeoff(result) {
   for (const row of result.rows) {
     if (
@@ -244,6 +252,7 @@ export function assertPickupTradeoff(result) {
   return true;
 }
 
+// prettier-ignore
 function parseArgs(args) {
   const seedsArg = args.find((arg) => arg.startsWith("--seeds="));
   const forgeArg = args.find((arg) => arg.startsWith("--forge="));
@@ -254,6 +263,7 @@ function parseArgs(args) {
   return { seedCount, forgeLevels: mode === "both" ? [0, 1] : [Number(mode)] };
 }
 
+// prettier-ignore
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
