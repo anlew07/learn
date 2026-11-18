@@ -42,6 +42,7 @@ app.innerHTML = [
     SORTIE.rewards.shardsPerStone + ' 片兑换 1 灵石（最多兑换 ' +
     SORTIE.rewards.maxShardStones + ' 灵石）。</p>',
   '<p class="sortie-entry-growth" data-sortie-entry-growth>先看实际资源，再决定保留还是修剑台。</p>',
+  '<button class="sortie-cta" data-start-sortie>▶ 保留当前灵石 · 稳妥出击</button>',
   '<section class="sortie-2l-missions" aria-label="出击任务选择">',
   '<strong>本场任务 · 先选择风险</strong>',
   '<p data-sortie-safe-mission>稳妥巡护：撑满 75 秒，生存奖励 3 石；普通碎片最多换 2 石。</p>',
@@ -55,7 +56,7 @@ app.innerHTML = [
   '<p data-sortie-prepare-preview>一次性回收信标：尚未启用，不能扣费。</p>',
   '<p class="sortie-2l-unavailable">回收信标为独立影子实验，不会出现在正式可购买按钮中。</p>',
   '</section>',
-  '<button class="sortie-cta" data-start-sortie>▶ 保留当前灵石 · 稳妥出击</button>',
+
   '<div class="sortie-camp" data-sortie-camp>',
   '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span>',
   '<p data-sortie-last-receipt>尚无已提交的出击回执</p></div>',
