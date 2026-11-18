@@ -204,7 +204,7 @@ export function buildSortieForge(archive, operationId) {
       weaponDamage: archive.lastReceipt.battle.weaponDamage ?? SORTIE.weapon.damage,
     },
   };
-  next.run.sortieCamp = { forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
+  next.run.sortieCamp = { ...next.run.sortieCamp, forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
   return { ok: true, archive: next, receipt };
 }
 
