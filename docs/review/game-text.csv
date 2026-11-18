@@ -431,7 +431,7 @@
 "src/sortie.js","256","静态/待复核","常规核对","""，但到第六场的既有试验尚未证明回本"" :"
 "src/sortie.js","257","动态拼接/需复原","常规核对","(forge.reason || ""首次出击后解锁"") + ""；修复费用 "" + forge.cost + "" 灵石"");"
 "src/sortie.js","263","动态拼接/需复原","常规核对","lastReceipt.textContent += ""｜付费后本场武器伤害 "" +"
-"src/sortie.js","264","动态拼接/需复原","常规核对","prior.battle.weaponDamage + ""；修复前击退 "" + oldBattle.defeated +"
+"src/sortie.js","264","动态拼接/需复原","常规核对","prior.battle.weaponDamage + ""；首场击退 "" + oldBattle.defeated +"
 "src/sortie.js","265","动态拼接/需复原","常规核对",""" → 本场击退 "" + prior.battle.defeated + ""；本场实得灵石 +"" +"
 "src/sortie.js","266","动态拼接/需复原","常规核对","prior.battle.stones + ""（非回本保证）"";"
 "src/sortie.js","276","静态/待复核","常规核对","warning.textContent = ""读取独立试验档失败或结构不兼容：已禁止写入，不覆盖旧数据。"";"
