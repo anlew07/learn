@@ -111,16 +111,16 @@ function collectFragments(battle) {
 
 function applySkillEffects(battle) {
   if (battle.skillId === "thunder" && battle.tick >= battle.thunderNextTick) {
-    // Hold a ready bolt for a nearby threat instead of spending it on empty space.
-    const threatRange = Math.min(SORTIE.skills.thunderRange, SORTIE.weapon.range * 0.75);
+    battle.thunderNextTick += Math.round(
+      SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond,
+    );
     const targets = battle.enemies
       .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
-      .filter(({ enemy, range }) => enemy.hp > 0 && range <= threatRange)
+      .filter(({ enemy, range }) => enemy.hp > 0 && range <= SORTIE.skills.thunderRange)
       .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)
       .slice(0, SORTIE.skills.thunderTargets)
       .map(({ enemy }) => enemy);
     if (targets.length) {
-      battle.thunderNextTick = battle.tick + Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
       battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
       battle.flashUntil = battle.tick + 15;
       battle.thunderHits += targets.length;
