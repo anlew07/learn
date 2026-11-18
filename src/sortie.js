@@ -261,7 +261,7 @@ function updateCamp() {
     const oldBattle = archive.run.sortieCamp?.buildReceipt?.beforeStats;
     if (oldBattle && prior && prior.day > oldBattle.day) {
       lastReceipt.textContent += "｜付费后本场武器伤害 " +
-        prior.battle.weaponDamage + "；修复前击退 " + oldBattle.defeated +
+        prior.battle.weaponDamage + "；首场击退 " + oldBattle.defeated +
         " → 本场击退 " + prior.battle.defeated + "；本场实得灵石 +" +
         prior.battle.stones + "（非回本保证）";
     }
