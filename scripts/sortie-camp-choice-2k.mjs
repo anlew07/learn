@@ -1,3 +1,4 @@
+// prettier-ignore
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,9 +9,12 @@ export const ROUTES = ["kite", "pickup", "reverse"];
 export const DANGERS = [0, 40, 75];
 export const SKILLS = ["thunder", "rune"];
 
+// prettier-ignore
 const clone = (value) => JSON.parse(JSON.stringify(value));
+// prettier-ignore
 const mean = (values) =>
   values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+// prettier-ignore
 const round = (value) => (value === null ? null : Math.round(value * 1000) / 1000);
 
 /**
@@ -19,6 +23,7 @@ const round = (value) => (value === null ? null : Math.round(value * 1000) / 100
  * simply awarding bonus HP after a production receipt would be invalid.
  * This adapter is intentionally disposable until its product value is proven.
  */
+// prettier-ignore
 export async function openCampChoiceSandbox() {
   const root = mkdtempSync(join(process.cwd(), ".sortie-camp-2k-"));
   const replace = (path, before, after) => {
@@ -104,6 +109,7 @@ export async function openCampChoiceSandbox() {
 }
 
 /** Atomic, immutable purchase on a clone of the isolated archive. */
+// prettier-ignore
 export function buyExperimentalPreparation(env, archive, operationId) {
   env.session.assertSortieArchive(archive);
   if (typeof operationId !== "string" ||
@@ -140,9 +146,12 @@ export function buyExperimentalPreparation(env, archive, operationId) {
   return { ok: true, replayed: false, archive: next, receipt };
 }
 
+// prettier-ignore
 const stock = (env, archive) => env.Engine.byId(archive.run, "lingzai").resource;
+// prettier-ignore
 const zombie = (env, archive) => env.Engine.byId(archive.run, "zombie");
 
+// prettier-ignore
 function routeInput(env, battle, route) {
   if (route !== "reverse") return env.experimentInput(battle, route);
   const input = env.experimentInput(battle, "pickup");
@@ -154,6 +163,7 @@ function routeInput(env, battle, route) {
 }
 
 /** Same prepare -> ticks -> replay -> double-world receipt as the real 2E path. */
+// prettier-ignore
 export function replayExperimentalSortie(env, archive, skill, route) {
   const ready = env.session.prepareSortieArchive(archive);
   if (!ready.ok) return { available: false, reason: ready.error };
@@ -221,6 +231,7 @@ export function replayExperimentalSortie(env, archive, skill, route) {
   };
 }
 
+// prettier-ignore
 function stage(env, result) {
   if (!result.available) return null;
   const other = zombie(env, result.archive);
@@ -236,6 +247,7 @@ function stage(env, result) {
   };
 }
 
+// prettier-ignore
 function maybeBuild(env, archive, operationId) {
   const preview = env.session.previewSortieForge(archive);
   if (!preview.available) return { archive, built: false, receipt: null };
@@ -248,6 +260,7 @@ function maybeBuild(env, archive, operationId) {
   return { archive: result.archive, built: true, receipt: result.receipt };
 }
 
+// prettier-ignore
 function campaign(env, seedIndex, danger, skill, route, maxSorties) {
   const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") +
     "-danger-" + danger;
@@ -322,6 +335,7 @@ function campaign(env, seedIndex, danger, skill, route, maxSorties) {
   return { seedIndex, danger, skill, route, firstStage, branches };
 }
 
+// prettier-ignore
 function summarize(pairs, mode, sortie) {
   const cohort = pairs.filter((pair) => pair.branches[mode].invested);
   const comparable = cohort.filter((pair) =>
@@ -380,6 +394,7 @@ function summarize(pairs, mode, sortie) {
  * All recorded receipts are from the authoritative shadow Engine.
  * Costs, battle HP and one-use consumption are not post-hoc result edits.
  */
+// prettier-ignore
 export async function runCampChoiceExperiment(seedCount = 40, maxSorties = 6) {
   if (!Number.isInteger(seedCount) || seedCount < 1 || seedCount > 80 ||
     !Number.isInteger(maxSorties) || maxSorties < 2 || maxSorties > 6) {
@@ -448,6 +463,7 @@ export async function runCampChoiceExperiment(seedCount = 40, maxSorties = 6) {
   }
 }
 
+// prettier-ignore
 if (process.argv[1]?.endsWith("sortie-camp-choice-2k.mjs")) {
   const countArg = process.argv.find((value) => value.startsWith("--seeds="));
   const horizonArg = process.argv.find((value) => value.startsWith("--sorties="));
