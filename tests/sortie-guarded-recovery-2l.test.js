@@ -107,9 +107,9 @@ describe("2L-A authority and settlement", () => {
     ]) {
       const archive = snapshot(forged);
       archive.run.sortieCamp.missionSelection = selection;
-      const next = prepareSortieArchive(archive);
-      expect(Engine.settleSortie(next.archive.run, {
-        sortieId: sortieIdentity(next.archive.run), actions: [["retreat"]],
+      expect(() => prepareSortieArchive(archive)).toThrow(/任务选择/);
+      expect(Engine.settleSortie(archive.run, {
+        sortieId: sortieIdentity(archive.run), actions: [["retreat"]],
       }).ok).toBe(false);
     }
   });
