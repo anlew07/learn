@@ -1,20 +1,29 @@
+// prettier-ignore
 import { cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+// prettier-ignore
 import { tmpdir } from "node:os";
+// prettier-ignore
 import { join, resolve } from "node:path";
+// prettier-ignore
 import { fileURLToPath, pathToFileURL } from "node:url";
+// prettier-ignore
 import Engine from "../src/engine.js";
+// prettier-ignore
 import { SORTIE } from "../src/config/sortie-data.js";
+// prettier-ignore
 import {
   createSortieArchive,
   prepareSortieArchive,
   settleSortieArchive,
 } from "../src/systems/sortie-session.js";
+// prettier-ignore
 import {
   chooseSortieSkill,
   createSortie,
   DURATION_TICKS,
   stepSortie,
 } from "../src/systems/sortie-sim.js";
+// prettier-ignore
 import {
   DANGERS,
   ROUTES,
@@ -31,17 +40,25 @@ import {
  * Only disposable source copies are patched. Both runs use the original
  * Engine.settleSortie authority and the exact same validated input trace.
  */
+// prettier-ignore
 export const CANDIDATE = "one-victory-stone-requires-contested-recovery-96px";
+// prettier-ignore
 export const THREAT_RADIUS = 96;
+// prettier-ignore
 const SIM_SHARD_FIELD = "drops: [], collectedShards: 0,";
+// prettier-ignore
 const SIM_PICKUP = "battle.collectedShards++;";
+// prettier-ignore
 const REWARD_BASE = "const baseStones = won ? rewards.baseStonesOnWin : 0;";
+// prettier-ignore
 const REWARD_RESULT = "    baseStones,";
-const clone = (value) => JSON.parse(JSON.stringify(value));
+// prettier-ignore
 const mean = (items, key) =>
   items.length ? items.reduce((sum, item) => sum + item[key], 0) / items.length : 0;
+// prettier-ignore
 const round = (value) => Math.round(value * 1000) / 1000;
 
+// prettier-ignore
 export function makeExpeditionCandidate(sim, rewards) {
   for (const [source, marker] of [
     [sim, SIM_SHARD_FIELD],
@@ -78,6 +95,7 @@ export function makeExpeditionCandidate(sim, rewards) {
 }
 
 /** Create an isolated, native-ESM clone with the SAME authoritative engine. */
+// prettier-ignore
 export async function withCandidateAuthority(callback) {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const temporary = await mkdtemp(join(tmpdir(), "sortie-2k-b-"));
@@ -102,6 +120,7 @@ export async function withCandidateAuthority(callback) {
   }
 }
 
+// prettier-ignore
 export function createExpeditionTrace(prepared, skill, route) {
   const battle = createSortie(prepared.seed, prepared.danger, prepared.forgeLevel);
   const actions = [];
@@ -139,6 +158,7 @@ export function createExpeditionTrace(prepared, skill, route) {
   return { actions, battle, firstPickup, nearPickupHurt, pickupNearEnemies };
 }
 
+// prettier-ignore
 function capture(settled, trace) {
   const world = (id) => settled.receipt.worlds.find((item) => item.id === id);
   const battle = settled.receipt.battle;
@@ -171,6 +191,7 @@ function capture(settled, trace) {
   };
 }
 
+// prettier-ignore
 function assertPaired(control, candidate, trace) {
   const physical = ["won", "hurt", "hp", "defeated", "shards", "missed", "shardStones"];
   for (const key of physical) {
@@ -198,6 +219,7 @@ function assertPaired(control, candidate, trace) {
 }
 
 /** Exactly one real, fully replay-verified two-world settlement per variant. */
+// prettier-ignore
 export function pairedExpedition({ candidateAuthority, seedIndex, danger, skill, route }) {
   const seed =
     "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") +
@@ -227,6 +249,7 @@ export function pairedExpedition({ candidateAuthority, seedIndex, danger, skill,
   return { control, candidate, trace: trace.actions, base: settledBase, trial: settledTrial };
 }
 
+// prettier-ignore
 function summary(samples) {
   const feedback = samples.filter((sample) => sample.firstPickup !== null);
   return {
@@ -255,6 +278,7 @@ function summary(samples) {
   };
 }
 
+// prettier-ignore
 export async function runExpeditionValue(seedCount = 40) {
   if (!Number.isInteger(seedCount) || seedCount < 1 || seedCount > 100) {
     throw new Error("2K-B seeds must be 1..100");
@@ -310,6 +334,7 @@ export async function runExpeditionValue(seedCount = 40) {
   });
 }
 
+// prettier-ignore
 export function assertExpeditionValue(report) {
   if (report.metadata.pairs !==
     report.metadata.seedCount * DANGERS.length * SKILLS.length * ROUTES.length ||
@@ -335,6 +360,7 @@ export function assertExpeditionValue(report) {
   return true;
 }
 
+// prettier-ignore
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const raw = process.argv.find((value) => value.startsWith("--seeds="));
   const seedCount = raw ? Number(raw.slice(8)) : 40;
