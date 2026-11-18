@@ -61,6 +61,7 @@
 
 ## 工程状态、失败历史与下一步
 
+- **运行成本与稳定性门禁**：两版 40-seed 完整权威矩阵已由基线 CI #44230068975（success）与候选 CI #44230685954（断言失败，但 2J-A 完整矩阵确实执行）记录。回退后连续两次全量 Vitest 的 **336/336 断言均通过，却触发 `[vitest-worker]: Timeout calling "onTaskUpdate"` 未处理通信超时**（#44231128200、#44231427542），故均不可宣称整套 CI 通过。为减少和既有剑台/2I 长周期矩阵的并发资源争用，日常 `npm test` 中 2J-A 使用 **8 配对种子固定回归**；`node scripts/sortie-thunder-threat-2j.mjs` 显式设置 `SORTIE_THUNDER_FULL=1`，仍执行原始 **40 seeds / 2,160 权威场 / 720 逐帧首场**，不减正式实验深度。源实验函数默认仍为 40，所有报告历史数据未改写。此为测试调度收敛，不是战斗机制更改。
 - 基线诊断（未改运行时）[#44230068975](https://github.com/anlew07/learn/actions/runs/44230068975)：**success**，包含专属测试、原权威矩阵、构建及浏览器测试。
 - 首个候选 CI [#44230395152](https://github.com/anlew07/learn/actions/runs/44230395152)：**failure**，因添加运行时代码导致审核 CSV 对应的源码行号变化。未改 CSV；后改为雷击代码区内部等行数替换。
 - 等行数候选 CI [#44230685954](https://github.com/anlew07/learn/actions/runs/44230685954)：**failure**，lint/format/text 已通过，但 Vitest **332 通过、4 失败**：既有 `sortie-rewards.test.js` / `sortie-thunder-2h.test.js` / `sortie-thunder-value-2i.test.js` 均要求原始首次触发 4 秒；`sortie-forge-horizon-2i.test.js` 中建造总数 518→519 打破固定基线断言。该候选虽然独立 2J-A 指标测试跑通，但整体回归不合格。
