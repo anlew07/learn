@@ -10,6 +10,7 @@ const viewports = [
   { width: 430, height: 932 },
 ];
 
+// prettier-ignore
 async function archives(page) {
   return page.evaluate(async () => {
     const { sortieRepository } = await import("/src/services/sortie-persistence.js");
@@ -21,6 +22,7 @@ async function archives(page) {
   });
 }
 
+// prettier-ignore
 async function capture(page, viewport, phase) {
   await page.screenshot({
     path: folder + "/sortie-2l-" + viewport.width + "x" + viewport.height + "-" + phase + ".png",
@@ -29,6 +31,7 @@ async function capture(page, viewport, phase) {
 }
 
 // Audit viewport coordinates and actual hit-testing BEFORE any scrolling/clicking.
+// prettier-ignore
 async function visibleTarget(page, selector) {
   const rect = await page.locator(selector).boundingBox();
   if (!rect) return null;
@@ -45,6 +48,7 @@ async function visibleTarget(page, selector) {
   return hit ? point : null;
 }
 
+// prettier-ignore
 async function tapStrict(page, selector) {
   const point = await visibleTarget(page, selector);
   expect(point, selector + " must be visible and physically touchable").not.toBeNull();
@@ -52,6 +56,7 @@ async function tapStrict(page, selector) {
 }
 
 // Real CDP touch gesture. Never use locator.scrollIntoViewIfNeeded() or locator.click().
+// prettier-ignore
 async function swipeCamp(page) {
   const viewport = page.viewportSize();
   const client = await page.context().newCDPSession(page);
@@ -76,6 +81,7 @@ async function swipeCamp(page) {
   }
 }
 
+// prettier-ignore
 async function tapCampWithFingerScroll(page, selector) {
   for (let i = 0; i < 6; i++) {
     const point = await visibleTarget(page, selector);
@@ -90,6 +96,7 @@ async function tapCampWithFingerScroll(page, selector) {
 
 // Simulate a held thumb on the actual joystick and a square escape route.
 // The 60Hz runtime runs unmodified; all movement is recorded as tick actions.
+// prettier-ignore
 async function thumbRoute(page, segments, assertMovement = false) {
   const joystick = page.locator("[data-sortie-joystick]");
   await expect(joystick).toHaveCSS("touch-action", "none");
@@ -130,11 +137,13 @@ async function thumbRoute(page, segments, assertMovement = false) {
   }
 }
 
+// prettier-ignore
 async function start(page) {
   await tapStrict(page, "[data-start-sortie]");
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
 }
 
+// prettier-ignore
 async function passChoice(page, skill, viewport) {
   await thumbRoute(page, 5, true);
   await page.clock.runFor(700);
@@ -151,12 +160,14 @@ async function passChoice(page, skill, viewport) {
   await expect(dialog).toBeHidden();
 }
 
+// prettier-ignore
 async function finishByThumb(page) {
   await thumbRoute(page, 10);
   await expect(page.locator("[data-sortie-results]")).toHaveAttribute("data-result", "won");
   await expect(page.locator("[data-sortie-summary]")).toContainText("存活 75.0 秒");
 }
 
+// prettier-ignore
 for (const viewport of viewports) {
   test("2L-C two 75s outings, finger payment and authoritative resources " +
     viewport.width + "x" + viewport.height, async ({ page }) => {
@@ -255,7 +266,11 @@ for (const viewport of viewports) {
 
 // These are CONTRACT GATES, not successes. Re-enable only on a combined A+B branch
 // with frozen mission, replay and camp-payment APIs; never fake objective rewards.
+// prettier-ignore
 test.fixme("2L-A/B pending: safe versus salvage mission choice by direct finger", () => {});
+// prettier-ignore
 test.fixme("2L-A/B pending: move hero into a visible guarded recovery object", () => {});
+// prettier-ignore
 test.fixme("2L-A/B pending: objectiveStones from authoritative win/failure receipts", () => {});
+// prettier-ignore
 test.fixme("2L-B pending: task-specific one-time preparation and repeat payment", () => {});
