@@ -271,8 +271,7 @@ for (const viewport of viewports) {
   });
 }
 
-// These are CONTRACT GATES, not successes. Re-enable only on a combined A+B branch
-// with frozen mission, replay and camp-payment APIs; never fake objective rewards.
+// The single remaining gate is deliberately blocked: no beacon authority or payment UI yet.
 // prettier-ignore
 test.fixme("2L-B pending: task-specific one-time preparation and repeat payment", () => {});
 
@@ -280,6 +279,7 @@ test.fixme("2L-B pending: task-specific one-time preparation and repeat payment"
 // The 2L-A+B combined slice: these tests use real finger coordinates and
 // the unmodified 60 Hz runtime. The objective is NEVER completed by direct
 // state mutation, locator.click(), or scrolling an element into view.
+// prettier-ignore
 async function thumbToRecoverySite(page) {
   const rect = await page.locator("[data-sortie-joystick]").boundingBox();
   expect(rect).not.toBeNull();
@@ -309,6 +309,7 @@ async function thumbToRecoverySite(page) {
     .toBeGreaterThan(initial);
 }
 
+// prettier-ignore
 async function chooseSalvageWithFinger(page) {
   await expect(page.locator("[data-sortie-mission-salvage]")).toBeEnabled();
   await tapCampWithFingerScroll(page, "[data-sortie-mission-salvage]");
@@ -323,6 +324,7 @@ async function chooseSalvageWithFinger(page) {
     .toContainText("已选险地回收");
 }
 
+// prettier-ignore
 for (const viewport of viewports) {
   test("2L-C real finger reaches guarded recovery and earns authority-only bonus " +
     viewport.width + "x" + viewport.height, async ({ page }) => {
@@ -367,6 +369,7 @@ for (const viewport of viewports) {
   });
 }
 
+// prettier-ignore
 test("2L-C completed physical salvage still pays no objective bonus on finger retreat",
   async ({ page }) => {
     const viewport = { width: 390, height: 844 };

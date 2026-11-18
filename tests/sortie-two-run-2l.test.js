@@ -185,6 +185,7 @@ describe("2L-C fixed-seed regression: existing safe outing (no mission feature y
   });
 });
 
+// prettier-ignore
 describe("2L-C A+B integrated authority and mission replay", () => {
   it("persisted salvage selection controls the prepared mission and survives interruption", () => {
     const initial = createSortieArchive("2l-c-salvage-selection");
@@ -206,7 +207,7 @@ describe("2L-C A+B integrated authority and mission replay", () => {
     const initial = createSortieArchive("2l-c-physical");
     const salvaged = playRecoveryRun(initial, "rune", "target", "salvage");
     const safe = playRecoveryRun(initial, "rune", "target", "safe");
-    expect(salvaged.stats.completed).toBe(true);
+    expect(salvaged.stats.completed).toBe(1);
     expect(salvaged.receipt.missionId).toBe("salvage");
     expect(salvaged.receipt.battle.objectiveStones).toBe(
       salvaged.stats.won ? 2 : 0,
