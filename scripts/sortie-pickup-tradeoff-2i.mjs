@@ -11,23 +11,43 @@ import { experimentInput } from "./sortie-experiment.mjs";
  * No production file, save, reward cap, or sim rule is modified.
  */
 export const RADII = Object.freeze([28, 24, 20, 16]);
-export const ROUTES = Object.freeze(["kite", "pickup", "reverse", "short-reverse", "drift"]);
+export const ROUTES = Object.freeze([
+  "kite",
+  "pickup",
+  "reverse",
+  "short-reverse",
+  "drift",
+]);
 export const DANGERS = Object.freeze([0, 40, 75]);
 export const SKILLS = Object.freeze(["thunder", "rune"]);
 
 export async function loadRadiusEngine(radius) {
-  if (!RADII.includes(radius)) throw new Error("Unsupported pickup radius: " + radius);
-  const config = await readFile(new URL("../src/config/sortie-data.js", import.meta.url), "utf8");
-  const sim = await readFile(new URL("../src/systems/sortie-sim.js", import.meta.url), "utf8");
+  if (!RADII.includes(radius))
+    throw new Error("Unsupported pickup radius: " + radius);
+  const config = await readFile(
+    new URL("../src/config/sortie-data.js", import.meta.url),
+    "utf8",
+  );
+  const sim = await readFile(
+    new URL("../src/systems/sortie-sim.js", import.meta.url),
+    "utf8",
+  );
   const matches = [...config.matchAll(/\bpickupRadius:\s*\d+/g)];
   if (matches.length !== 1 || !sim.includes('"../config/sortie-data.js"')) {
-    throw new Error("Unexpected engine import or pickupRadius source; inspect before testing");
+    throw new Error(
+      "Unexpected engine import or pickupRadius source; inspect before testing",
+    );
   }
-  const variant = config.replace(/\bpickupRadius:\s*\d+/, "pickupRadius: " + radius);
+  const variant = config.replace(
+    /\bpickupRadius:\s*\d+/,
+    "pickupRadius: " + radius,
+  );
   const configUrl = "data:text/javascript," + encodeURIComponent(variant);
   const simUrl =
     "data:text/javascript," +
-    encodeURIComponent(sim.replace('"../config/sortie-data.js"', JSON.stringify(configUrl)));
+    encodeURIComponent(
+      sim.replace('"../config/sortie-data.js"', JSON.stringify(configUrl)),
+    );
   return import(simUrl);
 }
 
@@ -59,12 +79,20 @@ export function pickupRouteInput(battle, route) {
 
 function nearestDistance(items, hero) {
   let min = Infinity;
-  for (const item of items) min = Math.min(min, Math.hypot(item.x - hero.x, item.y - hero.y));
+  for (const item of items)
+    min = Math.min(min, Math.hypot(item.x - hero.x, item.y - hero.y));
   return min;
 }
 
-export function playRadiusBattle(engine, { seedIndex, danger, skill, route, forgeLevel = 0 }) {
-  const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") + "-danger-" + danger;
+export function playRadiusBattle(
+  engine,
+  { seedIndex, danger, skill, route, forgeLevel = 0 },
+) {
+  const seed =
+    "sortie-2e-fixed-" +
+    String(seedIndex).padStart(3, "0") +
+    "-danger-" +
+    danger;
   const battle = engine.createSortie(seed, danger, forgeLevel);
   let firstPickupTick = null;
   let nearDropHurt = 0;
@@ -82,12 +110,16 @@ export function playRadiusBattle(engine, { seedIndex, danger, skill, route, forg
     const gained = battle.collectedShards - shardsBefore;
     if (gained > 0) {
       if (firstPickupTick === null) firstPickupTick = battle.tick;
-      if (nearestDistance(battle.enemies, battle.hero) <= 60) contestedShards += gained;
+      if (nearestDistance(battle.enemies, battle.hero) <= 60)
+        contestedShards += gained;
     }
   }
-  if (battle.outcome === "running") throw new Error("Fixed-tick battle exceeded budget");
+  if (battle.outcome === "running")
+    throw new Error("Fixed-tick battle exceeded budget");
   const reward = previewSortieRewards(battle);
-  const eligibleShards = Math.floor(battle.defeated / SORTIE.rewards.defeatedPerShard);
+  const eligibleShards = Math.floor(
+    battle.defeated / SORTIE.rewards.defeatedPerShard,
+  );
   if (
     !reward ||
     battle.collectedShards + battle.drops.length > eligibleShards ||
@@ -108,7 +140,8 @@ export function playRadiusBattle(engine, { seedIndex, danger, skill, route, forg
     missed: battle.drops.length,
     shardStones: reward.shardStones,
     totalStones: reward.stones,
-    firstPickupSeconds: firstPickupTick === null ? null : firstPickupTick / SORTIE.ticksPerSecond,
+    firstPickupSeconds:
+      firstPickupTick === null ? null : firstPickupTick / SORTIE.ticksPerSecond,
     nearDropHurt,
     contestedShards,
   };
@@ -137,13 +170,23 @@ export async function runPickupTradeoff({
         for (const skill of skills) {
           for (const route of routes) {
             const samples = Array.from({ length: seedCount }, (_, seedIndex) =>
-              playRadiusBattle(engine, { seedIndex, danger, skill, route, forgeLevel }),
+              playRadiusBattle(engine, {
+                seedIndex,
+                danger,
+                skill,
+                route,
+                forgeLevel,
+              }),
             );
             const feedback = samples
               .map((sample) => sample.firstPickupSeconds)
               .filter((time) => time !== null);
             rows.push({
-              radius, forgeLevel, danger, skill, route,
+              radius,
+              forgeLevel,
+              danger,
+              skill,
+              route,
               wins: samples.reduce((sum, sample) => sum + sample.won, 0),
               count: seedCount,
               hp: aggregate(samples, "hp"),
@@ -155,9 +198,14 @@ export async function runPickupTradeoff({
               totalStones: aggregate(samples, "totalStones"),
               pickupFeedbackCount: feedback.length,
               firstPickupSeconds:
-                feedback.length ? feedback.reduce((sum, time) => sum + time, 0) / feedback.length : null,
+                feedback.length
+                  ? feedback.reduce((sum, time) => sum + time, 0) / feedback.length
+                  : null,
               nearDropHurt: aggregate(samples, "nearDropHurt"),
-              contestedShards: samples.reduce((sum, sample) => sum + sample.contestedShards, 0),
+              contestedShards: samples.reduce(
+                (sum, sample) => sum + sample.contestedShards,
+                0,
+              ),
             });
           }
         }
@@ -175,7 +223,8 @@ export function assertPickupTradeoff(result) {
       row.stones > SORTIE.rewards.maxShardStones ||
       row.shards < 0 ||
       row.missed < 0
-    ) throw new Error("Invalid pickup experiment row");
+    )
+      throw new Error("Invalid pickup experiment row");
   }
   // The orbit route never steers toward a shard: reducing pickup range cannot
   // make that same deterministic trajectory collect more shards.
@@ -200,30 +249,47 @@ function parseArgs(args) {
   const forgeArg = args.find((arg) => arg.startsWith("--forge="));
   const seedCount = seedsArg ? Number(seedsArg.slice(8)) : 40;
   const mode = forgeArg ? forgeArg.slice(8) : "0";
-  if (!["0", "1", "both"].includes(mode)) throw new Error("Use --forge=0|1|both");
+  if (!["0", "1", "both"].includes(mode))
+    throw new Error("Use --forge=0|1|both");
   return { seedCount, forgeLevels: mode === "both" ? [0, 1] : [Number(mode)] };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   const result = await runPickupTradeoff(parseArgs(process.argv.slice(2)));
   if (process.argv.includes("--assert")) assertPickupTradeoff(result);
   console.log(
     "2I-B paired exact-engine simulation: " +
-      result.sorties + " battles; same 40 seed series; not human touch evidence",
+      result.sorties +
+      " battles; same 40 seed series; not human touch evidence",
   );
   console.log(
     "| Radius | Forge | D | Skill | Route | Wins | HP | Hurt | Kills | Shards | Missed | Bonus stones | First feedback (s) | Feedback n |",
   );
-  console.log("|---:|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+  console.log(
+    "|---:|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+  );
   for (const row of result.rows) {
     const fixed = (n) => n === null ? "—" : n.toFixed(2);
     console.log(
       "| " +
         [
-          row.radius, row.forgeLevel, row.danger, row.skill, row.route,
-          row.wins + "/" + row.count, fixed(row.hp), fixed(row.hurt),
-          fixed(row.defeated), fixed(row.shards), fixed(row.missed),
-          fixed(row.stones), fixed(row.firstPickupSeconds), row.pickupFeedbackCount,
+          row.radius,
+          row.forgeLevel,
+          row.danger,
+          row.skill,
+          row.route,
+          row.wins + "/" + row.count,
+          fixed(row.hp),
+          fixed(row.hurt),
+          fixed(row.defeated),
+          fixed(row.shards),
+          fixed(row.missed),
+          fixed(row.stones),
+          fixed(row.firstPickupSeconds),
+          row.pickupFeedbackCount,
         ].join(" | ") + " |",
     );
   }
