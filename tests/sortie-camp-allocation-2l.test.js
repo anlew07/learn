@@ -36,8 +36,8 @@ function firstWin(seed = "2l-b-camp-first") {
   throw new Error("No eligible first win");
 }
 
-describe("2L-B safe-only mission, real camp payment and shadow-only preparation", () => {
-  it("shows true 4-stone start, honest costs and refuses unimplemented salvage", () => {
+describe("2L-B mission selection, real camp payment and shadow-only preparation", () => {
+  it("shows true 4-stone start, real A-backed salvage and blocked shadow beacon", () => {
     const fresh = createSortieArchive("2l-b-fresh");
     const before = clone(fresh);
     const preview = previewSortieCampAllocation(fresh);
@@ -47,8 +47,10 @@ describe("2L-B safe-only mission, real camp payment and shadow-only preparation"
     expect(preview.beacon).toMatchObject({
       cost: 2, remaining: 2, available: false, affordable: true,
     });
-    expect(preview.salvage.available).toBe(false);
-    expect(selectSortieCampMission(fresh, "salvage", "mission:try").ok).toBe(false);
+    expect(preview.salvage.available).toBe(true);
+    const salvage = selectSortieCampMission(fresh, "salvage", "mission:try");
+    expect(salvage.ok).toBe(true);
+    expect(salvage.archive.run.sortieCamp.missionSelection.missionId).toBe("salvage");
     expect(selectSortieCampMission(fresh, "anything", "mission:try").ok).toBe(false);
     expect(selectSortieCampMission(fresh, "safe", "bad space").ok).toBe(false);
     expect(fresh).toEqual(before);
@@ -83,9 +85,9 @@ describe("2L-B safe-only mission, real camp payment and shadow-only preparation"
     expect(prepareSortieArchive(recovery.archive).archive.pending.missionId).toBe("safe");
     const fake = clone(pending.archive);
     fake.pending.missionId = "salvage";
-    expect(() => assertSortieArchive(fake)).toThrow(/重放|回放/);
+    expect(() => assertSortieArchive(fake)).toThrow(/任务.*不匹配/);
     const tampered = clone(selected.archive);
-    tampered.run.sortieCamp.missionSelection.missionId = "salvage";
+    tampered.run.sortieCamp.missionSelection.missionId = "unknown";
     expect(() => assertSortieArchive(tampered)).toThrow(/任务选择/);
     const legacy = createSortieArchive("2l-b-old");
     delete legacy.run.sortieCamp;
