@@ -110,33 +110,19 @@ function collectFragments(battle) {
 }
 
 function applySkillEffects(battle) {
-  // 2J-A single-variable candidate: fire a ready-soon strike up to 2s early
-  // when an approaching enemy could contact a stationary hero within 1s.
-  // Target count, damage, range and ordinary 4s cooldown remain unchanged.
-  const thunderThreat =
-    battle.skillId === "thunder" &&
-    battle.tick + 2 * SORTIE.ticksPerSecond >= battle.thunderNextTick &&
-    battle.enemies.some((enemy) =>
-      enemy.hp > 0 &&
-      distance(enemy, battle.hero) <=
-        SORTIE.player.radius +
-        SORTIE.enemies[enemy.kind].radius +
-        SORTIE.enemies[enemy.kind].speed,
-    );
-  if (battle.skillId === "thunder" &&
-      (battle.tick >= battle.thunderNextTick || thunderThreat)) {
-    const early = battle.tick < battle.thunderNextTick;
-    battle.thunderNextTick = (early ? battle.tick : battle.thunderNextTick) +
+  const imminent = battle.skillId === "thunder" && battle.tick + 2 * SORTIE.ticksPerSecond >= battle.thunderNextTick &&
+    battle.enemies.some((enemy) => enemy.hp > 0 &&
+      distance(enemy, battle.hero) <= SORTIE.player.radius +
+      SORTIE.enemies[enemy.kind].radius + SORTIE.enemies[enemy.kind].speed);
+  if (battle.skillId === "thunder" && (battle.tick >= battle.thunderNextTick || imminent)) {
+    battle.thunderNextTick = (imminent && battle.tick < battle.thunderNextTick ? battle.tick : battle.thunderNextTick) +
       Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
     const targets = battle.enemies
       .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
       .filter(({ enemy, range }) => enemy.hp > 0 && range <= SORTIE.skills.thunderRange)
-      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)
-      .slice(0, SORTIE.skills.thunderTargets)
-      .map(({ enemy }) => enemy);
+      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id).slice(0, SORTIE.skills.thunderTargets).map(({ enemy }) => enemy);
     if (targets.length) {
-      battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
-      battle.flashUntil = battle.tick + 15;
+      battle.flashTargets = targets.map(({ x, y }) => ({ x, y })); battle.flashUntil = battle.tick + 15;
       battle.thunderHits += targets.length;
       for (const enemy of targets) damageEnemy(battle, enemy, SORTIE.skills.thunderDamage);
       battle.enemies = battle.enemies.filter((enemy) => enemy.hp > 0);
