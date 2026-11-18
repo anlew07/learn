@@ -1,7 +1,6 @@
 import { createSortie, stepSortie, chooseSortieSkill, retreatSortie, DURATION_TICKS } from "./sortie-sim.js";
 
 export const MAX_TRACE_ACTIONS = DURATION_TICKS + 2;
-const SORTIE_MISSION_IDS = ["safe", "salvage"];
 
 /** A deterministic identity tied to this run/day; no UI-supplied reward numbers. */
 export function sortieIdentity(run) {
@@ -22,9 +21,6 @@ export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, mission
   }
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
     return { ok: false, error: "护灵剑台状态不合法" };
-  }
-  if (!SORTIE_MISSION_IDS.includes(missionId)) {
-    return { ok: false, error: "出击任务不合法" };
   }
   const battle = createSortie(seed, danger, forgeLevel, missionId);
   let moveCount = 0;

@@ -14,14 +14,21 @@ import {
 import { experimentInput } from "./sortie-experiment.mjs";
 
 // 2L-A: production tick physics + authoritative Engine replay in isolated saves.
+// prettier-ignore
 export const RECOVERY_DANGERS = [0, 40, 75];
+// prettier-ignore
 export const RECOVERY_SKILLS = ["thunder", "rune"];
+// prettier-ignore
 export const RECOVERY_ROUTES = ["kite", "target", "mistake", "drift"];
+// prettier-ignore
 const SITE = SORTIE.mission;
+// prettier-ignore
 const round = (n) => Math.round(n * 1000) / 1000;
+// prettier-ignore
 const mean = (items, key) =>
   items.length ? items.reduce((sum, item) => sum + item[key], 0) / items.length : 0;
 
+// prettier-ignore
 function normalize(x, y) {
   const length = Math.hypot(x, y);
   return length > 0.001 ? { x: x / length, y: y / length } : { x: 0, y: 0 };
@@ -32,6 +39,7 @@ function normalize(x, y) {
  * and attempt a visible one-second hold. Only salvage spawns actual guardians.
  * Mistakes are joystick direction errors, never scripted damage.
  */
+// prettier-ignore
 export function recoveryRouteInput(battle, route, controller) {
   if (!RECOVERY_ROUTES.includes(route)) throw new Error("Invalid recovery route");
   if (route === "kite" || controller.finished) return experimentInput(battle, "kite");
@@ -65,6 +73,7 @@ export function recoveryRouteInput(battle, route, controller) {
   return motion;
 }
 
+// prettier-ignore
 export function playRecoveryRun(archive, skill, route, missionId) {
   const previousDay = archive.run.day;
   const staged = JSON.parse(JSON.stringify(archive));
@@ -150,6 +159,7 @@ export function playRecoveryRun(archive, skill, route, missionId) {
   };
 }
 
+// prettier-ignore
 export function pairedRecoveryRun(seedIndex, danger, skill, route) {
   const seed = "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") +
     "-danger-" + danger;
@@ -176,6 +186,7 @@ export function pairedRecoveryRun(seedIndex, danger, skill, route) {
   return pair;
 }
 
+// prettier-ignore
 export function runRecoveryMatrix(seeds = 40) {
   if (!Number.isInteger(seeds) || seeds < 1 || seeds > 40) {
     throw new Error("Use 1..40 fixed seeds");
@@ -223,6 +234,7 @@ export function runRecoveryMatrix(seeds = 40) {
   return { seeds, totalPairs: pairs.length, totalBattles: pairs.length * 4, groups, pairs };
 }
 
+// prettier-ignore
 export function assertRecoveryMatrix(report) {
   if (report.totalPairs !== report.seeds * 3 * 2 * RECOVERY_ROUTES.length ||
     report.totalBattles !== report.totalPairs * 4) {
@@ -245,6 +257,7 @@ export function assertRecoveryMatrix(report) {
   return true;
 }
 
+// prettier-ignore
 if (process.argv[1] && import.meta.url === new URL("file://" + process.argv[1]).href) {
   const count = Number(process.argv.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 40);
   const report = runRecoveryMatrix(count);
