@@ -23,6 +23,10 @@ const round = (value) => (value === null ? null : Math.round(value * 1000) / 100
  * simply awarding bonus HP after a production receipt would be invalid.
  * This adapter is intentionally disposable until its product value is proven.
  */
+/**
+ * Source contract for 2L-A: missionId remains fourth; shadow prepHp follows it.
+ * The old 2K-C experiment must stay on the safe route, never claim a mission bonus.
+ */
 // prettier-ignore
 export async function openCampChoiceSandbox() {
   const root = mkdtempSync(join(process.cwd(), ".sortie-camp-2k-"));
@@ -44,8 +48,8 @@ export async function openCampChoiceSandbox() {
     writeFileSync(join(root, "package.json"), '{"private":true,"type":"module"}\n');
     replace(
       "src/systems/sortie-sim.js",
-      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0) {',
-      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, prepHp = 0) {',
+      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe") {',
+      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", prepHp = 0) {',
     );
     replace(
       "src/systems/sortie-sim.js",
@@ -54,24 +58,24 @@ export async function openCampChoiceSandbox() {
     );
     replace(
       "src/systems/sortie-trace.js",
-      "export function replaySortieTrace(seed, danger, actions, forgeLevel = 0) {",
-      "export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, prepHp = 0) {",
+      "export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe") {",
+      "export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", prepHp = 0) {",
     );
     replace(
       "src/systems/sortie-trace.js",
-      "const battle = createSortie(seed, danger, forgeLevel);",
-      "const battle = createSortie(seed, danger, forgeLevel, prepHp);",
+      "const battle = createSortie(seed, danger, forgeLevel, missionId);",
+      "const battle = createSortie(seed, danger, forgeLevel, missionId, prepHp);",
     );
     replace(
       "src/engine.js",
-      "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel);",
+      "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId);",
       [
         "var prep=s.sortieCamp?.prepared;",
         "if(prep&&(!Number.isInteger(prep.charges)||prep.charges<0||prep.charges>1||",
         "  prep.cost!==3||prep.hpBonus!==2||typeof prep.operationId!==\"string\"))",
         "  return {ok:false,error:\"战前准备试验状态非法\"};",
         "var prepHp=prep?.charges===1?2:0;",
-        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,prepHp);",
+        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,prepHp);",
       ].join("\n"),
     );
     replace(
@@ -169,7 +173,7 @@ export function replayExperimentalSortie(env, archive, skill, route) {
   if (!ready.ok) return { available: false, reason: ready.error };
   const prepCharges = ready.archive.run.sortieCamp?.prepared?.charges ?? 0;
   const prepHp = prepCharges === 1 ? PREP_HP : 0;
-  const battle = env.sim.createSortie(ready.seed, ready.danger, ready.forgeLevel, prepHp);
+  const battle = env.sim.createSortie(ready.seed, ready.danger, ready.forgeLevel, "safe", prepHp);
   const actions = [];
   let ticks = 0;
   while (battle.outcome === "running" && ticks <= env.sim.DURATION_TICKS) {
