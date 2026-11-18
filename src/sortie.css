@@ -34,6 +34,14 @@ a { color: #f3d898; }
   flex: 1; display: flex; flex-direction: column; justify-content: center;
   align-items: center; padding: 25px; text-align: center; gap: 12px;
 }
+/* B camp comparisons are longer than the original intro.
+   Keep the primary hold-resources action reachable at 320×568,
+   while letting all honest mission/cost/risk detail scroll inside the mode. */
+.sortie-intro {
+  min-height: 0; overflow-y: auto; justify-content: flex-start;
+  overscroll-behavior: contain;
+}
+.sortie-intro > * { flex-shrink: 0; }
 .sortie-intro h1, .sortie-results h1 { margin: 0; font-size: 25px; }
 .sortie-intro p, .sortie-results p { max-width: 320px; color: #d4d6bd; line-height: 1.6; }
 .sortie-intro .sortie-warning { font-size: 12px; color: #f0c78e; }
