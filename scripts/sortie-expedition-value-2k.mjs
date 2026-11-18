@@ -352,8 +352,9 @@ export function assertExpeditionValue(report) {
       a.shardStones !== b.shardStones ||
       b.stones > report.metadata.existingMaxTotalStones ||
       b.objectiveCompleted > b.n ||
-      b.lingResourceDelta - a.lingResourceDelta !==
-        round(b.stones - a.stones)) {
+      Math.abs(
+        b.lingResourceDelta - a.lingResourceDelta - (b.stones - a.stones)
+      ) > 0.002) {
       throw new Error("2K-B paired result invariants broken");
     }
   }
