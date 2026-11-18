@@ -1,6 +1,9 @@
 import Engine from "../src/engine.js";
 import { SORTIE } from "../src/config/sortie-data.js";
-import { createSortieArchive, prepareSortieArchive } from "../src/systems/sortie-session.js";
+import {
+  createSortieArchive,
+  prepareSortieArchive,
+} from "../src/systems/sortie-session.js";
 import {
   chooseSortieSkill,
   createSortie,
@@ -17,7 +20,9 @@ const DANGERS = [0, 40, 75];
 const SKILLS = ["thunder", "rune"];
 const MOVEMENTS = ["stationary", "kite", "pickup", "mistouch"];
 const mean = (values) =>
-  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+  values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0;
 const round = (value) => Math.round(value * 100) / 100;
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -31,7 +36,10 @@ function movementInput(battle, movement) {
 
 function inspectFirstSortie(seedIndex, danger, skill, movement) {
   const seed =
-    "sortie-2e-fixed-" + String(seedIndex).padStart(3, "0") + "-danger-" + danger;
+    "sortie-2e-fixed-" +
+    String(seedIndex).padStart(3, "0") +
+    "-danger-" +
+    danger;
   const archive = createSortieArchive(seed);
   Engine.byId(archive.run, "lingzai").d = danger;
   const prepared = prepareSortieArchive(archive);
@@ -54,7 +62,9 @@ function inspectFirstSortie(seedIndex, danger, skill, movement) {
   let lastStrikeTick = -Infinity;
   while (battle.outcome === "running" && battle.tick < DURATION_TICKS) {
     if (battle.skillChoicePending) {
-      if (!chooseSortieSkill(battle, skill).ok) throw new Error("Skill choice failed");
+      if (!chooseSortieSkill(battle, skill).ok) {
+        throw new Error("Skill choice failed");
+      }
     }
     const ready =
       skill === "thunder" && battle.tick + 1 >= battle.thunderNextTick;
@@ -182,6 +192,11 @@ export function runThunderValueExperiment(seedCount = 40) {
 }
 
 if (process.argv[1]?.endsWith("sortie-thunder-value-2i.mjs")) {
-  const requested = Number(process.argv.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 40);
-  console.log("THUNDER_VALUE_2I_JSON=" + JSON.stringify(runThunderValueExperiment(requested)));
+  const requested = Number(
+    process.argv.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 40,
+  );
+  console.log(
+    "THUNDER_VALUE_2I_JSON=" +
+      JSON.stringify(runThunderValueExperiment(requested)),
+  );
 }
