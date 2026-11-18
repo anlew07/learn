@@ -20,6 +20,7 @@ const DROP_MARKER =
 export const CANDIDATE = "drift-to-living-enemy-48px";
 export const PICKUP_RADIUS = 28;
 
+// prettier-ignore
 const DROP_EXPERIMENT = [
   "const shard = { id: enemy.id, x: enemy.x, y: enemy.y };",
   "const living = battle.enemies.filter((other) => other.hp > 0);",
@@ -47,6 +48,7 @@ const DROP_EXPERIMENT = [
 ].join("\n");
 
 /** Uses the exact original engine source and alters only the shard spawn expression. */
+// prettier-ignore
 export async function loadShardRiskEngine(candidate = false) {
   const [configuration, source] = await Promise.all([
     readFile(new URL("../src/config/sortie-data.js", import.meta.url), "utf8"),
@@ -75,6 +77,7 @@ export async function loadShardRiskEngine(candidate = false) {
   return import(simUrl);
 }
 
+// prettier-ignore
 function nearestDistance(items, hero) {
   let best = Infinity;
   for (const item of items) {
@@ -84,6 +87,7 @@ function nearestDistance(items, hero) {
 }
 
 /** Actual 60Hz collisions and the existing preview; no synthetic harm. */
+// prettier-ignore
 export function playShardRiskBattle(
   engine,
   { seedIndex, danger, skill, route, forgeLevel = 0 },
@@ -157,10 +161,12 @@ export function playShardRiskBattle(
   };
 }
 
+// prettier-ignore
 function mean(samples, key) {
   return samples.reduce((sum, sample) => sum + sample[key], 0) / samples.length;
 }
 
+// prettier-ignore
 function summarize(samples) {
   const feedback = samples.filter(
     (sample) => sample.firstPickupSeconds !== null,
@@ -183,6 +189,7 @@ function summarize(samples) {
   };
 }
 
+// prettier-ignore
 function spatialSummary(traces) {
   return {
     spawned: traces.length,
@@ -196,6 +203,7 @@ function spatialSummary(traces) {
 }
 
 /** Each route/danger/skill cell uses the same 40 fixed seeds on both engines. */
+// prettier-ignore
 export async function runShardRisk({ seedCount = 40, forgeLevel = 0 } = {}) {
   if (!Number.isInteger(seedCount) || seedCount < 1 || seedCount > 100) {
     throw new Error("seedCount must be between 1 and 100");
@@ -249,6 +257,7 @@ export async function runShardRisk({ seedCount = 40, forgeLevel = 0 } = {}) {
   };
 }
 
+// prettier-ignore
 export function assertShardRisk(result) {
   if (
     result.rows.length !== DANGERS.length * SKILLS.length * ROUTES.length ||
@@ -277,6 +286,7 @@ export function assertShardRisk(result) {
   return true;
 }
 
+// prettier-ignore
 function show(result) {
   console.log(
     "2J-B paired shard experiment: " +
@@ -318,6 +328,7 @@ function show(result) {
   );
 }
 
+// prettier-ignore
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
