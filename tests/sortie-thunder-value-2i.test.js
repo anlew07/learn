@@ -14,7 +14,7 @@ import {
   assertExperimentResult,
   experimentInput,
   runSortieExperiment,
-} from "./sortie-experiment.mjs";
+} from "../scripts/sortie-experiment.mjs";
 
 const DANGERS = [0, 40, 75];
 const SKILLS = ["thunder", "rune"];
