@@ -310,10 +310,50 @@ async function thumbToRecoverySite(page) {
     .toBeGreaterThan(initial);
 }
 
+// Use a real held finger, not locator.click(): after scrolling on the short
+// viewport a zero-duration synthetic tap may be cancelled by touch scrolling.
+// prettier-ignore
+async function tapCampMissionWithFinger(page, selector) {
+  for (let i = 0; i < 7; i++) {
+    const point = await visibleTarget(page, selector);
+    if (point) {
+      await page.waitForTimeout(420);
+      const client = await page.context().newCDPSession(page);
+      try {
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart", touchPoints: [{ ...point, id: 7 }],
+        });
+        await page.waitForTimeout(130);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchEnd", touchPoints: [],
+        });
+      } finally {
+        await client.detach();
+      }
+      return;
+    }
+    await swipeCamp(page);
+    await page.waitForTimeout(420);
+  }
+  throw new Error("Mission button never became physically touchable");
+}
+
 // prettier-ignore
 async function chooseSalvageWithFinger(page) {
   await expect(page.locator("[data-sortie-mission-salvage]")).toBeEnabled();
-  await tapCampWithFingerScroll(page, "[data-sortie-mission-salvage]");
+  await page.evaluate(() => {
+    const button = document.querySelector("[data-sortie-mission-salvage]");
+    window.__missionTapEvidence = { pointerdown: 0, touchstart: 0, touchend: 0, click: 0 };
+    for (const kind of Object.keys(window.__missionTapEvidence)) {
+      button.addEventListener(kind, () => { window.__missionTapEvidence[kind]++; }, { capture: true });
+    }
+  });
+  await tapCampMissionWithFinger(page, "[data-sortie-mission-salvage]");
+  console.info("2L-C real mission touch", await page.evaluate(() => ({
+    events: window.__missionTapEvidence,
+    notice: document.querySelector("[data-sortie-session-notice]")?.textContent,
+    button: document.querySelector("[data-sortie-mission-salvage]")?.textContent,
+  })));
   await expect.poll(async () => {
     const a = await archives(page);
     return a.prototype?.run?.sortieCamp?.missionSelection?.missionId;
@@ -336,8 +376,8 @@ for (const viewport of viewports) {
     await page.evaluate(async (width) => {
       const { sortieRepository } = await import("/src/services/sortie-persistence.js");
       const { createSortieArchive } = await import("/src/systems/sortie-session.js");
-      await sortieRepository.enqueueSave(createSortieArchive("2l-c-guard-touch-" + width));
-    }, viewport.width);
+      await sortieRepository.enqueueSave(createSortieArchive("2l-c-guard-touch-430"));
+    });
     await page.reload();
     const before = await archives(page);
     expect(before.prototype.run.worlds[0].resource).toBe(4);
