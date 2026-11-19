@@ -4,6 +4,7 @@ import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
 import { drawSortie } from "./ui/sortie-stage.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
+import { previewCivilizationProgress } from "./systems/civilization-progression.js";
 import { sortieRepository } from "./services/sortie-persistence.js";
 import {
   createSortieArchive, recoverSortieArchive,
@@ -67,6 +68,16 @@ app.innerHTML = [
   '<button type="button" data-sortie-build hidden>消耗 6 灵石 · 修复护灵剑台</button>',
   '<small>灵石同时用于终局封印；修复后不可拆除退款。</small>',
   '</section>',
+  '<details class="sortie-civilization" data-civilization-tree>',
+  '<summary><strong>文明演化图谱</strong><span data-civilization-count>0/8 节点</span>',
+  '<small data-civilization-next>正在读取下一步目标…</small></summary>',
+  '<div class="sortie-civilization-shortcuts" aria-label="直接查看已有选择">',
+  '<button type="button" data-civilization-target="salvage">查看险地任务</button>',
+  '<button type="button" data-civilization-target="forge">查看剑台投入</button>',
+  '</div>',
+  '<div class="sortie-civilization-nodes" data-civilization-nodes></div>',
+  '<p class="sortie-civilization-hint">图谱只记录真实成就并引导已有选择；没有隐藏加成，建设依旧需要付款。</p>',
+  '</details>',
   '<p class="sortie-warning">本模式不读取、写入正式存档；收益和剑台仅存独立试验档。出击结束推进双世界一天，营地建设不推进世界日。</p></section>',
   '<section class="sortie-session-notice" data-sortie-session-notice role="status"></section>',
   '<section class="sortie-play" data-sortie-play hidden>',
@@ -146,6 +157,9 @@ const forgePanel = app.querySelector("[data-sortie-forge]");
 const forgeState = app.querySelector("[data-sortie-forge-state]");
 const forgePreview = app.querySelector("[data-sortie-forge-preview]");
 const forgeButton = app.querySelector("[data-sortie-build]");
+const civilizationCount = app.querySelector("[data-civilization-count]");
+const civilizationNext = app.querySelector("[data-civilization-next]");
+const civilizationNodes = app.querySelector("[data-civilization-nodes]");
 const sessionNotice = app.querySelector("[data-sortie-session-notice]");
 const startButton = app.querySelector("[data-start-sortie]");
 const joystick = app.querySelector("[data-sortie-joystick]");
@@ -259,6 +273,38 @@ function updateCamp() {
     forgeButton.hidden = forge.built || !archive.lastReceipt;
     forgeButton.disabled = !forge.available || !session.isOwner ||
       writeBusy || Boolean(writeError) || Boolean(restoreError) || phase !== "intro";
+    const tree = previewCivilizationProgress(archive);
+    civilizationCount.textContent = tree.completed + "/" + tree.total + " 节点";
+    civilizationNext.textContent = tree.next ?
+      "下一目标：" + tree.next.title + " · " + tree.next.task :
+      "本阶段目标已完成，后续内容仍待验证";
+    civilizationNodes.replaceChildren(...tree.nodes.map((node) => {
+      const item = document.createElement("section");
+      item.className = "sortie-civilization-node";
+      item.dataset.civilizationNode = node.id;
+      item.dataset.state = node.status;
+      const title = document.createElement("strong");
+      title.textContent = node.title + " · " +
+        (node.status === "complete" ? "已达成" :
+          node.status === "ready" ? "可挑战" : "待解锁");
+      const branch = document.createElement("small");
+      branch.textContent = node.branch + "路线";
+      const requirement = document.createElement("p");
+      requirement.textContent = node.task;
+      const effect = document.createElement("p");
+      effect.className = "sortie-civilization-reward";
+      effect.textContent = "实际意义：" + node.reward;
+      item.append(title, branch, requirement, effect);
+      if (node.target && node.status === "ready") {
+        const action = document.createElement("button");
+        action.type = "button";
+        action.dataset.civilizationTarget = node.target;
+        action.textContent = node.target === "salvage" ? "查看险地任务" :
+          node.target === "forge" ? "查看营地投资" : "查看出击入口";
+        item.append(action);
+      }
+      return item;
+    }));
     const oldBattle = archive.run.sortieCamp?.buildReceipt?.beforeStats;
     if (oldBattle && prior && prior.day > oldBattle.day) {
       lastReceipt.textContent += "｜付费后本场武器伤害 " +
@@ -681,6 +727,15 @@ function launchBattle() {
 }
 
 app.querySelector("[data-start-sortie]").addEventListener("click", start);
+app.querySelector("[data-civilization-tree]").addEventListener("click", (event) => {
+  const action = event.target.closest("[data-civilization-target]");
+  if (!action) return;
+  const target = action.dataset.civilizationTarget === "salvage" ?
+    missionSalvageButton : action.dataset.civilizationTarget === "forge" ?
+      forgePanel : startButton;
+  target.scrollIntoView({ block: "center", behavior: "smooth" });
+  if (target.tagName === "BUTTON") target.focus({ preventScroll: true });
+});
 missionSalvageButton.addEventListener("click", () => {
   if (!archive || !session.isOwner || writeBusy || writeError || restoreError ||
     phase !== "intro") return;
