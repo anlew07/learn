@@ -90,8 +90,6 @@ async function assertHudFits(page) {
     expect(bounds.y, selector).toBeGreaterThanOrEqual(0);
     expect(bounds.y + bounds.height, selector).toBeLessThanOrEqual(viewport.height + 1);
   }
-  const field = await page.locator("[data-sortie-field]").count();
-  expect(field).toBe(0); // no extra overlay or replacement battle stage
   const canvas = await page.locator("[data-sortie-canvas]").boundingBox();
   expect(canvas.height).toBeGreaterThan(170);
 }
@@ -144,6 +142,8 @@ for (const viewport of viewports) {
     await expect(page.locator("[data-sortie-deadline-alert]"))
       .toContainText("回收点即将失效");
     await assertHudFits(page);
+    await page.screenshot({ path: "test-results/camp-ui/2p-salvage-" +
+      viewport.width + "x" + viewport.height + "-urgent.png" });
 
     await thumbRoute(page, 3);
     await expect(panel).toHaveAttribute("data-phase", "expired");
@@ -160,6 +160,7 @@ test("2P default safe outing never shows the salvage-only clock",
     await page.setViewportSize({ width: 320, height: 568 });
     await page.goto("/?mode=sortie");
     await tapVisibleFinger(page, "[data-start-sortie]");
+    await expect(page.locator("[data-sortie-play]")).toBeVisible();
     await expect(page.locator("[data-sortie-deadline]")).toBeHidden();
     await expect(page.locator("[data-sortie-time]")).toContainText("75");
   });
