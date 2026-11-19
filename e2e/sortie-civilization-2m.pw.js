@@ -7,6 +7,7 @@ const viewports = [
 ];
 
 // A finger-only test: no locator.click() or programmatic scrolling.
+// prettier-ignore
 async function visibleTouchPoint(page, selector) {
   const bounds = await page.locator(selector).boundingBox();
   const viewport = page.viewportSize();
@@ -45,6 +46,7 @@ async function fingerSwipe(page) {
   }
 }
 
+// prettier-ignore
 async function tapByFinger(page, selector) {
   for (let i = 0; i < 9; i++) {
     const point = await visibleTouchPoint(page, selector);
@@ -58,6 +60,7 @@ async function tapByFinger(page, selector) {
   throw new Error(selector + " cannot be physically reached");
 }
 
+// prettier-ignore
 for (const viewport of viewports) {
   test("2M civilization map: collapsed by default, finger-open and real navigation " +
     viewport.width + "x" + viewport.height, async ({ page }) => {
