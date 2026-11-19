@@ -14,7 +14,7 @@
     "text:runtime": "node scripts/export-runtime-templates.mjs",
     "text:review": "node scripts/export-human-review.mjs",
     "text:check": "node scripts/export-game-text.mjs --check",
-    "test": "vitest run",
+    "test": "vitest run --pool=threads --maxWorkers=4",
     "test:watch": "vitest",
     "balance": "node scripts/balance-report.mjs --seeds=100",
     "balance:check": "node scripts/balance-report.mjs --seeds=100 --assert",
