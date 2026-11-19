@@ -129,9 +129,9 @@ for (const viewport of viewports) {
     expect(await page.evaluate(() =>
       document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     const initial = await archives(page);
-    expect(initial.prototype.run.day).toBe(1);
-    expect(initial.prototype.run.worlds[0].resource).toBe(4);
-    expect(initial.prototype.lastReceipt).toBeNull();
+    // The entry creates an in-memory camp but persists nothing until the
+    // first real command. An empty IndexedDB is the expected fresh-player state.
+    expect(initial.prototype).toBeNull();
     expect(initial.formal.run).toBeNull();
     expect(initial.formal.profile).toBeNull();
     await page.screenshot({ path: folder + "/sortie-2r-" + viewport.width +
