@@ -18,8 +18,8 @@ export function previewSortieDeadline(battle) {
 
   if (mission.status === "completed") {
     return {
-      phase: "completed", seconds, text: "回收完成 · 仍需活到 75 秒",
-      notice: "回收已完成，生存到 75 秒才能领取任务奖金",
+      phase: "completed", seconds, text: "回收完成 · 仍需活到 " + SORTIE.durationSeconds + " 秒",
+      notice: "回收已完成，生存到 " + SORTIE.durationSeconds + " 秒才能领取任务奖金",
     };
   }
   if (mission.status === "expired") {
