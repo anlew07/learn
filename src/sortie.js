@@ -35,7 +35,31 @@ app.className = "";
 app.innerHTML = [
   '<main class="sortie-root" data-sortie-root>',
   '<header class="sortie-head"><div><strong>灵灾 · 雾谷试炼</strong><small>移动避险 · 自动灵刃 · 战技构筑</small></div>',
-  '<a href="./">返回正式模拟器</a></header>',
+  '<div class="sortie-head-links"><button type="button" data-sortie-menu-return>主菜单</button>',
+  '<a href="./">正式模拟器</a></div></header>',
+  '<section class="sortie-title-screen" data-sortie-title-screen aria-label="游戏主菜单">',
+  '<div class="sortie-title-scene">',
+  '<div class="sortie-title-logo"><small>末日降临 · 两界同行</small>',
+  '<h1>同时穿越</h1><p>末日模拟器 <span>雾谷篇</span></p></div>',
+  '<div class="sortie-title-character" aria-hidden="true"></div>',
+  '</div>',
+  '<div class="sortie-title-menu">',
+  '<p class="sortie-title-tagline">走进雾谷，带回资源，重建家园。</p>',
+  '<button type="button" class="sortie-title-start" data-sortie-menu-enter disabled>开始冒险</button>',
+  '<button type="button" class="sortie-title-help-button" data-sortie-menu-help>玩法说明</button>',
+  '<small data-sortie-title-status role="status">正在读取冒险记录…</small>',
+  '</div>',
+  '<footer class="sortie-title-footer"><span>独立试玩 · 不影响正式存档</span>',
+  '<a href="./">返回正式模拟器</a></footer>',
+  '</section>',
+  '<section class="sortie-title-help" data-sortie-menu-help-dialog hidden>',
+  '<div class="sortie-title-help-panel" role="dialog" aria-modal="true" aria-labelledby="sortie-how-title">',
+  '<h2 id="sortie-how-title">如何开始</h2>',
+  '<p><b>① 出击</b>：进入营地选稳妥巡护或险地回收，再开始 75 秒冒险。</p>',
+  '<p><b>② 生存</b>：按住摇杆躲避危险，灵刃自动攻击；25 秒时暂停选择战技。</p>',
+  '<p><b>③ 成长</b>：带回灵石，在营地决定保留资源还是修复护灵剑台。</p>',
+  '<button type="button" data-sortie-menu-help-close>明白了</button>',
+  '</div></section>',
   '<section class="sortie-intro" data-sortie-intro>',
   '<h1>出击雾谷</h1>',
   '<p class="sortie-objective"><strong>本场目标：坚持 ' + SORTIE.durationSeconds +
@@ -134,7 +158,19 @@ app.innerHTML = [
   '</div><button class="sortie-cta" data-sortie-retry>返回营地</button></section></main>',
 ].join("");
 
+const root = app.querySelector("[data-sortie-root]");
+const titleScreen = app.querySelector("[data-sortie-title-screen]");
+const titleEnter = app.querySelector("[data-sortie-menu-enter]");
+const titleStatus = app.querySelector("[data-sortie-title-status]");
+const titleHelp = app.querySelector("[data-sortie-menu-help-dialog]");
+const titleHelpButton = app.querySelector("[data-sortie-menu-help]");
+const titleHelpClose = app.querySelector("[data-sortie-menu-help-close]");
+const titleReturn = app.querySelector("[data-sortie-menu-return]");
+const showTitleFirst = new URLSearchParams(window.location.search).get("screen") !== "camp";
 const intro = app.querySelector("[data-sortie-intro]");
+titleScreen.hidden = !showTitleFirst;
+intro.hidden = showTitleFirst;
+root.dataset.screen = showTitleFirst ? "menu" : "camp";
 const play = app.querySelector("[data-sortie-play]");
 const results = app.querySelector("[data-sortie-results]");
 const canvas = app.querySelector("[data-sortie-canvas]");
@@ -186,7 +222,7 @@ const knob = app.querySelector("[data-sortie-knob]");
 const keys = new Set();
 
 let battle = null;
-let phase = "intro";
+let phase = showTitleFirst ? "menu" : "intro";
 let paused = false;
 let pointerId = null;
 let pointerVector = { x: 0, y: 0 };
@@ -209,6 +245,40 @@ let lastVisualStats = null;
 let feedbackUntilTick = -1;
 let lastDeadlinePhase = null;
 
+function updateTitleScreen() {
+  if (!titleEnter) return;
+  titleEnter.textContent = archive?.lastReceipt ?
+    "继续冒险 · 第 " + archive.run.day + " 日" : "开始冒险";
+  titleEnter.disabled = !archive?.run || !session.isOwner ||
+    writeBusy || Boolean(writeError) || Boolean(restoreError);
+  titleStatus.textContent = restoreError ? "存档读取失败，请在下方重试" :
+    !archive?.run ? "正在读取冒险记录…" :
+      archive.lastReceipt ? "营地已保存，继续上次旅程" : "新的旅程正等待你";
+}
+function switchTitleScreen(toTitle) {
+  if (toTitle ? phase !== "intro" : !archive?.run) return;
+  if (!toTitle && (writeBusy || writeError || restoreError || !session.isOwner)) return;
+  phase = toTitle ? "menu" : "intro";
+  titleScreen.hidden = !toTitle;
+  intro.hidden = toTitle;
+  root.dataset.screen = toTitle ? "menu" : "camp";
+  if (!toTitle) intro.scrollTop = 0;
+  titleHelp.hidden = true;
+  updateCamp();
+}
+titleEnter.addEventListener("click", () => switchTitleScreen(false));
+titleReturn.addEventListener("click", () => switchTitleScreen(true));
+titleHelpButton.addEventListener("click", () => {
+  titleHelp.hidden = false;
+  titleHelpClose.focus();
+});
+titleHelpClose.addEventListener("click", () => {
+  titleHelp.hidden = true;
+  titleHelpButton.focus();
+});
+titleHelp.addEventListener("click", (event) => {
+  if (event.target === titleHelp) titleHelpClose.click();
+});
 const session = createExclusiveSession({
   onLost() {
     sessionMode = "readonly";
@@ -385,6 +455,7 @@ function updateCamp() {
   // settlement room for objective/changes. Still expose write/lock failures.
   sessionNotice.hidden = phase !== "intro" && sessionMode === "owner" &&
     !writeError && !restoreError;
+  updateTitleScreen();
 }
 
 async function persistCandidate(candidate, onSaved) {
@@ -435,7 +506,7 @@ async function initializeSession() {
     archive = recovered?.archive ?? createSortieArchive("sortie-camp-" + Date.now());
     // Reacquiring a previously lost lock invalidates any in-memory battle,
     // even if it was paused: only the saved pre-sortie snapshot may survive.
-    if (phase !== "intro") {
+    if (phase !== "intro" && phase !== "menu") {
       cancelAnimationFrame(frameId);
       resetMovement();
       battle = null;
@@ -604,6 +675,7 @@ function endBattle() {
   skillOverlay.hidden = true;
   retreatOverlay.hidden = true;
   results.hidden = false;
+  root.dataset.screen = "results";
   gains.hidden = true;
   gains.replaceChildren();
   app.querySelector("[data-sortie-outcome]").textContent = battle.outcome === "won" ?
@@ -756,6 +828,7 @@ function launchBattle() {
   skillOverlay.hidden = true;
   retreatOverlay.hidden = true;
   play.hidden = false;
+  root.dataset.screen = "battle";
   pauseButton.textContent = "暂停";
   pauseButton.setAttribute("aria-pressed", "false");
   pauseOverlay.hidden = true;
@@ -846,6 +919,7 @@ app.querySelector("[data-sortie-retry]").addEventListener("click", () => {
   phase = "intro";
   results.hidden = true;
   intro.hidden = false;
+  root.dataset.screen = "camp";
   updateCamp();
 });
 pauseButton.addEventListener("click", () => {
@@ -942,6 +1016,11 @@ for (const kind of ["pointerup", "pointercancel", "lostpointercapture"]) {
 const validKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"]);
 window.addEventListener("keydown", (event) => {
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  if (key === "Escape" && !titleHelp.hidden) {
+    event.preventDefault();
+    titleHelpClose.click();
+    return;
+  }
   if (phase === "battle" && key === "Escape" && !retreatOverlay.hidden) {
     event.preventDefault();
     closeRetreat();
