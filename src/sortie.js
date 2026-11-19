@@ -3,6 +3,7 @@ import { createSortie, advanceSortie, DURATION_TICKS, chooseSortieSkill, retreat
 import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
 import { drawSortie } from "./ui/sortie-stage.js";
+import { previewSortieDeadline } from "./ui/sortie-deadline.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 import { previewCivilizationProgress } from "./systems/civilization-progression.js";
 import { sortieRepository } from "./services/sortie-persistence.js";
@@ -85,6 +86,10 @@ app.innerHTML = [
   '<span data-sortie-time>剩余 75 秒</span><span data-sortie-defeated>击退 0</span></div>',
   '<div class="sortie-timebar" data-sortie-timebar role="progressbar" aria-label="试炼剩余时间" aria-valuemin="0" aria-valuemax="75" aria-valuenow="75" aria-valuetext="剩余 75 秒"><span data-sortie-time-fill></span></div>',
   '<div class="sortie-goal" data-sortie-goal>目标：撑到 0 秒 · 走位避险，靠近碎片拾取</div>',
+  '<div class="sortie-deadline" data-sortie-deadline data-phase="waiting" hidden>',
+  '<strong data-sortie-deadline-timer role="timer" aria-live="off"></strong>',
+  '<small>回收点驻留 1 秒 · 生存领 +2 石</small>',
+  '<span class="sortie-deadline-alert" data-sortie-deadline-alert role="status" aria-live="polite" aria-atomic="true"></span></div>',
   '<div class="sortie-lootbar"><span data-sortie-loot>碎片 0 · 灵石兑换 0/2</span>',
   '<span data-sortie-power>战技：待觉醒</span></div>',
   '<div class="sortie-field"><canvas width="320" height="448" data-sortie-canvas role="img"',
@@ -136,6 +141,9 @@ const defeated = app.querySelector("[data-sortie-defeated]");
 const pauseButton = app.querySelector("[data-sortie-pause]");
 const lootText = app.querySelector("[data-sortie-loot]");
 const goalText = app.querySelector("[data-sortie-goal]");
+const deadlinePanel = app.querySelector("[data-sortie-deadline]");
+const deadlineTimer = app.querySelector("[data-sortie-deadline-timer]");
+const deadlineAlert = app.querySelector("[data-sortie-deadline-alert]");
 const eventText = app.querySelector("[data-sortie-feedback]");
 const choiceState = app.querySelector("[data-sortie-choice-state]");
 const gains = app.querySelector("[data-sortie-gains]");
@@ -188,6 +196,7 @@ let restoreError = null;
 let recoveryMessage = "";
 let lastVisualStats = null;
 let feedbackUntilTick = -1;
+let lastDeadlinePhase = null;
 
 const session = createExclusiveSession({
   onLost() {
@@ -497,6 +506,20 @@ function drawStats() {
   const secondsLeft = Math.ceil(remainingTicks / SORTIE.ticksPerSecond);
   remaining.textContent = "剩余 " + secondsLeft + " 秒";
   const mission = battle.mission;
+  const deadline = previewSortieDeadline(battle);
+  deadlinePanel.hidden = deadline === null;
+  if (deadline) {
+    deadlinePanel.dataset.phase = deadline.phase;
+    deadlineTimer.textContent = deadline.text;
+    deadlineTimer.dataset.seconds = String(deadline.seconds);
+    if (lastDeadlinePhase !== deadline.phase) {
+      deadlineAlert.textContent = deadline.notice;
+      lastDeadlinePhase = deadline.phase;
+    }
+  } else {
+    deadlineAlert.textContent = "";
+    lastDeadlinePhase = null;
+  }
   const missionHint = mission?.id === "salvage" ?
     mission.status === "completed" ? " · 回收完成，仍需活到 75 秒" :
       mission.status === "expired" ? " · 回收点已过期，不得任务奖金" :
@@ -720,6 +743,8 @@ function launchBattle() {
   pauseOverlay.hidden = true;
   lastVisualStats = null;
   feedbackUntilTick = -1;
+  lastDeadlinePhase = null;
+  deadlineAlert.textContent = "";
   eventText.hidden = true;
   eventText.textContent = "";
   drawStats();
