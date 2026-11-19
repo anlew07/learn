@@ -285,12 +285,18 @@ for (const viewport of viewports) {
     expect(first.prototype.pending).toBeNull();
     expect(first.prototype.lastReceipt.worlds).toHaveLength(2);
     await expect(page.locator("[data-sortie-reward-preview]")).toContainText("灵石 " + award.stones);
+    await expect(page.locator("[data-sortie-reward-preview]"))
+      .toContainText("稳妥巡护：无额外回收目标");
+    await expect(page.locator("[data-sortie-world-report]"))
+      .not.toContainText(/主要行动：(?:sortie|explore)/);
     await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute("data-day", "2");
     await expect(page.locator("[data-sortie-growth-result]")).toBeHidden();
     await capture(page, viewport, "receipt-first");
 
     await tapStrict(page, "[data-sortie-retry]");
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 2 日");
+    await expect(page.locator("[data-sortie-last-receipt]"))
+      .not.toContainText(/sortie|explore/);
     await expect(page.locator("[data-sortie-forge-preview]")).toContainText("投入 6 灵石");
     // The camp is a real scroll container on short screens. Only finger gestures may reveal it.
     await tapCampWithFingerScroll(page, "[data-sortie-build]");
@@ -500,7 +506,11 @@ for (const viewport of viewports) {
       .toEqual(final.prototype.lastReceipt);
     expect(final.formal.run).toBeNull();
     expect(final.formal.profile).toBeNull();
-    await expect(page.locator("[data-sortie-reward-preview]")).toContainText("险地任务 2");
+    await expect(page.locator("[data-sortie-reward-preview]"))
+      .toContainText("险地回收：已完成");
+    await expect(page.locator("[data-sortie-reward-preview]"))
+      .toContainText("任务奖金 +2 灵石");
+    await expect(page.locator("[data-sortie-reward-preview]")).not.toContainText("completed");
     await capture(page, viewport, "guard-receipt");
   });
 }
@@ -531,6 +541,10 @@ test("2L-C completed physical salvage still pays no objective bonus on finger re
     await expect(page.locator("[data-sortie-results]")).toBeVisible();
     const final = await archives(page);
     expect(final.prototype.lastReceipt.battle.objectiveStones).toBe(0);
+    await expect(page.locator("[data-sortie-reward-preview]"))
+      .toContainText("险地回收：撤离时未完成");
+    await expect(page.locator("[data-sortie-reward-preview]"))
+      .toContainText("任务奖金 +0 灵石");
     expect(final.prototype.lastReceipt.battle.baseStones).toBe(0);
     expect(final.prototype.run.day).toBe(2);
     expect(final.formal.run).toBeNull();

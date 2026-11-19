@@ -5,6 +5,7 @@ import { SORTIE } from "./config/sortie-data.js";
 import { drawSortie } from "./ui/sortie-stage.js";
 import { previewSortieDeadline } from "./ui/sortie-deadline.js";
 import { previewSortieGrowthReview } from "./ui/sortie-growth-review.js";
+import { formatSortieMissionSummary, formatWorldActionLabel } from "./ui/sortie-receipt-labels.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 import { previewCivilizationProgress } from "./systems/civilization-progression.js";
 import { sortieRepository } from "./services/sortie-persistence.js";
@@ -308,7 +309,7 @@ function updateCamp() {
       "，经验 +" + prior.battle.experience +
       "，灵刃 " + (prior.battle.weaponDamage ?? 1) + " 伤害，击退 " +
       prior.battle.defeated + "；废土当日行动：" +
-      (prior.worlds[1]?.actionId || "无") +
+      formatWorldActionLabel(prior.worlds[1]?.actionId) +
       "。重新打开页面不会重复结算。" : "尚无已提交的出击回执";
     const forge = previewSortieForge(archive);
     const allocation = previewSortieCampAllocation(archive);
@@ -701,8 +702,7 @@ function endBattle() {
     const objectiveStones = Number.isFinite(reward.objectiveStones) ?
       reward.objectiveStones : null;
     const missionDetail = objectiveStones === null ? "" :
-      " + 险地任务 " + objectiveStones + "（状态 " + reward.objectiveStatus +
-        "，守卫造成 " + reward.objectiveGuardDamage + " 次受击；仅真实达成且胜利才发）";
+      "；" + formatSortieMissionSummary(reward);
     rewardText.textContent = "本场已权威结算：灵刃 " + reward.weaponDamage +
       " 伤害，拾取碎片 " + reward.collectedShards +
       "（未拾取 " + reward.uncollectedShards + "），灵石 " + reward.stones +
@@ -746,7 +746,7 @@ function endBattle() {
         " · 经验 " + delta(world.xpDelta) +
         " · 准备 " + delta(world.pDelta) +
         " · 风险 " + delta(world.dDelta) +
-        "；主要行动：" + (world.actionId || "未执行");
+        "；主要行动：" + formatWorldActionLabel(world.actionId);
       worldReport.append(item);
     }
     worldReport.dataset.day = String(receipt.nextDay);
