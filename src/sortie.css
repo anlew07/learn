@@ -369,3 +369,25 @@ a { color: #f3d898; }
 .sortie-civilization .sortie-civilization-hint {
   margin: 4px 0 0; color: #d4c6a1; font-size: 11px; line-height: 1.45;
 }
+
+/* 2Q: show the committed investment and its verified next-outing outcome.
+   Keep the panel inside the existing scrollable camp and result areas. */
+.sortie-growth-review {
+  width: min(420px, 100%); display: grid; gap: 4px;
+  border: 2px solid #94a777; background: #2b4032;
+  padding: 9px 11px; text-align: left;
+}
+.sortie-growth-review strong { color: #d5f2bd; font-size: 13px; }
+.sortie-growth-review p { margin: 0; color: #e6ddc2; font-size: 11px; line-height: 1.45; }
+.sortie-growth-review[data-phase="prepared"] {
+  border-color: #c9b777; background: #383a2c;
+}
+.sortie-growth-review[data-phase="prepared"] strong { color: #ffe2a8; }
+.sortie-growth-result {
+  width: min(100%, 380px); margin: 0; padding: 7px 9px;
+  border: 2px solid #94a777; background: #2d4637; color: #e6f1d2 !important;
+  font-size: 11px !important; line-height: 1.5 !important;
+}
+@media (max-height: 620px) {
+  .sortie-growth-review { padding: 6px 8px; gap: 3px; }
+}
