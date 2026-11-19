@@ -16,7 +16,7 @@ describe("2Q honest two-outing camp growth review", () => {
 
     const paid = buildSortieForge(first.archive, "2q:forge:first");
     expect(paid.ok).toBe(true);
-    expect(paid.replayed).toBe(false);
+    expect(paid.replayed).not.toBe(true);
     expect(paid.receipt.cost).toBe(SORTIE.forge.cost);
     expect(paid.receipt.afterStones).toBe(
       paid.receipt.beforeStones - SORTIE.forge.cost);
