@@ -45,6 +45,8 @@
 - 早期 CI #44439970570：规则、构建、数值测试通过；Playwright 共 115 passed / 1 failed / 1 skipped，失败为 320×568 图谱下部按钮触摸不可达。已给展开图谱加顶部快捷入口。
 - CI #44441663533：全量 Vitest、构建、矩阵通过；手机 E2E 在 320px 快捷导航、430px 展开操作遇到滚动惯性抵消点按。已改为 CDP 真实持续按压并在每次操作后检查界面变化，没有使用 `locator.click()`。
 - CI #44443316052 与原配置重跑：59/59 文件、376/376 断言通过（另 1 TODO），但 Vitest 3 fork worker 都在结束时报 `Timeout calling "onTaskUpdate"`，因此两次工作流最终均为 **failure**，Playwright 未执行。此问题已有 Vitest 官方讨论（vitest-dev/vitest/discussions/6511）。
-- 曾尝试只改 `.github/workflows/ci.yml` 为线程池，但当时 GitHub 没有为含 workflow 变更的新 HEAD 生成新检查，故**已恢复原 Actions 文件**，改由 `package.json` 的既有 `npm test` 使用 Vitest v3 官方支持的 `--pool=threads --maxWorkers=4`。不降低断言、不删除长种子实验。**线程池是否真正稳定及完整 Playwright 是否通过，以最终 HEAD 的新运行结果为准**。
+- 曾尝试只改 `.github/workflows/ci.yml` 为线程池，但当时 GitHub 没有为含 workflow 变更的新 HEAD 生成新检查，故**已恢复原 Actions 文件**，改由 `package.json` 的既有 `npm test` 仅指定 Vitest v3 官方支持的 `--pool=threads`，保留同时进行的基线修复中 CI 已设定的 `--maxWorkers=2`，避免重复参数冲突。不降低断言、不删除长种子实验。**线程池是否真正稳定及完整 Playwright 是否通过，以最终 HEAD 的新运行结果为准**。
 
 以上结果不能视为已通过的完整 2M 产品门禁；PR 继续保持 Draft。
+
+- CI #44445593950：因并行线已经将基线 CI 更新为 `npm test -- --maxWorkers=2`，与本分支 `package.json` 自带 `--maxWorkers=4` 叠加，Vitest 拒绝重复选项。已删除本分支重复的 worker 数值，仅保留 `--pool=threads`，尊重基线的并行约束。
