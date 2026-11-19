@@ -403,6 +403,14 @@ test("two real battles pay for the forge and use the stronger projectile after r
   expect(second.formal.run).toBeNull();
   expect(second.formal.profile).toBeNull();
   await page.locator("[data-sortie-retry]").click();
-  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("首场击退");
-  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("本场击退");
+  // The two-round comparison moved out of the dense receipt into a dedicated,
+  // explicitly non-causal growth panel. Keep verifying both real receipts.
+  await expect(page.locator("[data-sortie-last-receipt]")).toContainText("第 2 日回执");
+  const review = page.locator("[data-sortie-growth-review]");
+  await expect(review).toHaveAttribute("data-phase", "verified");
+  await expect(review).toContainText("建造前一场击退 " +
+    first.lastReceipt.battle.defeated);
+  await expect(review).toContainText("本场灵石 +" +
+    second.prototype.lastReceipt.battle.stones);
+  await expect(review).toContainText("单场灵石不是回本证明");
 });
