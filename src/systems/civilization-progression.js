@@ -34,7 +34,7 @@ export const CIVILIZATION_NODES = Object.freeze([
     id: "forge", branch: "建设", title: "修复剑台",
     task: "首场出击结算后，投入 6 灵石修复护灵剑台",
     reward: "下场灵刃命中伤害由 1 变 2；不保证赚回成本",
-    requires: ["survive"], target: "forge",
+    requires: ["worlds"], target: "forge",
   }),
   Object.freeze({
     id: "forge-trial", branch: "建设", title: "灵刃实战",
