@@ -4,7 +4,8 @@ import { test, expect } from "@playwright/test";
 const folder = "test-results/camp-ui";
 mkdirSync(folder, { recursive: true });
 
-// prettier-ignore -- Keep the three viewport touch assertions visually grouped.
+// Group the three viewport touch assertions for one screenshot gate.
+// prettier-ignore
 for (const viewport of [
   { width: 320, height: 568 },
   { width: 390, height: 844 },
