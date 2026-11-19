@@ -770,8 +770,9 @@ a { color: #f3d898; }
 }
 .sortie-title-logo p span { color: #ffcf88; }
 .sortie-title-character {
-  position: absolute; z-index: 1; right: 14%; bottom: 0;
-  width: clamp(83px,22vw,145px); height: 53%; min-height: 100px;
+  position: absolute; z-index: 1; right: 50%; bottom: 0;
+  transform: translateX(50%);
+  width: clamp(150px,42vw,195px); height: 67%; min-height: 150px;
   background: url("./assets/original/clone-cultivator.svg") center bottom / contain no-repeat;
   image-rendering: pixelated;
   filter: drop-shadow(6px 6px 0 rgba(13,18,26,.65));
@@ -858,7 +859,10 @@ a { color: #f3d898; }
   }
   .sortie-title-logo { top: 22px; }
   .sortie-title-logo h1 { font-size: clamp(30px,5vw,56px); }
-  .sortie-title-character { width: 125px; min-height: 130px; height: 58%; }
+  .sortie-title-character {
+    right: 14%; transform: none;
+    width: 125px; min-height: 130px; height: 58%;
+  }
   .sortie-title-menu { margin: auto 0; padding: 0; gap: 12px; width: 100%; }
   .sortie-title-menu button { width: min(100%,340px); }
   .sortie-title-footer { grid-column: 1 / -1; margin: 0; min-height: 24px; }
