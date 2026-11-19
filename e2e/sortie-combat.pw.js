@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("isolated sortie opens with a clear action and fits mobile viewports", async ({ page }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.getByRole("heading", { name: "出击雾谷" })).toBeVisible();
   await expect(page.getByText("不读取、写入正式存档", { exact: false })).toBeVisible();
 
@@ -48,7 +48,7 @@ test("isolated sortie opens with a clear action and fits mobile viewports", asyn
 });
 
 test("keyboard movement, pause and resume operate on battle ticks", async ({ page }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   const canvas = page.locator("[data-sortie-canvas]");
   const before = Number(await canvas.getAttribute("data-hero-x"));
@@ -79,7 +79,7 @@ test("keyboard movement, pause and resume operate on battle ticks", async ({ pag
 });
 
 test("joystick pointer drag moves the hero and releases without drift", async ({ page }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   const joystick = page.locator("[data-sortie-joystick]");
   const canvas = page.locator("[data-sortie-canvas]");
@@ -105,7 +105,7 @@ test("joystick pointer drag moves the hero and releases without drift", async ({
 
 test("touch joystick reverses and cancels without page scroll", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   const joystick = page.locator("[data-sortie-joystick]");
   await expect(joystick).toHaveCSS("touch-action", "none");
@@ -151,7 +151,7 @@ test("touch joystick reverses and cancels without page scroll", async ({ page })
 });
 
 test("refreshing a prototype does not use the formal save", async ({ page }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   await page.reload();
   await expect(page.locator("[data-sortie-intro]")).toBeVisible();
@@ -166,7 +166,7 @@ test("refreshing a prototype does not use the formal save", async ({ page }) => 
 test("the 25-second skill choice freezes time and resumes with a real choice", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   // A battle may not begin until the pre-sortie IndexedDB checkpoint commits.
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
@@ -195,7 +195,7 @@ test("the 25-second skill choice freezes time and resumes with a real choice", a
 test("retreat confirmation shows sandbox-only loss rules without touching saves", async ({
   page,
 }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   await page.locator("[data-sortie-retreat]").click();
   const confirm = page.getByRole("dialog", { name: "确定撤离雾谷？" });
@@ -220,14 +220,14 @@ test("retreat confirmation shows sandbox-only loss rules without touching saves"
 });
 
 test("a confirmed retreat commits exactly one world day and survives reload", async ({ page }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.locator("[data-sortie-camp]")).toContainText("第 1 日");
   await page.locator("[data-start-sortie]").click();
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
   await page.locator("[data-sortie-retreat]").click();
   await page.locator("[data-sortie-confirm-yes]").click();
   await expect(page.locator("[data-sortie-world-report]")).toContainText("第 1 日结算 → 第 2 日");
-  await expect(page.locator("[data-sortie-world-report]")).toContainText("主要行动：sortie");
+  await expect(page.locator("[data-sortie-world-report]")).toContainText("主要行动：雾谷出击");
   await expect(page.locator("[data-sortie-world-report]")).toContainText("废土救援");
 
   const saved = await page.evaluate(async () => {
@@ -252,7 +252,7 @@ test("a confirmed retreat commits exactly one world day and survives reload", as
 });
 
 test("refresh during a pending battle rolls back to camp without awards", async ({ page }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await page.locator("[data-start-sortie]").click();
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
   await page.reload();
@@ -270,10 +270,10 @@ test("refresh during a pending battle rolls back to camp without awards", async 
 });
 
 test("second tab is read-only while the first owns the save lock", async ({ page, context }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
   const second = await context.newPage();
-  await second.goto("/?mode=sortie");
+  await second.goto("/?mode=sortie&screen=camp");
   await expect(second.locator("[data-sortie-session-notice]")).toContainText("只读");
   await expect(second.locator("[data-start-sortie]")).toBeDisabled();
   await page.close();
@@ -285,7 +285,7 @@ test("second tab is read-only while the first owns the save lock", async ({ page
 test("the camp forge remains accessible without page overflow at mobile sizes", async ({
   page,
 }) => {
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
   await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "0");
   await expect(page.locator("[data-sortie-build]")).toBeHidden();
@@ -314,7 +314,7 @@ test("two real battles pay for the forge and use the stronger projectile after r
   test.setTimeout(90_000);
   await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
 
   // Replace the throwaway unsaved fresh seed with a deterministic, unmodified

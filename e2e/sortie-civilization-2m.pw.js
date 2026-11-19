@@ -89,7 +89,7 @@ for (const viewport of viewports) {
     viewport.width + "x" + viewport.height, async ({ page }) => {
     test.setTimeout(60_000);
     await page.setViewportSize(viewport);
-    await page.goto("/?mode=sortie");
+    await page.goto("/?mode=sortie&screen=camp");
     const tree = page.locator("[data-civilization-tree]");
     await expect(page.locator("[data-civilization-count]")).toContainText("1/8");
     await expect(tree).not.toHaveAttribute("open");
