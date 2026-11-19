@@ -37,6 +37,8 @@ async function fingerSwipe(page, forward = true) {
         type: "touchMove",
         touchPoints: [{ x, y: from + (to - from) * i / 8, id: 1 }],
       });
+      // A real drag takes time; instantaneous 8-frame swipes create momentum.
+      await page.waitForTimeout(22);
     }
     await client.send("Input.dispatchTouchEvent", {
       type: "touchEnd", touchPoints: [],
@@ -46,33 +48,54 @@ async function fingerSwipe(page, forward = true) {
   }
 }
 
+// Use a real held touch, and confirm the destination visibly changed.
+// Merely seeing a button under a finger is insufficient during scroll inertia.
 // prettier-ignore
-async function tapByFinger(page, selector) {
-  for (let i = 0; i < 16; i++) {
+async function tapByFinger(page, selector, didAct) {
+  for (let i = 0; i < 18; i++) {
     const point = await visibleTouchPoint(page, selector);
     if (point) {
-      await page.touchscreen.tap(point.x, point.y);
-      return;
+      await page.waitForTimeout(500);
+      const still = await visibleTouchPoint(page, selector);
+      if (!still) continue;
+      const client = await page.context().newCDPSession(page);
+      try {
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart", touchPoints: [{ ...still, id: 7 }],
+        });
+        await page.waitForTimeout(140);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchEnd", touchPoints: [],
+        });
+      } finally {
+        await client.detach();
+      }
+      await page.waitForTimeout(700);
+      if (await didAct()) return;
+      // First finger contact may dismiss inertia. Try again, never force click.
+      continue;
     }
     const bounds = await page.locator(selector).boundingBox();
     const forward = !bounds || bounds.y + bounds.height / 2 > 88;
     await fingerSwipe(page, forward);
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(430);
   }
-  throw new Error(selector + " cannot be physically reached");
+  throw new Error(selector + " did not respond to real finger touches");
 }
 
 // prettier-ignore
 for (const viewport of viewports) {
   test("2M civilization map: collapsed by default, finger-open and real navigation " +
     viewport.width + "x" + viewport.height, async ({ page }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize(viewport);
     await page.goto("/?mode=sortie");
     const tree = page.locator("[data-civilization-tree]");
     await expect(page.locator("[data-civilization-count]")).toContainText("1/8");
     await expect(tree).not.toHaveAttribute("open");
     await expect(page.locator("[data-civilization-next]")).toContainText("雾谷生还");
-    await tapByFinger(page, "[data-civilization-tree] > summary");
+    await tapByFinger(page, "[data-civilization-tree] > summary",
+      () => tree.evaluate((element) => element.open));
     await expect(tree).toHaveAttribute("open", "");
     await expect(page.locator('[data-civilization-node="fire"]'))
       .toHaveAttribute("data-state", "complete");
@@ -80,7 +103,9 @@ for (const viewport of viewports) {
       .toHaveAttribute("data-state", "ready");
     await expect(page.locator('[data-civilization-node="forge"]'))
       .toHaveAttribute("data-state", "locked");
-    await tapByFinger(page, '.sortie-civilization-shortcuts [data-civilization-target="salvage"]');
+    await tapByFinger(page,
+      '.sortie-civilization-shortcuts [data-civilization-target="salvage"]',
+      async () => Boolean(await visibleTouchPoint(page, "[data-sortie-mission-salvage]")));
     await expect(page.locator("[data-sortie-mission-salvage]")).toBeEnabled();
     await page.waitForTimeout(450);
     expect(await visibleTouchPoint(page, "[data-sortie-mission-salvage]"))
