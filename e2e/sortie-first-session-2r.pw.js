@@ -125,7 +125,7 @@ for (const viewport of viewports) {
     await expect(page.locator("[data-sortie-salvage-description]"))
       .toContainText("未完成、失败或撤离不领任务奖金");
     await expect(page.locator("[data-sortie-build]")).toBeHidden();
-    await expect(page.locator("[data-civilization-tree] summary")).toContainText("0/8 节点");
+    await expect(page.locator("[data-civilization-tree] summary")).toContainText("下一目标：雾谷生还");
     expect(await page.evaluate(() =>
       document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     const initial = await archives(page);
