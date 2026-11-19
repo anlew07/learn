@@ -31,7 +31,8 @@ jobs:
             docs/review/human-review-worklist.csv
           if-no-files-found: error
           retention-days: 14
-      - run: npm test
+      # Bound concurrent CPU-heavy fixed-seed suites to avoid Vitest worker RPC starvation.
+      - run: npm test -- --maxWorkers=2
       - run: npm run build
       - run: npm run balance:check
       - run: npm run balance:matrix:check
