@@ -122,17 +122,53 @@ async function swipeCamp(page) {
 
 // prettier-ignore
 async function tapCampWithFingerScroll(page, selector) {
-  for (let i = 0; i < 6; i++) {
+  await expect(page.locator(selector)).toBeEnabled();
+  await page.evaluate((target) => {
+    const button = document.querySelector(target);
+    window.__campActionTouchEvidence = {
+      pointerdown: 0, touchstart: 0, touchend: 0, click: 0,
+    };
+    for (const kind of Object.keys(window.__campActionTouchEvidence)) {
+      button.addEventListener(kind, () => {
+        window.__campActionTouchEvidence[kind]++;
+      }, { capture: true });
+    }
+  }, selector);
+
+  for (let i = 0; i < 7; i++) {
     const point = await visibleTarget(page, selector);
     if (point) {
-      await page.touchscreen.tap(point.x, point.y);
+      // A short, held finger is more reliable than a zero-duration tap after
+      // the nested camp scroller has moved on 320px devices.
+      await page.waitForTimeout(420);
+      const stablePoint = await visibleTarget(page, selector);
+      if (!stablePoint) continue;
+      const client = await page.context().newCDPSession(page);
+      try {
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart", touchPoints: [{ ...stablePoint, id: 9 }],
+        });
+        await page.waitForTimeout(140);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchEnd", touchPoints: [],
+        });
+      } finally {
+        await client.detach();
+      }
+      await expect.poll(async () => page.evaluate(() =>
+        window.__campActionTouchEvidence.click)).toBeGreaterThan(0);
+      console.info("2L-C camp action real finger", await page.evaluate(() => ({
+        events: window.__campActionTouchEvidence,
+        level: document.querySelector("[data-sortie-forge]")?.dataset.level,
+        notice: document.querySelector("[data-sortie-session-notice]")?.textContent,
+        buttonDisabled: document.querySelector("[data-sortie-build]")?.disabled,
+      })));
       return;
     }
     await swipeCamp(page);
-    // Let the compositor finish the finger-scroll; tapping during inertia is cancelled on 320px.
-    await page.waitForTimeout(380);
+    await page.waitForTimeout(420);
   }
-  await tapStrict(page, selector);
+  throw new Error(selector + " never became physically touchable after finger scrolling");
 }
 
 // Simulate a held thumb on the actual joystick and a square escape route.
