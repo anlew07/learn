@@ -391,3 +391,314 @@ a { color: #f3d898; }
 @media (max-height: 620px) {
   .sortie-growth-review { padding: 6px 8px; gap: 3px; }
 }
+
+
+/* 2R game-first visual pass: reuse original pixel sprites and existing rules.
+   Scope carefully so the 75s simulation, mission state and touch hit areas stay authoritative. */
+.sortie-root {
+  --ui-ink: #201b24;
+  --ui-border: #baa37a;
+  --ui-gold: #ffd982;
+  --ui-parchment: #f5e8c6;
+  background: #171923;
+  color: var(--ui-parchment);
+}
+.sortie-head {
+  min-height: calc(50px + env(safe-area-inset-top));
+  padding: calc(7px + env(safe-area-inset-top)) 12px 7px;
+  background: linear-gradient(180deg,#41344a,#292533);
+  border-bottom: 3px solid #b99562;
+  box-shadow: inset 0 -2px 0 #1a1925;
+}
+.sortie-head strong { color: #fff1c7; font-size: 14px; letter-spacing: .035em; }
+.sortie-head small { color: #d4bfa7; font-size: 10px; }
+.sortie-head a {
+  display: inline-flex; align-items: center; min-height: 34px;
+  max-width: 105px; padding: 5px 7px; font-size: 11px; line-height: 1.25;
+  color: #ffdda1; text-align: center; text-decoration: none;
+  border: 1px solid #806c70; background: #302837;
+}
+.sortie-root button {
+  border-color: #aa8967;
+  box-shadow: inset 0 2px rgba(255,255,255,.13), 0 3px 0 #171522;
+  border-radius: 5px;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+.sortie-root button:not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px rgba(255,255,255,.08), 0 1px 0 #171522;
+  filter: brightness(1.08);
+}
+.sortie-intro {
+  align-items: stretch;
+  gap: 9px;
+  padding: 12px 12px 16px;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(135,100,145,.18), transparent 65%),
+    #1c1e29;
+  text-align: left;
+  scrollbar-color: #75617d #292635;
+  scrollbar-width: thin;
+}
+.sortie-intro > * { max-width: none; width: 100%; }
+.sortie-intro h1 {
+  order: 1;
+  display: flex; align-items: flex-end;
+  min-height: 145px; margin: 0;
+  padding: 14px 12px 12px;
+  position: relative; overflow: hidden;
+  font-size: 26px; line-height: 1.1; letter-spacing: .07em;
+  color: #fff6cf; text-shadow: 2px 3px #302634, -1px -1px #302634;
+  image-rendering: pixelated;
+  background:
+    linear-gradient(0deg, rgba(15,22,24,.88),rgba(15,22,24,.04) 70%),
+    url("./assets/original/clone-cultivator.svg") 83% 91% / auto 120px no-repeat,
+    url("./assets/world-lingzai.svg") center / 100% 100% no-repeat;
+  border: 4px solid #bbaa7e; border-radius: 6px;
+  box-shadow: 0 5px 0 #100f19, inset 0 0 0 2px #4f5c47;
+}
+.sortie-intro h1::before {
+  content: "✦ 01";
+  position: absolute; top: 7px; left: 10px;
+  padding: 3px 7px; font-size: 10px; line-height: 1;
+  font-family: monospace; letter-spacing: 0;
+  color: #fff0bf; background: #5e3e56;
+  border: 1px solid #ddbb78; text-shadow: none;
+}
+.sortie-intro .sortie-objective {
+  order: 2; max-width: none; margin: 0;
+  padding: 9px 12px; border: 2px solid #9e8066; border-radius: 4px;
+  background: linear-gradient(90deg,#37303c,#2f3440);
+  box-shadow: inset 4px 0 #e7ba6f;
+}
+.sortie-intro .sortie-objective strong { font-size: 14px; color: #ffe0a0; }
+.sortie-intro .sortie-objective span {
+  margin-top: 3px; font-size: 11px; line-height: 1.4; color: #e8dec7;
+}
+.sortie-intro .sortie-2l-missions {
+  order: 3;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 7px;
+  padding: 9px;
+  width: 100%; max-width: none;
+  border: 2px solid #8e7471; border-radius: 7px;
+  background: #292735;
+  box-shadow: 0 4px 0 #12121b;
+}
+.sortie-intro .sortie-2l-missions > strong {
+  grid-column: 1 / -1; grid-row: 1;
+  font-size: 14px; letter-spacing: .03em; color: #ffe1a4;
+  padding-left: 4px; padding-bottom: 3px;
+}
+.sortie-intro .sortie-2l-missions p {
+  min-width: 0; max-width: none; width: 100%; margin: 0;
+  padding: 8px 8px 5px; font-size: 11px; line-height: 1.42;
+  overflow-wrap: anywhere; border: 2px solid #6f846d;
+  border-bottom: 0; border-radius: 5px 5px 0 0;
+  background: #2a443b; color: #e4f1d4;
+}
+.sortie-intro [data-sortie-safe-mission] { grid-column: 1; grid-row: 2; }
+.sortie-intro [data-sortie-salvage-description] {
+  grid-column: 2; grid-row: 2;
+  background: #473747; color: #ffe5cb;
+  border-color: #b37d63; border-left: 2px solid #b37d63;
+}
+.sortie-intro .sortie-2l-missions button {
+  min-width: 0; width: 100%; min-height: 51px;
+  padding: 7px 5px; font-size: 11px; line-height: 1.32;
+  border-radius: 0 0 5px 5px;
+  box-shadow: 0 2px 0 #11151b;
+  white-space: normal; overflow-wrap: anywhere;
+}
+.sortie-intro [data-sortie-mission-safe] {
+  grid-column: 1; grid-row: 3;
+  background: linear-gradient(#7eb271,#456e5c);
+  border-color: #bbce91; color: #fffce2;
+}
+.sortie-intro [data-sortie-mission-salvage] {
+  grid-column: 2; grid-row: 3;
+  background: linear-gradient(#bd876d,#8d5b5e);
+  border-color: #f1c284; color: #fff7df;
+}
+.sortie-intro .sortie-2l-missions button:disabled {
+  filter: saturate(.55); opacity: .58;
+}
+.sortie-intro > [data-start-sortie] {
+  order: 4;
+  position: sticky; bottom: 4px; z-index: 3;
+  width: 100%; min-height: 53px; margin: 1px 0 4px;
+  padding: 10px 12px;
+  font-size: 16px; line-height: 1.3; letter-spacing: .03em;
+  border: 3px solid #fff0ba; border-radius: 7px;
+  color: #33241c;
+  background: linear-gradient(#ffe29b 0%, #f2b65b 61%, #dc9147 100%);
+  text-shadow: 0 1px rgba(255,245,215,.5);
+  box-shadow: inset 0 3px rgba(255,255,255,.45), 0 5px 0 #693f36, 0 7px 13px rgba(0,0,0,.28);
+}
+.sortie-intro .sortie-intro-tip,
+.sortie-intro .sortie-entry-growth { order: 5; }
+.sortie-intro .sortie-intro-tip {
+  padding: 7px 10px; margin: 0; font-size: 11px; line-height: 1.5;
+  color: #bcb6b0; text-align: left;
+  background: #242530; border: 1px solid #5e5561; border-radius: 4px;
+}
+.sortie-intro .sortie-entry-growth {
+  order: 6; margin: 0; font-size: 11px; line-height: 1.5;
+  color: #f2d5a4; text-align: left;
+}
+.sortie-intro .sortie-2l-allocation {
+  order: 7; gap: 4px; width: 100%; max-width: none;
+  border: 2px solid #706276; border-radius: 6px;
+  background: #292b37; padding: 9px 10px;
+}
+.sortie-intro .sortie-2l-allocation > strong { font-size: 13px; color: #f4d6a9; }
+.sortie-intro .sortie-2l-allocation p { font-size: 11px; line-height: 1.45; }
+.sortie-intro .sortie-2l-allocation [data-sortie-prepare-preview],
+.sortie-intro .sortie-2l-allocation .sortie-2l-unavailable {
+  display: none;
+}
+.sortie-intro .sortie-camp {
+  order: 8; width: 100%; max-width: none;
+  padding: 10px; border: 2px solid #796c7b; border-radius: 5px;
+  background: #30323c; gap: 6px;
+}
+.sortie-camp > strong { font-size: 13px; color: #ffe4ad; }
+.sortie-camp span { font-size: 11px; line-height: 1.5; }
+.sortie-camp p { font-size: 11px; color: #f2d6a6; }
+.sortie-intro .sortie-forge {
+  order: 9; width: 100%; max-width: none;
+  border: 2px solid #9e8263; border-radius: 6px;
+  padding: 11px; gap: 8px;
+  background: linear-gradient(140deg,#423740,#292735);
+}
+.sortie-forge .sortie-forge-top strong { font-size: 15px; color: #ffe0a4; }
+.sortie-forge .sortie-forge-top p { color: #d3cbbe; }
+.sortie-forge .sortie-forge-pedestal {
+  background: linear-gradient(#765c4d,#42343c);
+  border-color: #c19a68; color: #f2b76b;
+}
+.sortie-forge > button {
+  min-height: 48px; background: linear-gradient(#f1b86a,#b97849);
+  color: #261e26; border-color: #ffe6aa;
+}
+.sortie-intro .sortie-growth-review {
+  order: 10; width: 100%; max-width: none;
+  background: #294037; border-color: #bba06f; border-radius: 6px;
+}
+.sortie-intro .sortie-civilization {
+  order: 11; width: 100%; max-width: none;
+  background: #2d2b3a; border: 2px solid #85708f; border-radius: 6px;
+}
+.sortie-intro .sortie-warning {
+  order: 12; width: 100%; margin: 0; text-align: left;
+  font-size: 10px; line-height: 1.5; color: #c7a78e;
+}
+.sortie-session-notice {
+  flex: 0 0 auto; min-height: 25px;
+  padding: 5px 10px calc(5px + env(safe-area-inset-bottom));
+  font-size: 11px; line-height: 1.35; background: #211d2b;
+  border-top: 1px solid #5f4c60; color: #f0c98a;
+}
+.sortie-stats {
+  min-height: 43px; background: #30283b;
+  border-bottom: 2px solid #a88162; color: #fff0cb;
+}
+.sortie-stats [data-sortie-time] { color: #ffe082; }
+.sortie-timebar { background: #4b3543; height: 7px; flex-basis: 7px; }
+.sortie-timebar span { height: 6px; background: #ffc25e; border-color: #fff0b8; }
+.sortie-goal { background: #282b39; color: #f4dcaa; border-color: #80677b; }
+.sortie-lootbar { background: #292a39; border-color: #8e6c70; }
+.sortie-deadline { background: #514238; }
+.sortie-controls {
+  background: linear-gradient(#3c3044,#2a2737);
+  border-color: #a18768;
+}
+.sortie-joystick {
+  background: radial-gradient(circle,#50495c 0%,#39374e 68%,#282333 70%);
+  border-color: #e1bb83;
+  box-shadow: inset 0 0 0 5px #514355, 0 3px #1b1823;
+}
+.sortie-knob { background: #d3c2a1; border-color: #fff0c7; }
+.sortie-actions button { background: #6b5665; border-color: #cfac89; }
+.sortie-dialog-overlay { background: rgba(20,17,29,.92); }
+.sortie-modal {
+  border-color: #f1ca86; border-radius: 9px;
+  background: linear-gradient(#443343,#292b36);
+  box-shadow: 0 7px 0 #161522, inset 0 0 0 2px #745a63;
+}
+.sortie-modal h2 { color: #ffe6af; }
+.sortie-choice-state {
+  background: #3b4950; border-color: #ffd075;
+}
+.sortie-skill-card {
+  border: 3px solid #bfc8b2; border-radius: 6px;
+  background: linear-gradient(100deg,#557073,#344b59);
+  box-shadow: 0 3px #1d2734;
+}
+.sortie-skill-card:first-of-type {
+  border-color: #e8bf77;
+  background: linear-gradient(100deg,#7e5050,#563748);
+}
+.sortie-skill-card strong { font-size: 14px; color: #fff6c6; }
+.sortie-skill-card span { color: #eee3d9; }
+.sortie-default { background: #3d344a; color: #f9dbad; }
+.sortie-results {
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(150,111,80,.27),transparent 65%),
+    #1c1d29;
+}
+.sortie-results-content { gap: 9px; }
+.sortie-results-content h1 {
+  width: 100%; padding: 20px 12px 14px;
+  background:
+    url("./assets/original/supply-chest.svg") right 10px center / 55px auto no-repeat,
+    linear-gradient(110deg,#584538,#302d3b);
+  border: 3px solid #f1c782; border-radius: 7px;
+  box-shadow: 0 4px #161620;
+  text-align: left; color: #ffebb3; font-size: 23px;
+}
+.sortie-result-gains > div {
+  border: 2px solid #bc9567; border-radius: 6px;
+  background: linear-gradient(#494052,#32323c);
+  box-shadow: inset 0 2px rgba(255,255,255,.1), 0 3px #181720;
+}
+.sortie-result-gains strong { color: #ffd36e; font-size: 23px; }
+.sortie-results [data-sortie-reward-preview] {
+  border-radius: 5px; background: #292c37; border-color: #796574;
+}
+.sortie-results .sortie-world-report {
+  width: 100%; max-width: none; background: #2f3540;
+  border-color: #81737c; border-radius: 6px;
+}
+.sortie-results > [data-sortie-retry] {
+  width: 100%; min-height: 48px;
+  background: linear-gradient(#ffe09a,#e6ae5e);
+  color: #35241f; border-color: #fff0bd;
+}
+@media (max-width: 360px), (max-height: 620px) {
+  .sortie-head { min-height: 42px; padding: 4px 9px; }
+  .sortie-head small { display: none; }
+  .sortie-intro { padding: 8px 9px 11px; gap: 5px; }
+  .sortie-intro h1 {
+    min-height: 94px; padding: 8px 10px;
+    font-size: 21px;
+    background:
+      linear-gradient(0deg,rgba(15,22,24,.87),rgba(15,22,24,.08) 70%),
+      url("./assets/original/clone-cultivator.svg") 84% 94% / auto 83px no-repeat,
+      url("./assets/world-lingzai.svg") center / 100% 100% no-repeat;
+  }
+  .sortie-intro .sortie-objective { padding: 6px 8px; }
+  .sortie-intro .sortie-objective strong { font-size: 12px; }
+  .sortie-intro .sortie-objective span { font-size: 10px; line-height: 1.25; }
+  .sortie-intro .sortie-2l-missions { padding: 6px; gap: 5px; }
+  .sortie-intro .sortie-2l-missions > strong { font-size: 12px; }
+  .sortie-intro .sortie-2l-missions p { padding: 5px; font-size: 10px; line-height: 1.25; }
+  .sortie-intro .sortie-2l-missions button { padding: 5px 3px; min-height: 43px; font-size: 10px; }
+  .sortie-intro > [data-start-sortie] { min-height: 45px; font-size: 13px; padding: 7px 9px; }
+  .sortie-session-notice { min-height: 20px; font-size: 10px; }
+  .sortie-results-content h1 { font-size: 19px; padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sortie-root button { transition: none; }
+}
