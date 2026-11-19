@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 
 mkdirSync("test-results/camp-ui", { recursive: true });
 
+// prettier-ignore
 const viewports = [
   { width: 320, height: 568 },
   { width: 390, height: 844 },
@@ -74,6 +75,7 @@ for (const viewport of viewports) {
     });
 }
 
+// prettier-ignore
 test("2S direct-camp entry remains available to authoritative gameplay tests",
   async ({ page }) => {
     await page.goto("/?mode=sortie&screen=camp");
