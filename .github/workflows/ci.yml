@@ -31,7 +31,11 @@ jobs:
             docs/review/human-review-worklist.csv
           if-no-files-found: error
           retention-days: 14
-      - run: npm test
+      # Vitest 3.x fork workers intermittently emit "Timeout calling onTaskUpdate"
+      # after all fixed-seed assertions pass. Keep the full suite, switch only
+      # CI worker isolation/communication; do not skip or relax any test.
+      - name: Run Vitest with thread workers
+        run: npm test -- --pool=threads --maxWorkers=4
       - run: npm run build
       - run: npm run balance:check
       - run: npm run balance:matrix:check
