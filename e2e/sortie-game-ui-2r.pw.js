@@ -14,7 +14,7 @@ for (const viewport of [
   test("2R game-first camp keeps both route cards and the battle action readable " +
     viewport.width + "x" + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/?mode=sortie");
+    await page.goto("/?mode=sortie&screen=camp");
     const scene = page.locator(".sortie-intro h1");
     const routes = page.locator(".sortie-2l-missions");
     const launch = page.locator("[data-start-sortie]");
