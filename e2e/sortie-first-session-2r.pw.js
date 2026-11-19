@@ -126,6 +126,18 @@ async function archives(page) {
   });
 }
 
+// Enter the camp through the title screen when the game-first menu is present.
+// The fallback keeps this release-gate branch valid against the pre-2S base.
+async function enterCamp(page) {
+  const menu = page.locator("[data-sortie-title-screen]");
+  if (await menu.isVisible()) {
+    await expect(page.locator("[data-sortie-menu-enter]")).toBeEnabled();
+    await fingerTapReachable(page, "[data-sortie-menu-enter]");
+    await expect(menu).toBeHidden();
+  }
+  await expect(page.locator("[data-sortie-intro]")).toBeVisible();
+}
+
 // prettier-ignore
 for (const viewport of viewports) {
   test("2R fresh player finds risk choice, gets 25s pause, and never earns on interruption " +
@@ -134,6 +146,7 @@ for (const viewport of viewports) {
     await page.clock.install({ time: new Date("2026-11-19T00:00:00Z") });
     await page.setViewportSize(viewport);
     await page.goto("/?mode=sortie");
+    await enterCamp(page);
 
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 1 日");
     await expect(page.locator(".sortie-objective")).toContainText("坚持 75 秒");
@@ -165,6 +178,7 @@ for (const viewport of viewports) {
     expect(selected.prototype.lastReceipt).toBeNull();
 
     await page.reload();
+    await enterCamp(page);
     await expect(page.locator("[data-sortie-mission-salvage]"))
       .toContainText("已选险地回收");
     await fingerTapReachable(page, "[data-start-sortie]", false);
@@ -187,6 +201,7 @@ for (const viewport of viewports) {
     await expect(dialog).toBeHidden();
 
     await page.reload();
+    await enterCamp(page);
     await expect(page.locator("[data-sortie-intro]")).toBeVisible();
     await expect(page.locator("[data-sortie-session-notice]"))
       .toContainText("未完成提交");
