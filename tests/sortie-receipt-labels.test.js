@@ -36,6 +36,28 @@ describe("formatSortieMissionSummary", () => {
     })).toBe("险地回收：已完成 · 任务奖金 +2 灵石 · 守卫造成 3 次受击");
   });
 
+  it("keeps completed objectives distinct from unpaid retreat or defeat", () => {
+    expect(formatSortieMissionSummary({
+      missionId: "salvage",
+      objectiveStatus: "completed",
+      objectiveStones: 0,
+      outcome: "retreated",
+    })).toContain("已完成，但撤离未获奖金");
+    expect(formatSortieMissionSummary({
+      missionId: "salvage",
+      objectiveStatus: "completed",
+      objectiveStones: 0,
+      outcome: "lost",
+    })).toContain("已完成，但倒下后未获奖金");
+  });
+
+  it("does not mislabel an unknown future mission as the safe route", () => {
+    expect(formatSortieMissionSummary({
+      missionId: "future-objective",
+      objectiveStones: 0,
+    })).toBe("额外任务：状态待核验");
+  });
+
   it("distinguishes retreat and defeat from successful completion", () => {
     expect(formatSortieMissionSummary({
       missionId: "salvage",

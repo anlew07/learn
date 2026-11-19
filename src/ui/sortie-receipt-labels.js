@@ -1,6 +1,8 @@
 import { ACTION_LABELS } from "../systems/action-policy.js";
 
 function objectiveStatusLabel(status, outcome) {
+  if (status === "completed" && outcome === "retreated") return "已完成，但撤离未获奖金";
+  if (status === "completed" && outcome === "lost") return "已完成，但倒下后未获奖金";
   if (status === "available" && outcome === "retreated") return "撤离时未完成";
   if (status === "available" && outcome === "lost") return "失败时未完成";
   switch (status) {
@@ -27,7 +29,9 @@ export function formatWorldActionLabel(actionId) {
 
 /** Describe the selected sortie objective using only its authoritative receipt. */
 export function formatSortieMissionSummary(reward) {
-  if (reward?.missionId !== "salvage") return "稳妥巡护：无额外回收目标";
+  if (reward?.missionId === "safe" || !reward?.missionId)
+    return "稳妥巡护：无额外回收目标";
+  if (reward.missionId !== "salvage") return "额外任务：状态待核验";
 
   const status = objectiveStatusLabel(reward.objectiveStatus, reward.outcome);
   const stones = Number.isFinite(reward.objectiveStones) ?

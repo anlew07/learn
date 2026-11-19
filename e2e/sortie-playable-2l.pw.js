@@ -542,7 +542,7 @@ test("2L-C completed physical salvage still pays no objective bonus on finger re
     const final = await archives(page);
     expect(final.prototype.lastReceipt.battle.objectiveStones).toBe(0);
     await expect(page.locator("[data-sortie-reward-preview]"))
-      .toContainText("险地回收：撤离时未完成");
+      .toContainText("险地回收：已完成，但撤离未获奖金");
     await expect(page.locator("[data-sortie-reward-preview]"))
       .toContainText("任务奖金 +0 灵石");
     expect(final.prototype.lastReceipt.battle.baseStones).toBe(0);
