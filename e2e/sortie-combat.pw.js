@@ -227,7 +227,7 @@ test("a confirmed retreat commits exactly one world day and survives reload", as
   await page.locator("[data-sortie-retreat]").click();
   await page.locator("[data-sortie-confirm-yes]").click();
   await expect(page.locator("[data-sortie-world-report]")).toContainText("第 1 日结算 → 第 2 日");
-  await expect(page.locator("[data-sortie-world-report]")).toContainText("主要行动：sortie");
+  await expect(page.locator("[data-sortie-world-report]")).toContainText("主要行动：雾谷出击");
   await expect(page.locator("[data-sortie-world-report]")).toContainText("废土救援");
 
   const saved = await page.evaluate(async () => {
