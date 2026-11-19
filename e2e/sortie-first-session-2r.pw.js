@@ -57,7 +57,23 @@ async function fingerTapReachable(page, selector, upward = true) {
   for (let attempt = 0; attempt < 7; attempt++) {
     const point = await touchPoint(page, selector);
     if (point) {
-      await page.touchscreen.tap(point.x, point.y);
+      // A held real finger avoids tap cancellation after camp scroll inertia
+      // on 320px Chromium. Never dispatch a fake DOM click.
+      await page.waitForTimeout(420);
+      const stablePoint = await touchPoint(page, selector);
+      if (!stablePoint) continue;
+      const client = await page.context().newCDPSession(page);
+      try {
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart", touchPoints: [{ ...stablePoint, id: 29 }],
+        });
+        await page.waitForTimeout(140);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchEnd", touchPoints: [],
+        });
+      } finally {
+        await client.detach();
+      }
       return;
     }
     await fingerSwipe(page, upward);
