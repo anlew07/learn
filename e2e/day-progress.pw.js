@@ -61,10 +61,20 @@ test("changing speed preserves elapsed-day fraction without skipping a game day"
   const before = await currentProgress(page);
   expect(before).toBeGreaterThanOrEqual(25);
 
+  // Freeze the game clock while changing speed: with a live 4x clock,
+  // elapsed RAF frames during selectOption legitimately add ~2 percentage
+  // points. The invariant is retained progress, not a fixed UI event latency.
+  await page.locator('.stage-actions [data-action="toggle"]').click();
+  await expect(page.locator("[data-stage-time-label]")).toContainText("已暂停");
+  const held = await currentProgress(page);
+  expect(held).toBeGreaterThanOrEqual(before);
   await page.locator('select[data-action="speed"]').selectOption("4");
   const changed = await currentProgress(page);
-  expect(changed).toBeGreaterThanOrEqual(before - 1);
-  expect(changed).toBeLessThanOrEqual(before + 1);
+  expect(changed).toBeGreaterThanOrEqual(held - 1);
+  expect(changed).toBeLessThanOrEqual(held + 1);
+  await page.clock.runFor(1_000);
+  expect(await currentProgress(page)).toBe(changed);
+  await page.locator('.stage-actions [data-action="toggle"]').click();
   await page.clock.runFor(3_900);
   await expect(page.locator(".stage-day")).toContainText("第 2 天");
   expect(await currentProgress(page)).toBeLessThan(30);

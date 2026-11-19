@@ -4,6 +4,7 @@ import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
 import { drawSortie } from "./ui/sortie-stage.js";
 import { previewSortieDeadline } from "./ui/sortie-deadline.js";
+import { previewSortieGrowthReview } from "./ui/sortie-growth-review.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 import { previewCivilizationProgress } from "./systems/civilization-progression.js";
 import { sortieRepository } from "./services/sortie-persistence.js";
@@ -69,6 +70,10 @@ app.innerHTML = [
   '<button type="button" data-sortie-build hidden>消耗 6 灵石 · 修复护灵剑台</button>',
   '<small>灵石同时用于终局封印；修复后不可拆除退款。</small>',
   '</section>',
+  '<section class="sortie-growth-review" data-sortie-growth-review hidden>',
+  '<strong data-sortie-growth-title></strong>',
+  '<p data-sortie-growth-payment></p><p data-sortie-growth-outcome></p>',
+  '</section>',
   '<details class="sortie-civilization" data-civilization-tree>',
   '<summary><strong>文明演化图谱</strong><span data-civilization-count>0/8 节点</span>',
   '<small data-civilization-next>正在读取下一步目标…</small></summary>',
@@ -122,6 +127,7 @@ app.innerHTML = [
   '<div class="sortie-results-content">',
   '<h1 data-sortie-outcome>试炼结束</h1><p class="sortie-feedback" data-sortie-summary></p>',
   '<div class="sortie-result-gains" data-sortie-gains aria-label="本场结算收益" hidden></div>',
+  '<p class="sortie-growth-result" data-sortie-growth-result hidden></p>',
   '<p data-sortie-reward-preview>战斗结束，正在验证轨迹与写入独立试验档……</p>',
   '<div class="sortie-world-report" data-sortie-world-report></div>',
   '<p>收益已结算进独立试验档，仅供可玩性验证；正式存档与世界碎片不受影响。</p>',
@@ -165,6 +171,11 @@ const forgePanel = app.querySelector("[data-sortie-forge]");
 const forgeState = app.querySelector("[data-sortie-forge-state]");
 const forgePreview = app.querySelector("[data-sortie-forge-preview]");
 const forgeButton = app.querySelector("[data-sortie-build]");
+const growthPanel = app.querySelector("[data-sortie-growth-review]");
+const growthTitle = app.querySelector("[data-sortie-growth-title]");
+const growthPayment = app.querySelector("[data-sortie-growth-payment]");
+const growthOutcome = app.querySelector("[data-sortie-growth-outcome]");
+const growthResult = app.querySelector("[data-sortie-growth-result]");
 const civilizationCount = app.querySelector("[data-civilization-count]");
 const civilizationNext = app.querySelector("[data-civilization-next]");
 const civilizationNodes = app.querySelector("[data-civilization-nodes]");
@@ -314,12 +325,13 @@ function updateCamp() {
       }
       return item;
     }));
-    const oldBattle = archive.run.sortieCamp?.buildReceipt?.beforeStats;
-    if (oldBattle && prior && prior.day > oldBattle.day) {
-      lastReceipt.textContent += "｜付费后本场武器伤害 " +
-        prior.battle.weaponDamage + "；首场击退 " + oldBattle.defeated +
-        " → 本场击退 " + prior.battle.defeated + "；本场实得灵石 +" +
-        prior.battle.stones + "（非回本保证）";
+    const growth = previewSortieGrowthReview(archive);
+    growthPanel.hidden = !growth;
+    if (growth) {
+      growthPanel.dataset.phase = growth.phase;
+      growthTitle.textContent = growth.title;
+      growthPayment.textContent = growth.payment;
+      growthOutcome.textContent = growth.outcome;
     }
   }
   const ready = session.isOwner && Boolean(archive?.run.active) &&
@@ -601,6 +613,8 @@ function endBattle() {
     " 秒，击退 " + battle.defeated + " 只妖影，释放灵刃 " + battle.fired + " 次。";
   results.dataset.result = battle.outcome;
   rewardText.textContent = "正在复算真实战斗记录并提交本次唯一的双世界日结算……";
+  growthResult.hidden = true;
+  growthResult.textContent = "";
   worldReport.textContent = "";
   const staged = settleSortieArchive(archive, actions);
   if (!staged.ok) {
@@ -643,6 +657,10 @@ function endBattle() {
       return item;
     }));
     gains.hidden = false;
+    const growth = previewSortieGrowthReview(staged.archive);
+    growthResult.hidden = !growth || growth.phase !== "verified";
+    growthResult.textContent = growth?.phase === "verified" ?
+      growth.title + " · " + growth.outcome : "";
     worldReport.replaceChildren();
     const heading = document.createElement("strong");
     heading.textContent = "双世界当日变化 · 第 " + receipt.day + " 日结算 → 第 " +

@@ -227,6 +227,7 @@ for (const viewport of viewports) {
     await expect(page.locator(".sortie-intro-tip")).toContainText("第 25 秒自动暂停");
     const beginning = await archives(page);
     expect(beginning.prototype.run.worlds[0].resource).toBe(4);
+    await expect(page.locator("[data-sortie-growth-review]")).toBeHidden();
     await capture(page, viewport, "camp-first");
 
     await start(page);
@@ -249,6 +250,7 @@ for (const viewport of viewports) {
     expect(first.prototype.lastReceipt.worlds).toHaveLength(2);
     await expect(page.locator("[data-sortie-reward-preview]")).toContainText("灵石 " + award.stones);
     await expect(page.locator("[data-sortie-world-report]")).toHaveAttribute("data-day", "2");
+    await expect(page.locator("[data-sortie-growth-result]")).toBeHidden();
     await capture(page, viewport, "receipt-first");
 
     await tapStrict(page, "[data-sortie-retry]");
@@ -257,6 +259,12 @@ for (const viewport of viewports) {
     // The camp is a real scroll container on short screens. Only finger gestures may reveal it.
     await tapCampWithFingerScroll(page, "[data-sortie-build]");
     await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
+    const growth = page.locator("[data-sortie-growth-review]");
+    await expect(growth).toBeVisible();
+    await expect(growth).toHaveAttribute("data-phase", "prepared");
+    await expect(growth).toContainText("成长待实战");
+    await expect(growth).toContainText("真实投入 6 石");
+    await expect(growth).toContainText("灵刃 1 → 2 伤害");
     const purchased = await archives(page);
     expect(purchased.prototype.run.worlds[0].resource).toBe(
       first.prototype.run.worlds[0].resource - 6,
@@ -268,6 +276,8 @@ for (const viewport of viewports) {
     await page.reload();
     await expect(page.locator("[data-sortie-forge]")).toHaveAttribute("data-level", "1");
     await expect(page.locator("[data-sortie-build]")).toBeHidden();
+    await expect(page.locator("[data-sortie-growth-review]"))
+      .toHaveAttribute("data-phase", "prepared");
 
     // Start run two, interrupt before completion, then replay from the saved camp.
     await start(page);
@@ -306,9 +316,19 @@ for (const viewport of viewports) {
     expect(second.prototype.run.sortieCamp.forgeLevel).toBe(1);
     expect(second.formal.run).toBeNull();
     expect(second.formal.profile).toBeNull();
+    const growthResult = page.locator("[data-sortie-growth-result]");
+    await expect(growthResult).toBeVisible();
+    await expect(growthResult).toContainText("已实战验证 · 灵刃 2 伤害");
+    await expect(growthResult).toContainText("本场灵石 +" +
+      second.prototype.lastReceipt.battle.stones);
+    await expect(growthResult).toContainText("单场灵石不是回本证明");
     await capture(page, viewport, "receipt-second");
     await page.reload();
     await expect(page.locator("[data-sortie-camp]")).toContainText("第 3 日");
+    await expect(page.locator("[data-sortie-growth-review]"))
+      .toHaveAttribute("data-phase", "verified");
+    await expect(page.locator("[data-sortie-growth-review]"))
+      .toContainText("真实投入 6 石");
   });
 }
 
