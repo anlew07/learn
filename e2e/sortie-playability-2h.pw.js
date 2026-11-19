@@ -63,7 +63,7 @@ for (const size of screens) {
     test.setTimeout(90_000);
     await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
     await page.setViewportSize(size);
-    await page.goto("/?mode=sortie");
+    await page.goto("/?mode=sortie&screen=camp");
     await expect(page.getByRole("heading", { name: "出击雾谷" })).toBeVisible();
     await expect(page.getByText("拖动移动躲避灵息弹", { exact: false })).toBeVisible();
     await expect(page.getByText("不读取、写入正式存档", { exact: false })).toBeVisible();
@@ -200,7 +200,7 @@ test("2H-D 320px settlement return action remains fully visible", async ({ page 
   test.setTimeout(60_000);
   await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
   await page.evaluate(async () => {
     const { sortieRepository } = await import("/src/services/sortie-persistence.js");
@@ -237,7 +237,7 @@ test("2H-D 320px settlement return action remains fully visible", async ({ page 
 for (const size of screens) {
   test("2H-D touch controls " + size.width, async ({ page }) => {
     await page.setViewportSize(size);
-    await page.goto("/?mode=sortie");
+    await page.goto("/?mode=sortie&screen=camp");
     await expect(page.locator("[data-start-sortie]")).toBeEnabled();
     await startBattle(page);
     const canvas = page.locator("[data-sortie-canvas]");
@@ -294,7 +294,7 @@ for (const size of screens) {
 
 test("2H-D interruption remains isolated", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/?mode=sortie");
+  await page.goto("/?mode=sortie&screen=camp");
   await expect(page.locator("[data-start-sortie]")).toBeEnabled();
   await startBattle(page);
   await expect(page.locator("[data-sortie-canvas]")).toBeVisible();
