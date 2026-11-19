@@ -55,6 +55,45 @@ async function tapStrict(page, selector) {
   await page.touchscreen.tap(point.x, point.y);
 }
 
+// A released held joystick can suppress the first subsequent browser tap.
+// Retest physical touches (not DOM clicks) and record whether the browser
+// delivered a click, so a persistent failure remains actionable.
+// prettier-ignore
+async function tapRetreatAfterHeldJoystick(page) {
+  const button = "[data-sortie-retreat]";
+  const dialog = page.locator("[data-sortie-confirm]");
+  await page.evaluate(() => {
+    const retreat = document.querySelector("[data-sortie-retreat]");
+    window.__retreatTouchEvidence = { touchstart: 0, pointerdown: 0, click: 0 };
+    for (const kind of Object.keys(window.__retreatTouchEvidence)) {
+      retreat.addEventListener(kind, () => { window.__retreatTouchEvidence[kind]++; }, { capture: true });
+    }
+  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (await dialog.isVisible()) break;
+    const point = await visibleTarget(page, button);
+    expect(point, "Retreat must be in the actual finger hit area").not.toBeNull();
+    const client = await page.context().newCDPSession(page);
+    try {
+      await client.send("Input.dispatchTouchEvent", {
+        type: "touchStart", touchPoints: [{ ...point, id: 8 }],
+      });
+      await page.waitForTimeout(140);
+      await client.send("Input.dispatchTouchEvent", {
+        type: "touchEnd", touchPoints: [],
+      });
+    } finally {
+      await client.detach();
+    }
+    await page.waitForTimeout(340);
+  }
+  const evidence = await page.evaluate(() => window.__retreatTouchEvidence);
+  console.info("2L-C retreat finger evidence", evidence);
+  await expect(dialog, "Retreat confirmation must open after real touches: " +
+    JSON.stringify(evidence)).toBeVisible({ timeout: 1000 });
+  expect(evidence.click).toBeGreaterThan(0);
+}
+
 // Real CDP touch gesture. Never use locator.scrollIntoViewIfNeeded() or locator.click().
 // prettier-ignore
 async function swipeCamp(page) {
@@ -430,10 +469,8 @@ test("2L-C completed physical salvage still pays no objective bonus on finger re
     await thumbToRecoverySite(page);
     await page.clock.runFor(3_000);
     await expect(page.locator("[data-sortie-goal]")).toContainText("回收完成");
-    // Human hand-off from a held joystick: the browser suppresses a near-simultaneous touch click.
-    await page.waitForTimeout(380);
-    await tapStrict(page, "[data-sortie-retreat]");
-    await expect(page.locator("[data-sortie-confirm]")).toBeVisible();
+    // A real held finger is followed by a real retreat touch, never a forced DOM click.
+    await tapRetreatAfterHeldJoystick(page);
     await tapStrict(page, "[data-sortie-confirm-yes]");
     await expect(page.locator("[data-sortie-results]")).toBeVisible();
     const final = await archives(page);
