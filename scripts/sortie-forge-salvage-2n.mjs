@@ -31,6 +31,7 @@ const seedOf = (index, danger) =>
  * actually afford the forge. Then both branches choose the same "salvage"
  * mission and follow exactly the same physical joystick script.
  */
+// prettier-ignore
 export function pairedForgeSalvageRun(seedIndex, danger, skill, route) {
   if (!Number.isInteger(seedIndex) || seedIndex < 0 || seedIndex >= 40 ||
     !RECOVERY_DANGERS.includes(danger) ||
@@ -117,6 +118,7 @@ function summarize(pairs) {
  * 40 paired seeds x three dangers x two skills x four control routes =
  * 960 matched-eligibility trials (not necessarily 960 affordable builds).
  */
+// prettier-ignore
 export function runForgeSalvageExperiment(seeds = 40) {
   if (!Number.isInteger(seeds) || seeds < 1 || seeds > 40) {
     throw new Error("2N accepts 1..40 fixed seeds");
@@ -182,6 +184,7 @@ export function assertForgeSalvageExperiment(report) {
   return true;
 }
 
+// prettier-ignore
 if (process.argv[1] &&
   import.meta.url === new URL("file://" + process.argv[1]).href) {
   const seeds = Number(process.argv.find((arg) =>
