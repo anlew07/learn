@@ -23,8 +23,10 @@ for (const viewport of [
     await expect(launch).toBeVisible();
     await expect(scene).toHaveCSS("image-rendering", "pixelated");
     const art = await scene.evaluate((el) => getComputedStyle(el).backgroundImage);
-    expect(art).toContain("clone-cultivator");
-    expect(art).toContain("world-lingzai");
+    // Vite inlines small SVG assets as data: URLs in development and build.
+    // Check both art layers exist rather than asserting the source filenames.
+    expect(art).toContain("image/svg+xml");
+    expect((art.match(/url\\(/g) ?? []).length).toBe(2);
     const sceneBox = await scene.boundingBox();
     const routesBox = await routes.boundingBox();
     const launchBox = await launch.boundingBox();
