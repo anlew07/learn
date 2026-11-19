@@ -22,12 +22,12 @@ async function visibleTouchPoint(page, selector) {
 }
 
 // prettier-ignore
-async function fingerSwipe(page) {
+async function fingerSwipe(page, forward = true) {
   const size = page.viewportSize();
   const client = await page.context().newCDPSession(page);
   const x = size.width * 0.5;
-  const from = size.height * 0.79;
-  const to = size.height * 0.29;
+  const from = size.height * (forward ? 0.65 : 0.35);
+  const to = size.height * (forward ? 0.43 : 0.57);
   try {
     await client.send("Input.dispatchTouchEvent", {
       type: "touchStart", touchPoints: [{ x, y: from, id: 1 }],
@@ -48,14 +48,16 @@ async function fingerSwipe(page) {
 
 // prettier-ignore
 async function tapByFinger(page, selector) {
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 16; i++) {
     const point = await visibleTouchPoint(page, selector);
     if (point) {
       await page.touchscreen.tap(point.x, point.y);
       return;
     }
-    await fingerSwipe(page);
-    await page.waitForTimeout(350);
+    const bounds = await page.locator(selector).boundingBox();
+    const forward = !bounds || bounds.y + bounds.height / 2 > 88;
+    await fingerSwipe(page, forward);
+    await page.waitForTimeout(250);
   }
   throw new Error(selector + " cannot be physically reached");
 }
@@ -78,7 +80,7 @@ for (const viewport of viewports) {
       .toHaveAttribute("data-state", "ready");
     await expect(page.locator('[data-civilization-node="forge"]'))
       .toHaveAttribute("data-state", "locked");
-    await tapByFinger(page, '[data-civilization-target="salvage"]');
+    await tapByFinger(page, '.sortie-civilization-shortcuts [data-civilization-target="salvage"]');
     await expect(page.locator("[data-sortie-mission-salvage]")).toBeEnabled();
     await page.waitForTimeout(450);
     expect(await visibleTouchPoint(page, "[data-sortie-mission-salvage]"))
