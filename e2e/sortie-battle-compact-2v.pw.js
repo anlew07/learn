@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 const folder = "test-results/camp-ui";
 mkdirSync(folder, { recursive: true });
 
+// prettier-ignore
 async function fingerTap(page, selector) {
   const rect = await page.locator(selector).boundingBox();
   const viewport = page.viewportSize();
