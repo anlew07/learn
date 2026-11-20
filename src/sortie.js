@@ -1,5 +1,6 @@
 import "./sortie.css";
 import "./sortie-camp-compact.css";
+import "./sortie-result-compact.css";
 import { createSortie, advanceSortie, DURATION_TICKS, chooseSortieSkill, retreatSortie } from "./systems/sortie-sim.js";
 import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
@@ -169,13 +170,21 @@ app.innerHTML = [
   '</section></div></section>',
   '<section class="sortie-results" data-sortie-results hidden>',
   '<div class="sortie-results-content">',
-  '<h1 data-sortie-outcome>试炼结束</h1><p class="sortie-feedback" data-sortie-summary></p>',
+  '<header class="sortie-result-hero">',
+  '<small>雾谷 · 战斗结算</small>',
+  '<h1 data-sortie-outcome>试炼结束</h1>',
+  '<p class="sortie-feedback" data-sortie-summary></p></header>',
   '<div class="sortie-result-gains" data-sortie-gains aria-label="本场结算收益" hidden></div>',
+  '<p class="sortie-result-status" data-sortie-settlement-status role="status" aria-live="polite">正在验证战斗记录…</p>',
+  '<div class="sortie-result-world-glance" data-sortie-world-glance aria-label="双世界变化摘要" hidden></div>',
   '<p class="sortie-growth-result" data-sortie-growth-result hidden></p>',
+  '<details class="sortie-result-details" data-sortie-result-details>',
+  '<summary>查看完整战报与双世界变化</summary>',
   '<p data-sortie-reward-preview>战斗结束，正在验证轨迹与写入独立试验档……</p>',
   '<div class="sortie-world-report" data-sortie-world-report></div>',
-  '<p>收益已结算进独立试验档，仅供可玩性验证；正式存档与世界碎片不受影响。</p>',
-  '</div><button class="sortie-cta" data-sortie-retry>返回营地</button></section></main>',
+  '</details>',
+  '<p class="sortie-result-note">奖励仅进入独立试玩档 · 正式存档不变</p>',
+  '</div><button class="sortie-cta" data-sortie-retry disabled>返回营地 · 决定下一步强化</button></section></main>',
 ].join("");
 
 const root = app.querySelector("[data-sortie-root]");
@@ -220,6 +229,10 @@ const powerText = app.querySelector("[data-sortie-power]");
 const skillOverlay = app.querySelector("[data-sortie-choice]");
 const retreatOverlay = app.querySelector("[data-sortie-confirm]");
 const rewardText = app.querySelector("[data-sortie-reward-preview]");
+const resultStatus = app.querySelector("[data-sortie-settlement-status]");
+const resultDetails = app.querySelector("[data-sortie-result-details]");
+const resultWorldGlance = app.querySelector("[data-sortie-world-glance]");
+const resultReturn = app.querySelector("[data-sortie-retry]");
 const worldReport = app.querySelector("[data-sortie-world-report]");
 const camp = app.querySelector("[data-sortie-camp]");
 const campScroll = app.querySelector("[data-sortie-camp-scroll]");
@@ -512,6 +525,11 @@ async function persistCandidate(candidate, onSaved) {
     writeBusy = false;
     writeError = error;
     if (phase === "battle") pause();
+    if (phase === "end") {
+      resultStatus.dataset.state = "error";
+      resultStatus.textContent = "保存失败 · 奖励尚未入档，请使用重试保存";
+      resultDetails.open = true;
+    }
     console.error("出击试验档保存失败", error);
     updateCamp();
   }
@@ -712,6 +730,12 @@ function endBattle() {
   root.dataset.screen = "results";
   gains.hidden = true;
   gains.replaceChildren();
+  resultWorldGlance.hidden = true;
+  resultWorldGlance.replaceChildren();
+  resultDetails.open = false;
+  resultStatus.dataset.state = "saving";
+  resultStatus.textContent = "正在核对战果并保存…";
+  resultReturn.disabled = true;
   app.querySelector("[data-sortie-outcome]").textContent = battle.outcome === "won" ?
     "结界稳住了！" : battle.outcome === "retreated" ? "谨慎撤离雾谷" : "分身撤离 · 试炼失败";
   app.querySelector("[data-sortie-summary]").textContent =
@@ -726,12 +750,18 @@ function endBattle() {
   if (!staged.ok) {
     writeError = new Error(staged.error);
     rewardText.textContent = "结算已冻结：" + staged.error + "。请刷新回退本次未提交的战斗。";
+    resultStatus.dataset.state = "error";
+    resultStatus.textContent = "结算失败 · 未发放奖励";
+    resultDetails.open = true;
     updateCamp();
     return;
   }
   void persistCandidate(staged.archive, () => {
     const receipt = staged.receipt;
     const reward = receipt.battle;
+    resultStatus.dataset.state = "saved";
+    resultStatus.textContent = "✓ 战果已保存 · 第 " + receipt.nextDay + " 日营地已就绪";
+    resultReturn.disabled = false;
     const objectiveStones = Number.isFinite(reward.objectiveStones) ?
       reward.objectiveStones : null;
     const missionDetail = objectiveStones === null ? "" :
@@ -783,6 +813,16 @@ function endBattle() {
       worldReport.append(item);
     }
     worldReport.dataset.day = String(receipt.nextDay);
+    const worldDay = document.createElement("strong");
+    worldDay.textContent = "双世界已推进 · 第 " + receipt.nextDay + " 日";
+    resultWorldGlance.append(worldDay);
+    for (const world of receipt.worlds) {
+      const item = document.createElement("span");
+      item.textContent = (world.id === "lingzai" ? "灵灾" : "废土") +
+        "资源 " + delta(world.resourceDelta);
+      resultWorldGlance.append(item);
+    }
+    resultWorldGlance.hidden = false;
   });
 }
 
