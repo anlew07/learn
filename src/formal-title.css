@@ -1,0 +1,247 @@
+/*
+ * Formal-game main menu. Native CSS and existing original pixel assets only:
+ * no new font, engine, component library or fetched image.
+ * The scene is decorative; actions remain real buttons with existing data-action.
+ */
+.app-shell.formal-title-mode {
+  max-width: 900px;
+  padding-top: max(8px,env(safe-area-inset-top));
+}
+.formal-title {
+  overflow: hidden;
+  color: #f5ebd1;
+  background: #222b2a;
+  border: 3px solid #b79a66;
+  box-shadow: inset 0 0 0 3px #1b2527, 4px 4px 0 #101816;
+}
+.formal-title-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 12px;
+  color: #e5cea1;
+  background: #202529;
+  border-bottom: 2px solid #887855;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.formal-title-layout { display: grid; min-width: 0; }
+.formal-title-art {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: clamp(188px, 39dvh, 335px);
+  background: #28342f;
+  image-rendering: pixelated;
+}
+.formal-title-worlds {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.formal-world {
+  position: relative;
+  min-width: 0;
+  border-right: 3px solid #d3b57b;
+  background-position: center bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.formal-world:last-child { border-right: 0; }
+.formal-world-lingzai {
+  background-color: #344d41;
+  background-image: linear-gradient(180deg,rgba(17,27,32,.48),transparent 46%,rgba(13,23,20,.48)),url("./assets/world-lingzai.svg");
+}
+.formal-world-zombie {
+  background-color: #514535;
+  background-image: linear-gradient(180deg,rgba(18,23,30,.38),transparent 46%,rgba(13,18,22,.58)),url("./assets/world-zombie.svg");
+}
+.formal-world-beast {
+  background-color: #474535;
+  background-image: linear-gradient(180deg,rgba(17,25,25,.45),transparent 46%,rgba(13,23,20,.58)),url("./assets/world-beast.svg");
+}
+.formal-world span {
+  position: absolute;
+  z-index: 1;
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  color: #ffde9e;
+  background: #1c2526;
+  border: 2px solid #bfa36d;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 #142024;
+}
+.formal-title-art::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg,rgba(15,22,27,.62) 0%, transparent 52%, rgba(19,28,30,.28) 100%);
+}
+.formal-title-character {
+  position: absolute;
+  z-index: 2;
+  width: clamp(86px, 24vw, 150px);
+  height: 64%;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: url("./assets/original/clone-cultivator.svg") center bottom / contain no-repeat;
+  filter: drop-shadow(4px 4px 0 #121c20);
+  pointer-events: none;
+}
+.formal-title-logo {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 8px;
+  right: 8px;
+  text-align: center;
+  pointer-events: none;
+}
+.formal-title-logo small {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(23,32,33,.82);
+  border: 1px solid #ad9670;
+  color: #e5d9b5;
+}
+.formal-title-logo h1 {
+  margin: 7px 0 0;
+  color: #ffebae;
+  font-size: clamp(32px, 8vw, 56px);
+  line-height: 1.05;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-shadow: -2px 0 #352e2d,2px 0 #352e2d,0 4px #352e2d,2px 6px #151d23;
+}
+.formal-title-logo p {
+  width: max-content;
+  margin: 8px auto 0;
+  padding: 2px 10px;
+  color: #d3dfd1;
+  background: rgba(23,30,33,.86);
+  border: 1px solid #a7a18d;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .18em;
+}
+.formal-title-menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 15px 15px 13px;
+  text-align: center;
+  background: #2d3530;
+  border-top: 3px solid #b79a66;
+}
+.formal-title-tagline {
+  margin: 0 0 4px;
+  color: #ffe3a8;
+  font-size: clamp(15px, 4vw, 19px);
+  font-weight: 900;
+  line-height: 1.3;
+}
+.formal-title-summary {
+  margin: 0 0 13px;
+  color: #d4d8c6;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.formal-title-menu .pill { align-self: center; margin: 0 0 8px; }
+.formal-title-menu .hero-actions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.formal-title-menu .hero-actions button {
+  width: 100%;
+  min-height: 49px;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 900;
+}
+.formal-title-menu .hero-actions .btn {
+  color: #382a21;
+  background: linear-gradient(180deg,#ffe8a8,#ebb55d);
+  border: 3px solid #ffebbd;
+  box-shadow: inset 0 2px #fff4d5,0 4px #795637;
+}
+.formal-title-menu .hero-actions .btn:hover:not(:disabled) {
+  color: #382a21;
+  background: #ffd98a;
+}
+.formal-title-menu .hero-actions .btn-soft {
+  color: #f4e6cf;
+  background: #3b4242;
+  border: 2px solid #928d78;
+}
+.formal-title-utility {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+.formal-title-utility button {
+  min-width: 0;
+  min-height: 40px;
+  padding: 7px 5px;
+  color: #e1e1d2;
+  background: #252d31;
+  border: 1px solid #78827c;
+  font-size: 12px;
+  font-weight: 700;
+}
+.formal-title-save {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: #aab3a9;
+}
+.formal-title-mode .how-to-play,
+.formal-title-mode .progression-panel {
+  margin-top: 14px;
+}
+.formal-title-mode .how-steps>div { background: #26372d; }
+@media (max-width: 350px) {
+  .formal-title-top { padding-inline: 8px; }
+  .formal-title-art { height: 192px; }
+  .formal-title-logo h1 { font-size: 31px; }
+  .formal-title-menu { padding: 11px 10px 10px; }
+  .formal-title-menu .hero-actions button { min-height: 45px; }
+  .formal-title-utility button { min-height: 36px; }
+  .formal-title-summary { margin-bottom: 9px; }
+}
+@media (min-width: 700px) {
+  .formal-title-layout { grid-template-columns: minmax(0,1.18fr) minmax(285px,.82fr); }
+  .formal-title-art { height: min(430px,calc(100dvh - 80px)); min-height: 320px; }
+  .formal-title-menu { border-top: 0; border-left: 3px solid #b79a66; padding-inline: 19px; }
+  .formal-title-logo h1 { font-size: clamp(34px,4.7vw,54px); }
+  .formal-title-character { width: min(30%,155px); }
+  .formal-title-summary { margin-bottom: 17px; }
+  .formal-title-utility { margin-top: 17px; }
+}
+@media (min-width:700px) and (max-height:500px) {
+  .app-shell.formal-title-mode { padding-top: 6px; }
+  .formal-title-top { min-height: 26px; }
+  .formal-title-art { height: min(315px,calc(100dvh - 62px)); min-height: 270px; }
+  .formal-title-menu { padding: 8px 15px; }
+  .formal-title-summary { margin-bottom: 9px; }
+  .formal-title-menu .hero-actions button { min-height: 43px; }
+  .formal-title-utility { margin-top: 8px; }
+  .formal-title-utility button { min-height: 34px; }
+  .formal-title-logo h1 { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .formal-title * { transition: none !important; animation: none !important; }
+}
