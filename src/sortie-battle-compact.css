@@ -1,0 +1,183 @@
+/* 2V: battle-first HUD. Only the isolated sortie battle uses these rules.
+   Preserve the underlying DOM/status values for saves, tests and screen readers. */
+.sortie-root[data-screen="battle"] .sortie-head {
+  display: none;
+}
+
+.sortie-root[data-screen="battle"] .sortie-play {
+  background: #171a23;
+}
+
+.sortie-root[data-screen="battle"] .sortie-stats {
+  flex: 0 0 38px;
+  min-height: 38px;
+  padding: 3px 10px;
+  gap: 6px;
+  border-bottom: 0;
+  background: #272937;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sortie-root[data-screen="battle"] .sortie-stats span {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.sortie-root[data-screen="battle"] [data-sortie-time] {
+  font-size: 15px;
+  color: #ffdc8f;
+}
+
+.sortie-root[data-screen="battle"] [data-sortie-hp][data-low="true"] {
+  color: #ff9b80;
+}
+
+.sortie-root[data-screen="battle"] .sortie-timebar {
+  flex: 0 0 8px;
+  height: 8px;
+  padding: 0;
+  background: #4a3a45;
+}
+
+.sortie-root[data-screen="battle"] .sortie-timebar span {
+  height: 8px;
+  border: 0;
+  background: #f2bc67;
+  box-shadow: inset 0 2px rgba(255, 239, 186, 0.45);
+}
+
+/* In the safe route the countdown already expresses the only objective.
+   Keep the detailed goal text available to assistive technology and tests. */
+.sortie-root[data-screen="battle"] .sortie-play[data-mission="safe"] .sortie-goal {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sortie-root[data-screen="battle"] .sortie-play[data-mission="salvage"] .sortie-goal {
+  min-height: 24px;
+  padding: 4px 9px;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: #37313b;
+  border-color: #977752;
+}
+
+.sortie-root[data-screen="battle"] .sortie-deadline {
+  min-height: 28px;
+  padding: 4px 9px;
+  border-bottom-width: 1px;
+  gap: 7px;
+}
+
+.sortie-root[data-screen="battle"] .sortie-deadline small {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.sortie-root[data-screen="battle"] .sortie-lootbar {
+  min-height: 28px;
+  padding: 3px 9px;
+  gap: 8px;
+  border-top: 0;
+  border-bottom: 2px solid #9a8065;
+  background: #302d3d;
+  font-size: 11px;
+}
+
+.sortie-root[data-screen="battle"] [data-sortie-loot] {
+  flex: 0 0 auto;
+  color: #ffda87;
+}
+
+.sortie-root[data-screen="battle"] [data-sortie-power] {
+  flex: 0 1 auto;
+  text-align: right;
+  color: #dbd2c6;
+}
+
+/* Tall phones letterbox the fixed 320×448 world canvas to preserve its
+   authoritative coordinates. Continue the subdued pixel terrain behind it
+   instead of exposing empty black bars; never crop or stretch the arena. */
+.sortie-root[data-screen="battle"] .sortie-field {
+  background-color: #20372f;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 19px, rgba(9, 23, 19, 0.5) 19px 22px),
+    repeating-linear-gradient(90deg, #233d33 0 19px, #182e27 19px 22px);
+}
+
+.sortie-root[data-screen="battle"] .sortie-controls {
+  height: calc(102px + env(safe-area-inset-bottom));
+  padding: 7px 12px calc(8px + env(safe-area-inset-bottom));
+  border-top: 3px solid #997b5f;
+  gap: 12px;
+  background: #282b39;
+}
+
+.sortie-root[data-screen="battle"] .sortie-joystick {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 84px;
+}
+
+.sortie-root[data-screen="battle"] .sortie-actions {
+  min-width: 164px;
+  max-width: 184px;
+  gap: 8px;
+}
+
+.sortie-root[data-screen="battle"] .sortie-actions button {
+  min-height: 44px;
+  padding: 7px 6px;
+  font-size: 13px;
+}
+
+.sortie-root[data-screen="battle"] .sortie-actions small {
+  display: none;
+}
+
+/* Keep the battle useful at 320x568, without reducing tap targets. */
+@media (max-width: 360px), (max-height: 620px) {
+  .sortie-root[data-screen="battle"] .sortie-stats {
+    flex-basis: 35px;
+    min-height: 35px;
+    padding-inline: 7px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .sortie-root[data-screen="battle"] [data-sortie-time] {
+    font-size: 14px;
+  }
+
+  .sortie-root[data-screen="battle"] .sortie-lootbar {
+    padding-inline: 6px;
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .sortie-root[data-screen="battle"] .sortie-deadline {
+    padding-inline: 6px;
+  }
+
+  .sortie-root[data-screen="battle"] .sortie-controls {
+    height: calc(94px + env(safe-area-inset-bottom));
+    padding: 6px 10px calc(7px + env(safe-area-inset-bottom));
+  }
+
+  .sortie-root[data-screen="battle"] .sortie-joystick {
+    width: 77px;
+    height: 77px;
+    flex-basis: 77px;
+  }
+}

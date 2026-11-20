@@ -1,6 +1,7 @@
 import "./sortie.css";
 import "./sortie-camp-compact.css";
 import "./sortie-result-compact.css";
+import "./sortie-battle-compact.css";
 import { createSortie, advanceSortie, DURATION_TICKS, chooseSortieSkill, retreatSortie } from "./systems/sortie-sim.js";
 import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
@@ -901,6 +902,7 @@ function launchBattle() {
   skillOverlay.hidden = true;
   retreatOverlay.hidden = true;
   play.hidden = false;
+  play.dataset.mission = savedMissionId;
   root.dataset.screen = "battle";
   pauseButton.textContent = "暂停";
   pauseButton.setAttribute("aria-pressed", "false");
