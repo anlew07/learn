@@ -1,5 +1,6 @@
 import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; import "./pixel-visual-language.css";
 import "./support-pages.css";
+import "./formal-title.css";
 import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
 applyTextSize();
 import Engine from "./engine.js";
@@ -447,33 +448,44 @@ function profileArchiveHtml(){
 }
 function homeHtml(){
  const opening = getOpeningBrief(profile);
- return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div><div class="brand">同时穿越</div>'+
- '<div class="micro">末日营地 · 救援手记</div></div></div><span class="pill">开发中 · V0.2</span></header>'+
- '<nav class="home-utility" aria-label="游戏帮助与设置">'+
+ const title = selectedArchiveTitle(profile);
+ return '<section class="formal-title" data-formal-title aria-label="游戏主菜单">'+
+ '<header class="formal-title-top"><span>✦ 多世界生存冒险</span><span>开发版 V0.2</span></header>'+
+ '<div class="formal-title-layout">'+
+ '<div class="formal-title-art" role="img" aria-label="灵灾、废土和兽潮三个像素世界，修行者在世界交界处守望">'+
+ '<div class="formal-title-worlds" aria-hidden="true">'+
+ '<div class="formal-world formal-world-lingzai"><span>灵灾</span></div>'+
+ '<div class="formal-world formal-world-zombie"><span>废土</span></div>'+
+ '<div class="formal-world formal-world-beast"><span>兽潮</span></div></div>'+
+ '<div class="formal-title-character" aria-hidden="true"></div>'+
+ '<div class="formal-title-logo"><small>一人三界 · 共守黎明</small>'+
+ '<h1>同时穿越</h1><p>末日模拟器</p></div></div>'+
+ '<div class="formal-title-menu">'+
+ '<p class="formal-title-tagline">世界在变化，下一步由你决定。</p>'+
+ '<p class="formal-title-summary">观察分身、应对危机、收集资源，守护逐渐重建的家园。</p>'+
+ (title?'<p class="pill good" data-equipped-title>✦ '+esc(title)+'</p>':'')+
+ '<div class="hero-actions" role="group" aria-label="主菜单操作">'+
+ (run?'<button class="btn" data-action="continue" data-formal-title-primary>▶ '+(run.active?'继续第 '+run.day+' 日':'查看本局结局')+'</button>':
+  profile.runCount===0?
+  '<button class="btn" data-action="new-run" data-onboarding="focus" data-formal-title-primary>▶ 开始冒险</button>'+
+  '<button class="btn-soft" data-action="new-run" data-onboarding="full">双界完整开局</button>':
+  '<button class="btn" data-action="new-run" data-formal-title-primary>▶ 开始第 '+(profile.runCount+1)+' 次远征</button>')+
+ (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+
+ '</div>'+
+ '<nav class="formal-title-utility" aria-label="游戏帮助与设置">'+
  '<button data-action="open-help">? 玩法帮助</button>'+
  '<button data-action="open-settings">⚙ 设置与本机数据</button></nav>'+
- '<section class="hero camp-home" aria-label="游戏开始">'+
- '<span class="eyebrow">三个世界 · 同一个守望者</span>'+
- (selectedArchiveTitle(profile)?'<p class="pill good" data-equipped-title>✦ '+esc(selectedArchiveTitle(profile))+'</p>':'')+
- '<h1>守住营火，<br><em>救回三个世界。</em></h1>'+
- '<p class="home-story">你是连接不同世界的守望者。修仙异变、废土危机与兽潮围城同时发生，分身们正在等待救援。</p>'+ 
+ '<p class="formal-title-save">进度保存在当前设备 · 可在设置中管理</p>'+
+ '</div></div></section>'+
+ '<section class="panel how-to-play" data-home-guide><h2>你的第一段冒险</h2>'+
+ '<div class="how-steps">'+
+ '<div><b>01 · 观察</b><p>分身自动探索和成长，世界不会静止。</p></div>'+
+ '<div><b>02 · 决策</b><p>危机出现时暂停，选择救援或积蓄力量。</p></div>'+
+ '<div><b>03 · 重建</b><p>积累准备和资源，让下一次行动更有把握。</p></div></div>'+
  '<p class="hint">'+esc(opening.automatic)+' '+esc(opening.playerRole)+'</p>'+
- (profile.runCount===0?'<p class="hint home-first-run">首局是两个世界同时演化；推荐新手先看灵灾，废土仍在行动。兽潮世界后续解锁。</p>':'')+
- '<div class="home-scene" role="img" aria-label="像素营地和通往三个世界的传送门">'+
- '<span>营地记录 · 第 '+(profile.runCount+1)+' 次远征</span></div>'+
- '<div class="hero-actions">'+
- (run?'<button class="btn" data-action="continue">▶ 返回营地 · 第'+run.day+'天</button>':
-  profile.runCount===0?
-  '<button class="btn" data-action="new-run" data-onboarding="focus">▶ 开始救援 · 推荐新手</button>'+
-  '<button class="btn-soft" data-action="new-run" data-onboarding="full">完整开局 · 同时照看双世界</button>':
-  '<button class="btn" data-action="new-run">▶ 开始第 '+(profile.runCount+1)+' 局</button>')+
- (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+'</div></section>'+
- '<section class="panel how-to-play"><h2>你需要做什么？</h2><div class="how-steps">'+
- '<div><b>01 · 观察世界</b><p>分身每天自主探索、采集、成长和迎战。</p></div>'+
- '<div><b>02 · 处理危机</b><p>重大事件可以干预，长期策略和跨界援助由你决定。</p></div>'+
- '<div><b>03 · 等待救援结算</b><p>在倒计时结束前积累准备，争取救回更多世界。</p></div>'+
- '</div><p class="hint">首次游玩会先聚焦一个世界，其他分身仍自动行动。</p></section>'+
- '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">保存在本机</span></div>'+
+ (profile.runCount===0?'<p class="hint home-first-run">新手先聚焦灵灾世界；废土继续行动，兽潮后续解锁。</p>':'')+
+ '</section>'+
+ '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">本机进度</span></div>'+
  '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
  '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
  '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
@@ -737,6 +749,7 @@ function sceneHtml() {
 
 function render(){
  app.classList.toggle("readonly",!session.isOwner);
+ app.classList.toggle("formal-title-mode", Boolean((!run||tab==="home")&&!infoPage));
  app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene" && !infoPage));
  if (tab!=="scene" || !run?.active || infoPage) stopPixelStage();
  const banner=sessionBanner();

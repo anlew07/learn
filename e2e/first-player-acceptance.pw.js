@@ -19,7 +19,8 @@ async function start(page, mode = "full") {
 
 test("legacy detailed view retains first-run guidance and safe focus skip", async ({ page }) => {
   await page.goto("/?debug=1");
-  await expect(page.locator(".hero")).toContainText("救回三个世界");
+  await expect(page.locator("[data-formal-title]")).toContainText("同时穿越");
+  await expect(page.locator("[data-home-guide]")).toContainText("你的第一段冒险");
   await expect(page.locator(".progression-panel")).toContainText("世界碎片");
   await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
 
