@@ -6,7 +6,7 @@ test("formal title enters a separate playable preview", async ({ page }) => {
   const entry = page.locator("[data-sortie-preview-entry]");
   await expect(entry).toBeVisible();
   await entry.tap();
-  expect(new URL(page.url()).searchParams.get("mode")).toBe("sortie");
+  await expect(page).toHaveURL(/mode=sortie$/);
   await expect(page.locator("[data-sortie-title-screen]")).toBeVisible();
   await expect(page.locator("[data-sortie-menu-enter]")).toBeEnabled();
   await page.locator("[data-sortie-menu-enter]").tap();
