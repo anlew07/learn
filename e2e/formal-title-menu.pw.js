@@ -54,7 +54,7 @@ test("help and settings do not start or overwrite the run", async ({ page }) => 
   await expect(page.locator("[data-formal-title]")).toBeVisible();
   await tapVisible(page, '[data-formal-title] [data-action="open-help"]');
   await expect(page.locator(".support-page")).toBeVisible();
-  await page.locator('[data-action="support-back"]').click();
+  await page.locator('[data-action="support-back"]').first().click();
   await expect(page.locator("[data-formal-title]")).toBeVisible();
   await tapVisible(page, '[data-formal-title] [data-action="open-settings"]');
   await expect(page.locator(".support-page")).toBeVisible();

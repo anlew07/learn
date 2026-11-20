@@ -172,13 +172,13 @@
   font-size: 15px;
   font-weight: 900;
 }
-.formal-title-menu .hero-actions .btn {
+.app-shell.formal-title-mode .formal-title-menu .hero-actions .btn {
   color: #382a21;
   background: linear-gradient(180deg,#ffe8a8,#ebb55d);
   border: 3px solid #ffebbd;
   box-shadow: inset 0 2px #fff4d5,0 4px #795637;
 }
-.formal-title-menu .hero-actions .btn:hover:not(:disabled) {
+.app-shell.formal-title-mode .formal-title-menu .hero-actions .btn:hover:not(:disabled) {
   color: #382a21;
   background: #ffd98a;
 }

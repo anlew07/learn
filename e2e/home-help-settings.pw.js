@@ -9,7 +9,7 @@ test("help works before creating a save and returns to first-session entry", asy
   await expect(page.locator('[data-support-page="help"]')).toContainText("P100");
   await expect(page.locator('[data-support-page="help"]')).toContainText("同步运行");
   await page.locator('[data-action="support-back"]').first().click();
-  await expect(page.locator(".camp-home")).toBeVisible();
+  await expect(page.locator("[data-formal-title]")).toBeVisible();
   await expect(page.locator('[data-action="new-run"][data-onboarding="focus"]')).toBeVisible();
 });
 
@@ -44,7 +44,7 @@ test("settings uses actual persistent text-size preference and returns to the sa
 
   await page.locator('[data-action="scene-panel"][data-panel="menu"]').click();
   await page.locator('[data-action="home"]').click();
-  await expect(page.locator(".camp-home")).toBeVisible();
+  await expect(page.locator("[data-formal-title]")).toBeVisible();
   await page.locator('[data-action="continue"]').click();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
   await expect(page.locator(".stage-day")).toHaveText(originalDay);
