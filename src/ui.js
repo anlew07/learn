@@ -472,6 +472,7 @@ function homeHtml(){
   '<button class="btn" data-action="new-run" data-formal-title-primary>▶ 开始第 '+(profile.runCount+1)+' 次远征</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+
  '</div>'+
+ '<a class="formal-title-sortie-link" href="?mode=sortie" data-sortie-preview-entry>⚔ 雾谷出击 · 75秒动作试玩 <small>独立进度 · 不覆盖正式存档</small></a>'+
  '<nav class="formal-title-utility" aria-label="游戏帮助与设置">'+
  '<button data-action="open-help">? 玩法帮助</button>'+
  '<button data-action="open-settings">⚙ 设置与本机数据</button></nav>'+

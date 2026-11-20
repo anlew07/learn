@@ -31,11 +31,14 @@ jobs:
             docs/review/human-review-worklist.csv
           if-no-files-found: error
           retention-days: 14
-      - run: npm test
+      # Bound CPU-heavy fixed seed suites to avoid worker starvation.
+      - run: npm test -- --maxWorkers=2
       - run: npm run build
       - run: npm run balance:check
       - run: npm run balance:matrix:check
       - run: npm run compare:interventions:check
+      - name: Validate opt-in sortie core loop with paired seeds
+        run: npm run sortie:matrix:check
       - name: Install Chromium for browser acceptance tests
         run: npx playwright install --with-deps chromium
       - name: Verify real mobile-viewport Chromium flows
