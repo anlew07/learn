@@ -66,9 +66,9 @@ for (const size of screens) {
     await page.goto("/?mode=sortie&screen=camp");
     await expect(page.getByRole("heading", { name: "雾谷营地" })).toBeVisible();
     await expect(page.locator("[data-sortie-mission-safe]")).toBeVisible();
-    await expect(page.locator("[data-sortie-camp-more]")).not.toHaveAttribute(
-      "open",
-    );
+    // The collapsed detail is a deliberate first-screen product contract.
+    // prettier-ignore
+    await expect(page.locator("[data-sortie-camp-more]")).not.toHaveAttribute("open");
     await expect(page.getByText("不读取、写入正式存档", { exact: false })).toBeVisible();
     await expect(page.locator("[data-start-sortie]")).toBeEnabled();
 
