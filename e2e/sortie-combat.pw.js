@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("isolated sortie opens with a clear action and fits mobile viewports", async ({ page }) => {
   await page.goto("/?mode=sortie&screen=camp");
-  await expect(page.getByRole("heading", { name: "出击雾谷" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "雾谷营地" })).toBeVisible();
   await expect(page.getByText("不读取、写入正式存档", { exact: false })).toBeVisible();
 
   await page.locator("[data-start-sortie]").click();

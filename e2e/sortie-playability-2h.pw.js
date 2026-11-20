@@ -64,8 +64,11 @@ for (const size of screens) {
     await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
     await page.setViewportSize(size);
     await page.goto("/?mode=sortie&screen=camp");
-    await expect(page.getByRole("heading", { name: "出击雾谷" })).toBeVisible();
-    await expect(page.getByText("拖动移动躲避灵息弹", { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "雾谷营地" })).toBeVisible();
+    await expect(page.locator("[data-sortie-mission-safe]")).toBeVisible();
+    // The collapsed detail is a deliberate first-screen product contract.
+    // prettier-ignore
+    await expect(page.locator("[data-sortie-camp-more]")).not.toHaveAttribute("open");
     await expect(page.getByText("不读取、写入正式存档", { exact: false })).toBeVisible();
     await expect(page.locator("[data-start-sortie]")).toBeEnabled();
 
