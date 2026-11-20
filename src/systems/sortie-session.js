@@ -5,6 +5,23 @@ import { SORTIE } from "../config/sortie-data.js";
 
 export const SORTIE_ARCHIVE_VERSION = "sortie-world-v1";
 
+/**
+ * Feature gate supplied by 2L-A's task engine. On the untouched 2G branch,
+ * it is false, so no unverified salvage purchase or play can be initiated.
+ */
+export function hasAuthoritativeSortieMission() {
+  return SORTIE.mission?.options?.includes("salvage") === true &&
+    Number.isInteger(SORTIE.mission.rewardStones) &&
+    SORTIE.mission.rewardStones > 0;
+}
+
+/** Candidate only: no production purchase until 2L-A verifies guarded salvage. */
+export const SORTIE_2L_BEACON = Object.freeze({
+  id: "salvage-beacon",
+  cost: 2,
+  proposedContactBonus: 20,
+});
+
 function snapshot(state) {
   return JSON.parse(JSON.stringify(state));
 }
@@ -43,6 +60,23 @@ export function assertSortieArchive(archive) {
           SORTIE.forge.damageBonus)) ||
       (camp.forgeLevel === 0 && camp.buildReceipt != null))) {
     throw new Error("护灵剑台试验档结构无效");
+  }
+  const mission = camp?.missionSelection;
+  if (mission != null &&
+    (!["safe", ...(hasAuthoritativeSortieMission() ? ["salvage"] : [])].includes(mission.missionId) ||
+      !Number.isInteger(mission.day) || mission.day < 1 ||
+      mission.day > archive.run.day ||
+      typeof mission.operationId !== "string" ||
+      !/^[A-Za-z0-9:_/.-]{1,128}$/.test(mission.operationId))) {
+    throw new Error("营地任务选择记录无效");
+  }
+  if (archive.pending?.missionId != null) {
+    const selectedMission = mission?.day === archive.run.day ?
+      mission.missionId : "safe";
+    if (!["safe", ...(hasAuthoritativeSortieMission() ? ["salvage"] : [])].includes(archive.pending.missionId) ||
+      archive.pending.missionId !== selectedMission) {
+      throw new Error("未完成出击任务与营地已选任务不匹配");
+    }
   }
   if (archive.pending !== null &&
     (!archive.pending || typeof archive.pending.sortieId !== "string" ||
@@ -92,14 +126,31 @@ export function prepareSortieArchive(archive) {
     return { ok: false, error: "当前不可开启灵灾出击" };
   }
   const sortieId = sortieIdentity(run);
-  const pending = { sortieId, day: run.day };
+  // The legacy archive defaults to safe; only A's future verified replay can
+  // enable salvage. A UI-provided mission string cannot grant reward stones.
+  const next = snapshot(archive);
+  const selected = next.run.sortieCamp?.missionSelection;
+  // A's Engine rejects a previous-day selection. Missing selection means
+  // default safe; do not accidentally re-submit yesterday's salvage choice.
+  if (selected && selected.day !== run.day) {
+    delete next.run.sortieCamp.missionSelection;
+  }
+  const activeChoice = next.run.sortieCamp?.missionSelection;
+  const missionId = activeChoice?.missionId ?? "safe";
+  const pending = {
+    sortieId, day: run.day, missionId,
+    missionOperationId: activeChoice?.operationId ?? null,
+    preparationId: null,
+  };
   return {
     ok: true,
     seed: sortieSeed(run),
     danger: ling.d,
     forgeLevel: run.sortieCamp?.forgeLevel ?? 0,
+    missionId,
+    preparationId: null,
     sortieId,
-    archive: { ...snapshot(archive), pending },
+    archive: { ...next, pending },
   };
 }
 
@@ -178,8 +229,80 @@ export function buildSortieForge(archive, operationId) {
       weaponDamage: archive.lastReceipt.battle.weaponDamage ?? SORTIE.weapon.damage,
     },
   };
-  next.run.sortieCamp = { forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
+  next.run.sortieCamp = { ...next.run.sortieCamp, forgeLevel: SORTIE.forge.maxLevel, buildReceipt: receipt };
   return { ok: true, archive: next, receipt };
+}
+
+/**
+ * Safe-only mission command, recorded in the isolated archive.
+ * "salvage" is a reserved ID, NOT a reward instruction or enabled button.
+ */
+export function selectSortieCampMission(archive, missionId, operationId) {
+  assertSortieArchive(archive);
+  if (!["safe", "salvage"].includes(missionId)) {
+    return { ok: false, error: "出击任务 ID 不合法" };
+  }
+  if (typeof operationId !== "string" ||
+    !/^[A-Za-z0-9:_/.-]{1,128}$/.test(operationId)) {
+    return { ok: false, error: "任务选择操作 ID 不合法" };
+  }
+  if (missionId === "salvage" && !hasAuthoritativeSortieMission()) {
+    return { ok: false, error: "险地回收的战场实体与权威回放接口尚未接通，不能接取" };
+  }
+  const world = Engine.byId(archive.run, "lingzai");
+  if (archive.pending || !archive.run.active || world?.status !== "running" ||
+    world.retreat) {
+    return { ok: false, error: "当前不可更改出击任务" };
+  }
+  const old = archive.run.sortieCamp?.missionSelection;
+  if (old?.day === archive.run.day) {
+    if (old.operationId === operationId && old.missionId === missionId) {
+      return { ok: true, replayed: true, archive, receipt: old };
+    }
+    return { ok: false, error: "本日任务已确定，不能使用另一操作重复选择" };
+  }
+  const next = snapshot(archive);
+  const receipt = { missionId, operationId, day: next.run.day };
+  next.run.sortieCamp = { ...next.run.sortieCamp, missionSelection: receipt };
+  return { ok: true, replayed: false, archive: next, receipt };
+}
+
+/** One source of truth for the budget, eligibility and the *blocked* candidate. */
+export function previewSortieCampAllocation(archive) {
+  const forge = previewSortieForge(archive);
+  const world = Engine.byId(archive.run, "lingzai");
+  const ready = archive.run.active && world?.status === "running" &&
+    !world.retreat && !archive.pending;
+  const selected = archive.run.sortieCamp?.missionSelection;
+  const chosen = selected?.day === archive.run.day ? selected.missionId : "safe";
+  const missionReady = hasAuthoritativeSortieMission();
+  return {
+    day: archive.run.day,
+    stones: forge.stones,
+    missionId: chosen,
+    missionLocked: selected?.day === archive.run.day,
+    safe: { available: Boolean(ready), cost: 0, remaining: forge.stones },
+    salvage: {
+      available: Boolean(ready && missionReady),
+      cost: 0, rewardCandidate: SORTIE.mission?.rewardStones ?? 0,
+      reason: missionReady ? "需在回收点停留并成功完成 75 秒才能领任务奖金" :
+        "需先接入真实守卫、可接触回收点与权威任务回执",
+    },
+    keep: { cost: 0, remaining: forge.stones, available: Boolean(ready) },
+    forge: {
+      ...forge,
+      effect: "永久灵刃单次命中伤害 1 → 2（不保证资源回本）",
+    },
+    beacon: {
+      id: SORTIE_2L_BEACON.id,
+      cost: SORTIE_2L_BEACON.cost,
+      remaining: forge.stones - SORTIE_2L_BEACON.cost,
+      affordable: forge.stones >= SORTIE_2L_BEACON.cost,
+      available: false,
+      effect: "候选：下次险地回收接触半径 +20px；不加生命、不直接给灵石",
+      reason: "未有 2L-A 任务引擎与权威回放证明；禁止正式扣费",
+    },
+  };
 }
 
 function validateSortieArchiveStructure(archive) {

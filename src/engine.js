@@ -551,7 +551,11 @@ const MultiworldEngine = (function () {
     var forgeLevel=s.sortieCamp?.forgeLevel??0;
     if(!Number.isInteger(forgeLevel)||forgeLevel<0||forgeLevel>SORTIE.forge.maxLevel)
       return {ok:false,error:"护灵剑台状态不合法"};
-    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel);
+    var missionId=sortieMissionFromCamp(s);
+    if(missionId===null||(request.missionId!==undefined&&request.missionId!==missionId)){
+      return {ok:false,error:"Invalid sortie mission receipt"};
+    }
+    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId);
     if(!verified.ok)return {ok:false,error:verified.error};
     var reward=previewSortieRewards(verified.battle);
     if(!reward)return {ok:false,error:"战斗未完成"};
@@ -576,7 +580,7 @@ const MultiworldEngine = (function () {
     });
     var receipt={
       sortieId:request.sortieId,day:s.day,nextDay:next.day,
-      battle:reward,
+      battle:reward,missionId:missionId,objectiveStones:reward.objectiveStones,
       worlds:changes,
       newLogs:next.logs.slice(s.logs.length).map(function(entry){return {...entry};})
     };
@@ -716,3 +720,13 @@ const MultiworldEngine = (function () {
     resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;
+/** Validated persisted camp selection; client-side request bonuses are ignored. */
+function sortieMissionFromCamp(run) {
+  const selection = run.sortieCamp?.missionSelection;
+  if (selection === undefined || selection === null) return "safe";
+  if (!selection || typeof selection !== "object" || Array.isArray(selection) ||
+    !SORTIE.mission.options.includes(selection.missionId) ||
+    selection.day !== run.day || typeof selection.operationId !== "string" ||
+    !/^[A-Za-z0-9:_/.-]{1,128}$/.test(selection.operationId)) return null;
+  return selection.missionId;
+}
