@@ -24,29 +24,31 @@ async function tapVisible(page, selector) {
 }
 
 for (const viewport of viewports) {
-  test("formal title menu keeps primary actions in view " +
-    viewport.width + "x" + viewport.height, async ({ page }) => {
+  const name = `formal title keeps primary actions in view ${viewport.width}x${viewport.height}`;
+  test(name, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.locator("[data-formal-title]")).toBeVisible();
     await expect(page.getByRole("heading", { name: "同时穿越" })).toBeVisible();
-    await expect(page.locator('[data-action="new-run"][data-onboarding="focus"]'))
-      .toBeVisible();
-    await expect(page.locator('[data-action="new-run"][data-onboarding="full"]'))
-      .toBeVisible();
-    await expect(page.locator('[data-formal-title] [data-action="open-help"]'))
-      .toBeVisible();
-    expect(await page.evaluate(() =>
-      document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+    const focus = page.locator('[data-action="new-run"][data-onboarding="focus"]');
+    const full = page.locator('[data-action="new-run"][data-onboarding="full"]');
+    const help = page.locator('[data-formal-title] [data-action="open-help"]');
+    await expect(focus).toBeVisible();
+    await expect(full).toBeVisible();
+    await expect(help).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
     await page.screenshot({
-      path: folder + "/formal-title-" + viewport.width + "x" + viewport.height + ".png",
+      path: `${folder}/formal-title-${viewport.width}x${viewport.height}.png`,
     });
-    await tapVisible(page, '[data-formal-title-primary]');
+    await tapVisible(page, "[data-formal-title-primary]");
     await expect(page.locator("[data-game-stage]")).toBeVisible();
   });
 }
 
-test("formal title help and settings do not start or overwrite the run", async ({ page }) => {
+test("help and settings do not start or overwrite the run", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.locator("[data-formal-title]")).toBeVisible();
