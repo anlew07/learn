@@ -126,15 +126,15 @@ async function archives(page) {
   });
 }
 
-// Enter the camp through the title screen when the game-first menu is present.
-// The fallback keeps this release-gate branch valid against the pre-2S base.
+// The 2S menu is mandatory on this branch. Wait for the async bootstrap
+// before checking it: locator.isVisible() returns false immediately if the
+// dynamic import has not mounted the menu yet.
 async function enterCamp(page) {
   const menu = page.locator("[data-sortie-title-screen]");
-  if (await menu.isVisible()) {
-    await expect(page.locator("[data-sortie-menu-enter]")).toBeEnabled();
-    await fingerTapReachable(page, "[data-sortie-menu-enter]");
-    await expect(menu).toBeHidden();
-  }
+  await expect(menu).toBeVisible();
+  await expect(page.locator("[data-sortie-menu-enter]")).toBeEnabled();
+  await fingerTapReachable(page, "[data-sortie-menu-enter]");
+  await expect(menu).toBeHidden();
   await expect(page.locator("[data-sortie-intro]")).toBeVisible();
 }
 
