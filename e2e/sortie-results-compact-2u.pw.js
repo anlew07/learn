@@ -48,7 +48,7 @@ for (const size of [
       .toHaveAttribute("data-state", "saved");
     await expect(page.locator("[data-sortie-reward-preview]"))
       .toContainText("生存 0");
-    await expect(page.locator("[data-sortie-gains] > div")).toHaveCount(5);
+    await expect(page.locator("[data-sortie-gains] > div")).toHaveCount(4);
     await expect(page.locator("[data-sortie-world-glance]")).toBeVisible();
     await expect(page.locator("[data-sortie-world-glance] > span")).toHaveCount(2);
     await expect(page.locator("[data-sortie-world-glance]")).toContainText("第 2 日");

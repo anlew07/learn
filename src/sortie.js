@@ -779,7 +779,7 @@ function endBattle() {
       ["救援准备", "+" + reward.progress],
       ["拾取碎片", String(reward.collectedShards)],
     ];
-    if (objectiveStones !== null) {
+    if (objectiveStones !== null && (reward.missionId === "salvage" || objectiveStones > 0)) {
       items.push(["回收奖金（权威）", "+" + objectiveStones]);
     }
     gains.replaceChildren(...items.map(([label, value]) => {
