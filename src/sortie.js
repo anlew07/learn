@@ -1,4 +1,5 @@
 import "./sortie.css";
+import "./sortie-camp-compact.css";
 import { createSortie, advanceSortie, DURATION_TICKS, chooseSortieSkill, retreatSortie } from "./systems/sortie-sim.js";
 import { POWERS } from "./config/game-data.js";
 import { SORTIE } from "./config/sortie-data.js";
@@ -61,44 +62,59 @@ app.innerHTML = [
   '<p><b>③ 成长</b>：带回灵石，在营地决定保留资源还是修复护灵剑台。</p>',
   '<button type="button" data-sortie-menu-help-close>明白了</button>',
   '</div></section>',
-  '<section class="sortie-intro" data-sortie-intro>',
-  '<h1>出击雾谷</h1>',
-  '<p class="sortie-objective"><strong>本场目标：坚持 ' + SORTIE.durationSeconds +
-    ' 秒</strong><span>拖动移动躲避灵息弹，灵刃自动攻击；倒计时归零即完成试炼。</span></p>',
-  '<p class="sortie-intro-tip">第 ' + SORTIE.skills.choiceSeconds +
-    ' 秒自动暂停选择战技。靠近金色碎片可拾取，' +
-    SORTIE.rewards.shardsPerStone + ' 片兑换 1 灵石（最多兑换 ' +
-    SORTIE.rewards.maxShardStones + ' 灵石）。</p>',
-  '<p class="sortie-entry-growth" data-sortie-entry-growth>先看实际资源，再决定保留还是修剑台。</p>',
-  '<button class="sortie-cta" data-start-sortie>▶ 保留当前灵石 · 稳妥出击</button>',
+  '<section class="sortie-intro" data-sortie-intro aria-label="雾谷出击营地">',
+  '<div class="sortie-camp-scroll" data-sortie-camp-scroll>',
+  '<h1>雾谷营地</h1>',
+  '<section class="sortie-camp" data-sortie-camp aria-label="营地资源与上场收获">',
+  '<div class="sortie-camp-top"><strong>营地 · 第 1 日</strong><small>战后整备</small></div>',
+  '<div class="sortie-camp-stats">',
+  '<span><small>灵石</small><b data-sortie-stones>0</b></span>',
+  '<span><small>上场灵石</small><b data-sortie-last-stones>—</b></span>',
+  '<span><small>拾取碎片</small><b data-sortie-last-shards>—</b></span></div>',
+  '<p class="sortie-camp-brief" data-sortie-camp-brief>选择任务，进入雾谷带回资源。</p>',
+  '<details class="sortie-camp-report" data-sortie-camp-report>',
+  '<summary>查看战报与双世界变化</summary>',
+  '<span data-sortie-world-lines>正在读取世界状态…</span>',
+  '<p data-sortie-last-receipt>尚无已提交的出击回执</p></details></section>',
   '<section class="sortie-2l-missions" aria-label="出击任务选择">',
-  '<strong>本场任务 · 先选择风险</strong>',
+  '<strong>选择出击任务</strong>',
+  '<div class="sortie-route-grid">',
+  '<div class="sortie-route-card" data-sortie-route="safe">',
+  '<button type="button" data-sortie-mission-safe aria-pressed="true">稳妥巡护</button>',
+  '<small>生存 ' + SORTIE.durationSeconds + ' 秒 · 基础 +3 石</small></div>',
+  '<div class="sortie-route-card" data-sortie-route="salvage">',
+  '<button type="button" data-sortie-mission-salvage aria-pressed="false" disabled>险地回收</button>',
+  '<small data-sortie-salvage-summary>到回收点 · 额外 +2 石</small></div></div>',
+  '<details class="sortie-mission-rules" data-sortie-mission-rules>',
+  '<summary>查看任务条件</summary>',
   '<p data-sortie-safe-mission>稳妥巡护：撑满 75 秒，生存奖励 3 石；普通碎片最多换 2 石。</p>',
-  '<button type="button" data-sortie-mission-safe>选择稳妥巡护 · 无额外任务费</button>',
-  '<p class="sortie-2l-unavailable" data-sortie-salvage-description>险地回收：需接触回收点、面对守卫，未完成或撤离不领额外奖金；当前未接通。</p>',
-  '<button type="button" data-sortie-mission-salvage disabled>险地回收 · 等待权威战场接入</button>',
-  '</section>',
-  '<section class="sortie-2l-allocation" aria-label="营地资源抉择">',
-  '<strong>营地资金安排</strong><p data-sortie-budget>正在读取资源与费用……</p>',
-  '<p data-sortie-keep-preview>保留全部灵石，不增加当前风险和额外收益。</p>',
-  '<p data-sortie-prepare-preview>一次性回收信标：尚未启用，不能扣费。</p>',
-  '<p class="sortie-2l-unavailable">回收信标为独立影子实验，不会出现在正式可购买按钮中。</p>',
-  '</section>',
-
-  '<div class="sortie-camp" data-sortie-camp>',
-  '<strong>尚未取得营地状态</strong><span>灵灾与废土会在每次完整出击后共同推进一日</span>',
-  '<p data-sortie-last-receipt>尚无已提交的出击回执</p></div>',
-  '<section class="sortie-forge" data-sortie-forge data-level="0">',
+  '<p class="sortie-2l-unavailable" data-sortie-salvage-description>险地回收需要额外走位和击退守卫。</p></details></section>',
+  '<section class="sortie-forge" data-sortie-forge data-level="0" aria-label="营地成长投资">',
   '<div class="sortie-forge-top"><div class="sortie-forge-pedestal" aria-hidden="true">✦</div>',
-  '<div><strong>护灵剑台 · 待修复</strong><p data-sortie-forge-state>残破的基座等待灵石修复</p></div></div>',
-  '<p data-sortie-forge-preview>初始灵刃 1 伤害，修复后 2 伤害</p>',
-  '<button type="button" data-sortie-build hidden>消耗 6 灵石 · 修复护灵剑台</button>',
-  '<small>灵石同时用于终局封印；修复后不可拆除退款。</small>',
-  '</section>',
+  '<div><strong>护灵剑台 · 待修复</strong>',
+  '<p data-sortie-forge-state>永久强化灵刃</p></div></div>',
+  '<p data-sortie-forge-preview>投入 6 灵石 · 灵刃伤害 1 → 2</p>',
+  '<button type="button" data-sortie-build hidden>花 6 灵石 · 修复剑台</button>',
   '<section class="sortie-growth-review" data-sortie-growth-review hidden>',
   '<strong data-sortie-growth-title></strong>',
-  '<p data-sortie-growth-payment></p><p data-sortie-growth-outcome></p>',
+  '<details><summary>查看真实投入与成长记录</summary>',
+  '<p data-sortie-growth-payment></p><p data-sortie-growth-outcome></p></details></section>',
   '</section>',
+  '<details class="sortie-camp-more" data-sortie-camp-more>',
+  '<summary>玩法规则与资源说明</summary>',
+  '<p class="sortie-objective"><strong>本场目标：坚持 ' + SORTIE.durationSeconds +
+    ' 秒</strong><span>摇杆走位，灵刃自动攻击。</span></p>',
+  '<p class="sortie-intro-tip">第 ' + SORTIE.skills.choiceSeconds +
+    ' 秒自动暂停选择战技。金色碎片靠近即可拾取，' +
+    SORTIE.rewards.shardsPerStone + ' 片兑换 1 灵石（最多兑换 ' +
+    SORTIE.rewards.maxShardStones + ' 灵石）。</p>',
+  '<p class="sortie-entry-growth" data-sortie-entry-growth>首场结束后再选择投资。</p>',
+  '<section class="sortie-2l-allocation" aria-label="营地资源明细">',
+  '<strong>营地资金安排</strong><p data-sortie-budget>正在读取资源…</p>',
+  '<p data-sortie-keep-preview>保留当前灵石，不获得额外增益。</p>',
+  '<p data-sortie-prepare-preview>回收信标尚未启用。</p>',
+  '<p class="sortie-2l-unavailable">回收信标仍属未验证候选，不能购买或扣费。</p>',
+  '</section></details>',
   '<details class="sortie-civilization" data-civilization-tree>',
   '<summary><strong>文明演化图谱</strong><span data-civilization-count>0/8 节点</span>',
   '<small data-civilization-next>正在读取下一步目标…</small></summary>',
@@ -107,9 +123,12 @@ app.innerHTML = [
   '<button type="button" data-civilization-target="forge">查看剑台投入</button>',
   '</div>',
   '<div class="sortie-civilization-nodes" data-civilization-nodes></div>',
-  '<p class="sortie-civilization-hint">图谱只记录真实成就并引导已有选择；没有隐藏加成，建设依旧需要付款。</p>',
+  '<p class="sortie-civilization-hint">图谱仅记录真实成就，不额外发放资源或效果。</p>',
   '</details>',
-  '<p class="sortie-warning">本模式不读取、写入正式存档；收益和剑台仅存独立试验档。出击结束推进双世界一天，营地建设不推进世界日。</p></section>',
+  '<p class="sortie-warning">独立试玩 · 不读取、写入正式存档</p>',
+  '</div>',
+  '<div class="sortie-camp-launch"><button class="sortie-cta" data-start-sortie>▶ 开始出击 · 稳妥巡护</button></div>',
+  '</section>',
   '<section class="sortie-session-notice" data-sortie-session-notice role="status"></section>',
   '<section class="sortie-play" data-sortie-play hidden>',
   '<div class="sortie-stats"><span data-sortie-hp>生命 8/8</span>',
@@ -203,6 +222,13 @@ const retreatOverlay = app.querySelector("[data-sortie-confirm]");
 const rewardText = app.querySelector("[data-sortie-reward-preview]");
 const worldReport = app.querySelector("[data-sortie-world-report]");
 const camp = app.querySelector("[data-sortie-camp]");
+const campScroll = app.querySelector("[data-sortie-camp-scroll]");
+const campStones = app.querySelector("[data-sortie-stones]");
+const campLastStones = app.querySelector("[data-sortie-last-stones]");
+const campLastShards = app.querySelector("[data-sortie-last-shards]");
+const campBrief = app.querySelector("[data-sortie-camp-brief]");
+const campWorldLines = app.querySelector("[data-sortie-world-lines]");
+const salvageSummary = app.querySelector("[data-sortie-salvage-summary]");
 const lastReceipt = app.querySelector("[data-sortie-last-receipt]");
 const forgePanel = app.querySelector("[data-sortie-forge]");
 const forgeState = app.querySelector("[data-sortie-forge-state]");
@@ -263,7 +289,7 @@ function switchTitleScreen(toTitle) {
   titleScreen.hidden = !toTitle;
   intro.hidden = toTitle;
   root.dataset.screen = toTitle ? "menu" : "camp";
-  if (!toTitle) intro.scrollTop = 0;
+  if (!toTitle) campScroll.scrollTop = 0;
   titleHelp.hidden = true;
   updateCamp();
 }
@@ -301,9 +327,16 @@ function updateCamp() {
   if (archive?.run) {
     const run = archive.run;
     const [ling, zombie] = run.worlds;
-    camp.querySelector("strong").textContent = "营地 · 第 " + run.day + " 日（世界时间在营地冻结）";
-    camp.querySelector("span").textContent = worldLine(ling) + "｜" + worldLine(zombie);
+    camp.querySelector(".sortie-camp-top strong").textContent = "营地 · 第 " + run.day + " 日";
+    campWorldLines.textContent = worldLine(ling) + "｜" + worldLine(zombie);
     const prior = archive.lastReceipt;
+    campStones.textContent = String(ling?.resource ?? 0);
+    campLastStones.textContent = prior ? "+" + prior.battle.stones : "—";
+    campLastShards.textContent = prior ? "+" + prior.battle.collectedShards : "—";
+    campBrief.textContent = prior ?
+      (prior.battle.outcome === "won" ? "上场胜利" : "上场未完成") +
+      " · 击退 " + prior.battle.defeated + " · 第 " + prior.day + " 日结算" :
+      "选择任务 · 带回灵石 · 修复剑台";
     lastReceipt.textContent = prior ?
       "已保存的第 " + prior.day + " 日回执：灵石 +" + prior.battle.stones +
       "，经验 +" + prior.battle.experience +
@@ -327,11 +360,14 @@ function updateCamp() {
       "，若购买将剩余 " + allocation.beacon.remaining + "；" +
       allocation.beacon.effect + "。当前禁止付款：" + allocation.beacon.reason + "。";
     missionSafeButton.textContent = selectedToday && chosenMission === "safe" ?
-      "已选稳妥巡护 · 记录已存档" : "选择稳妥巡护（默认）";
+      "✓ 已选稳妥巡护" : "稳妥巡护";
+    missionSafeButton.setAttribute("aria-pressed", String(chosenMission === "safe"));
     missionSalvageButton.textContent = selectedToday && chosenMission === "salvage" ?
-      "已选险地回收 · 记录已存档" : allocation.salvage.available ?
-        "选择险地回收 · 候选成功奖金 +" + allocation.salvage.rewardCandidate :
-        "险地回收 · 等待权威战场接入";
+      "✓ 已选险地回收" : "险地回收";
+    missionSalvageButton.setAttribute("aria-pressed", String(chosenMission === "salvage"));
+    salvageSummary.textContent = allocation.salvage.available ?
+      "接触回收点 · 成功额外 +" + allocation.salvage.rewardCandidate + " 石" :
+      "尚未解锁 · 不可出击";
     salvageDescription.textContent = allocation.salvage.available ?
       "险地回收有额外守卫；走到地图中的回收点停留 1 秒并活到 75 秒，才有候选奖金 +" +
         allocation.salvage.rewardCandidate + " 灵石；未完成、失败或撤离不领任务奖金。" :
@@ -343,24 +379,21 @@ function updateCamp() {
       (selectedToday && chosenMission !== "safe");
     missionSalvageButton.disabled = !allocation.salvage.available || locked ||
       (selectedToday && chosenMission !== "salvage");
-    startButton.textContent = "▶ 保留 " + allocation.keep.remaining + " 灵石 · " +
-      (chosenMission === "salvage" ? "险地回收" : "稳妥出击");
+    startButton.textContent = "▶ 开始出击 · " +
+      (chosenMission === "salvage" ? "险地回收" : "稳妥巡护");
     forgePanel.dataset.level = String(forge.level);
     entryGrowth.textContent = forge.built ?
       "剑台已修复：下一场灵刃伤害 1 → " + forge.nextDamage + "；留意实际击退与资源回报。" :
       "首场后通常已能负担修复剑台的 " + forge.cost + " 灵石；请在保留资源与真实付费强化之间选择。";
     forgePanel.querySelector("strong").textContent = forge.built ?
       "护灵剑台 · 已修复" : "护灵剑台 · 待修复";
-    forgeState.textContent = forge.built ? "剑台已点亮 · 灵刃基础伤害 1 → 2" :
-      "残破的基座 · 完成首场出击后可投入灵石";
+    forgeState.textContent = forge.built ? "永久生效 · 灵刃伤害 " + forge.nextDamage :
+      "永久强化 · 费用 " + forge.cost + " 灵石";
     forgePreview.textContent = forge.built ?
-      "下次出击灵刃伤害 " + forge.nextDamage +
-      "（妖狼从 2 次命中缩短到 1 次）；是否增加灵石以实际战果为准" :
-      (forge.available ?
-        "投入 " + forge.cost + " 灵石后剩余 " + forge.remaining +
-        "；灵刃伤害 1 → " + forge.nextDamage +
-        "，但到第六场的既有试验尚未证明回本" :
-        (forge.reason || "首次出击后解锁") + "；修复费用 " + forge.cost + " 灵石");
+      "灵刃伤害 " + forge.nextDamage + " · 已永久生效" :
+      "投入 " + forge.cost + " 灵石 · 灵刃伤害 1 → " + forge.nextDamage +
+      (forge.available ? " · 投入后剩 " + forge.remaining + " 石" :
+        " · 当前 " + allocation.stones + " 石");
     forgeButton.hidden = forge.built || !archive.lastReceipt;
     forgeButton.disabled = !forge.available || !session.isOwner ||
       writeBusy || Boolean(writeError) || Boolean(restoreError) || phase !== "intro";
@@ -454,8 +487,8 @@ function updateCamp() {
   }
   // The persistent archive notice belongs to camp; leave the battlefield and
   // settlement room for objective/changes. Still expose write/lock failures.
-  sessionNotice.hidden = phase !== "intro" && sessionMode === "owner" &&
-    !writeError && !restoreError;
+  sessionNotice.hidden = sessionMode === "owner" && !writeBusy &&
+    !writeError && !restoreError && !recoveryMessage;
   updateTitleScreen();
 }
 
