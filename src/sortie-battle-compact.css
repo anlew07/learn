@@ -106,8 +106,14 @@
   color: #dbd2c6;
 }
 
+/* Tall phones letterbox the fixed 320×448 world canvas to preserve its
+   authoritative coordinates. Continue the subdued pixel terrain behind it
+   instead of exposing empty black bars; never crop or stretch the arena. */
 .sortie-root[data-screen="battle"] .sortie-field {
-  background: #161a24;
+  background-color: #20372f;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 19px, rgba(9, 23, 19, 0.5) 19px 22px),
+    repeating-linear-gradient(90deg, #233d33 0 19px, #182e27 19px 22px);
 }
 
 .sortie-root[data-screen="battle"] .sortie-controls {
