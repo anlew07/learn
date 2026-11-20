@@ -10,6 +10,8 @@ const viewports = [
   { width: 430, height: 932 },
 ];
 
+// Coordinate-aware real finger checks, deliberately kept in one readable block.
+// prettier-ignore
 async function tapInViewport(page, selector) {
   const box = await page.locator(selector).boundingBox();
   expect(box, selector + " must have a hitbox").not.toBeNull();
@@ -30,6 +32,7 @@ async function tapInViewport(page, selector) {
   await page.touchscreen.tap(x, y);
 }
 
+// prettier-ignore
 for (const viewport of viewports) {
   test(
     `compact camp keeps the real choice and fixed sortie action touchable ${viewport.width}x${viewport.height}`,
