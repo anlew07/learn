@@ -14,6 +14,7 @@ export function normalizeLegacyProfile(profile) {
   return {
     ...source,
     runCount: Number.isInteger(source.runCount) && source.runCount >= 0 ? source.runCount : 0,
+    worldsSaved: Number.isInteger(source.worldsSaved) && source.worldsSaved >= 0 ? source.worldsSaved : 0,
     shards: Number.isFinite(source.shards) && source.shards >= 0 ? source.shards : 0,
     legacyUnlocks: legacyUnlocks.filter((id) => known.has(id)),
     activeLegacyId,
