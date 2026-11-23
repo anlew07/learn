@@ -103,7 +103,14 @@ describe("2AC progressive world slots", () => {
     expect(restored.worldSlots).toBe(2);
     expect(running(restored)).toHaveLength(2);
     expect(running(restored).map((world) => world.id).sort()).toEqual(["beast", "zombie"]);
-    expect(Engine.byId(restored, "beast").bornDay).toBe(restored.day + 1);
+    const beast = Engine.byId(restored, "beast");
+    expect(beast.bornDay).toBe(restored.day + 1);
     expect(Engine.byId(restored, "zombie").bornDay).toBe(1);
+    expect(beast.lastDecision).toBeNull();
+    Engine.step(restored);
+    expect(beast.lastDecision).toBeNull();
+    expect(restored.day).toBe(beast.bornDay);
+    Engine.step(restored);
+    expect(beast.lastDecision.day).toBe(beast.bornDay);
   });
 });

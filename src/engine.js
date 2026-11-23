@@ -563,7 +563,7 @@ const MultiworldEngine = (function () {
   }
   function memory(s){
     s.worlds.forEach(function(w){
-      if(w.status!=="running"){w.memoryCandidates=[];return;}
+      if(w.status!=="running"||(w.bornDay||1)>s.day){w.memoryCandidates=[];return;}
       var src=s.memory[w.id]||(s.memory[w.id]={count:0,lastDay:-100,keys:[]});
       if(src.count>=3||s.day<src.lastDay+6){w.memoryCandidates=[];return;}
       var dest=alive(s).filter(function(x){return x!==w;});
@@ -582,9 +582,11 @@ const MultiworldEngine = (function () {
   function tickDay(s,sortie){
     if(!s||!s.active)return {ok:false,error:"本局已经结束"};
     if(s.day>1&&(s.day-1)%8===0){s.ap=Math.min(s.apMax,s.ap+2);log(s,null,"灵魂行动点恢复2点。","minor");}
-    s.worlds.forEach(function(w){if(w.status==="running"){queuedEvent(s,w);activateEvents(s,w);}});
     s.worlds.forEach(function(w){
-      if(w.status!=="running")return;
+      if(w.status==="running"&&(w.bornDay||1)<=s.day){queuedEvent(s,w);activateEvents(s,w);}
+    });
+    s.worlds.forEach(function(w){
+      if(w.status!=="running"||(w.bornDay||1)>s.day)return;
       var nextPhase=worldPhase(w,s.day);
       if(w.id==="beast"&&w.phase!==nextPhase){w.phase=nextPhase;log(s,w.id,"兽王进入「"+nextPhase+"」阶段。","warning");}
       if(w.retreat){

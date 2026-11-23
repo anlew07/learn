@@ -602,7 +602,8 @@ function worldOverviewHtml(w) {
  const guide=getWorldGuidance(run,w,Engine);
  const risk=w.status!=="running"?worldStatus(w):w.d>=75?"高危 · 尽快关注":w.d>=50?"风险上升":"持续推进";
  const ageDay=Math.max(1,(w.status==="running"?run.day:(w.endDay||run.day))-(w.bornDay||1)+1);
- const timeLabel=w.status==="running"?"世界第"+ageDay+"天 · 救援期限剩余"+Math.max(0,w.deadline-run.day+1)+"天":"世界存续"+ageDay+"天";
+ const arriving=(w.bornDay||1)>run.day;
+ const timeLabel=arriving?"明日抵达":w.status==="running"?"世界第"+ageDay+"天 · 救援期限剩余"+Math.max(0,w.deadline-run.day+1)+"天":"世界存续"+ageDay+"天";
  return '<article class="world-brief world-'+esc(w.id)+'" data-world-overview="'+esc(w.id)+'">'+
  '<div class="brief-scene" aria-hidden="true"></div>'+
  '<div class="brief-head"><div><span class="eyebrow">第 '+String(w.worldNumber||1).padStart(2,"0")+' 个世界</span>'+
