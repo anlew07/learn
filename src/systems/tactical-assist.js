@@ -24,7 +24,8 @@ export function previewTacticalAssist(run, world, freeAP = 0) {
   return {
     available: !reason,
     reason,
-    armed: world?.tacticalAssist?.kind === TACTICAL_ASSIST.id,
+    armed: Boolean(run?.active && world?.status === "running" &&
+      world?.tacticalAssist?.kind === TACTICAL_ASSIST.id),
     apCost: TACTICAL_ASSIST.apCost,
     wavePower: TACTICAL_ASSIST.wavePower,
     dangerCap: TACTICAL_ASSIST.dangerCap,
