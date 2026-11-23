@@ -753,6 +753,10 @@ function stagePanelHtml(view) {
   '<div class="stage-sheet-body">'+content+'</div></section></div>';
 }
 function sceneHtml() {
+ const running = activeWorlds();
+ if (running.length && !running.some((world) => world.id === sceneWorldId)) {
+  sceneWorldId = running[0].id;
+ }
  const view = getStageView(run,sceneWorldId);
  if (!view) return "";
  const canExplore = !inQuickStart();

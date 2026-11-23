@@ -10,6 +10,7 @@ function average(total, count) {
 
 function emptyWorld() {
   return {
+    visits: 0,
     saved: 0,
     day: 0,
     resources: 0,
@@ -30,26 +31,44 @@ function emptyWorld() {
 
 function simulate(runNumber, strategy, waves, samples) {
   const totals = {};
-  const ids = runNumber >= 3 ? ["lingzai", "zombie", "beast"] : ["lingzai", "zombie"];
+  const ids = ["lingzai", "zombie", "beast"];
   for (const id of ids) totals[id] = emptyWorld();
   let incomplete = 0;
   let allSaved = 0;
   let runDay = 0;
 
   for (let index = 0; index < samples; index++) {
-    // Intentionally use the exact same seeds as the existing balance report.
-    const state = Engine.fresh("balance-v2-r" + runNumber + "-" + index, runNumber, waves);
+    // A run's initial slots now follow the permanent rescue progression:
+    // first run = one world, second = two, third and later = three.
+    const savedBeforeRun = Math.min(2, Math.max(0, runNumber - 1));
+    const state = Engine.fresh(
+      "balance-v2-r" + runNumber + "-" + index,
+      runNumber,
+      waves,
+      "",
+      savedBeforeRun,
+    );
     if (strategy !== "default") {
       for (const world of state.worlds) world.strategy = strategy;
     }
-    const terminal = {};
+    const terminal = new Map();
+    const finishedWorlds = new Map();
     let steps = 0;
     while (state.active && steps++ < 200) {
       const day = state.day;
       Engine.step(state);
+      // A strategy experiment applies the same policy to every newly crossed
+      // world, not only the worlds that happened to exist at run start.
+      if (strategy !== "default") {
+        for (const world of state.worlds) {
+          if (world.status === "running") world.strategy = strategy;
+        }
+      }
       for (const world of state.worlds) {
-        if (!terminal[world.id] && world.status !== "running") {
-          terminal[world.id] = readWorldTerminal(world, state.logs, day);
+        const instanceId = world.worldNumber ?? world.slotId ?? world.id;
+        if (!finishedWorlds.has(instanceId) && world.status !== "running") {
+          finishedWorlds.set(instanceId, world);
+          terminal.set(instanceId, readWorldTerminal(world, state.logs, day));
         }
       }
     }
@@ -58,13 +77,16 @@ function simulate(runNumber, strategy, waves, samples) {
       continue;
     }
 
-    allSaved += Number(state.result.saved === state.worlds.length);
+    allSaved += Number(state.result.saved === state.result.visited);
     runDay += state.result.endedDay;
-    for (const world of state.worlds) {
+    for (const [instanceId, world] of finishedWorlds) {
       const row = totals[world.id];
+      if (!row) continue;
+      const outcome = terminal.get(instanceId);
       const metrics = world.metrics || {};
+      row.visits++;
       row.saved += Number(world.status === "saved");
-      row.day += terminal[world.id]?.day ?? state.result.endedDay;
+      row.day += outcome?.day ?? state.result.endedDay;
       row.resources += world.resource;
       row.p += world.p;
       row.d += world.d;
@@ -80,7 +102,7 @@ function simulate(runNumber, strategy, waves, samples) {
         row.actions[action] = (row.actions[action] || 0) + count;
       }
       if (world.status !== "saved") {
-        const reason = terminal[world.id]?.reason ?? "未知原因";
+        const reason = outcome?.reason ?? "未知原因";
         row.reasons[reason] = (row.reasons[reason] || 0) + 1;
       }
     }
@@ -89,28 +111,30 @@ function simulate(runNumber, strategy, waves, samples) {
   const worlds = {};
   for (const id of ids) {
     const row = totals[id];
+    const count = row.visits;
     const counts = {};
     const reasons = {};
-    for (const [action, count] of Object.entries(row.actions)) {
-      counts[action] = completed ? average(count, completed) : null;
+    for (const [action, value] of Object.entries(row.actions)) {
+      counts[action] = count ? average(value, count) : null;
     }
-    for (const [reason, count] of Object.entries(row.reasons)) {
-      reasons[reason] = completed ? average(count, completed) : null;
+    for (const [reason, value] of Object.entries(row.reasons)) {
+      reasons[reason] = count ? average(value, count) : null;
     }
     worlds[id] = {
-      saveRate: completed ? average(row.saved, completed) : null,
-      meanEndDay: completed ? average(row.day, completed) : null,
-      meanResources: completed ? average(row.resources, completed) : null,
-      meanP: completed ? average(row.p, completed) : null,
-      meanD: completed ? average(row.d, completed) : null,
-      meanFights: completed ? average(row.fights, completed) : null,
-      eliteClearRate: completed ? average(row.clears, completed) : null,
-      meanSuppressionStages: completed ? average(row.suppressions, completed) : null,
-      meanWaveBattles: completed ? average(row.waveBattles, completed) : null,
-      meanWaveXp: completed ? average(row.waveXp, completed) : null,
-      meanWaveResources: completed ? average(row.waveResources, completed) : null,
-      meanWaveDoomRelief: completed ? average(row.waveDoomRelief, completed) : null,
-      meanEvolutions: completed ? average(row.evolutions, completed) : null,
+      visits: count,
+      saveRate: count ? average(row.saved, count) : null,
+      meanEndDay: count ? average(row.day, count) : null,
+      meanResources: count ? average(row.resources, count) : null,
+      meanP: count ? average(row.p, count) : null,
+      meanD: count ? average(row.d, count) : null,
+      meanFights: count ? average(row.fights, count) : null,
+      eliteClearRate: count ? average(row.clears, count) : null,
+      meanSuppressionStages: count ? average(row.suppressions, count) : null,
+      meanWaveBattles: count ? average(row.waveBattles, count) : null,
+      meanWaveXp: count ? average(row.waveXp, count) : null,
+      meanWaveResources: count ? average(row.waveResources, count) : null,
+      meanWaveDoomRelief: count ? average(row.waveDoomRelief, count) : null,
+      meanEvolutions: count ? average(row.evolutions, count) : null,
       failureReasons: reasons,
       meanActions: counts,
     };

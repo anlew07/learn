@@ -91,7 +91,10 @@ export function getWorldSceneState(world, day = 1) {
 export function getStageView(run, selectedWorldId) {
   const allWorlds = Array.isArray(run?.worlds) ? run.worlds : [];
   const worlds = allWorlds.filter((world) => world.status === "running");
-  const selected = [...worlds].reverse().find((world) => world.id === selectedWorldId) || worlds[0];
+  const selected =
+    [...worlds].reverse().find((world) => world.id === selectedWorldId) ||
+    [...allWorlds].reverse().find((world) => world.id === selectedWorldId) ||
+    worlds[0];
   if (!selected) return null;
   const pendingWorlds = worlds.filter((world) =>
     world.status === "running" &&

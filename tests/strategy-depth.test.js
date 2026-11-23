@@ -103,7 +103,11 @@ describe("rescue-first beast threat opportunity cost", () => {
     expect(
       first.differences
         .filter((entry) => entry.runNumber < 3)
-        .every((entry) => Object.values(entry.worldDeltas).every((delta) => delta === 0)),
+        .every((entry) =>
+          Object.entries(entry.worldDeltas)
+            .filter(([worldId]) => worldId !== "beast")
+            .every(([, delta]) => delta === 0),
+        ),
     ).toBe(true);
     console.info(
       "SECOND_PHASE_SEEDED_BASELINE",
