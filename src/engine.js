@@ -23,6 +23,7 @@ import { discoverEasterEgg, discoverCrossworldSecrets } from "./systems/easter-e
 const MultiworldEngine = (function () {
   "use strict";
   var VERSION = "0.2.0";
+  var WORLD_ORDER = ["lingzai","zombie","beast"];
   function clamp(value, lo, hi) { return Math.max(lo, Math.min(hi, value)); }
   function r2(value) { return Math.round(value * 100) / 100; }
   function hash(input) {
@@ -42,37 +43,142 @@ const MultiworldEngine = (function () {
     s.logs.push({day:s.day, world:world||"system", text:message, kind:type||"normal"});
     if(s.logs.length>180)s.logs.splice(0,s.logs.length-180);
   }
-  function newWorld(id, seed, runNumber, startingResourceBonus) {
+  function newWorld(id, seed, runNumber, startingResourceBonus, worldNumber, slotId) {
+    var instance = Math.max(1, Number(worldNumber)||1);
+    var rngKey = instance<=3 ? String(seed)+"/"+id : String(seed)+"/world/"+instance+"/"+id;
+    var buildKey = instance<=3 ? String(seed)+"/build/"+id : String(seed)+"/build/world/"+instance+"/"+id;
     return {
-      id:id,name:WORLDS[id].name,status:"running",level:1,xp:0,resource:4+(startingResourceBonus||0),
+      id:id,worldNumber:instance,slotId:Math.max(1,Number(slotId)||1),
+      name:WORLDS[id].name,status:"running",level:1,xp:0,resource:4+(startingResourceBonus||0),
       p:0,d:0,deadline:runNumber===1?76:94,strategy:id==="lingzai"?"growth":"rescue",
-      action:"正在观察灾变",rng:seedrandom(String(seed)+"/"+id, {state:true}).state(),
-      buildRng:seedrandom(String(seed)+"/build/"+id, {state:true}).state(),
+      action:"正在观察灾变",rng:seedrandom(rngKey, {state:true}).state(),
+      buildRng:seedrandom(buildKey, {state:true}).state(),
       flags:{},milestones:[],threat:null,pendingEvent:null,queuedBoss:false,
       eventCount:0,injuryUntil:0,weaknessStart:0,weaknessUntil:0,retreat:null,
       repairUsed:false,suppression:0,echoMade:false,memoryCandidates:[],
-      lastDecision:null,lastCombat:null,
+      lastDecision:null,lastCombat:null,transitionSettled:false,
       build:{attack:[],support:[],count:0,pending:null,triggers:{},evolved:false,evolutionName:""}
     };
   }
-  function fresh(seed,runNumber,waves,legacyId) {
+  function fresh(seed,runNumber,waves,legacyId,worldsSavedCount) {
     var no = Math.max(1, Number(runNumber)||1);
-    var ids = no>=3?["lingzai","zombie","beast"]:["lingzai","zombie"];
+    // The UI always passes the permanent rescue count. The omitted-argument
+    // fallback keeps older integrations and deterministic fixtures compatible.
+    var savedCount = Number.isInteger(worldsSavedCount)&&worldsSavedCount>=0
+      ? worldsSavedCount : null;
+    var slots = savedCount===null ? (no>=3?3:2) : Math.min(3,1+savedCount);
+    var ids = WORLD_ORDER.slice(0,slots);
     var legacy = getLegacyDoctrine(legacyId);
     var s = {
       version:VERSION,id:"run-"+hash(seed+"/"+no),seed:String(seed),day:1,runNumber:no,active:true,
       legacyId:legacy?legacy.id:"",
+      worldsSavedCount:savedCount===null?0:savedCount,worldsSavedThisRun:0,
+      worldsFailedThisRun:0,worldsVisitedThisRun:ids.length,worldSlots:slots,
+      worldSequence:ids.length,nextSlotId:ids.length+1,
+      worldTypesSeen:ids.slice(),worldDiscoveryArchive:[],
       waves:!!waves,speed:1,paused:true,soul:8+(legacy?.startingSoul||0),ap:2+(legacy?.startingAP||0),apReserved:0,apMax:4,
       aidNext:{},fusionNext:1,echoes:[],memory:{},sequence:0,
       operationResults:{},operationOrder:[],
-      worlds:ids.map(function(id){return newWorld(id,seed,no,legacy?.startingResource||0);}),logs:[],
+      worlds:ids.map(function(id,index){return newWorld(id,seed,no,legacy?.startingResource||0,index+1,index+1);}),logs:[],
       result:null
     };
-    log(s,null,ids.length+"个世界已同时开启；分身将自主行动。","major");
+    log(s,null,slots+"个世界已同时开启；分身将自主行动。","major");
     if(legacy)log(s,null,"文明传承生效："+legacy.title+" · "+legacy.effectLabel,"major");
     return s;
   }
-  function byId(s,id){return s.worlds.find(function(w){return w.id===id;});}
+  function byId(s,id){
+    var matches=s.worlds.filter(function(w){return w.id===id;});
+    return matches.find(function(w){return w.status==="running";})||matches[matches.length-1];
+  }
+  function nextWorldSpec(s){
+    for(var offset=0;offset<WORLD_ORDER.length;offset++){
+      var serial=s.worldSequence+offset;
+      var id=WORLD_ORDER[serial%WORLD_ORDER.length];
+      if(!alive(s).some(function(w){return w.id===id;})){
+        s.worldSequence=serial+1;
+        return {id:id,worldNumber:serial+1};
+      }
+    }
+    return null;
+  }
+  function trimWorldHistory(s){
+    var ended=s.worlds.filter(function(w){return w.status!=="running";});
+    if(ended.length<=30)return;
+    var remove=new Set(ended.slice(0,ended.length-30));
+    s.worlds=s.worlds.filter(function(w){return w.status==="running"||!remove.has(w);});
+  }
+  function settleWorldTransitions(s){
+    var terminal=s.worlds.filter(function(w){return w.status!=="running"&&!w.transitionSettled;})
+      .sort(function(a,b){return (a.slotId||0)-(b.slotId||0);});
+    if(!terminal.length)return;
+    var previousSlots=Math.min(3,Math.max(1,Number(s.worldSlots)||alive(s).length||1));
+    var saved=terminal.filter(function(w){return w.status==="saved";});
+    terminal.forEach(function(w){
+      w.transitionSettled=true;w.endDay=s.day;
+      if(w.status==="saved"){
+        s.worldsSavedThisRun=(s.worldsSavedThisRun||0)+1;
+        s.worldsSavedCount=(s.worldsSavedCount||0)+1;
+        (w.flags?.easterEggs||[]).forEach(function(id){
+          if(!s.worldDiscoveryArchive.includes(id))s.worldDiscoveryArchive.push(id);
+        });
+      }else s.worldsFailedThisRun=(s.worldsFailedThisRun||0)+1;
+    });
+    s.worldSlots=Math.min(3,Math.max(previousSlots,1+s.worldsSavedCount));
+    var extraSlots=Math.max(0,s.worldSlots-previousSlots);
+    var specs=saved.map(function(w){return {slotId:w.slotId||s.nextSlotId++};});
+    for(var i=0;i<extraSlots;i++)specs.push({slotId:s.nextSlotId++});
+    specs.forEach(function(spec){
+      var next=nextWorldSpec(s);
+      if(!next)return;
+      var legacy=getLegacyDoctrine(s.legacyId);
+      var world=newWorld(next.id,s.seed,s.runNumber,legacy?.startingResource||0,next.worldNumber,spec.slotId);
+      s.worlds.push(world);
+      s.worldsVisitedThisRun=(s.worldsVisitedThisRun||0)+1;
+      if(!s.worldTypesSeen.includes(next.id))s.worldTypesSeen.push(next.id);
+      log(s,next.id,"分身穿越至第"+next.worldNumber+"个世界："+world.name+"。","major");
+    });
+    trimWorldHistory(s);
+  }
+  function restore(s,savedWorldsCount) {
+    if(!s||!Array.isArray(s.worlds))return s;
+    var hasProgression=Number.isInteger(s.worldsSavedCount)&&Array.isArray(s.worldTypesSeen);
+    if(hasProgression){
+      s.worldsSavedCount=Math.max(s.worldsSavedCount,Number(savedWorldsCount)||0);
+      s.worldsSavedThisRun=Number.isInteger(s.worldsSavedThisRun)?s.worldsSavedThisRun:s.worlds.filter(function(w){return w.status==="saved";}).length;
+      s.worldsFailedThisRun=Number.isInteger(s.worldsFailedThisRun)?s.worldsFailedThisRun:s.worlds.filter(function(w){return w.status==="failed";}).length;
+      s.worldsVisitedThisRun=Number.isInteger(s.worldsVisitedThisRun)?s.worldsVisitedThisRun:s.worlds.length;
+      s.worldSlots=Math.min(3,Math.max(Number(s.worldSlots)||0,alive(s).length,Math.min(3,1+s.worldsSavedCount)));
+      s.worldSequence=Math.max(Number(s.worldSequence)||0,...s.worlds.map(function(w){return Number(w.worldNumber)||0;}));
+      s.nextSlotId=Math.max(Number(s.nextSlotId)||1,...s.worlds.map(function(w){return (Number(w.slotId)||0)+1;}));
+      s.worldTypesSeen=Array.from(new Set([...(s.worldTypesSeen||[]),...s.worlds.map(function(w){return w.id;})]));
+      s.worldDiscoveryArchive=Array.from(new Set([...(s.worldDiscoveryArchive||[]),...s.worlds.flatMap(function(w){return w.flags?.easterEggs||[];})]));
+      s.worlds.forEach(function(w,index){
+        if(!Number.isInteger(w.slotId))w.slotId=index+1;
+        if(!Number.isInteger(w.worldNumber))w.worldNumber=index+1;
+        if(typeof w.transitionSettled!=="boolean")w.transitionSettled=w.status!=="running";
+      });
+      return s;
+    }
+    var oldSaved=s.worlds.filter(function(w){return w.status==="saved";}).length;
+    var oldFailed=s.worlds.filter(function(w){return w.status==="failed";}).length;
+    s.worldsSavedCount=Math.max(0,Number(savedWorldsCount)||0);
+    s.worldsSavedThisRun=0;s.worldsFailedThisRun=0;s.worldsVisitedThisRun=s.worlds.length;
+    s.worldSlots=Math.min(3,Math.max(s.worlds.length,alive(s).length,1+s.worldsSavedCount));
+    s.worldSequence=s.worlds.length;s.nextSlotId=s.worlds.length+1;
+    s.worldTypesSeen=Array.from(new Set(s.worlds.map(function(w){return w.id;})));
+    s.worldDiscoveryArchive=Array.from(new Set(s.worlds.flatMap(function(w){return w.flags?.easterEggs||[];})));
+    s.worlds.forEach(function(w,index){
+      if(!Number.isInteger(w.slotId))w.slotId=index+1;
+      if(!Number.isInteger(w.worldNumber))w.worldNumber=index+1;
+      w.transitionSettled=!s.active;
+    });
+    if(s.active){
+      finishRun(s);
+    }else{
+      s.worldsSavedThisRun=oldSaved;s.worldsFailedThisRun=oldFailed;
+    }
+    return s;
+  }
   function alive(s){return s.worlds.filter(function(w){return w.status==="running";});}
   function availableAP(s){return s.ap-s.apReserved;}
   function resourceTarget(w) {
@@ -279,7 +385,7 @@ const MultiworldEngine = (function () {
     }
     w.flags.sideResolved=true;
     w.pendingEvent=null;
-    checkWorld(s,w);
+    checkWorld(s,w);finishRun(s);
     return {ok:true};
   }
   function finishBoss(s,w){
@@ -393,6 +499,7 @@ const MultiworldEngine = (function () {
   function worldEnd(s,w,status,reason){
     if(w.status!=="running")return;
     w.status=status;w.action=status==="saved"?"世界获救":"救援未完成";
+    w.endReason=reason;w.endDay=s.day;w.transitionSettled=false;
     w.pendingEvent=null;w.queuedBoss=false;w.build.pending=null;
     if(w.retreat){s.apReserved=Math.max(0,s.apReserved-1);w.retreat=null;}
     if(status==="saved"){
@@ -410,7 +517,8 @@ const MultiworldEngine = (function () {
     if(s.soul<=0){
       s.worlds.forEach(function(other){
         if(other.status==="running"){
-          other.status="failed";other.action="灵魂坍塌";other.pendingEvent=null;other.build.pending=null;
+          other.status="failed";other.action="灵魂坍塌";other.endReason="灵魂坍塌";other.endDay=s.day;other.transitionSettled=false;
+          other.pendingEvent=null;other.build.pending=null;
           if(other.retreat){s.apReserved=Math.max(0,s.apReserved-1);other.retreat=null;}
           log(s,other.id,"灵魂支援耗尽，分身已安全撤离。","danger");
         }
@@ -430,11 +538,15 @@ const MultiworldEngine = (function () {
     return true;
   }
   function finishRun(s){
-    if(!s.active||alive(s).length)return;
+    if(!s||!s.active)return;
+    settleWorldTransitions(s);
+    discoverCrossworldSecrets(s).forEach(function(secret){log(s,null,secret.message,"minor");});
+    if(alive(s).length)return;
     s.active=false;s.paused=true;
-    var wins=s.worlds.filter(function(w){return w.status==="saved";}).length;
-    s.result={saved:wins,failed:s.worlds.length-wins,shards:wins*4+Math.max(0,s.worlds.length-wins),endedDay:s.day};
-    log(s,null,"本局结束：拯救"+wins+"个世界，获得"+s.result.shards+"枚世界碎片。","major");
+    var wins=s.worldsSavedThisRun||0,failed=s.worldsFailedThisRun||0;
+    var visited=s.worldsVisitedThisRun||wins+failed;
+    s.result={saved:wins,failed:failed,visited:visited,shards:wins*4+Math.max(0,failed),endedDay:s.day};
+    log(s,null,"本局结束：拯救"+wins+"个世界，救援失败"+failed+"个世界，获得"+s.result.shards+"枚世界碎片。","major");
   }
   function memory(s){
     s.worlds.forEach(function(w){
@@ -530,11 +642,7 @@ const MultiworldEngine = (function () {
         }
       }
     });
-    // Cross-world secrets are processed after all world actions, so world order
-    // cannot affect whether a combination unlocks on this day.
-    discoverCrossworldSecrets(s).forEach(function(secret){
-      log(s,null,secret.message,"minor");
-    });
+    // Completed worlds transition only after every current world has acted.
     memory(s);finishRun(s);
     if(s.active)s.day++;
     return {ok:true};
@@ -750,7 +858,7 @@ const MultiworldEngine = (function () {
       fusion:previewFusion,aid:previewResourceAid});
   }
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
-    fresh:fresh,step:step,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
+    fresh:fresh,restore:restore,step:step,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
     resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();

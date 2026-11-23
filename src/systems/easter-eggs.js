@@ -51,21 +51,26 @@ export function discoverEasterEgg(state, world) {
   return egg;
 }
 
-/** Read-only run collection. Missing worlds stay locked until that run unlocks them. */
+/** Read-only run collection, aggregated by world type across repeated crossings. */
 export function summarizeEasterEggCollection(state) {
-  const entries = (state?.worlds || []).map((world) => {
-    const definition = EASTER_EGGS[world.id];
-    if (!definition) return null;
-    const found = Boolean(world.flags?.easterEggs?.includes(definition.id));
+  const worlds = Array.isArray(state?.worlds) ? state.worlds : [];
+  const seen = Array.from(new Set([...(state?.worldTypesSeen || []), ...worlds.map((world) => world.id)]))
+    .filter((id) => EASTER_EGGS[id]);
+  const archive = new Set(state?.worldDiscoveryArchive || []);
+  const entries = seen.map((id) => {
+    const definition = EASTER_EGGS[id];
+    const world = [...worlds].reverse().find((item) => item.id === id);
+    const found = archive.has(definition.id) || worlds.some((item) =>
+      item.id === id && item.flags?.easterEggs?.includes(definition.id));
     return {
-      worldId: world.id,
-      worldName: world.name,
+      worldId: id,
+      worldName: world?.name || id,
       id: definition.id,
       found,
       title: found ? definition.title : "？？？",
       detail: found ? definition.message : "尚未发现：留意世界成长与特殊经历。",
     };
-  }).filter(Boolean);
+  });
   const found = entries.filter((entry) => entry.found).length;
   return {
     found,
@@ -92,10 +97,10 @@ export const CROSSWORLD_SECRETS = Object.freeze([
 ]);
 
 function hasAllClues(state, worlds) {
-  return worlds.every((id) => {
-    const world = state?.worlds?.find((item) => item.id === id);
-    return Boolean(world?.flags?.easterEggs?.includes(EASTER_EGGS[id].id));
-  });
+  const archive = new Set(state?.worldDiscoveryArchive || []);
+  return worlds.every((id) => archive.has(EASTER_EGGS[id].id) || Boolean(
+    state?.worlds?.some((item) => item.id === id && item.flags?.easterEggs?.includes(EASTER_EGGS[id].id)),
+  ));
 }
 
 export function previewCrossworldSecrets(state) {
@@ -116,8 +121,9 @@ export function discoverCrossworldSecrets(state) {
 
 /** A pure collection summary, suitable for display in archived completed runs. */
 export function summarizeCrossworldSecrets(state) {
+  const seen = new Set([...(state?.worldTypesSeen || []), ...(state?.worlds || []).map((world) => world.id)]);
   return CROSSWORLD_SECRETS
-    .filter((secret) => secret.worlds.every((id) => state?.worlds?.some((world) => world.id === id)))
+    .filter((secret) => secret.worlds.every((id) => seen.has(id)))
     .map((secret) => {
       const found = Boolean(state?.crossworldSecrets?.includes(secret.id));
       return {

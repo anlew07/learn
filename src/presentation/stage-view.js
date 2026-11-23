@@ -89,8 +89,9 @@ export function getWorldSceneState(world, day = 1) {
  * Never advances the simulation, consumes RNG, or mutates RunState.
  */
 export function getStageView(run, selectedWorldId) {
-  const worlds = Array.isArray(run?.worlds) ? run.worlds : [];
-  const selected = worlds.find((world) => world.id === selectedWorldId) || worlds[0];
+  const allWorlds = Array.isArray(run?.worlds) ? run.worlds : [];
+  const worlds = allWorlds.filter((world) => world.status === "running");
+  const selected = [...worlds].reverse().find((world) => world.id === selectedWorldId) || worlds[0];
   if (!selected) return null;
   const pendingWorlds = worlds.filter((world) =>
     world.status === "running" &&
@@ -122,8 +123,8 @@ export function getStageView(run, selectedWorldId) {
     status,
     statusCode: selected.status,
     day,
-    saved: worlds.filter((world) => world.status === "saved").length,
-    total: worlds.length,
+    saved: Number.isInteger(run.worldsSavedThisRun) ? run.worldsSavedThisRun : allWorlds.filter((world) => world.status === "saved").length,
+    total: Number.isInteger(run.worldsVisitedThisRun) ? run.worldsVisitedThisRun : allWorlds.length,
     ap: Math.max(0, number(run.ap) - number(run.apReserved)),
     soul: number(run.soul),
     rescue: percent(selected.p),
