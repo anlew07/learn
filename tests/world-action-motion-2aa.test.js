@@ -21,8 +21,10 @@ describe("truthful autonomous world-action reenactment", () => {
     expect(combat).toMatchObject({
       offsetX: 22, phase: "strike", strike: true, interacting: true,
     });
-    expect(patrol.strike).toBe(false);
-    expect(patrol.offsetX).toBe(combat.offsetX);
+    expect(patrol).toMatchObject({
+      phase: "patrol", interacting: false, strike: false,
+    });
+    expect(Math.abs(patrol.offsetX)).toBeLessThanOrEqual(4);
   });
 
   it("gives training a stationary energy pulse instead of walking", () => {

@@ -39,6 +39,13 @@ export function getWorldActionMotion(activity, frame = 0, paused = false, hasEnc
 
   if (action === "defending") {
     const phase = tick % 30;
+    if (!hasEncounter) {
+      return {
+        offsetX: Math.round(Math.sin((phase / 30) * Math.PI * 2) * 4),
+        offsetY: 0, bob: 0, flipX: false, phase: "patrol",
+        interacting: false, pulse: false, strike: false, paused: false,
+      };
+    }
     let offsetX = 0;
     let motionPhase = "rest";
     if (phase < 9) {
