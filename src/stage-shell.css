@@ -173,7 +173,15 @@
   pointer-events: none;
 }
 .stage-action-marker { flex: none; font-size: 11px; font-weight: 850; }
-.stage-action-text { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stage-action-text { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stage-action-report {
+  flex: 0 0 auto;
+  min-width: 63px;
+  min-height: 44px;
+  padding: 5px 7px;
+  font-size: 12px !important;
+  pointer-events: auto;
+}
 .stage-onboarding-hint .stage-action-marker { display: none; }
 .stage-onboarding-hint .stage-action-text {
   white-space: normal;

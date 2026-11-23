@@ -244,6 +244,12 @@
   box-shadow: 2px 2px 0 #121b16;
 }
 .stage-action-text { color: #f6edd2; font-size: 12px; font-weight: 650; }
+.stage-action-report {
+  color: #253026;
+  background: #e0bf82;
+  border: 2px solid #f7d69b;
+  box-shadow: inset -2px -2px 0 #a48158, 2px 2px 0 #121b16;
+}
 .stage-onboarding-hint .stage-action-text { font-size: 11px; line-height: 1.35; font-weight: 600; }
 
 .stage-bars {
