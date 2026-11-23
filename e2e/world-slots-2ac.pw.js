@@ -6,7 +6,15 @@ test(
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/?debug=1");
     await page.locator('[data-action="new-run"]').first().click();
-    await expect(page.locator("[data-game-stage], [data-rescue-board]")).toBeVisible();
+    await expect(page.locator("[data-rescue-board]")).toBeVisible();
+    await expect
+      .poll(async () =>
+        page.evaluate(async () => {
+          const { saveRepository } = await import("/src/services/persistence.js");
+          return (await saveRepository.load()).run?.worlds?.length ?? 0;
+        }),
+      )
+      .toBe(1);
 
     await page.evaluate(async () => {
       const { saveRepository } = await import("/src/services/persistence.js");

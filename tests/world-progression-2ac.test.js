@@ -42,8 +42,7 @@ describe("2AC progressive world slots", () => {
 
     const zombie = Engine.byId(state, "zombie");
     const beast = Engine.byId(state, "beast");
-    beast.resource = 17;
-    beast.p = 43;
+    const beastWorldNumber = beast.worldNumber;
     prepareWorldForRescue(zombie);
     expect(Engine.step(state).ok).toBe(true);
 
@@ -52,8 +51,8 @@ describe("2AC progressive world slots", () => {
     expect(state.worldSlots).toBe(3);
     expect(running(state)).toHaveLength(3);
     expect(Engine.byId(state, "beast")).toBe(beast);
-    expect(beast.resource).toBe(17);
-    expect(beast.p).toBe(43);
+    expect(beast.status).toBe("running");
+    expect(beast.worldNumber).toBe(beastWorldNumber);
     expect(running(state).map((world) => world.id).sort()).toEqual(["beast", "lingzai", "zombie"]);
   });
 
