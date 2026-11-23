@@ -35,7 +35,10 @@ describe("recognizable project-owned pixel scene art", () => {
 
   it("renders three distinct functional silhouettes at legible scales", () => {
     expect(scene).toContain('sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint)');
-    expect(scene).toContain('sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint)');
+    expect(scene).toContain('sprite(ctx, "ally", allyX, 127 + ambientBob, 32, 45, repaint)');
+    expect(scene).toContain(
+      "getWorldActionMotion(activity, frame, view.paused, Boolean(view.encounter))",
+    );
     expect(scene).toContain('sprite(ctx, art.foe, 268, 125 +');
     expect(scene).not.toContain("function atlas(");
   });
