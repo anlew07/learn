@@ -16,9 +16,7 @@ test("2AB unlocks, equips and resets a permanent doctrine without wiping the arc
   const tree = page.locator("[data-legacy-progression]");
   await tree.locator("summary").click();
 
-  const supplyUnlock = tree.locator(
-    '[data-action="unlock-legacy"][data-legacy-id="supply"]',
-  );
+  const supplyUnlock = tree.locator('[data-action="unlock-legacy"][data-legacy-id="supply"]');
   const supplyBounds = await supplyUnlock.boundingBox();
   expect(supplyBounds?.height).toBeGreaterThanOrEqual(44);
   await supplyUnlock.click();
