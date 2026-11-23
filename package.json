@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "lint": "eslint src tests scripts e2e eslint.config.mjs playwright.config.mjs",
     "format": "prettier --write src tests scripts e2e eslint.config.mjs playwright.config.mjs",
-    "format:check": "prettier --check \"scripts/**/*.mjs\" \"eslint.config.mjs\" \"playwright.config.mjs\" \"e2e/**/*.pw.js\"",
+    "format:check": "prettier --check \"scripts/**/*.mjs\" \"eslint.config.mjs\" \"playwright.config.mjs\" \"e2e/**/*.pw.js\" || (prettier --write scripts/beast-suppression-compare.mjs && cat scripts/beast-suppression-compare.mjs && exit 1)",
     "text:export": "node scripts/export-game-text.mjs",
     "text:runtime": "node scripts/export-runtime-templates.mjs",
     "text:review": "node scripts/export-human-review.mjs",
