@@ -637,11 +637,26 @@ function partyHtml() {
 }
 
 
+function tacticalPanelHtml(world) {
+ const preview=Engine.previewTactic(run,world.id);
+ const combat=world.lastCombat?.day===run.day-1?world.lastCombat?.tactic:null;
+ return '<section class="stage-tactic-card" data-tactical-support data-state="'+
+   (preview.armed?'armed':preview.available?'ready':'unavailable')+'">'+
+   '<strong>'+esc(world.name)+' · 集中火力</strong>'+
+   '<p>分身继续自动探索与排险。花 1 点干预点，下次三波清剿每波最多额外击退 4 只，并按新增击退缓解最多 2.5 点危机。</p>'+
+   '<p class="hint">只作用于下一次真正发生的排险；若世界提前结束，投入的干预点不会退回。无额外行动或重复战利品。</p>'+
+   (preview.available?
+    '<button class="btn" data-action="tactic" data-world="'+esc(world.id)+'">投入 1 AP · 下次清剿集中火力</button>':
+    '<p data-tactical-hint role="status">'+esc(preview.reason)+'</p>')+
+   (combat?'<p data-tactical-receipt>上次实际支援：额外击退 '+combat.extraDefeated+
+    ' · 危机缓解 '+n(combat.dangerRelief)+'</p>':'')+
+   '</section>';
+}
 function stagePanelHtml(view) {
  if (!scenePanel) return "";
  const selected = run.worlds.find(w => w.id === view.worldId) || run.worlds[0];
  const titles = { strategy:"世界档案与策略", event:"待处理事件与战技", aid:"跨世界援助",
-  team:"队伍与战技", report:"战斗记录", guide:"生存手册", all:"全部世界", menu:"更多功能" };
+  tactic:"战前支援", team:"队伍与战技", report:"战斗记录", guide:"生存手册", all:"全部世界", menu:"更多功能" };
  let content = "";
  if (scenePanel === "strategy") content = worldHtml(selected);
  if (scenePanel === "event") {
@@ -655,6 +670,7 @@ function stagePanelHtml(view) {
     '<p class="hint">当前没有待处理的关键选择。可返回主屏继续模拟。</p>';
  }
  if (scenePanel === "aid") content = soulHtml();
+ if (scenePanel === "tactic") content = tacticalPanelHtml(selected);
  if (scenePanel === "team") content = partyHtml();
  if (scenePanel === "report") content = selected.lastCombat ?
   combatHtml(selected.lastCombat) : '<p class="hint">本世界暂时没有战斗记录。</p>';
@@ -664,6 +680,7 @@ function stagePanelHtml(view) {
   '<p>这是自动生存模拟。你选择策略和关键干预，分身每天自主行动。</p>'+
   '<button data-action="scene-panel" data-panel="guide">玩法帮助</button>'+
   '<button data-action="scene-panel" data-panel="all">全部世界档案</button>'+
+  '<button data-action="scene-panel" data-panel="report">最近战报</button>'+
   '<button data-action="scene-classic">传统详细视图</button>'+
   '<button data-action="open-settings">设置与本机数据</button>'+
   '<button data-action="home">返回首页</button>'+
@@ -720,7 +737,9 @@ function sceneHtml() {
   '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+
   '<span class="stage-action-marker">'+(view.encounter?'昨日战报':'今日动向')+'</span><span class="stage-action-text">'+
   esc(inQuickStart()?getOpeningBrief(profile).stageHint:
-   view.encounter?'击退 '+view.encounter.defeated+'/'+view.encounter.encountered+' · '+view.action:view.action)+'</span></div>'+
+   view.encounter?'击退 '+view.encounter.defeated+'/'+view.encounter.encountered+
+    (view.tacticResult?' · 支援多击退 '+view.tacticResult.extraDefeated+
+     ' · 危机缓解 '+n(view.tacticResult.dangerRelief):'')+' · '+view.action:view.action)+'</span></div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div class="stage-meter stage-meter-rescue"><div class="stage-meter-head"><span>救援准备</span><b>'+Math.round(view.rescue)+'<small>%</small></b></div>'+
@@ -740,7 +759,8 @@ function sceneHtml() {
   '<button class="stage-nav-action" data-action="scene-panel" data-panel="strategy" aria-label="策略与世界档案">策略</button>'+
   '<button class="stage-nav-action" data-action="scene-panel" data-panel="aid" aria-label="跨世界援助">援助</button>'+
   '<button class="stage-nav-action" data-action="scene-panel" data-panel="team">队伍</button>'+
-  '<button class="stage-nav-action" data-action="scene-panel" data-panel="report">战报</button>'+
+  '<button class="stage-nav-action" data-action="scene-panel" data-panel="tactic" aria-label="战前支援">战术'+
+  (view.tacticArmed?' ✓':'')+'</button>'+
   '<button class="stage-nav-action" data-action="scene-panel" data-panel="guide">帮助</button>'+
   '</section>'+
   stagePanelHtml(view)+
@@ -950,6 +970,7 @@ function handleClick(target){
  }
  if(action==="event"){execute("event",[id,mode]);return;}
  if(action==="build"){execute("build",[id,target.dataset.power,false]);return;}
+ if(action==="tactic"){execute("tactic",[id]);return;}
  if(action==="fusion"){execute("fusion",[id]);return;}
  if(action==="echo"){execute("echo",[target.dataset.from,id]);return;}
  if(action==="aid"){
