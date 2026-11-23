@@ -32,16 +32,16 @@ describe("player guidance: first-time learning", () => {
   });
 
   it("shows first-day observation without treating decisions as mandatory clicks", () => {
-    const state = Engine.fresh("guidance-day1", 1, true);
+    const state = Engine.fresh("guidance-day1", 1, true, "", 0);
     const tutorial = getTutorialGuidance(state, { seenIds: ["arrival"] });
     expect(tutorial.current.id).toBe("first-day");
     expect(tutorial.current.text).toContain("自主");
     const overview = getRunOverview(state, Engine);
-    expect(overview.total).toBe(2);
-    expect(overview.ongoing).toBe(2);
+    expect(overview.total).toBe(1);
+    expect(overview.ongoing).toBe(1);
     expect(overview.freeInterventionPoints).toBe(2);
     expect(overview.dailyFlow.automatic).toContain("一次主要行动");
-    expect(overview.worlds.map((world) => world.worldId)).toEqual(["lingzai", "zombie"]);
+    expect(overview.worlds.map((world) => world.worldId)).toEqual(["lingzai"]);
     expect(overview.worlds.every((world) => world.lastDecision === null)).toBe(true);
 
     Engine.step(state);

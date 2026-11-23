@@ -8,9 +8,10 @@ function simulate(seed, runNumber=1, waves=false, days=35) {
 }
 
 describe("multiworld simulation baseline",()=>{
-  it("opens 2 worlds on the first run and 3 on the third",()=>{
-    expect(Engine.fresh("a",1,false).worlds.map(w=>w.id)).toEqual(["lingzai","zombie"]);
-    expect(Engine.fresh("a",3,false).worlds.map(w=>w.id)).toEqual(["lingzai","zombie","beast"]);
+  it("opens one, two, then three worlds as permanent rescues accumulate",()=>{
+    expect(Engine.fresh("a",1,false,"",0).worlds.map(w=>w.id)).toEqual(["lingzai"]);
+    expect(Engine.fresh("a",1,false,"",1).worlds.map(w=>w.id)).toEqual(["lingzai","zombie"]);
+    expect(Engine.fresh("a",1,false,"",2).worlds.map(w=>w.id)).toEqual(["lingzai","zombie","beast"]);
   });
   it("is reproducible from a seed with saved independent random streams",()=>{
     const a=simulate("determinism",3,true,45),b=simulate("determinism",3,true,45);
