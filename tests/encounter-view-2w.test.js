@@ -55,6 +55,10 @@ describe("2W formal-world automatic encounter replay", () => {
 
   it("uses the real formal-world fight transaction without another reward or day", () => {
     const run = Engine.fresh("2w-encounter-integrity", 1, true);
+    const selected = Engine.applyCommand(run, {
+      operationId: "2w-clear-test", type: "strategy", args: ["lingzai", "clear"],
+    });
+    expect(selected.ok).toBe(true);
     let fought = false;
     for (let i = 0; i < 100 && run.active; i++) {
       Engine.step(run);
