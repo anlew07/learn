@@ -1,5 +1,6 @@
 
 import { paintWorldSceneDetails } from "./world-scene-details.js";
+import { paintRecentEncounter } from "./world-encounter-paint.js";
 import { paintWorldArchitecture, paintWorldSkyDetails, paintWorldForeground } from "./pixel-biomes.js";
 import heroUrl from "../assets/original/clone-cultivator.svg";
 import foeUrl from "../assets/original/rift-beast.svg";
@@ -352,9 +353,13 @@ function characters(ctx, view, frame, repaint) {
   if (scene?.phase === "lost") return;
   const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
   const activity = scene?.activity;
-  const heroX =
+  const walking = !view.paused &&
+    ["gathering", "exploring", "defending"].includes(activity);
+  const stride = walking ? Math.round(Math.sin(frame / 8) * 6) : 0;
+  const heroX = (
     activity === "gathering" ? 64 : activity === "rescuing" ? 198 :
-    activity === "exploring" ? 156 : activity === "defending" ? 148 : 123;
+    activity === "exploring" ? 156 : activity === "defending" ? 148 : 123
+  ) + stride;
   const heroY = activity === "rescuing" ? 103 : activity === "gathering" ? 121 : 111;
   rect(ctx, "#1c3034", heroX + 5, heroY + 57, 40, 4);
   sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint);
@@ -395,6 +400,7 @@ export function paintPixelStage(canvas, view, frame = 0) {
   environment(ctx, view, frame, repaint);
   paintWorldSceneDetails(ctx, view, frame);
   characters(ctx, view, frame, repaint);
+  paintRecentEncounter(ctx, view.encounter, frame);
   ctx.restore();
 }
 
