@@ -56,6 +56,8 @@ export function getWorldSceneState(world, day = 1) {
           ? "重大事件 · 等待决策"
           : hasBuild
             ? "战技机会 · 可以选择"
+            : world.tacticalAssist?.kind === "focus"
+              ? "战术待命 · 下次排险生效"
             : encounter
               ? "上日交战 · 击退 " + encounter.defeated + "/" + encounter.encountered
             : phase === "critical"
@@ -101,6 +103,9 @@ export function getStageView(run, selectedWorldId) {
   return {
     scene: getWorldSceneState(selected, number(run.day)),
     encounter: getRecentEncounter(selected, number(run.day)),
+    tacticArmed: selected.tacticalAssist?.kind === "focus" && selected.status === "running",
+    tacticResult: selected.lastCombat?.day === number(run.day) - 1 ?
+      selected.lastCombat?.tactic ?? null : null,
     worldId: selected.id,
     title: selected.name || selected.id,
     status,

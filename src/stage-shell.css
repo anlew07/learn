@@ -267,6 +267,38 @@
   overscroll-behavior: contain;
 }
 .stage-sheet-body .stack { display: grid; gap: 10px; }
+.stage-tactic-card {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 2px solid #9c956a;
+  background: #2e4235;
+  color: #f6ebc7;
+}
+.stage-tactic-card strong { font-size: 15px; }
+.stage-tactic-card p { margin: 0; font-size: 12px; line-height: 1.55; }
+.stage-tactic-card .hint { color: #dacb9f; }
+.stage-tactic-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.stage-tactic-numbers span {
+  padding: 4px 6px;
+  border: 1px solid #8a946c;
+  background: #344f40;
+  color: #f7e9bb;
+}
+.stage-tactic-card button { min-height: 48px; width: 100%; }
+.stage-tactic-card [data-tactical-receipt],
+.stage-tactic-card [data-tactical-hint] {
+  padding: 8px;
+  background: #354f40;
+  border-left: 3px solid #c0b478;
+}
 .stage-sheet-body :is(.panel, .world, .event) { max-width: 100%; }
 .stage-sheet-body :is(select, button) { min-height: 44px; }
 .stage-sheet-body :is(h2, h3, p) { overflow-wrap: anywhere; }
