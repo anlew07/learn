@@ -21,6 +21,7 @@ for (const viewport of [
     const result = await page.evaluate(async () => {
       const Engine = (await import("/src/engine.js")).default;
       const { getStageView } = await import("/src/presentation/stage-view.js");
+      const { getCombatNextStep } = await import("/src/presentation/combat-next-step.js");
       const { paintPixelStage } = await import("/src/ui/pixel-stage.js");
       const { saveRepository } = await import("/src/services/persistence.js");
       const originalSave = await saveRepository.load();
@@ -63,6 +64,8 @@ for (const viewport of [
         found: true,
         status: view.scene.summary,
         encounter: view.encounter,
+        nextStep: getCombatNextStep(replay, replay.worlds.find(w => w.id === view.worldId),
+          Engine.previewTactic(replay, view.worldId)),
         unchanged: stateAfter === stateBefore,
         savedUnchanged: formalAfter === formalBefore,
       };
@@ -113,6 +116,23 @@ for (const viewport of [
     const battleSheet = page.getByRole("dialog", { name: "战斗记录" });
     await expect(battleSheet).toBeVisible();
     await expect(battleSheet).toContainText("最近防线行动");
+
+    // 2Z: from the real battle receipt, one finger can reach the next
+    // already-existing decision panel without changing the battle outcome.
+    expect(result.nextStep).not.toBeNull();
+    const followup = battleSheet.locator("[data-combat-followup]");
+    await expect(followup).toContainText("战后下一步");
+    await expect(followup).toContainText(result.nextStep.description);
+    const nextButton = followup.locator('button[data-action="scene-panel"]');
+    await expect(nextButton).toHaveAttribute("data-panel", result.nextStep.panel);
+    const nextBounds = await nextButton.boundingBox();
+    expect(nextBounds).not.toBeNull();
+    expect(nextBounds.height).toBeGreaterThanOrEqual(44);
+    await page.touchscreen.tap(nextBounds.x + nextBounds.width / 2,
+      nextBounds.y + nextBounds.height / 2);
+    await expect(page.locator(".stage-sheet")).toHaveAttribute(
+      "data-stage-panel", result.nextStep.panel,
+    );
     await page.locator('.stage-sheet-head [data-action="scene-close"]').click();
 
     // Existing strategy is the authoritative indirect intervention; not a new mode.
