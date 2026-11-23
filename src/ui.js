@@ -31,6 +31,7 @@ let sessionStatus = "starting";
 let commandBusy = false;
 let aidSourceId = null;
 let aidTargetId = null;
+let legacyTreeOpen = false;
 const tutorialSeen = new Set();
 let tutorialSkipped = false;
 const session = createExclusiveSession({
@@ -444,7 +445,7 @@ function legacyProgressionHtml(){
  const timing=run?.active?
   "传承只在下一次新远征开始时生效，不会改变正在进行的本局。":
   "启用后从下一次新远征开始生效。";
- return '<details class="panel legacy-progression" data-legacy-progression>'+
+ return '<details class="panel legacy-progression" data-legacy-progression'+(legacyTreeOpen?" open":"")+">'+
   '<summary><span><strong>文明传承</strong><small>'+progress.unlockedCount+'/3 已解锁 · 当前：'+esc(activeName)+'</small></span><span class="pill">展开图谱</span></summary>'+
   '<p class="hint">完成远征获得世界碎片，永久解锁传承。每次远征只能启用一项；可免费重整启用路线，已解锁节点和已花碎片不会回退。</p>'+
   '<div class="legacy-currency"><b>'+n(profile.shards)+'</b><span>可用世界碎片</span></div>'+
@@ -978,6 +979,7 @@ function handleClick(target){
    return;
  }
  if(action==="unlock-legacy"||action==="equip-legacy"||action==="reset-legacy"){
+   legacyTreeOpen=Boolean(document.querySelector("[data-legacy-progression]")?.open);
    if(!session.isOwner||commandBusy||saveError){report("当前无法修改传承，请确认存档可写且没有其他操作正在结算。");return;}
    const result=action==="unlock-legacy"?unlockLegacy(profile,target.dataset.legacyId):
      action==="equip-legacy"?equipLegacy(profile,target.dataset.legacyId):resetLegacy(profile);

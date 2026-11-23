@@ -21,11 +21,10 @@ test("2AB unlocks, equips and resets a permanent doctrine without wiping the arc
   await expect(tree.locator('[data-legacy-node="soul"]')).toHaveAttribute("data-status", "active");
   await tree.locator('[data-action="reset-legacy"]').click();
 
-  const resetProfile = await page.evaluate(async () => {
+  await expect.poll(async () => page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     return (await saveRepository.load()).profile;
-  });
-  expect(resetProfile).toMatchObject({
+  })).toMatchObject({
     runCount: 2,
     shards: 2,
     legacyUnlocks: ["supply", "soul", "command"],
