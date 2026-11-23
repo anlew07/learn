@@ -12,6 +12,29 @@ export const STORAGE_KEYS = Object.freeze({
   profile: "simultaneous-apocalypse-profile-v1",
 });
 
+function hasValidLegacyProfile(profile) {
+  if (profile.legacyUnlocks !== undefined) {
+    if (
+      !Array.isArray(profile.legacyUnlocks) ||
+      new Set(profile.legacyUnlocks).size !== profile.legacyUnlocks.length ||
+      profile.legacyUnlocks.some((id) => typeof id !== "string" || !LEGACY_IDS.has(id))
+    ) {
+      return false;
+    }
+  }
+  if (profile.activeLegacyId !== undefined) {
+    if (
+      typeof profile.activeLegacyId !== "string" ||
+      (profile.activeLegacyId !== "" &&
+        (!Array.isArray(profile.legacyUnlocks) ||
+          !profile.legacyUnlocks.includes(profile.activeLegacyId)))
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function createSaveRepository(driver = { getMany, setMany }) {
   let tail = Promise.resolve();
   let failureEpoch = 0;
@@ -114,15 +137,7 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       profile.runCount < 0 ||
       !Number.isFinite(profile.shards) ||
       profile.shards < 0 ||
-      (profile.legacyUnlocks !== undefined &&
-        (!Array.isArray(profile.legacyUnlocks) ||
-          new Set(profile.legacyUnlocks).size !== profile.legacyUnlocks.length ||
-          profile.legacyUnlocks.some((id) => typeof id !== "string" || !LEGACY_IDS.has(id)))) ||
-      (profile.activeLegacyId !== undefined &&
-        (typeof profile.activeLegacyId !== "string" ||
-          (profile.activeLegacyId !== "" &&
-            (!Array.isArray(profile.legacyUnlocks) ||
-              !profile.legacyUnlocks.includes(profile.activeLegacyId)))))
+      !hasValidLegacyProfile(profile))
   ) {
     throw new Error("ProfileState is malformed");
   }
