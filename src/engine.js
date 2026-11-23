@@ -157,6 +157,7 @@ const MultiworldEngine = (function () {
         if(!Number.isInteger(w.worldNumber))w.worldNumber=index+1;
         if(typeof w.transitionSettled!=="boolean")w.transitionSettled=w.status!=="running";
       });
+      if(s.active)finishRun(s);
       return s;
     }
     var oldSaved=s.worlds.filter(function(w){return w.status==="saved";}).length;
@@ -175,6 +176,7 @@ const MultiworldEngine = (function () {
     if(s.active){
       finishRun(s);
     }else{
+      s.worldsSavedCount+=oldSaved;
       s.worldsSavedThisRun=oldSaved;s.worldsFailedThisRun=oldFailed;
     }
     return s;

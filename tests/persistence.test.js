@@ -115,10 +115,27 @@ describe("save recovery guard", () => {
     expect(() => assertRestorableSnapshot({ ...valid(), profile: null }, "0.2.0")).not.toThrow();
     expect(() => assertRestorableSnapshot(valid(), "0.2.0")).not.toThrow();
 
+    const oneWorld = {
+      run: {
+        ...valid().run,
+        worlds: [valid().run.worlds[0]],
+        worldSlots: 1,
+        worldsSavedCount: 0,
+        worldsSavedThisRun: 0,
+        worldsFailedThisRun: 0,
+        worldsVisitedThisRun: 1,
+        worldTypesSeen: ["lingzai"],
+        worldDiscoveryArchive: [],
+      },
+      profile: { runCount: 0, worldsSaved: 0, shards: 0 },
+    };
+    expect(() => assertRestorableSnapshot(oneWorld, "0.2.0")).not.toThrow();
+
     expect(() => assertRestorableSnapshot({
       ...valid(),
       profile: {
         runCount: 2,
+        worldsSaved: 2,
         shards: 8,
         legacyUnlocks: ["supply", "soul"],
         activeLegacyId: "soul",

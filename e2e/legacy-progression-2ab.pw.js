@@ -9,7 +9,7 @@ test("2AB unlocks, equips and resets a permanent doctrine without wiping the arc
 
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
-    await saveRepository.enqueueSave(null, { runCount: 2, shards: 20 });
+    await saveRepository.enqueueSave(null, { runCount: 2, worldsSaved: 2, shards: 20 });
   });
   await page.reload();
   await expect(page.locator("[data-formal-title]")).toBeVisible();
