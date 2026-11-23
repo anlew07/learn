@@ -1,4 +1,7 @@
 import { getMany, setMany } from "idb-keyval";
+import { LEGACY_DOCTRINES } from "../config/legacy-doctrines.js";
+
+const LEGACY_IDS = new Set(LEGACY_DOCTRINES.map((item) => item.id));
 
 /**
  * Keep a single IndexedDB transaction for run + profile.
@@ -8,6 +11,29 @@ export const STORAGE_KEYS = Object.freeze({
   run: "simultaneous-apocalypse-simulator-v1",
   profile: "simultaneous-apocalypse-profile-v1",
 });
+
+function hasValidLegacyProfile(profile) {
+  if (profile.legacyUnlocks !== undefined) {
+    if (
+      !Array.isArray(profile.legacyUnlocks) ||
+      new Set(profile.legacyUnlocks).size !== profile.legacyUnlocks.length ||
+      profile.legacyUnlocks.some((id) => typeof id !== "string" || !LEGACY_IDS.has(id))
+    ) {
+      return false;
+    }
+  }
+  if (profile.activeLegacyId !== undefined) {
+    if (
+      typeof profile.activeLegacyId !== "string" ||
+      (profile.activeLegacyId !== "" &&
+        (!Array.isArray(profile.legacyUnlocks) ||
+          !profile.legacyUnlocks.includes(profile.activeLegacyId)))
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
 
 export function createSaveRepository(driver = { getMany, setMany }) {
   let tail = Promise.resolve();
@@ -65,6 +91,9 @@ export function assertRestorableSnapshot({ run, profile }, version) {
     (typeof run !== "object" ||
       Array.isArray(run) ||
       run.version !== version ||
+      (run.legacyId !== undefined &&
+        (typeof run.legacyId !== "string" ||
+          (run.legacyId !== "" && !LEGACY_IDS.has(run.legacyId)))) ||
       !Number.isInteger(run.day) ||
       run.day < 1 ||
       !Number.isFinite(run.ap) ||
@@ -107,7 +136,8 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       !Number.isInteger(profile.runCount) ||
       profile.runCount < 0 ||
       !Number.isFinite(profile.shards) ||
-      profile.shards < 0)
+      profile.shards < 0 ||
+      !hasValidLegacyProfile(profile))
   ) {
     throw new Error("ProfileState is malformed");
   }

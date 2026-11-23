@@ -114,6 +114,17 @@ describe("save recovery guard", () => {
     expect(() => assertRestorableSnapshot({ run: null, profile: null }, "0.2.0")).not.toThrow();
     expect(() => assertRestorableSnapshot({ ...valid(), profile: null }, "0.2.0")).not.toThrow();
     expect(() => assertRestorableSnapshot(valid(), "0.2.0")).not.toThrow();
+
+    expect(() => assertRestorableSnapshot({
+      ...valid(),
+      profile: {
+        runCount: 2,
+        shards: 8,
+        legacyUnlocks: ["supply", "soul"],
+        activeLegacyId: "soul",
+      },
+      run: { ...valid().run, legacyId: "soul" },
+    }, "0.2.0")).not.toThrow();
   });
 
   it("fails closed on incompatible and corrupt runs without modifying the input", () => {
@@ -138,7 +149,15 @@ describe("save recovery guard", () => {
   });
 
   it("rejects invalid permanent profile rather than replacing it with an empty one", () => {
-    for (const profile of [{ runCount: -1, shards: 0 }, { runCount: 1 }, "invalid"]) {
+    for (const profile of [
+      { runCount: -1, shards: 0 },
+      { runCount: 1 },
+      "invalid",
+      { runCount: 1, shards: 5, legacyUnlocks: "supply" },
+      { runCount: 1, shards: 5, legacyUnlocks: ["unknown"] },
+      { runCount: 1, shards: 5, legacyUnlocks: ["supply", "supply"] },
+      { runCount: 1, shards: 5, legacyUnlocks: ["supply"], activeLegacyId: "soul" },
+    ]) {
       expect(() => assertRestorableSnapshot({ ...valid(), profile }, "0.2.0")).toThrow(
         /ProfileState/,
       );

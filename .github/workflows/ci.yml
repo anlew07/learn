@@ -37,6 +37,8 @@ jobs:
       - run: npm run balance:check
       - run: npm run balance:matrix:check
       - run: npm run compare:interventions:check
+      - name: Compare permanent legacy doctrines with fixed seeds
+        run: npm run legacy:balance:check
       - name: Validate opt-in sortie core loop with paired seeds
         run: npm run sortie:matrix:check
       - name: Install Chromium for browser acceptance tests
