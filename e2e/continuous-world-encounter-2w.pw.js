@@ -26,6 +26,10 @@ for (const viewport of [
       const originalSave = await saveRepository.load();
       const formalBefore = JSON.stringify(originalSave);
       const replay = Engine.fresh("2w-browser-encounter", 1, true);
+      const chosen = Engine.applyCommand(replay, {
+        operationId: "2w-clear-browser", type: "strategy", args: ["lingzai", "clear"],
+      });
+      if (!chosen.ok) throw new Error("Could not select the genuine clear-first strategy");
       let view = null;
       for (let day = 0; day < 100 && replay.active; day++) {
         Engine.step(replay);
