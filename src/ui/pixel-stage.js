@@ -1,6 +1,7 @@
 
 import { paintWorldSceneDetails } from "./world-scene-details.js";
 import { paintRecentEncounter } from "./world-encounter-paint.js";
+import { getWorldActionMotion } from "./world-action-motion.js";
 import { paintWorldArchitecture, paintWorldSkyDetails, paintWorldForeground } from "./pixel-biomes.js";
 import heroUrl from "../assets/original/clone-cultivator.svg";
 import foeUrl from "../assets/original/rift-beast.svg";
@@ -347,25 +348,51 @@ function environment(ctx, view, frame, repaint) {
     }
   }
 }
+function paintActivityCue(ctx, activity, motion, heroX, heroY) {
+  if (motion.paused || !motion.interacting) return;
+  if (activity === "training") {
+    sparkle(ctx, heroX + 34, heroY + 12, "#8edac7");
+    rect(ctx, "#d1f2ce", heroX + 38, heroY + 25, 2, 4);
+  } else if (activity === "gathering") {
+    sparkle(ctx, 71, 162, "#edc78a");
+    rect(ctx, "#f9e2a9", 77, 170, 3, 2);
+  } else if (activity === "exploring") {
+    sparkle(ctx, 229, 119, "#dfc787");
+    rect(ctx, "#dfc787", 225, 126, 12, 2);
+  } else if (activity === "rescuing") {
+    sparkle(ctx, 239, 111, "#a7e4ca");
+    rect(ctx, "#d5f4c7", 233, 118, 12, 2);
+  }
+}
+
 function characters(ctx, view, frame, repaint) {
   const scene = view.scene;
   const art = worldSprites[view.worldId] || worldSprites.lingzai;
   if (scene?.phase === "lost") return;
+  const activity = scene?.activity || "observing";
+  const motion = getWorldActionMotion(activity, frame, view.paused, Boolean(view.encounter));
   const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
-  const activity = scene?.activity;
-  const walking = !view.paused &&
-    ["gathering", "exploring", "defending"].includes(activity);
-  const stride = walking ? Math.round(Math.sin(frame / 8) * 6) : 0;
-  const heroX = (
+  const baseX = (
     activity === "gathering" ? 64 : activity === "rescuing" ? 198 :
     activity === "exploring" ? 156 : activity === "defending" ? 148 : 123
-  ) + stride;
-  const heroY = activity === "rescuing" ? 103 : activity === "gathering" ? 121 : 111;
+  );
+  const heroX = baseX + motion.offsetX;
+  const heroY = (activity === "rescuing" ? 103 : activity === "gathering" ? 121 : 111) +
+    motion.offsetY;
   rect(ctx, "#1c3034", heroX + 5, heroY + 57, 40, 4);
-  sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint);
-  // One readable character with actual sword and cloak replaces a stretched tiny sprite.
+  if (motion.flipX) {
+    ctx.save();
+    ctx.translate(heroX * 2 + 46, 0);
+    ctx.scale(-1, 1);
+    sprite(ctx, art.hero, heroX, heroY - motion.bob, 46, 62, repaint);
+    ctx.restore();
+  } else {
+    sprite(ctx, art.hero, heroX, heroY - motion.bob, 46, 62, repaint);
+  }
+  // The same owned sprite now approaches its real scene landmark before acting.
   if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 38, heroY + 3, "#79e7c5");
   if ((scene?.growthTier || 0) >= 2) sparkle(ctx, heroX + 9, heroY - 5, "#e8c888");
+  if (scene?.phase !== "restored") paintActivityCue(ctx, activity, motion, heroX, heroY);
   const allyX = scene?.phase === "restored" ? 105 : 91;
   rect(ctx, "#202d32", allyX + 3, 169, 26, 3);
   sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint);

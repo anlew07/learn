@@ -18,8 +18,13 @@ export function paintRecentEncounter(ctx, encounter, frame = 0, drawFoe = null) 
   // Reuse recognizable sprites from the existing three-world pixel stage.
   // A maximum of two silhouettes suggests a real wave; it never claims that
   // each pictured sprite represents one enemy actually defeated.
+  const hitCount = Math.ceil(enemyCount * wave.defeated / wave.encountered);
   for (let index = 0; index < enemyCount; index++) {
-    const x = 215 + index * 50 + (frame % 30 < 13 ? 4 : 0);
+    const hit = flash && index < hitCount;
+    const recoil = hit
+      ? Math.round(Math.sin(((frame % 30) - 13) / 6 * Math.PI) * 7)
+      : 0;
+    const x = 215 + index * 50 + (frame % 30 < 13 ? 4 : 0) + recoil;
     const y = 119 + (index % 2) * 12;
     tile(ctx, "#21323a", x + 4, y + 44, 33, 4);
     if (drawFoe) {
@@ -29,9 +34,12 @@ export function paintRecentEncounter(ctx, encounter, frame = 0, drawFoe = null) 
       tile(ctx, "#c98d79", x + 10, y + 7, 22, 9);
       tile(ctx, "#f4d09c", x + 29, y + 21, 4, 3);
     }
-    if (flash && index < Math.ceil(enemyCount * wave.defeated / wave.encountered)) {
+    if (hit) {
+      // Only the silhouettes covered by the authoritative defeat ratio recoil.
       tile(ctx, "#f6de9b", x - 4, y + 4, 5, 29);
       tile(ctx, "#fff0c2", x - 10, y + 16, 18, 5);
+      tile(ctx, "#fff0c2", x + 9, y + 10, 24, 3);
+      tile(ctx, "#f6de9b", x + 7, y + 14, 3, 11);
     }
   }
 
