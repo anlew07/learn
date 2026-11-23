@@ -156,9 +156,16 @@ export function compareBeastSuppression(seeds = 100, { waves = false } = {}) {
       beastSaveRateCandidate: candidate.worlds.beast.savedRate,
       deltaBeastSaveRate: Number(difference.toFixed(3)),
       deltaAllSavedRate: Number((candidate.allSavedRate - baseline.allSavedRate).toFixed(3)),
-      otherWorldRatesUnchanged: worldIds
-        .filter((id) => id !== "beast")
-        .every((id) => baseline.worlds[id].savedRate === candidate.worlds[id].savedRate),
+      otherWorldRateDeltas: Object.fromEntries(
+        worldIds
+          .filter((id) => id !== "beast")
+          .map((id) => [
+            id,
+            Number(
+              (candidate.worlds[id].savedRate - baseline.worlds[id].savedRate).toFixed(3),
+            ),
+          ]),
+      ),
     });
   }
   return {

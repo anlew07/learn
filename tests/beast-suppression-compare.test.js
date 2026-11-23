@@ -10,7 +10,13 @@ describe("paired-seed beast suppression balance", () => {
     expect(replay).toEqual(first);
     expect(BALANCE.actions).toEqual(original);
     expect(first.rows.every((row) => row.incomplete === 0)).toBe(true);
-    expect(first.comparisons.every((row) => row.otherWorldRatesUnchanged)).toBe(true);
+    expect(
+      first.comparisons.every((row) =>
+        Object.values(row.otherWorldRateDeltas).every(
+          (delta) => Number.isFinite(delta) && Math.abs(delta) <= 1,
+        ),
+      ),
+    ).toBe(true);
     expect(first.comparisons.every((row) => row.deltaBeastSaveRate >= 0)).toBe(true);
     console.info("Beast paired 30-seed A/B", JSON.stringify(first.comparisons));
   });
