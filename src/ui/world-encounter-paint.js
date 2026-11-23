@@ -8,25 +8,30 @@ function tile(ctx, color, x, y, width, height) {
   ctx.fillRect(x | 0, y | 0, width | 0, height | 0);
 }
 
-export function paintRecentEncounter(ctx, encounter, frame = 0) {
+export function paintRecentEncounter(ctx, encounter, frame = 0, drawFoe = null) {
   if (!encounter?.waves?.length) return;
   const waveIndex = Math.floor(frame / 30) % encounter.waves.length;
   const wave = encounter.waves[waveIndex];
-  const enemyCount = Math.min(4, Math.ceil(wave.encountered / 4));
+  const enemyCount = Math.min(2, Math.max(1, Math.ceil(wave.encountered / 12)));
   const flash = wave.defeated > 0 && frame % 30 >= 13 && frame % 30 <= 19;
 
-  // A few readable silhouettes suggest the genuine three-wave encounter.
-  // They are not a second enemy spawn schedule and do not claim 1:1 counts.
+  // Reuse recognizable sprites from the existing three-world pixel stage.
+  // A maximum of two silhouettes suggests a real wave; it never claims that
+  // each pictured sprite represents one enemy actually defeated.
   for (let index = 0; index < enemyCount; index++) {
-    const x = 216 + index * 19 + (frame % 30 < 13 ? 5 : 0);
-    const y = 126 + (index % 2) * 21;
-    tile(ctx, "#21323a", x - 2, y + 16, 19, 4);
-    tile(ctx, "#403f4d", x, y + 3, 14, 13);
-    tile(ctx, "#86616a", x + 2, y, 10, 5);
-    tile(ctx, "#f3bd89", x + 9, y + 7, 3, 2);
+    const x = 215 + index * 50 + (frame % 30 < 13 ? 4 : 0);
+    const y = 119 + (index % 2) * 12;
+    tile(ctx, "#21323a", x + 4, y + 44, 33, 4);
+    if (drawFoe) {
+      drawFoe(x, y, 42, 46);
+    } else {
+      tile(ctx, "#654c54", x + 5, y + 10, 31, 34);
+      tile(ctx, "#c98d79", x + 10, y + 7, 22, 9);
+      tile(ctx, "#f4d09c", x + 29, y + 21, 4, 3);
+    }
     if (flash && index < Math.ceil(enemyCount * wave.defeated / wave.encountered)) {
-      tile(ctx, "#f6de9b", x - 4, y - 5, 4, 16);
-      tile(ctx, "#fff0c2", x - 8, y + 1, 13, 4);
+      tile(ctx, "#f6de9b", x - 4, y + 4, 5, 29);
+      tile(ctx, "#fff0c2", x - 10, y + 16, 18, 5);
     }
   }
 
