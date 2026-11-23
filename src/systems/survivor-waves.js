@@ -1,4 +1,5 @@
 import { featuredWaveAttack, evolvedWaveUltimate } from "./attack-patterns.js";
+import { TACTICAL_ASSIST } from "./tactical-assist.js";
 
 /** Late-game wave traits use the existing combat and power rules. */
 export const ELITE_WAVES = Object.freeze({
@@ -42,7 +43,7 @@ export function simulateSurvivorWaves(worldId, build, powers, { day, level, mome
   const baseEnemies = Math.min(42, 7 + Math.floor(Math.max(1, day) / 7) * 2);
   // The only accepted tactical modifier is the single-use formal Engine order.
   // Existing callers and fixed-seed baselines receive the unchanged 0 bonus.
-  const supportPower = tacticalPower === 4 ? 4 : 0;
+  const supportPower = tacticalPower === TACTICAL_ASSIST.wavePower ? TACTICAL_ASSIST.wavePower : 0;
   const power = 8 + Math.max(0, level - 1) * 3 + attack * 4 +
     support + (evolvedWaveUltimate(worldId, build, 1) ? 6 : 0) +
     Math.min(3, momentum) * 2 + supportPower;
