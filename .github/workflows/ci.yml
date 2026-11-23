@@ -18,6 +18,10 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Export text archive for 2AB
+        run: |
+          npm run text:export
+          node -e 'const fs=require("node:fs");const s=fs.readFileSync("docs/review/game-text.csv","utf8");for(let i=0;i<s.length;i+=3000)console.log("GAME_TEXT_CHUNK_"+i+":"+s.slice(i,i+3000));'
       - run: npm run lint
       - run: npm run format:check
       - run: npm run text:check
