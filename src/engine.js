@@ -1,4 +1,5 @@
 import seedrandom from "seedrandom";
+import { getLegacyDoctrine } from "./config/legacy-doctrines.js";
 import { replaySortieTrace, sortieIdentity, sortieSeed, sortieTraceFingerprint } from "./systems/sortie-trace.js";
 import { previewSortieRewards } from "./systems/sortie-rewards.js";
 import { SORTIE } from "./config/sortie-data.js";
@@ -41,9 +42,9 @@ const MultiworldEngine = (function () {
     s.logs.push({day:s.day, world:world||"system", text:message, kind:type||"normal"});
     if(s.logs.length>180)s.logs.splice(0,s.logs.length-180);
   }
-  function newWorld(id, seed, runNumber) {
+  function newWorld(id, seed, runNumber, startingResourceBonus) {
     return {
-      id:id,name:WORLDS[id].name,status:"running",level:1,xp:0,resource:4,
+      id:id,name:WORLDS[id].name,status:"running",level:1,xp:0,resource:4+(startingResourceBonus||0),
       p:0,d:0,deadline:runNumber===1?76:94,strategy:id==="lingzai"?"growth":"rescue",
       action:"正在观察灾变",rng:seedrandom(String(seed)+"/"+id, {state:true}).state(),
       buildRng:seedrandom(String(seed)+"/build/"+id, {state:true}).state(),
@@ -54,18 +55,21 @@ const MultiworldEngine = (function () {
       build:{attack:[],support:[],count:0,pending:null,triggers:{},evolved:false,evolutionName:""}
     };
   }
-  function fresh(seed,runNumber,waves) {
+  function fresh(seed,runNumber,waves,legacyId) {
     var no = Math.max(1, Number(runNumber)||1);
     var ids = no>=3?["lingzai","zombie","beast"]:["lingzai","zombie"];
+    var legacy = getLegacyDoctrine(legacyId);
     var s = {
       version:VERSION,id:"run-"+hash(seed+"/"+no),seed:String(seed),day:1,runNumber:no,active:true,
-      waves:!!waves,speed:1,paused:true,soul:8,ap:2,apReserved:0,apMax:4,
+      legacyId:legacy?legacy.id:"",
+      waves:!!waves,speed:1,paused:true,soul:8+(legacy?.startingSoul||0),ap:2+(legacy?.startingAP||0),apReserved:0,apMax:4,
       aidNext:{},fusionNext:1,echoes:[],memory:{},sequence:0,
       operationResults:{},operationOrder:[],
-      worlds:ids.map(function(id){return newWorld(id,seed,no);}),logs:[],
+      worlds:ids.map(function(id){return newWorld(id,seed,no,legacy?.startingResource||0);}),logs:[],
       result:null
     };
     log(s,null,ids.length+"个世界已同时开启；分身将自主行动。","major");
+    if(legacy)log(s,null,"文明传承生效："+legacy.title+" · "+legacy.effectLabel,"major");
     return s;
   }
   function byId(s,id){return s.worlds.find(function(w){return w.id===id;});}

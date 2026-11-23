@@ -213,6 +213,61 @@
   margin-top: 14px;
 }
 .formal-title-mode .how-steps>div { background: #26372d; }
+
+.formal-title-mode .legacy-progression { margin-top: 14px; }
+.legacy-progression > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  cursor: pointer;
+  list-style: none;
+}
+.legacy-progression > summary::-webkit-details-marker { display: none; }
+.legacy-progression > summary>span:first-child { display: grid; gap: 2px; }
+.legacy-progression > summary small { color: #cfc6ad; font-size: 11px; }
+.legacy-currency {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 9px 0;
+  color: #f3e2b9;
+  background: #222d2b;
+  border: 1px solid #897958;
+}
+.legacy-currency b { font-size: 21px; color: #ffe0a0; }
+.legacy-currency span { font-size: 12px; color: #d4c8aa; }
+.legacy-node-list { display: grid; gap: 8px; }
+.legacy-node {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  background: #27322e;
+  border: 1px solid #716b54;
+}
+.legacy-node[data-status="active"] { border-color: #b9c98d; box-shadow: inset 3px 0 #b9c98d; }
+.legacy-node[data-status="locked"] { opacity: .78; }
+.legacy-node-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.legacy-node-head strong { color: #f5e8c9; font-size: 14px; }
+.legacy-node-head span { color: #c6b58f; font-size: 11px; }
+.legacy-node p { margin: 0; color: #d5d2bf; font-size: 12px; line-height: 1.45; }
+.legacy-node small { color: #c7bd9e; font-size: 11px; }
+.legacy-node button, .legacy-reset {
+  min-height: 42px;
+  padding: 7px 10px;
+  color: #f6e9ca;
+  background: #39463b;
+  border: 1px solid #9a956f;
+  font-size: 12px;
+  font-weight: 800;
+}
+.legacy-node button:disabled { color: #bcb6a4; background: #2b322f; border-color: #5d6257; }
+.legacy-state { color: #c8dda0; font-size: 12px; font-weight: 900; }
+.legacy-state-active { padding: 5px 8px; background: #344a39; border: 1px solid #a7bc83; }
+.legacy-reset { width: 100%; margin-top: 10px; background: #443c32; }
+
 @media (max-width: 350px) {
   .formal-title-top { padding-inline: 8px; }
   .formal-title-art { height: 192px; }

@@ -15,6 +15,7 @@ import { counteredEliteWaveLabels } from "./systems/survivor-waves.js";
 import { cautiousAftermathSummary } from "./systems/clue-aftermath.js";
 import { summarizeEasterEggCollection, summarizeCrossworldSecrets } from "./systems/easter-eggs.js";
 import { mergeProfileSecrets, summarizeProfileSecrets, availableArchiveTitles, equipArchiveTitle, selectedArchiveTitle } from "./systems/profile-collection.js";
+import { normalizeLegacyProfile, previewLegacyProgress, unlockLegacy, equipLegacy, resetLegacy } from "./systems/legacy-progression.js";
 import { saveRepository, assertRestorableSnapshot } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
 
@@ -22,7 +23,7 @@ const app = document.querySelector("#app");
 const TEMPOS = DAY_DURATION_MS;
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 const isDebug = new URLSearchParams(location.search).has("debug");
-let run = null, profile = {runCount:0,shards:0}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
+let run = null, profile = {runCount:0,shards:0,legacyUnlocks:[],activeLegacyId:""}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
 let sceneWorldId = "lingzai", scenePanel = "", infoPage = "";
 let tickHeldMs = 0;
 let saveError = false, restoreError = false;
@@ -45,7 +46,7 @@ const win = () => run?.worlds.filter(w=>w.status==="saved").length??0;
 
 function queueSave() {
   if (!session.isOwner) return Promise.resolve();
-  profile = mergeProfileSecrets(profile, run);
+  profile = mergeProfileSecrets(normalizeLegacyProfile(profile), run);
   return saveRepository.enqueueSave(run, profile)
     .then(() => {
       if (saveError) {
@@ -425,6 +426,33 @@ function logsHtml(){
  return collectionHtml()+'<section class="panel"><h2>世界战报</h2><div class="muted">普通行为自动合并，关键危机和突破保留记录。</div>'+
  run.logs.slice(-42).reverse().map(l=>'<div class="log '+esc(l.kind)+'"><b>Day '+l.day+' '+(l.world==="system"?"全局":Engine.WORLDS[l.world]?.name||"全局")+'</b>'+esc(l.text)+'</div>').join("")+'</section>'+interventionHtml(24);
 }
+function legacyProgressionHtml(){
+ const progress=previewLegacyProgress(profile);
+ const nodes=progress.nodes.map(node=>{
+  let action="";
+  if(node.status==="active")action='<span class="legacy-state legacy-state-active">当前启用</span>';
+  else if(node.unlocked)action='<button type="button" data-action="equip-legacy" data-legacy-id="'+esc(node.id)+'">启用到下一局</button>';
+  else if(node.status==="ready")action='<button type="button" data-action="unlock-legacy" data-legacy-id="'+esc(node.id)+'">永久解锁 · '+node.cost+' 碎片</button>';
+  else if(node.status==="insufficient")action='<button type="button" disabled>还差 '+node.shortfall+' 枚碎片</button>';
+  else action='<button type="button" disabled>完成第 '+node.minRuns+' 次远征后开放</button>';
+  return '<article class="legacy-node" data-legacy-node="'+esc(node.id)+'" data-status="'+node.status+'">'+
+   '<div class="legacy-node-head"><strong>'+esc(node.title)+'</strong><span>'+esc(node.branch)+'</span></div>'+
+   '<p>'+esc(node.description)+'</p><small>'+esc(node.effectLabel)+' · 解锁 '+node.cost+' 碎片</small>'+action+
+  '</article>';
+ }).join("");
+ const activeName=progress.active?.title||"未启用";
+ const timing=run?.active?
+  "传承只在下一次新远征开始时生效，不会改变正在进行的本局。":
+  "启用后从下一次新远征开始生效。";
+ return '<details class="panel legacy-progression" data-legacy-progression>'+
+  '<summary><span><strong>文明传承</strong><small>'+progress.unlockedCount+'/3 已解锁 · 当前：'+esc(activeName)+'</small></span><span class="pill">展开图谱</span></summary>'+
+  '<p class="hint">完成远征获得世界碎片，永久解锁传承。每次远征只能启用一项；可免费重整启用路线，已解锁节点和已花碎片不会回退。</p>'+
+  '<div class="legacy-currency"><b>'+n(profile.shards)+'</b><span>可用世界碎片</span></div>'+
+  '<div class="legacy-node-list">'+nodes+'</div>'+
+  (progress.active?'<button class="legacy-reset" type="button" data-action="reset-legacy">免费重整 · 解除当前传承</button>':'<p class="hint">尚未启用传承。已解锁路线可以随时切换。</p>')+
+  '<p class="hint" data-legacy-timing>'+timing+'</p>'+
+ '</details>';
+}
 function profileArchiveHtml(){
  const archive=summarizeProfileSecrets(profile);
  return '<section class="panel" aria-label="跨局收藏" data-profile-archive>'+
@@ -492,7 +520,7 @@ function homeHtml(){
  '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
  '<details class="advanced-settings"><summary>进阶设置 · 防线行动</summary>'+
  '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 启用三波防线行动与战技构筑</label></details></section>'+
- profileArchiveHtml()+'<p class="hint footnote">开发中版本 · 进度仅保存在当前浏览器</p>';
+ legacyProgressionHtml()+profileArchiveHtml()+'<p id="toast" class="notice" role="status" hidden></p><p class="hint footnote">开发中版本 · 进度仅保存在当前浏览器</p>';
 }
 function inQuickStart(){
  return Boolean(run?.onboardingFocus && run.active && run.day<9);
@@ -889,12 +917,12 @@ function reward(){
 }
 function confirmNew(mode="full"){
  if(!session.isOwner || commandBusy || saveError)return false;
- if(run&&run.active&&!window.confirm("将放弃当前模拟并开启新的一局，确定吗？"))return false;
+ if(run&&run.active&&!window.confirm("将放弃当前远征并开启新的一局。当前世界进度、分身等级、战技构筑和本局战报会重置；尚未结算的世界碎片不会发放。已完成远征数、现有碎片、永久传承解锁、纪念收藏和传承配置都会保留。确定吗？"))return false;
  tutorialSeen.clear();tutorialSkipped=false;
  profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
- run=Engine.fresh(seed,profile.runCount+1,waves);
+ run=Engine.fresh(seed,profile.runCount+1,waves,profile.activeLegacyId);
  run.onboardingFocus=mode==="focus"&&profile.runCount===0;
  tab=isDebug?"world":"scene";sceneWorldId="lingzai";scenePanel="";
  resetDayClock();queueSave();render();return true;
@@ -947,6 +975,18 @@ function handleClick(target){
    profile=updated.profile;
    queueSave();
    render();
+   return;
+ }
+ if(action==="unlock-legacy"||action==="equip-legacy"||action==="reset-legacy"){
+   if(!session.isOwner||commandBusy||saveError){report("当前无法修改传承，请确认存档可写且没有其他操作正在结算。");return;}
+   const result=action==="unlock-legacy"?unlockLegacy(profile,target.dataset.legacyId):
+     action==="equip-legacy"?equipLegacy(profile,target.dataset.legacyId):resetLegacy(profile);
+   if(!result.ok){report(result.reason);return;}
+   profile=result.profile;
+   const saved=queueSave();
+   render();
+   report(result.message);
+   void saved;
    return;
  }
  if(!session.isOwner){report("当前标签页是只读副本，请重新取得控制权。");return;}
@@ -1080,7 +1120,7 @@ async function claimSession() {
    // Always reload AFTER acquiring a lock: a previous tab may have progressed.
    const { run: saved, profile: account }=await saveRepository.load();
    assertRestorableSnapshot({run:saved,profile:account},Engine.VERSION);
-   if(account&&typeof account.runCount==="number")profile=account;
+   if(account&&typeof account.runCount==="number")profile=normalizeLegacyProfile(account);
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
      const hadUnpausedSave=!saved.paused;
      const needsReward=Boolean(acquired&&saved.result&&!saved.rewarded);

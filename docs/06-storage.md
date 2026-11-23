@@ -4,7 +4,7 @@
 
 - Definitions：静态配置及稳定 ID，运行中不能被 UI 修改。
 - RunState：runId、当前游戏日与阶段、世界集合、灵魂/AP、活动事件、经历/威胁/状态、随机流、结算状态和近期日志。
-- ProfileState：本局之外的碎片、升级、世界/天赋解锁、历史结果。
+- ProfileState：本局之外的世界碎片、已完成远征数、永久发现/称号、文明传承解锁与下一局启用配置。
 - Settings/Analytics：速度、暂停设置、测试与统计。
 
 每世界 WorldState 至少包含：worldId、状态、deadlineDay、P/D、等级经验资源、策略、当前行动目标、经历标记、事件实例/冷却、持续威胁、特殊机制、终局状态、独立随机状态。
@@ -35,3 +35,12 @@ SoulLinkState 保存：每来源世界成功广播次数、已广播 memoryKey �
 - **不支持Web Locks时：** 默认只读而非退化为两个可写入窗口。需在HTTPS或localhost安全上下文中运行；普通局域网HTTP调试可能受限。没有引入自研心跳租约、跨标签页广播协议或第三方状态同步库。
 - **玩家指令去重：** 每次主动操作由UI生成唯一 `operationId`，引擎 `applyCommand` 统一验证并在RunState持久化最近256条操作签名及结果。相同ID重试返回原结果、不重复扣AP/魂/材料；同一ID换参数直接拒绝；失败响应也记录。历史操作去重窗口有上限，长期业务仍以事件和终局状态自身的不可重复性兜底。
 - **仍待实测：** 真实浏览器两标签页的锁竞争、后台/关闭窗口时事务落盘、移动端HTTPS环境、多设备同步、完整JSON导入/导出。此版本只承诺同一浏览器来源的单写者保护，不包含跨设备同步。
+
+## 远征轮回与文明传承（2AB）
+
+- RunState 是单次远征：世界、等级、战技构筑、AP/灵魂、资源、日志与随机流；开始新远征时重新创建，不跨局继承。
+- ProfileState 是长期档案：runCount、shards、永久发现/称号、legacyUnlocks 和 activeLegacyId。旧档没有传承字段时按空解锁/未启用读取，不要求清档。
+- 世界碎片用于永久解锁三条文明传承；每次远征最多启用一条。启用配置写入 ProfileState，实际起始效果只在下一次 Engine.fresh 时应用，并将 legacyId 记录在 RunState。
+- 重整传承只清空 activeLegacyId，不退还解锁花费、不删除永久解锁。切换传承不会改写当前正在进行的 RunState。
+- 玩家主动放弃未完成远征时，不发放本局结算碎片，也不增加完成局数；既有碎片、永久解锁、发现和称号保留。正常完成远征后，按现有 run.rewarded 幂等结算。
+- RunState 与 ProfileState 继续在同一 IndexedDB setMany 批次中原子保存；所有传承操作都必须经过 ProfileState 纯函数校验并持有独占会话写权限。
