@@ -6,6 +6,7 @@
  */
 const TITLES = Object.freeze({
   strategy: "调整长期策略",
+  tactic: "集中火力支援",
   retreat: "开始闭关",
   exitRetreat: "强行出关",
   aid: "跨世界援助",
