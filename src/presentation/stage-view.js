@@ -1,3 +1,5 @@
+import { getRecentEncounter } from "./encounter-view.js";
+
 const clampPercent = (value) =>
   Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
 
@@ -37,6 +39,7 @@ export function getWorldSceneState(world, day = 1) {
             : actionId === "explore" || /调查|追踪|追查/.test(action)
               ? "exploring"
               : "observing";
+  const encounter = getRecentEncounter(world, day);
   const recentCombat =
     Number.isFinite(world.lastCombat?.day) &&
     world.lastCombat.day >= day - 2 &&
@@ -53,6 +56,8 @@ export function getWorldSceneState(world, day = 1) {
           ? "重大事件 · 等待决策"
           : hasBuild
             ? "战技机会 · 可以选择"
+            : encounter
+              ? "上日交战 · 击退 " + encounter.defeated + "/" + encounter.encountered
             : phase === "critical"
               ? "高危 · 请关注局势"
           : phase === "warning"
@@ -67,6 +72,7 @@ export function getWorldSceneState(world, day = 1) {
     growthTier,
     activity,
     recentCombat,
+    encounter,
     activeThreat,
     hasEvent,
     hasBuild,
@@ -94,6 +100,7 @@ export function getStageView(run, selectedWorldId) {
     selected.status === "failed" ? "救援未完成" : "正在求生";
   return {
     scene: getWorldSceneState(selected, number(run.day)),
+    encounter: getRecentEncounter(selected, number(run.day)),
     worldId: selected.id,
     title: selected.name || selected.id,
     status,
