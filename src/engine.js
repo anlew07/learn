@@ -6,6 +6,7 @@ import { WORLDS, POWERS, COMBOS, THRESHOLDS, LABELS } from "./config/game-data.j
 import { BALANCE, dailyDoomPressure } from "./config/balance.js";
 import { selectAutonomousAction } from "./systems/action-policy.js";
 import { computeWaveBonuses } from "./systems/wave-combat.js";
+import { TACTICAL_ASSIST, previewTacticalAssist, tacticalAssistImpact } from "./systems/tactical-assist.js";
 import { simulateSurvivorWaves, nextSurvivorFrenzy, applyFrenzyCaps } from "./systems/survivor-waves.js";
 import { previewMajorEvent } from "./systems/event-contract.js";
 import { recordWorldAction, recordWaveOutcome, recordBuildChoice } from "./systems/run-metrics.js";
@@ -158,9 +159,14 @@ const MultiworldEngine = (function () {
     var momentum=previous&&s.day-previous.lastDay<=3?
       Math.min(3,previous.count+1):1;
     w.waveMomentum={lastDay:s.day,count:momentum};
-    var spectacle=simulateSurvivorWaves(w.id,w.build,POWERS,{
-      day:s.day,level:w.level,momentum:momentum
-    });
+    const context={day:s.day,level:w.level,momentum:momentum};
+    const armed=w.tacticalAssist?.kind===TACTICAL_ASSIST.id;
+    const ordinary=simulateSurvivorWaves(w.id,w.build,POWERS,context);
+    const spectacle=armed?simulateSurvivorWaves(w.id,w.build,POWERS,{
+      ...context,tacticalPower:TACTICAL_ASSIST.wavePower
+    }):ordinary;
+    const tactic=armed?tacticalAssistImpact(ordinary,spectacle):null;
+    if(armed)w.tacticalAssist=null;
     var effect=computeWaveBonuses(w.id,w.build,POWERS,spectacle);
     const frenzy=nextSurvivorFrenzy(w.waveClearStreak,s.day,spectacle.fullClear);
     w.waveClearStreak={lastDay:frenzy.lastDay,count:frenzy.count};
@@ -177,6 +183,7 @@ const MultiworldEngine = (function () {
     if(effect.xp)produce(s,w,"xp",effect.xp);
     if(effect.resource)produce(s,w,"resource",effect.resource);
     if(effect.doomReduction)addD(w,-effect.doomReduction);
+    if(tactic?.dangerRelief)addD(w,-tactic.dangerRelief);
     w.lastCombat={
       day:s.day,
       action:w.action,
@@ -184,6 +191,7 @@ const MultiworldEngine = (function () {
       skills:effect.skills,
       evolution:effect.evolution,
       spectacle:spectacle,
+      ...(tactic?{tactic:tactic}:{}),
       bonus:{
         xp:r2(w.xp-beforeXp),
         resource:r2(w.resource-beforeResource),
@@ -194,6 +202,8 @@ const MultiworldEngine = (function () {
       }
     };
     recordWaveOutcome(w,w.lastCombat.bonus);
+    if(tactic)log(s,w.id,"集中火力已执行：额外击退"+tactic.extraDefeated+
+      "，实际缓解危机"+tactic.dangerRelief+"；本次支援已消耗。","battle");
   }
   function autoBuild(s,w) {
     if(!w.build.pending||w.build.pending.due>s.day)return;
@@ -598,6 +608,18 @@ const MultiworldEngine = (function () {
     log(s,id,"调整自主策略为「"+LABELS[strategy]+"」，消耗"+preview.cost+"行动点。","minor");
     return {ok:true};
   }
+  function previewTactic(s,id){
+    return previewTacticalAssist(s,s?byId(s,id):null,s?availableAP(s):0);
+  }
+  function setTactic(s,id){
+    var preview=previewTactic(s,id);
+    if(!preview.available)return {ok:false,error:preview.reason};
+    var w=byId(s,id);
+    s.ap-=TACTICAL_ASSIST.apCost;
+    w.tacticalAssist={kind:TACTICAL_ASSIST.id,issuedDay:s.day};
+    log(s,id,"投入1点干预点，下次自动排险集中火力（最多每波额外击退4只）。","minor");
+    return {ok:true};
+  }
   function retreat(s,id,duration){
     var w=byId(s,id);
     if(!s.active||!w||w.id!=="lingzai"||w.status!=="running"||w.level<2||w.retreat||[4,6].indexOf(duration)<0)return {ok:false,error:"当前无法安排闭关"};
@@ -675,6 +697,7 @@ const MultiworldEngine = (function () {
     }
     var handlers={
       strategy:setStrategy,
+      tactic:setTactic,
       retreat:retreat,
       exitRetreat:exitRetreat,
       aid:aid,
@@ -717,7 +740,7 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,step:step,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
+    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;
 /** Validated persisted camp selection; client-side request bonuses are ignored. */
