@@ -14,10 +14,9 @@ for (const viewport of [
     viewport.width + "x" + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
-    await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
-    await expect(page.locator("[data-game-stage]")).toBeVisible();
-    const canvas = page.locator("[data-stage-canvas]");
-    await expect(canvas).toBeVisible();
+    // Start from a clean title page, not an active RunState. Otherwise
+    // pagehide would save the old in-memory run over our isolated fixture.
+    await expect(page.locator("[data-formal-title]")).toBeVisible();
 
     const result = await page.evaluate(async () => {
       const Engine = (await import("/src/engine.js")).default;
@@ -42,15 +41,19 @@ for (const viewport of [
       if (!view) return { found: false };
 
       const stateBefore = JSON.stringify(replay);
-      const element = document.querySelector("[data-stage-canvas]");
+      const element = document.createElement("canvas");
+      element.width = 320;
+      element.height = 208;
+      document.body.append(element);
       paintPixelStage(element, view, 0);
       paintPixelStage(element, view, 16);
       paintPixelStage(element, view, 32);
+      element.remove();
       const stateAfter = JSON.stringify(replay);
       const formalAfter = JSON.stringify(await saveRepository.load());
       // Test-only fixture: persist a real Engine.step state inside this isolated browser.
       // Reload must then show the encounter in the *actual* formal UI.
-      await saveRepository.enqueueSave(replay, originalSave.profile);
+      await saveRepository.enqueueSave(replay, originalSave.profile ?? { runCount: 0, shards: 0 });
       return {
         worldId: view.worldId,
         found: true,
@@ -69,6 +72,8 @@ for (const viewport of [
     expect(result.savedUnchanged).toBe(true);
     await page.reload();
     await expect(page.locator("[data-game-stage]")).toBeVisible();
+    const canvas = page.locator("[data-stage-canvas]");
+    await expect(canvas).toBeVisible();
     if (result.worldId !== "lingzai") {
       await page.locator('[data-action="scene-world"][data-world="' + result.worldId + '"]').click();
     }
