@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("formal title has one main game; isolated sortie is still reachable for QA", async ({ page }) => {
+test("formal title keeps one game and retains the sortie QA deep link", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.locator("[data-formal-title]")).toBeVisible();
