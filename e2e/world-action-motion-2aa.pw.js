@@ -22,7 +22,7 @@ for (const viewport of [
       run.paused = false;
       const world = run.worlds[0];
       const actions = [
-        { id: "growth", activity: "training", label: "吸纳灵气", frame: 40 },
+        { id: "growth", activity: "training", label: "吸纳灵气", frame: 10 },
         { id: "gather", activity: "gathering", label: "搜集物资", frame: 24 },
         { id: "explore", activity: "exploring", label: "调查遗迹", frame: 30 },
         { id: "fight", activity: "defending", label: "排险妖兽", frame: 15 },

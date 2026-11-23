@@ -348,21 +348,12 @@ function environment(ctx, view, frame, repaint) {
     }
   }
 }
-function paintActivityCue(ctx, activity, motion, heroX, heroY) {
-  if (motion.paused || !motion.interacting) return;
-  if (activity === "training") {
-    sparkle(ctx, heroX + 34, heroY + 12, "#8edac7");
-    rect(ctx, "#d1f2ce", heroX + 38, heroY + 25, 2, 4);
-  } else if (activity === "gathering") {
-    sparkle(ctx, 71, 162, "#edc78a");
-    rect(ctx, "#f9e2a9", 77, 170, 3, 2);
-  } else if (activity === "exploring") {
-    sparkle(ctx, 229, 119, "#dfc787");
-    rect(ctx, "#dfc787", 225, 126, 12, 2);
-  } else if (activity === "rescuing") {
-    sparkle(ctx, 239, 111, "#a7e4ca");
-    rect(ctx, "#d5f4c7", 233, 118, 12, 2);
-  }
+function paintActivityCue(ctx, activity, motion) {
+  // Existing static markers already identify training, gathering and rescue.
+  // Exploration gets one scan pulse at the real landmark the hero approaches.
+  if (activity !== "exploring" || motion.paused || !motion.interacting) return;
+  sparkle(ctx, 229, 119, "#dfc787");
+  rect(ctx, "#dfc787", 225, 126, 12, 2);
 }
 
 function characters(ctx, view, frame, repaint) {
@@ -392,7 +383,7 @@ function characters(ctx, view, frame, repaint) {
   // The same owned sprite now approaches its real scene landmark before acting.
   if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 38, heroY + 3, "#79e7c5");
   if ((scene?.growthTier || 0) >= 2) sparkle(ctx, heroX + 9, heroY - 5, "#e8c888");
-  if (scene?.phase !== "restored") paintActivityCue(ctx, activity, motion, heroX, heroY);
+  if (scene?.phase !== "restored") paintActivityCue(ctx, activity, motion);
   const allyX = scene?.phase === "restored" ? 105 : 91;
   rect(ctx, "#202d32", allyX + 3, 169, 26, 3);
   sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint);

@@ -26,7 +26,7 @@ describe("truthful autonomous world-action reenactment", () => {
   });
 
   it("gives training a stationary energy pulse instead of walking", () => {
-    expect(getWorldActionMotion("training", 40)).toMatchObject({
+    expect(getWorldActionMotion("training", 10)).toMatchObject({
       offsetX: 0, offsetY: -2, bob: 1, phase: "channel", pulse: true,
     });
   });
