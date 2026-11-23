@@ -255,7 +255,8 @@
 .legacy-node p { margin: 0; color: #d5d2bf; font-size: 12px; line-height: 1.45; }
 .legacy-node small { color: #c7bd9e; font-size: 11px; }
 .legacy-node button, .legacy-reset {
-  min-height: 42px;
+  min-height: 44px;
+  width: 100%;
   padding: 7px 10px;
   color: #f6e9ca;
   background: #39463b;
