@@ -183,7 +183,6 @@ const MultiworldEngine = (function () {
     if(effect.xp)produce(s,w,"xp",effect.xp);
     if(effect.resource)produce(s,w,"resource",effect.resource);
     if(effect.doomReduction)addD(w,-effect.doomReduction);
-    if(tactic?.dangerRelief)addD(w,-tactic.dangerRelief);
     w.lastCombat={
       day:s.day,
       action:w.action,
@@ -201,9 +200,8 @@ const MultiworldEngine = (function () {
         waveLootModifier:r2(effect.waveLootModifier)
       }
     };
-    recordWaveOutcome(w,w.lastCombat.bonus);
-    if(tactic)log(s,w.id,"集中火力已执行：额外击退"+tactic.extraDefeated+
-      "，实际缓解危机"+tactic.dangerRelief+"；本次支援已消耗。","battle");
+    // Record authoritative outcome after daily crisis pressure, so a tactical
+    // reduction is measured rather than claimed while D is still zero.
   }
   function autoBuild(s,w) {
     if(!w.build.pending||w.build.pending.due>s.day)return;
@@ -499,8 +497,18 @@ const MultiworldEngine = (function () {
       if(secret)log(s,w.id,secret.message,"minor");
       // All sources of danger are calculated once after the day's major action.
       if(w.status==="running"){
-        addD(w,Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
-          followupMitigation(w,s.day,"natural")-cautiousMitigation(w,s.day)));
+        const pressure=Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
+          followupMitigation(w,s.day,"natural")-cautiousMitigation(w,s.day));
+        const tacticalReceipt=w.lastCombat?.day===s.day?w.lastCombat.tactic:null;
+        const prevented=tacticalReceipt?Math.min(pressure,tacticalReceipt.dangerRelief):0;
+        addD(w,pressure-prevented);
+        if(tacticalReceipt){
+          tacticalReceipt.dangerRelief=r2(prevented);
+          w.lastCombat.bonus.doomReduced=r2(w.lastCombat.bonus.doomReduced+prevented);
+          log(s,w.id,"集中火力已执行：额外击退"+tacticalReceipt.extraDefeated+
+            "，本日实际减缓危机"+tacticalReceipt.dangerRelief+"；本次支援已消耗。","battle");
+        }
+        if(s.waves&&w.lastCombat?.day===s.day)recordWaveOutcome(w,w.lastCombat.bonus);
         if(threatActive(w)){
           const beastSuppressionMitigation=w.id==="beast"?
             Math.min(2,w.suppression||0)*BALANCE.actions.beastSuppressionThreatMitigation:0;
