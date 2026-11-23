@@ -89,8 +89,8 @@ export function getOpeningBrief(profile = {}) {
     stageHint: "分身自动行动；你负责策略、事件与援助。",
     stakes: "危机压力达到100或错过世界期限，救援就会失败；失败还会削弱共享的灵魂强度。",
     continuation: nextRun === 1
-      ? "先观察两个世界如何运转；第二局解锁灵魂借力，第三局开启第三世界。"
-      : "不同策略会带来不同的救援路径；世界回响可以支援本局其他世界，跨局留存救援记录与收藏。",
+      ? "先守护一个世界。每成功拯救一个世界，新的世界就会加入；同时运行的世界逐步增加，最多三个。"
+      : "成功拯救会让分身穿越到新世界，并逐步增加并行名额；最多同时守护三个世界。",
     shardNote: "世界碎片目前用于记录局外收获，不提供可购买的数值强化。",
     glossary: PLAYER_GLOSSARY,
   };
@@ -177,9 +177,12 @@ export function getRunOverview(state, rules) {
   if (!state || !Array.isArray(state.worlds)) return null;
   const worlds = validWorlds(state);
   const running = worlds.filter((world) => world.status === "running");
-  const saved = worlds.filter((world) => world.status === "saved").length;
-  const failed = worlds.filter((world) => world.status === "failed").length;
-  const worldGuidance = worlds.map((world) => getWorldGuidance(state, world, rules));
+  const saved = Number.isInteger(state.worldsSavedThisRun)
+    ? state.worldsSavedThisRun : worlds.filter((world) => world.status === "saved").length;
+  const failed = Number.isInteger(state.worldsFailedThisRun)
+    ? state.worldsFailedThisRun : worlds.filter((world) => world.status === "failed").length;
+  const total = Number.isInteger(state.worldsVisitedThisRun) ? state.worldsVisitedThisRun : worlds.length;
+  const worldGuidance = running.map((world) => getWorldGuidance(state, world, rules));
   const urgent = worldGuidance.filter((item) => item.status === "running")
     .sort((a, b) =>
       Number(Boolean(b.event)) - Number(Boolean(a.event)) ||
@@ -193,7 +196,7 @@ export function getRunOverview(state, rules) {
     rescued: saved,
     failed,
     ongoing: running.length,
-    total: worlds.length,
+    total,
     soul: number(state.soul),
     freeInterventionPoints: Math.max(0, number(state.ap) - number(state.apReserved)),
     headline: !state.active
