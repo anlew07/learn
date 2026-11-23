@@ -67,10 +67,7 @@ function simulateProfile(runNumber, profile, samples) {
         const key = instanceId(world);
         if (world.status !== "running" && !finishedWorlds.has(key)) {
           finishedWorlds.set(key, world);
-          terminalByInstance.set(
-            key,
-            readWorldTerminal(world, state.logs, terminalDay),
-          );
+          terminalByInstance.set(key, readWorldTerminal(world, state.logs, terminalDay));
         }
       }
     }
@@ -123,23 +120,16 @@ function simulateProfile(runNumber, profile, samples) {
         totals[id].visits ? round(totals[id].saved / totals[id].visits) : null,
       ]),
     ),
-    worldVisits: Object.fromEntries(
-      trackedWorldTypes.map((id) => [id, totals[id].visits]),
-    ),
+    worldVisits: Object.fromEntries(trackedWorldTypes.map((id) => [id, totals[id].visits])),
     worldOutcomeReasons: Object.fromEntries(
       trackedWorldTypes.map((id) => [
         id,
         {
-          savedRate: totals[id].visits
-            ? round(totals[id].saved / totals[id].visits)
-            : null,
+          savedRate: totals[id].visits ? round(totals[id].saved / totals[id].visits) : null,
           failureReasons: Object.fromEntries(
             Object.entries(totals[id].failed)
               .sort(([a], [b]) => a.localeCompare(b))
-              .map(([reason, count]) => [
-                reason,
-                round(count / totals[id].visits),
-              ]),
+              .map(([reason, count]) => [reason, round(count / totals[id].visits)]),
           ),
         },
       ]),
@@ -147,9 +137,7 @@ function simulateProfile(runNumber, profile, samples) {
     meanWorldEndDay: Object.fromEntries(
       trackedWorldTypes.map((id) => [
         id,
-        totals[id].endDayCount
-          ? round(totals[id].endDay / totals[id].endDayCount, 2)
-          : null,
+        totals[id].endDayCount ? round(totals[id].endDay / totals[id].endDayCount, 2) : null,
       ]),
     ),
     meanActionsByWorld: Object.fromEntries(
@@ -200,9 +188,7 @@ function runMatrix(samples) {
       runNumber - 1,
     );
     const initialWorldIds = template.worlds.map((world) => world.id);
-    const defaults = Object.fromEntries(
-      template.worlds.map((world) => [world.id, world.strategy]),
-    );
+    const defaults = Object.fromEntries(template.worlds.map((world) => [world.id, world.strategy]));
     const defaultProfileId = profileId(initialWorldIds, defaults);
     const profiles = buildStrategyProfiles(initialWorldIds);
     const rows = profiles.map((profile) => simulateProfile(runNumber, profile, samples));
@@ -257,7 +243,8 @@ function runMatrix(samples) {
     samplesPerProfile: samples,
     strategyIds: STRATEGY_IDS,
     strategyLabels: LABELS,
-    simulationMode: "战潮关闭；不执行玩家主动干预；新穿越的世界沿用已配置的同类型策略，否则使用默认策略。",
+    simulationMode:
+      "战潮关闭；不执行玩家主动干预；新穿越的世界沿用已配置的同类型策略，否则使用默认策略。",
     interpretation:
       "各策略组合使用相同的初始种子编号；策略导致行动分歧后，后续随机流可能不同。结果按世界实例访问次数归一，用于描述策略组合，不构成玩家行为或严格因果保证。",
     runs,
