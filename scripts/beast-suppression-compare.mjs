@@ -161,9 +161,7 @@ export function compareBeastSuppression(seeds = 100, { waves = false } = {}) {
           .filter((id) => id !== "beast")
           .map((id) => [
             id,
-            Number(
-              (candidate.worlds[id].savedRate - baseline.worlds[id].savedRate).toFixed(3),
-            ),
+            Number((candidate.worlds[id].savedRate - baseline.worlds[id].savedRate).toFixed(3)),
           ]),
       ),
     });
