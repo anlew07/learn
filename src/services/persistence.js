@@ -106,7 +106,7 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       (run.worldsFailedThisRun !== undefined && (!Number.isInteger(run.worldsFailedThisRun) || run.worldsFailedThisRun < 0)) ||
       (run.worldsVisitedThisRun !== undefined && (!Number.isInteger(run.worldsVisitedThisRun) || run.worldsVisitedThisRun < 1)) ||
       (run.worldTypesSeen !== undefined && (!Array.isArray(run.worldTypesSeen) || run.worldTypesSeen.some((id) => !["lingzai", "zombie", "beast"].includes(id)))) ||
-      (run.worldDiscoveryArchive !== undefined && (!Array.isArray(run.worldDiscoveryArchive) || run.worldDiscoveryArchive.some((id) => typeof id !== "string")))
+      (run.worldDiscoveryArchive !== undefined && (!Array.isArray(run.worldDiscoveryArchive) || run.worldDiscoveryArchive.some((id) => typeof id !== "string"))) ||
       !Array.isArray(run.logs) ||
       !Array.isArray(run.echoes) ||
       typeof run.active !== "boolean" ||
@@ -118,7 +118,7 @@ export function assertRestorableSnapshot({ run, profile }, version) {
           !["running", "saved", "failed"].includes(world.status) ||
           (world.slotId !== undefined && (!Number.isInteger(world.slotId) || world.slotId < 1)) ||
           (world.worldNumber !== undefined && (!Number.isInteger(world.worldNumber) || world.worldNumber < 1)) ||
-          (world.transitionSettled !== undefined && typeof world.transitionSettled !== "boolean")
+          (world.transitionSettled !== undefined && typeof world.transitionSettled !== "boolean") ||
           !Number.isInteger(world.level) ||
           world.level < 1 ||
           !Number.isFinite(world.resource) ||

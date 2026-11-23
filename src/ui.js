@@ -44,8 +44,6 @@ const session = createExclusiveSession({
 const esc = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n = value => Number(value??0).toFixed(value%1===0?0:1);
 const activeWorlds = () => run?.worlds.filter((world) => world.status === "running") || [];
-const win = () => run?.worldsSavedThisRun ?? run?.worlds.filter(w=>w.status==="saved").length ?? 0;
-
 function queueSave() {
   if (!session.isOwner) return Promise.resolve();
   profile = normalizeLegacyProfile(profile);
