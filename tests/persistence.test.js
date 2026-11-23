@@ -157,6 +157,7 @@ describe("save recovery guard", () => {
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], build: { attack: [null], support: [] } }, valid().run.worlds[1]] } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], flags: [] }, valid().run.worlds[1]] } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], p: "bad" }, valid().run.worlds[1]] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], bornDay: 0 }, valid().run.worlds[1]] } },
     ];
     for (const snapshot of cases) {
       const before = JSON.stringify(snapshot);
