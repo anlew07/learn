@@ -80,10 +80,7 @@ for (const runNumber of [1, 2, 3]) {
             const key = instanceId(world);
             if (world.status !== "running" && !finishedWorlds.has(key)) {
               finishedWorlds.set(key, world);
-              terminalByInstance.set(
-                key,
-                readWorldTerminal(world, state.logs, currentDay),
-              );
+              terminalByInstance.set(key, readWorldTerminal(world, state.logs, currentDay));
             }
           }
         }
@@ -144,9 +141,7 @@ for (const runNumber of [1, 2, 3]) {
         worldSaveRates: Object.fromEntries(
           worldIds.map((id) => [
             id,
-            worlds[id].visits
-              ? Number((worlds[id].saved / worlds[id].visits).toFixed(3))
-              : null,
+            worlds[id].visits ? Number((worlds[id].saved / worlds[id].visits).toFixed(3)) : null,
           ]),
         ),
         worldVisits: Object.fromEntries(worldIds.map((id) => [id, worlds[id].visits])),
