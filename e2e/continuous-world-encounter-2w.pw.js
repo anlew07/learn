@@ -24,14 +24,15 @@ for (const viewport of [
       const { getStageView } = await import("/src/presentation/stage-view.js");
       const { paintPixelStage } = await import("/src/ui/pixel-stage.js");
       const { saveRepository } = await import("/src/services/persistence.js");
-      const formalBefore = JSON.stringify(await saveRepository.load());
+      const originalSave = await saveRepository.load();
+      const formalBefore = JSON.stringify(originalSave);
       const replay = Engine.fresh("2w-browser-encounter", 1, true);
       let view = null;
       for (let day = 0; day < 100 && replay.active; day++) {
         Engine.step(replay);
         for (const world of replay.worlds) {
           const candidate = getStageView(replay, world.id);
-          if (candidate.encounter) {
+          if (candidate.encounter && candidate.scene.summary.includes("上日交战")) {
             view = candidate;
             break;
           }
@@ -47,7 +48,11 @@ for (const viewport of [
       paintPixelStage(element, view, 32);
       const stateAfter = JSON.stringify(replay);
       const formalAfter = JSON.stringify(await saveRepository.load());
+      // Test-only fixture: persist a real Engine.step state inside this isolated browser.
+      // Reload must then show the encounter in the *actual* formal UI.
+      await saveRepository.enqueueSave(replay, originalSave.profile);
       return {
+        worldId: view.worldId,
         found: true,
         status: view.scene.summary,
         encounter: view.encounter,
@@ -62,6 +67,12 @@ for (const viewport of [
     expect(result.encounter.defeated).toBeLessThanOrEqual(result.encounter.encountered);
     expect(result.unchanged).toBe(true);
     expect(result.savedUnchanged).toBe(true);
+    await page.reload();
+    await expect(page.locator("[data-game-stage]")).toBeVisible();
+    if (result.worldId !== "lingzai") {
+      await page.locator('[data-action="scene-world"][data-world="' + result.worldId + '"]').click();
+    }
+    await expect(page.locator(".stage-scene-status")).toContainText("上日交战");
     await page.screenshot({ path: screenshots + "/2w-continuous-encounter-" +
       viewport.width + "x" + viewport.height + ".png" });
 
