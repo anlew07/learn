@@ -400,7 +400,10 @@ export function paintPixelStage(canvas, view, frame = 0) {
   environment(ctx, view, frame, repaint);
   paintWorldSceneDetails(ctx, view, frame);
   characters(ctx, view, frame, repaint);
-  paintRecentEncounter(ctx, view.encounter, frame);
+  const spriteNames = worldSprites[view.worldId] || worldSprites.lingzai;
+  paintRecentEncounter(ctx, view.encounter, frame, (x, y, width, height) => {
+    sprite(ctx, spriteNames.foe, x, y, width, height, repaint);
+  });
   ctx.restore();
 }
 
