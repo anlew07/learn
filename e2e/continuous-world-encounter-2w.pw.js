@@ -35,7 +35,7 @@ for (const viewport of [
         Engine.step(replay);
         for (const world of replay.worlds) {
           const candidate = getStageView(replay, world.id);
-          if (candidate.encounter && candidate.scene.summary.includes("上日交战")) {
+          if (candidate.encounter) {
             view = candidate;
             break;
           }
@@ -69,7 +69,7 @@ for (const viewport of [
     });
 
     expect(result.found).toBe(true);
-    expect(result.status).toContain("上日交战");
+    expect(result.encounter.grade).toBeTruthy();
     expect(result.encounter.encountered).toBeGreaterThan(0);
     expect(result.encounter.defeated).toBeLessThanOrEqual(result.encounter.encountered);
     expect(result.unchanged).toBe(true);
@@ -81,7 +81,10 @@ for (const viewport of [
     if (result.worldId !== "lingzai") {
       await page.locator('[data-action="scene-world"][data-world="' + result.worldId + '"]').click();
     }
-    await expect(page.locator(".stage-scene-status")).toContainText("上日交战");
+    await expect(page.locator(".stage-action-line")).toContainText("昨日战报");
+    await expect(page.locator(".stage-action-line")).toContainText(
+      "击退 " + result.encounter.defeated + "/" + result.encounter.encountered,
+    );
     await page.screenshot({ path: screenshots + "/2w-continuous-encounter-" +
       viewport.width + "x" + viewport.height + ".png" });
 
