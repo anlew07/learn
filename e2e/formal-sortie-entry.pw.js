@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-test("formal title enters a separate playable preview", async ({ page }) => {
+test("formal title has one main game; isolated sortie is still reachable for QA", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  const entry = page.locator("[data-sortie-preview-entry]");
-  await expect(entry).toBeVisible();
-  await entry.tap();
+  await expect(page.locator("[data-formal-title]")).toBeVisible();
+  await expect(page.locator("[data-sortie-preview-entry]")).toHaveCount(0);
+  await expect(page.locator("[data-formal-title-primary]")).toBeVisible();
+  await page.goto("/?mode=sortie");
   await expect(page).toHaveURL(/mode=sortie$/);
   await expect(page.locator("[data-sortie-title-screen]")).toBeVisible();
   await expect(page.locator("[data-sortie-menu-enter]")).toBeEnabled();
