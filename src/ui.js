@@ -472,7 +472,6 @@ function homeHtml(){
   '<button class="btn" data-action="new-run" data-formal-title-primary>▶ 开始第 '+(profile.runCount+1)+' 次远征</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+
  '</div>'+
- '<a class="formal-title-sortie-link" href="?mode=sortie" data-sortie-preview-entry>⚔ 雾谷出击 · 75秒动作试玩 <small>独立进度 · 不覆盖正式存档</small></a>'+
  '<nav class="formal-title-utility" aria-label="游戏帮助与设置">'+
  '<button data-action="open-help">? 玩法帮助</button>'+
  '<button data-action="open-settings">⚙ 设置与本机数据</button></nav>'+
@@ -719,8 +718,9 @@ function sceneHtml() {
   '<div class="stage-caption"><small>当前世界 · WORLD</small><b>'+esc(view.title)+'</b><span>Lv'+view.level+' · '+esc(view.status)+' · 剩余'+view.deadline+'天</span></div>'+
   '<div class="stage-scene-status" data-scene-phase="'+esc(view.scene.phase)+'"><span class="stage-status-dot"></span>'+esc(view.scene.summary)+'</div>'+
   '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+
-  '<span class="stage-action-marker">今日动向</span><span class="stage-action-text">'+
-  esc(inQuickStart()?getOpeningBrief(profile).stageHint:view.action)+'</span></div>'+
+  '<span class="stage-action-marker">'+(view.encounter?'昨日战报':'今日动向')+'</span><span class="stage-action-text">'+
+  esc(inQuickStart()?getOpeningBrief(profile).stageHint:
+   view.encounter?'击退 '+view.encounter.defeated+'/'+view.encounter.encountered+' · '+view.action:view.action)+'</span></div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div class="stage-meter stage-meter-rescue"><div class="stage-meter-head"><span>救援准备</span><b>'+Math.round(view.rescue)+'<small>%</small></b></div>'+
