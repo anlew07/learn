@@ -5,6 +5,7 @@ import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/
 applyTextSize();
 import Engine from "./engine.js";
 import { getStageView } from "./presentation/stage-view.js";
+import { getCombatNextStep } from "./presentation/combat-next-step.js";
 import { DAY_DURATION_MS, readDayProgress } from "./presentation/day-progress.js";
 import { nextNewDecision, pendingDecisions } from "./presentation/decision-attention.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
@@ -654,6 +655,18 @@ function tacticalPanelHtml(world) {
     ' · 危机 −'+n(combat.dangerRelief)+'</p>':'')+
    '</section>';
 }
+function combatNextStepHtml(world) {
+ const next=getCombatNextStep(run,world,Engine.previewTactic(run,world.id));
+ if(!next)return "";
+ return '<section class="stage-combat-followup" data-combat-followup data-next-panel="'+
+   next.panel+'">'+
+   '<div class="stage-combat-followup-copy"><strong>战后下一步</strong>'+
+   '<p>'+esc(next.description)+'</p>'+
+   (next.impact?'<small data-combat-impact>本场支援实得：击退 +'+
+     n(next.impact.extraDefeated)+' · 危机缓解 '+n(next.impact.dangerRelief)+'</small>':'')+
+   '</div><button type="button" data-action="scene-panel" data-panel="'+
+   next.panel+'">'+esc(next.label)+'</button></section>';
+}
 function stagePanelHtml(view) {
  if (!scenePanel) return "";
  const selected = run.worlds.find(w => w.id === view.worldId) || run.worlds[0];
@@ -675,7 +688,8 @@ function stagePanelHtml(view) {
  if (scenePanel === "tactic") content = tacticalPanelHtml(selected);
  if (scenePanel === "team") content = partyHtml();
  if (scenePanel === "report") content = selected.lastCombat ?
-  combatHtml(selected.lastCombat) : '<p class="hint">本世界暂时没有战斗记录。</p>';
+  combatNextStepHtml(selected)+combatHtml(selected.lastCombat) :
+  '<p class="hint">本世界暂时没有战斗记录。</p>';
  if (scenePanel === "guide") content = playerGuideHtml();
  if (scenePanel === "all") content = run.worlds.map(worldOverviewHtml).join("");
  if (scenePanel === "menu") content =
