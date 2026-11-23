@@ -364,7 +364,7 @@ function characters(ctx, view, frame, repaint) {
   const motion = getWorldActionMotion(activity, frame, view.paused, Boolean(view.encounter));
   const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
   const baseX = (
-    activity === "gathering" ? 64 : activity === "rescuing" ? 198 :
+    activity === "gathering" ? 80 : activity === "rescuing" ? 178 :
     activity === "exploring" ? 156 : activity === "defending" ? 148 : 123
   );
   const heroX = baseX + motion.offsetX;
