@@ -362,7 +362,8 @@ function characters(ctx, view, frame, repaint) {
   if (scene?.phase === "lost") return;
   const activity = scene?.activity || "observing";
   const motion = getWorldActionMotion(activity, frame, view.paused, Boolean(view.encounter));
-  const bob = view.paused ? 0 : Math.floor(frame / 14) % 2;
+  const bob = motion.bob;
+  const ambientBob = view.paused ? 0 : Math.floor(frame / 14) % 2;
   const baseX = (
     activity === "gathering" ? 80 : activity === "rescuing" ? 178 :
     activity === "exploring" ? 156 : activity === "defending" ? 148 : 123
@@ -375,10 +376,10 @@ function characters(ctx, view, frame, repaint) {
     ctx.save();
     ctx.translate(heroX * 2 + 46, 0);
     ctx.scale(-1, 1);
-    sprite(ctx, art.hero, heroX, heroY - motion.bob, 46, 62, repaint);
+    sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint);
     ctx.restore();
   } else {
-    sprite(ctx, art.hero, heroX, heroY - motion.bob, 46, 62, repaint);
+    sprite(ctx, art.hero, heroX, heroY - bob, 46, 62, repaint);
   }
   // The same owned sprite now approaches its real scene landmark before acting.
   if ((scene?.growthTier || 0) >= 1) sparkle(ctx, heroX + 38, heroY + 3, "#79e7c5");
@@ -386,15 +387,15 @@ function characters(ctx, view, frame, repaint) {
   if (scene?.phase !== "restored") paintActivityCue(ctx, activity, motion);
   const allyX = scene?.phase === "restored" ? 105 : 91;
   rect(ctx, "#202d32", allyX + 3, 169, 26, 3);
-  sprite(ctx, "ally", allyX, 127 + bob, 32, 45, repaint);
+  sprite(ctx, "ally", allyX, 127 + ambientBob, 32, 45, repaint);
   if (scene?.phase !== "restored" && (scene?.activeThreat || view.danger > 45)) {
     rect(ctx, "#273139", 275, 177, 41, 4);
     sprite(ctx, art.foe, 268, 125 + (frame % 31 > 15 ? 1 : 0), 48, 53, repaint);
     rect(ctx, "#492b37", 272, 120, 43, 5);
     rect(ctx, "#d28a7b", 274, 121, 39 * Math.min(1, view.danger / 100), 3);
   }
-  if (scene?.hasEvent) sparkle(ctx, 263, 89 + bob, "#f5d392");
-  if (scene?.recentCombat) sparkle(ctx, 176, 120 - bob, "#f3e29a");
+  if (scene?.hasEvent) sparkle(ctx, 263, 89 + ambientBob, "#f5d392");
+  if (scene?.recentCombat) sparkle(ctx, 176, 120 - ambientBob, "#f3e29a");
   if (scene?.phase === "restored") sparkle(ctx, 170, 110, "#a2f7cc");
 }
 export function paintPixelStage(canvas, view, frame = 0) {
