@@ -119,6 +119,7 @@ export function assertRestorableSnapshot({ run, profile }, version) {
           (world.slotId !== undefined && (!Number.isInteger(world.slotId) || world.slotId < 1)) ||
           (world.worldNumber !== undefined && (!Number.isInteger(world.worldNumber) || world.worldNumber < 1)) ||
           (world.transitionSettled !== undefined && typeof world.transitionSettled !== "boolean") ||
+          (world.bornDay !== undefined && (!Number.isInteger(world.bornDay) || world.bornDay < 1)) ||
           !Number.isInteger(world.level) ||
           world.level < 1 ||
           !Number.isFinite(world.resource) ||

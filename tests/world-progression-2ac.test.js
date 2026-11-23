@@ -32,7 +32,12 @@ describe("2AC progressive world slots", () => {
     expect(state.worldSlots).toBe(2);
     expect(running(state).map((world) => world.id).sort()).toEqual(["beast", "zombie"]);
     expect(running(state).map((world) => world.worldNumber).sort()).toEqual([2, 3]);
+    const beast = Engine.byId(state, "beast");
+    expect(beast.bornDay).toBe(state.day);
+    expect(beast.deadline - beast.bornDay + 1).toBe(76);
     expect(state.worldsVisitedThisRun).toBe(3);
+    Engine.step(state);
+    expect(beast.phase).toBe("苏醒");
   });
 
   it("opens the third slot after the second rescue while preserving the other world's state", () => {
@@ -88,6 +93,7 @@ describe("2AC progressive world slots", () => {
     old.worlds.forEach((world) => {
       delete world.slotId;
       delete world.worldNumber;
+      delete world.bornDay;
       delete world.transitionSettled;
     });
 
@@ -97,5 +103,7 @@ describe("2AC progressive world slots", () => {
     expect(restored.worldSlots).toBe(2);
     expect(running(restored)).toHaveLength(2);
     expect(running(restored).map((world) => world.id).sort()).toEqual(["beast", "zombie"]);
+    expect(Engine.byId(restored, "beast").bornDay).toBe(restored.day);
+    expect(Engine.byId(restored, "zombie").bornDay).toBe(1);
   });
 });

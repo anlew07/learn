@@ -43,14 +43,20 @@ const MultiworldEngine = (function () {
     s.logs.push({day:s.day, world:world||"system", text:message, kind:type||"normal"});
     if(s.logs.length>180)s.logs.splice(0,s.logs.length-180);
   }
-  function newWorld(id, seed, runNumber, startingResourceBonus, worldNumber, slotId) {
+  function worldAge(w,day){
+    var bornDay=Number.isInteger(w?.bornDay)&&w.bornDay>0?w.bornDay:1;
+    return Math.max(1,day-bornDay+1);
+  }
+  function newWorld(id, seed, runNumber, startingResourceBonus, worldNumber, slotId, bornDay) {
     var instance = Math.max(1, Number(worldNumber)||1);
+    var startDay = Math.max(1,Number(bornDay)||1);
+    var duration = runNumber===1?76:94;
     var rngKey = instance<=3 ? String(seed)+"/"+id : String(seed)+"/world/"+instance+"/"+id;
     var buildKey = instance<=3 ? String(seed)+"/build/"+id : String(seed)+"/build/world/"+instance+"/"+id;
     return {
-      id:id,worldNumber:instance,slotId:Math.max(1,Number(slotId)||1),
+      id:id,worldNumber:instance,slotId:Math.max(1,Number(slotId)||1),bornDay:startDay,
       name:WORLDS[id].name,status:"running",level:1,xp:0,resource:4+(startingResourceBonus||0),
-      p:0,d:0,deadline:runNumber===1?76:94,strategy:id==="lingzai"?"growth":"rescue",
+      p:0,d:0,deadline:startDay+duration-1,strategy:id==="lingzai"?"growth":"rescue",
       action:"正在观察灾变",rng:seedrandom(rngKey, {state:true}).state(),
       buildRng:seedrandom(buildKey, {state:true}).state(),
       flags:{},milestones:[],threat:null,pendingEvent:null,queuedBoss:false,
@@ -79,7 +85,7 @@ const MultiworldEngine = (function () {
       waves:!!waves,speed:1,paused:true,soul:8+(legacy?.startingSoul||0),ap:2+(legacy?.startingAP||0),apReserved:0,apMax:4,
       aidNext:{},fusionNext:1,echoes:[],memory:{},sequence:0,
       operationResults:{},operationOrder:[],
-      worlds:ids.map(function(id,index){return newWorld(id,seed,no,legacy?.startingResource||0,index+1,index+1);}),logs:[],
+      worlds:ids.map(function(id,index){return newWorld(id,seed,no,legacy?.startingResource||0,index+1,index+1,1);}),logs:[],
       result:null
     };
     log(s,null,slots+"个世界已同时开启；分身将自主行动。","major");
@@ -131,7 +137,7 @@ const MultiworldEngine = (function () {
       var next=nextWorldSpec(s);
       if(!next)return;
       var legacy=getLegacyDoctrine(s.legacyId);
-      var world=newWorld(next.id,s.seed,s.runNumber,legacy?.startingResource||0,next.worldNumber,spec.slotId);
+      var world=newWorld(next.id,s.seed,s.runNumber,legacy?.startingResource||0,next.worldNumber,spec.slotId,s.day+1);
       s.worlds.push(world);
       s.worldsVisitedThisRun=(s.worldsVisitedThisRun||0)+1;
       if(!s.worldTypesSeen.includes(next.id))s.worldTypesSeen.push(next.id);
@@ -155,6 +161,7 @@ const MultiworldEngine = (function () {
       s.worlds.forEach(function(w,index){
         if(!Number.isInteger(w.slotId))w.slotId=index+1;
         if(!Number.isInteger(w.worldNumber))w.worldNumber=index+1;
+        if(!Number.isInteger(w.bornDay)||w.bornDay<1)w.bornDay=1;
         if(typeof w.transitionSettled!=="boolean")w.transitionSettled=w.status!=="running";
       });
       if(s.active)finishRun(s);
@@ -171,6 +178,7 @@ const MultiworldEngine = (function () {
     s.worlds.forEach(function(w,index){
       if(!Number.isInteger(w.slotId))w.slotId=index+1;
       if(!Number.isInteger(w.worldNumber))w.worldNumber=index+1;
+      if(!Number.isInteger(w.bornDay)||w.bornDay<1)w.bornDay=1;
       w.transitionSettled=!s.active;
     });
     if(s.active){
@@ -425,7 +433,7 @@ const MultiworldEngine = (function () {
     }
   }
   function newThreat(s,w){
-    if(w.threat||s.day<12||w.d<10||random(w)>0.065)return;
+    if(w.threat||worldAge(w,s.day)<12||w.d<10||random(w)>0.065)return;
     w.threat={id:w.id+"/threat/1",status:"active",progress:0,retryDay:1};
     log(s,w.id,"发现持续威胁："+(w.id==="zombie"?"地下停车场尸群":w.id==="beast"?"赤角兽群巢穴":"裂纹妖狼巢穴")+"。","warning");
   }
@@ -497,7 +505,10 @@ const MultiworldEngine = (function () {
       }else {w.action="搜集压制所需结晶";produce(s,w,"resource",3);}
     }
   }
-  function worldPhase(w,day){return day>=70?"狂化":day>=35?"进化":"苏醒";}
+  function worldPhase(w,day){
+    var age=worldAge(w,day);
+    return age>=70?"狂化":age>=35?"进化":"苏醒";
+  }
   function worldEnd(s,w,status,reason){
     if(w.status!=="running")return;
     w.status=status;w.action=status==="saved"?"世界获救":"救援未完成";
@@ -615,7 +626,7 @@ const MultiworldEngine = (function () {
       if(secret)log(s,w.id,secret.message,"minor");
       // All sources of danger are calculated once after the day's major action.
       if(w.status==="running"){
-        const pressure=Math.max(0,dailyDoomPressure(s.day,s.runNumber)-
+        const pressure=Math.max(0,dailyDoomPressure(worldAge(w,s.day),s.runNumber)-
           followupMitigation(w,s.day,"natural")-cautiousMitigation(w,s.day));
         const tacticalReceipt=w.lastCombat?.day===s.day?w.lastCombat.tactic:null;
         const prevented=tacticalReceipt?Math.min(pressure,tacticalReceipt.dangerRelief):0;
