@@ -18,8 +18,6 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Print Prettier output for 2AB browser test
-        run: npx prettier e2e/legacy-progression-2ab.pw.js
       - run: npm run lint
       - run: npm run format:check
       - run: npm run text:check
