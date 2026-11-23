@@ -702,6 +702,17 @@ function sceneHtml() {
  const visibleWorlds = canExplore ? view.worlds : view.worlds.filter(w=>w.id==="lingzai");
  const pending = view.pendingCount > 0;
  const statusText = view.paused ? "已暂停" : "自动进行中";
+ const actionMarker = view.encounter ? "昨日战报" :
+   view.recentAction?.label ?? (view.statusCode === "running" ? "尚未行动" : "世界状态");
+ const actionText = view.encounter ?
+   "击退 " + view.encounter.defeated + "/" + view.encounter.encountered +
+     (view.tacticResult ? " · 支援 +" + view.tacticResult.extraDefeated +
+       " · 危机 −" + n(view.tacticResult.dangerRelief) : "") :
+   view.recentAction?.text ??
+     (view.statusCode === "running" ? "分身待命 · 继续模拟推进" : view.status);
+ const canvasSummary = view.encounter ? "上日交战回顾" :
+   view.recentAction ? view.recentAction.label + " · " + view.recentAction.text :
+     (view.statusCode === "running" ? "等待自动行动" : view.status);
  return '<main class="stage-game" data-stage-phase="'+esc(view.scene.phase)+'" aria-label="固定游戏主屏" data-game-stage>'+
   '<header class="stage-top">'+
   '<div class="stage-brand-group"><span class="stage-brand-seal" aria-hidden="true">✦</span>'+
@@ -732,16 +743,16 @@ function sceneHtml() {
   '</nav>'+
   '<section class="stage-window" data-time-phase="morning" aria-label="像素世界现场">'+
   '<canvas data-stage-canvas width="320" height="208" role="img" aria-label="'+
-  esc(view.title+'像素场景：分身正在'+view.action+',危机压力'+view.danger+'%')+'"></canvas>'+
+  esc(view.title+'像素场景：'+canvasSummary+',危机压力'+view.danger+'%')+'"></canvas>'+
   '<div class="stage-daylight" aria-hidden="true"></div>'+
   '<div class="stage-caption"><small>当前世界 · WORLD</small><b>'+esc(view.title)+'</b><span>Lv'+view.level+' · '+esc(view.status)+' · 剩余'+view.deadline+'天</span></div>'+
   '<div class="stage-scene-status" data-scene-phase="'+esc(view.scene.phase)+'"><span class="stage-status-dot"></span>'+esc(view.scene.summary)+'</div>'+
   '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+
-  '<span class="stage-action-marker">'+(view.encounter?'昨日战报':'今日动向')+'</span><span class="stage-action-text">'+
-  esc(inQuickStart()?getOpeningBrief(profile).stageHint:
-   view.encounter?'击退 '+view.encounter.defeated+'/'+view.encounter.encountered+
-    (view.tacticResult?' · 支援多击退 '+view.tacticResult.extraDefeated+
-     ' · 危机缓解 '+n(view.tacticResult.dangerRelief):'')+' · '+view.action:view.action)+'</span></div>'+
+  '<span class="stage-action-marker">'+esc(actionMarker)+'</span><span class="stage-action-text">'+
+  esc(inQuickStart()?getOpeningBrief(profile).stageHint:actionText)+'</span>'+
+  (view.encounter&&!inQuickStart()?
+    '<button type="button" class="stage-action-report" data-action="scene-panel" data-panel="report" aria-label="查看第'+
+      view.encounter.day+'日真实战报">战报 ›</button>':'')+'</div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div class="stage-meter stage-meter-rescue"><div class="stage-meter-head"><span>救援准备</span><b>'+Math.round(view.rescue)+'<small>%</small></b></div>'+

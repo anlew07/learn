@@ -97,6 +97,24 @@ for (const viewport of [
     expect(dimensions.height).toBeLessThanOrEqual(viewport.height + 1);
     expect(dimensions.stage).toBeGreaterThan(150);
 
+    // 2Y: only a genuinely settled battle offers a real one-tap report.
+    await expect(canvas).toHaveAttribute("aria-label", /上日交战回顾/);
+    const report = page.locator('.stage-action-report[data-panel="report"]');
+    await expect(report).toBeVisible();
+    const rect = await report.boundingBox();
+    expect(rect).not.toBeNull();
+    const viewportSize = page.viewportSize();
+    expect(rect.x).toBeGreaterThanOrEqual(0);
+    expect(rect.y).toBeGreaterThanOrEqual(0);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(viewportSize.width + 1);
+    expect(rect.y + rect.height).toBeLessThanOrEqual(viewportSize.height + 1);
+    expect(rect.height).toBeGreaterThanOrEqual(44);
+    await page.touchscreen.tap(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    const battleSheet = page.getByRole("dialog", { name: "战斗记录" });
+    await expect(battleSheet).toBeVisible();
+    await expect(battleSheet).toContainText("最近防线行动");
+    await page.locator('.stage-sheet-head [data-action="scene-close"]').click();
+
     // Existing strategy is the authoritative indirect intervention; not a new mode.
     await page.locator('[data-action="scene-panel"][data-panel="strategy"]').click();
     await expect(page.getByRole("dialog", { name: "世界档案与策略" })).toBeVisible();

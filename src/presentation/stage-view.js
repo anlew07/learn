@@ -97,20 +97,31 @@ export function getStageView(run, selectedWorldId) {
     (world.pendingEvent?.state === "active" || world.build?.pending),
   );
   const number = (value) => Number.isFinite(value) ? value : 0;
+  const day = Math.max(1, number(run.day));
+  // world.action is a completed action, never a real-time current-day event.
+  // A stopped run may not advance the day after its final settlement.
+  const actionDay = selected.lastDecision?.day;
+  const hasRecentAction = Number.isInteger(actionDay) &&
+    (actionDay === day - 1 || (!run.active && actionDay === day));
+  const recentAction = hasRecentAction ? {
+    day: actionDay,
+    label: actionDay === day ? "本日结算" : "上日行动",
+    text: typeof selected.action === "string" ? selected.action : "行动已结算",
+  } : null;
   const percent = clampPercent;
   const status = selected.status === "saved" ? "救援完成" :
     selected.status === "failed" ? "救援未完成" : "正在求生";
   return {
-    scene: getWorldSceneState(selected, number(run.day)),
-    encounter: getRecentEncounter(selected, number(run.day)),
+    scene: getWorldSceneState(selected, day),
+    encounter: getRecentEncounter(selected, day),
     tacticArmed: selected.tacticalAssist?.kind === "focus" && selected.status === "running",
-    tacticResult: selected.lastCombat?.day === number(run.day) - 1 ?
+    tacticResult: selected.lastCombat?.day === day - 1 ?
       selected.lastCombat?.tactic ?? null : null,
     worldId: selected.id,
     title: selected.name || selected.id,
     status,
     statusCode: selected.status,
-    day: Math.max(1, number(run.day)),
+    day,
     saved: worlds.filter((world) => world.status === "saved").length,
     total: worlds.length,
     ap: Math.max(0, number(run.ap) - number(run.apReserved)),
@@ -121,6 +132,7 @@ export function getStageView(run, selectedWorldId) {
     deadline: Math.max(0, number(selected.deadline) - number(run.day)),
     level: number(selected.level),
     action: typeof selected.action === "string" ? selected.action : "观察世界",
+    recentAction,
     strategy: selected.strategy || "growth",
     paused: Boolean(run.paused),
     active: Boolean(run.active),
