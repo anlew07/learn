@@ -82,10 +82,21 @@ describe("2X one-use authoritative tactical intervention", () => {
     const beforeAP = supported.ap;
     expect(arm(supported).ok).toBe(true);
     expect(supported.ap).toBe(beforeAP - 1);
-    expect(Engine.step(ordinary).ok).toBe(true);
-    expect(Engine.step(supported).ok).toBe(true);
+    // Default resource pressure can cause gathering first. Keep the genuine
+    // autonomous policy instead of forcing a fake fight on the first day.
+    let fought = false;
+    for(let day=0;day<30 && ordinary.active && supported.active;day++){
+      expect(Engine.step(ordinary).ok).toBe(true);
+      expect(Engine.step(supported).ok).toBe(true);
+      if(Engine.byId(supported,"lingzai").lastCombat?.tactic){
+        fought = true;
+        break;
+      }
+    }
+    expect(fought).toBe(true);
     const base = Engine.byId(ordinary, "lingzai");
     const focus = Engine.byId(supported, "lingzai");
+    expect(base.lastCombat.day).toBe(focus.lastCombat.day);
     expect(base.lastDecision.actionId).toBe("fight");
     expect(focus.lastDecision.actionId).toBe("fight");
     expect(focus.lastCombat.tactic).toBeTruthy();
@@ -128,9 +139,18 @@ describe("2X one-use authoritative tactical intervention", () => {
       expect(chooseClear(normal).ok).toBe(true);
       expect(chooseClear(focus).ok).toBe(true);
       expect(arm(focus).ok).toBe(true);
-      Engine.step(normal);
-      Engine.step(focus);
+      let encounter = false;
+      for(let day=0;day<30 && normal.active && focus.active;day++){
+        Engine.step(normal);
+        Engine.step(focus);
+        if(Engine.byId(focus,"lingzai").lastCombat?.tactic){
+          encounter = true;
+          break;
+        }
+      }
+      expect(encounter).toBe(true);
       const a=Engine.byId(normal,"lingzai"), b=Engine.byId(focus,"lingzai");
+      expect(a.lastCombat.day).toBe(b.lastCombat.day);
       expect(a.lastDecision.actionId).toBe("fight");
       expect(b.lastDecision.actionId).toBe("fight");
       expect(a.metrics.actions.fight).toBe(1);
