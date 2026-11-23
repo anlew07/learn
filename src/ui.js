@@ -643,13 +643,15 @@ function tacticalPanelHtml(world) {
  return '<section class="stage-tactic-card" data-tactical-support data-state="'+
    (preview.armed?'armed':preview.available?'ready':'unavailable')+'">'+
    '<strong>'+esc(world.name)+' · 集中火力</strong>'+
-   '<p>分身继续自动探索与排险。花 1 点干预点，下次三波清剿每波最多额外击退 4 只，并按新增击退缓解最多 2.5 点危机。</p>'+
-   '<p class="hint">只作用于下一次真正发生的排险；若世界提前结束，投入的干预点不会退回。无额外行动或重复战利品。</p>'+
+   '<div class="stage-tactic-numbers" aria-label="战术消耗与收益上限">'+
+   '<span>AP −'+preview.apCost+'</span><span>每波击退最多 +'+preview.wavePower+
+   '</span><span>危机最多 −'+n(preview.dangerCap)+'</span></div>'+
+   '<p class="hint">下次自动排险时生效，按实际新增击退结算。若世界提前结束，不返还 AP。</p>'+
    (preview.available?
-    '<button class="btn" data-action="tactic" data-world="'+esc(world.id)+'">投入 1 AP · 下次清剿集中火力</button>':
+    '<button class="btn" data-action="tactic" data-world="'+esc(world.id)+'">投入 '+preview.apCost+' AP · 准备集中火力</button>':
     '<p data-tactical-hint role="status">'+esc(preview.reason)+'</p>')+
-   (combat?'<p data-tactical-receipt>上次实际支援：额外击退 '+combat.extraDefeated+
-    ' · 危机缓解 '+n(combat.dangerRelief)+'</p>':'')+
+   (combat?'<p data-tactical-receipt>上次实得：击退 +'+combat.extraDefeated+
+    ' · 危机 −'+n(combat.dangerRelief)+'</p>':'')+
    '</section>';
 }
 function stagePanelHtml(view) {
