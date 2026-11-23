@@ -601,10 +601,13 @@ function worldOverviewHtml(w) {
  const info=Engine.info(run,w);
  const guide=getWorldGuidance(run,w,Engine);
  const risk=w.status!=="running"?worldStatus(w):w.d>=75?"高危 · 尽快关注":w.d>=50?"风险上升":"持续推进";
+ const ageDay=Math.max(1,(w.status==="running"?run.day:(w.endDay||run.day))-(w.bornDay||1)+1);
+ const timeLabel=w.status==="running"?"世界第"+ageDay+"天 · 救援期限剩余"+Math.max(0,w.deadline-run.day+1)+"天":"世界存续"+ageDay+"天";
  return '<article class="world-brief world-'+esc(w.id)+'" data-world-overview="'+esc(w.id)+'">'+
  '<div class="brief-scene" aria-hidden="true"></div>'+
  '<div class="brief-head"><div><span class="eyebrow">第 '+String(w.worldNumber||1).padStart(2,"0")+' 个世界</span>'+
  '<h3>'+esc(w.name)+'</h3></div><span class="pill '+pill(w.status)+'">'+risk+'</span></div>'+
+ '<p class="brief-time hint">'+timeLabel+'</p>'+
  '<div class="brief-progress"><div class="bar-head"><span>救援准备</span><b>'+n(w.p)+'%</b></div>'+
  '<div class="progress-track"><div class="progress-fill p" style="width:'+Math.max(0,Math.min(100,w.p))+'%"></div></div>'+
  '<div class="bar-head"><span>危机压力</span><b>'+n(w.d)+'%</b></div>'+
