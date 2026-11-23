@@ -20,7 +20,7 @@ const scenarioDays = {
 };
 const rows = [];
 
-for (const runNumber of [1, 3]) {
+for (const runNumber of [2, 3]) {
   for (const scenario of Object.keys(scenarioDays)) {
     let allSaved = 0;
     let savedWorlds = 0;
@@ -32,7 +32,13 @@ for (const runNumber of [1, 3]) {
     let totalD = 0;
 
     for (let i = 0; i < seeds; i++) {
-      const state = Engine.fresh(`intervention-compare-r${runNumber}-s${i}`, runNumber, true);
+      const state = Engine.fresh(
+        `intervention-compare-r${runNumber}-s${i}`,
+        runNumber,
+        true,
+        "",
+        runNumber - 1,
+      );
       let tried = false;
       let ticks = 0;
 
@@ -70,7 +76,7 @@ for (const runNumber of [1, 3]) {
         pending++;
         continue;
       }
-      allSaved += Number(state.result.saved === state.worlds.length);
+      allSaved += Number(state.result.saved === state.result.visited);
       savedWorlds += state.result.saved;
       endDays += state.result.endedDay;
     }

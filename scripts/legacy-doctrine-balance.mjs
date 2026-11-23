@@ -6,7 +6,7 @@ const doctrines = ["", "supply", "soul", "command"];
 const summary = [];
 
 function simulate(seed, runNumber, legacyId) {
-  const run = Engine.fresh("legacy-" + seed, runNumber, true, legacyId);
+  const run = Engine.fresh("legacy-" + seed, runNumber, true, legacyId, runNumber - 1);
   for (let day = 0; day < 160 && run.active; day += 1) Engine.step(run);
   if (run.active || !run.result) throw new Error("Legacy balance simulation did not finish");
   for (const world of run.worlds) {
@@ -19,6 +19,7 @@ function simulate(seed, runNumber, legacyId) {
   }
   return {
     saved: run.result.saved,
+    visited: run.result.visited,
     failed: run.result.failed,
     shards: run.result.shards,
     endedDay: run.result.endedDay,
@@ -31,16 +32,18 @@ for (const runNumber of [1, 2, 3]) {
     for (const id of doctrines) results[id || "baseline"].push(simulate(seed, runNumber, id));
   }
   const baseline = results.baseline.reduce((sum, result) => sum + result.saved, 0);
-  const worlds = seeds * (runNumber >= 3 ? 3 : 2);
+  const worlds = results.baseline.reduce((sum, result) => sum + result.visited, 0);
   const row = { runNumber, seeds, worlds, baselineSaved: baseline };
   for (const id of doctrines.slice(1)) {
     const values = results[id];
     const saved = values.reduce((sum, result) => sum + result.saved, 0);
+    const visited = values.reduce((sum, result) => sum + result.visited, 0);
     const shards = values.reduce((sum, result) => sum + result.shards, 0);
     const meanEndDay = values.reduce((sum, result) => sum + result.endedDay, 0) / values.length;
     row[id] = {
       saved,
-      savedRate: Number((saved / worlds).toFixed(4)),
+      visited,
+      savedRate: Number((saved / visited).toFixed(4)),
       savedDelta: saved - baseline,
       meanShards: Number((shards / seeds).toFixed(2)),
       meanEndDay: Number(meanEndDay.toFixed(2)),
