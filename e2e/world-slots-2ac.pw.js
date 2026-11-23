@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test(
-  "2AC starts with one active world and opens the second slot after rescue",
-  async ({ page }) => {
+test("2AC starts with one active world and opens the second slot after rescue", async ({
+  page,
+}) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/?debug=1");
     await page.locator('[data-action="new-run"]').first().click();
