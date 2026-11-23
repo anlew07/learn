@@ -29,9 +29,9 @@ describe("2Y truthful formal-stage action feedback", () => {
     expect(getStageView(stale, "lingzai").recentAction).toBeNull();
   });
 
-  it("preserves a finished world's final-day action but never invents a fight", () => {
+  it("preserves a finished world's final-day action while other worlds continue", () => {
     const run = Engine.fresh("2y-final", 1, true);
-    run.active = false;
+    run.active = true;
     run.day = 9;
     run.worlds[0].status = "failed";
     run.worlds[0].lastDecision = { day: 9, actionId: "explore" };

@@ -103,10 +103,10 @@ export function getStageView(run, selectedWorldId) {
   const number = (value) => Number.isFinite(value) ? value : 0;
   const day = Math.max(1, number(run.day));
   // world.action is a completed action, never a real-time current-day event.
-  // A stopped run may not advance the day after its final settlement.
+  // A terminal world can retain its final-day action while other worlds continue.
   const actionDay = selected.lastDecision?.day;
   const hasRecentAction = Number.isInteger(actionDay) &&
-    (actionDay === day - 1 || (!run.active && actionDay === day));
+    (actionDay === day - 1 || (selected.status !== "running" && actionDay === day));
   const recentAction = hasRecentAction ? {
     day: actionDay,
     label: actionDay === day ? "本日结算" : "上日行动",

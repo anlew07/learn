@@ -6,7 +6,7 @@ test("2AC starts with one active world and opens the second slot after rescue", 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?debug=1");
   await page.locator('[data-action="new-run"]').first().click();
-  await expect(page.locator("[data-rescue-board]")).toBeVisible();
+  await expect(page.locator("[data-world-overview]")).toHaveCount(1);
   await expect
     .poll(async () =>
       page.evaluate(async () => {
@@ -30,7 +30,7 @@ test("2AC starts with one active world and opens the second slot after rescue", 
     await saveRepository.enqueueSave(saved.run, saved.profile);
   });
   await page.reload();
-  await expect(page.locator("[data-rescue-board]")).toBeVisible();
+  await expect(page.locator("[data-world-overview]")).toHaveCount(1);
   await page.locator('[data-action="step"]').click();
 
   await expect
