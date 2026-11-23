@@ -7,6 +7,7 @@ import { buildStrategyProfiles, STRATEGY_IDS } from "./strategy-matrix-core.mjs"
 const params = process.argv.slice(2);
 const seeds = Number(params.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] ?? 60);
 const shouldAssert = params.includes("--assert");
+const trackedWorldTypes = ["lingzai", "zombie", "beast"];
 
 if (!Number.isInteger(seeds) || seeds < 10 || seeds > 1000) {
   throw new RangeError("--seeds must be an integer between 10 and 1000");
@@ -20,34 +21,56 @@ function profileId(worldIds, strategies) {
   return worldIds.map((worldId) => `${worldId}-${strategies[worldId]}`).join("__");
 }
 
-function simulateProfile(runNumber, profile, worldIds, samples) {
+function instanceId(world) {
+  return world.worldNumber ?? world.slotId ?? world.id;
+}
+
+function simulateProfile(runNumber, profile, samples) {
   let fullySaved = 0;
   let totalSaved = 0;
   let totalEndDay = 0;
   let incomplete = 0;
   let unknownFailures = 0;
-  const savedByWorld = Object.fromEntries(worldIds.map((id) => [id, 0]));
-  const actionsByWorld = Object.fromEntries(worldIds.map((id) => [id, {}]));
-  const outcomesByWorld = Object.fromEntries(worldIds.map((id) => [id, { saved: 0, failed: {} }]));
-  const endDayTotalsByWorld = Object.fromEntries(worldIds.map((id) => [id, 0]));
-  const endDayCountsByWorld = Object.fromEntries(worldIds.map((id) => [id, 0]));
+  const totals = Object.fromEntries(
+    trackedWorldTypes.map((id) => [
+      id,
+      { visits: 0, saved: 0, actions: {}, failed: {}, endDay: 0, endDayCount: 0 },
+    ]),
+  );
   const actionTotals = {};
 
   for (let index = 0; index < samples; index++) {
-    const state = Engine.fresh(`strategy-matrix-r${runNumber}-s${index}`, runNumber, false);
-    state.worlds.forEach((world) => {
-      world.strategy = profile.strategies[world.id];
-    });
+    const state = Engine.fresh(
+      `strategy-matrix-r${runNumber}-s${index}`,
+      runNumber,
+      false,
+      "",
+      runNumber - 1,
+    );
+    const applyProfile = () => {
+      for (const world of state.worlds) {
+        const strategy = profile.strategies[world.id];
+        if (world.status === "running" && strategy) world.strategy = strategy;
+      }
+    };
+    applyProfile();
 
-    const terminalByWorld = {};
+    const terminalByInstance = new Map();
+    const finishedWorlds = new Map();
     let ticks = 0;
     while (state.active && ticks < 200) {
       const terminalDay = state.day;
       Engine.step(state);
       ticks++;
+      applyProfile();
       for (const world of state.worlds) {
-        if (world.status !== "running" && !terminalByWorld[world.id]) {
-          terminalByWorld[world.id] = readWorldTerminal(world, state.logs, terminalDay);
+        const key = instanceId(world);
+        if (world.status !== "running" && !finishedWorlds.has(key)) {
+          finishedWorlds.set(key, world);
+          terminalByInstance.set(
+            key,
+            readWorldTerminal(world, state.logs, terminalDay),
+          );
         }
       }
     }
@@ -57,34 +80,29 @@ function simulateProfile(runNumber, profile, worldIds, samples) {
       continue;
     }
 
-    const savedCount = state.worlds.filter((world) => world.status === "saved").length;
-    fullySaved += Number(savedCount === worldIds.length);
-    totalSaved += savedCount;
+    fullySaved += Number(state.result.saved === state.result.visited);
+    totalSaved += state.result.saved;
     totalEndDay += state.result.endedDay;
 
-    for (const world of state.worlds) {
-      const outcomes = outcomesByWorld[world.id];
-      const terminal =
-        terminalByWorld[world.id] ?? readWorldTerminal(world, state.logs, state.result.endedDay);
-
+    for (const [key, world] of finishedWorlds) {
+      const row = totals[world.id];
+      const terminal = terminalByInstance.get(key);
+      if (!row) continue;
+      row.visits++;
       if (world.status === "saved") {
-        savedByWorld[world.id]++;
-        outcomes.saved++;
+        row.saved++;
       } else {
         const reason = terminal?.reason ?? "未知原因";
-        outcomes.failed[reason] = (outcomes.failed[reason] || 0) + 1;
+        row.failed[reason] = (row.failed[reason] || 0) + 1;
         if (reason === "未知原因") unknownFailures++;
       }
-
       if (terminal) {
-        endDayTotalsByWorld[world.id] += terminal.day;
-        endDayCountsByWorld[world.id]++;
+        row.endDay += terminal.day;
+        row.endDayCount++;
       }
-
       for (const [action, count] of Object.entries(world.metrics?.actions || {})) {
         actionTotals[action] = (actionTotals[action] || 0) + count;
-        const worldActions = actionsByWorld[world.id];
-        worldActions[action] = (worldActions[action] || 0) + count;
+        row.actions[action] = (row.actions[action] || 0) + count;
       }
     }
   }
@@ -100,39 +118,50 @@ function simulateProfile(runNumber, profile, worldIds, samples) {
     meanSavedWorlds: completed ? round(totalSaved / completed, 2) : null,
     meanEndDay: completed ? round(totalEndDay / completed, 2) : null,
     worldSaveRates: Object.fromEntries(
-      worldIds.map((id) => [id, completed ? round(savedByWorld[id] / completed) : null]),
+      trackedWorldTypes.map((id) => [
+        id,
+        totals[id].visits ? round(totals[id].saved / totals[id].visits) : null,
+      ]),
+    ),
+    worldVisits: Object.fromEntries(
+      trackedWorldTypes.map((id) => [id, totals[id].visits]),
     ),
     worldOutcomeReasons: Object.fromEntries(
-      worldIds.map((id) => {
-        const outcomes = outcomesByWorld[id];
-        return [
-          id,
-          {
-            savedRate: completed ? round(outcomes.saved / completed) : null,
-            failureReasons: Object.fromEntries(
-              Object.entries(outcomes.failed)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([reason, count]) => [reason, round(count / completed)]),
-            ),
-          },
-        ];
-      }),
+      trackedWorldTypes.map((id) => [
+        id,
+        {
+          savedRate: totals[id].visits
+            ? round(totals[id].saved / totals[id].visits)
+            : null,
+          failureReasons: Object.fromEntries(
+            Object.entries(totals[id].failed)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([reason, count]) => [
+                reason,
+                round(count / totals[id].visits),
+              ]),
+          ),
+        },
+      ]),
     ),
     meanWorldEndDay: Object.fromEntries(
-      worldIds.map((id) => [
+      trackedWorldTypes.map((id) => [
         id,
-        endDayCountsByWorld[id]
-          ? round(endDayTotalsByWorld[id] / endDayCountsByWorld[id], 2)
+        totals[id].endDayCount
+          ? round(totals[id].endDay / totals[id].endDayCount, 2)
           : null,
       ]),
     ),
     meanActionsByWorld: Object.fromEntries(
-      worldIds.map((id) => [
+      trackedWorldTypes.map((id) => [
         id,
         Object.fromEntries(
-          Object.entries(actionsByWorld[id])
+          Object.entries(totals[id].actions)
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([action, count]) => [action, round(count / completed, 2)]),
+            .map(([action, count]) => [
+              action,
+              totals[id].visits ? round(count / totals[id].visits, 2) : 0,
+            ]),
         ),
       ]),
     ),
@@ -144,13 +173,17 @@ function simulateProfile(runNumber, profile, worldIds, samples) {
   };
 }
 
-function compareToDefault(row, baseline, worldIds) {
+function compareToDefault(row, baseline) {
   return {
     allSavedRate: round(row.allSavedRate - baseline.allSavedRate),
     meanSavedWorlds: round(row.meanSavedWorlds - baseline.meanSavedWorlds, 2),
     meanEndDay: round(row.meanEndDay - baseline.meanEndDay, 2),
     worldSaveRates: Object.fromEntries(
-      worldIds.map((id) => [id, round(row.worldSaveRates[id] - baseline.worldSaveRates[id])]),
+      trackedWorldTypes.map((id) => {
+        const current = row.worldSaveRates[id];
+        const previous = baseline.worldSaveRates[id];
+        return [id, current === null || previous === null ? null : round(current - previous)];
+      }),
     ),
   };
 }
@@ -159,12 +192,20 @@ function runMatrix(samples) {
   const runs = [];
 
   for (const runNumber of [1, 2, 3]) {
-    const template = Engine.fresh(`strategy-matrix-default-r${runNumber}`, runNumber, false);
-    const worldIds = template.worlds.map((world) => world.id);
-    const defaults = Object.fromEntries(template.worlds.map((world) => [world.id, world.strategy]));
-    const defaultProfileId = profileId(worldIds, defaults);
-    const profiles = buildStrategyProfiles(worldIds);
-    const rows = profiles.map((profile) => simulateProfile(runNumber, profile, worldIds, samples));
+    const template = Engine.fresh(
+      `strategy-matrix-default-r${runNumber}`,
+      runNumber,
+      false,
+      "",
+      runNumber - 1,
+    );
+    const initialWorldIds = template.worlds.map((world) => world.id);
+    const defaults = Object.fromEntries(
+      template.worlds.map((world) => [world.id, world.strategy]),
+    );
+    const defaultProfileId = profileId(initialWorldIds, defaults);
+    const profiles = buildStrategyProfiles(initialWorldIds);
+    const rows = profiles.map((profile) => simulateProfile(runNumber, profile, samples));
     const baseline = rows.find((row) => row.profileId === defaultProfileId);
 
     if (!baseline) {
@@ -179,7 +220,7 @@ function runMatrix(samples) {
       meanSavedWorlds: row.meanSavedWorlds,
       meanEndDay: row.meanEndDay,
       worldSaveRates: row.worldSaveRates,
-      deltaFromDefault: compareToDefault(row, baseline, worldIds),
+      deltaFromDefault: compareToDefault(row, baseline),
     }));
     const leadingProfiles = [...rows]
       .sort(
@@ -200,10 +241,11 @@ function runMatrix(samples) {
 
     runs.push({
       runNumber,
-      worldIds,
+      initialWorldIds,
+      trackedWorldTypes,
       samplesPerProfile: samples,
       defaultProfileId,
-      expectedProfileCount: STRATEGY_IDS.length ** worldIds.length,
+      expectedProfileCount: STRATEGY_IDS.length ** initialWorldIds.length,
       profiles: rows,
       comparisons,
       leadingProfiles,
@@ -215,9 +257,9 @@ function runMatrix(samples) {
     samplesPerProfile: samples,
     strategyIds: STRATEGY_IDS,
     strategyLabels: LABELS,
-    simulationMode: "战潮关闭；不执行玩家主动干预；每个世界固定使用指定长期策略。",
+    simulationMode: "战潮关闭；不执行玩家主动干预；新穿越的世界沿用已配置的同类型策略，否则使用默认策略。",
     interpretation:
-      "各策略组合使用相同的初始种子编号；策略导致行动分歧后，后续随机流可能不同。结果用于描述策略组合，不构成玩家行为或严格因果保证。",
+      "各策略组合使用相同的初始种子编号；策略导致行动分歧后，后续随机流可能不同。结果按世界实例访问次数归一，用于描述策略组合，不构成玩家行为或严格因果保证。",
     runs,
   };
 }
