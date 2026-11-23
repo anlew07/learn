@@ -527,7 +527,10 @@ function homeHtml(){
  legacyProgressionHtml()+profileArchiveHtml()+'<p id="toast" class="notice" role="status" hidden></p><p class="hint footnote">开发中版本 · 进度仅保存在当前浏览器</p>';
 }
 function inQuickStart(){
- return Boolean(run?.onboardingFocus && run.active && run.day<9);
+ return Boolean(
+  run?.onboardingFocus && run.active && run.day<9 &&
+  (run.worldsSavedThisRun||0)===0 && activeWorlds().length===1
+ );
 }
 /**
  * Interrupt only when a decision becomes newly actionable. A dismissed but
