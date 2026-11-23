@@ -47,5 +47,4 @@ test("2AC starts with one active world and opens the second slot after rescue", 
       )
       .toEqual({ savedWorlds: 1, slots: 2, active: 2 });
     await expect(page.locator("[data-world-overview]")).toHaveCount(2);
-  },
-);
+});
