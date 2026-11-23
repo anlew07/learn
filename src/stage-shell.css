@@ -278,6 +278,20 @@
 .stage-tactic-card strong { font-size: 15px; }
 .stage-tactic-card p { margin: 0; font-size: 12px; line-height: 1.55; }
 .stage-tactic-card .hint { color: #dacb9f; }
+.stage-tactic-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.stage-tactic-numbers span {
+  padding: 4px 6px;
+  border: 1px solid #8a946c;
+  background: #344f40;
+  color: #f7e9bb;
+}
 .stage-tactic-card button { min-height: 48px; width: 100%; }
 .stage-tactic-card [data-tactical-receipt],
 .stage-tactic-card [data-tactical-hint] {
