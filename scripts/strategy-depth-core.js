@@ -2,6 +2,7 @@ import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
 import {
+  OPENING_WORLD_MAX_DAYS,
   collectOpeningWorlds,
   getOpeningWorlds,
   isOpeningWorldCohortComplete,
@@ -60,7 +61,7 @@ function simulate(runNumber, strategy, waves, samples) {
     const terminal = new Map();
     const cohort = collectOpeningWorlds(state);
     let steps = 0;
-    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && steps++ < 200) {
+    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && steps++ < OPENING_WORLD_MAX_DAYS) {
       const day = state.day;
       Engine.step(state);
       // Apply the same policy to every new world while measuring only the
