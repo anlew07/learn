@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function snapshot(page) {
   return page.evaluate(async () => {
@@ -8,10 +9,8 @@ async function snapshot(page) {
 }
 
 async function newRun(page, mode = "full") {
-  await page.goto("/");
-  await page.locator(`[data-action="new-run"][data-onboarding="${mode}"]`).click();
+  await startProgressedRun(page, { focus: mode === "focus" });
   await expect(page.locator("[data-game-stage]")).toBeVisible();
-  await expect.poll(async () => (await snapshot(page)).run?.day).toBe(1);
 }
 
 async function queueClue(page, worldIds) {
