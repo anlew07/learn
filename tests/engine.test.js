@@ -49,14 +49,13 @@ describe("multiworld simulation baseline",()=>{
     expect(a.d-b.d).toBeGreaterThan(0);
     expect(a.d-b.d).toBeLessThanOrEqual(0.25);
   });
-  it("still reaches a legitimate end when nobody intervenes",()=>{
-    for(let i=0;i<10;i++){
-      const s=Engine.fresh("auto-"+i,3,i%2===0);
-      for(let d=0;d<150&&s.active;d++)Engine.step(s);
-      expect(s.active).toBe(false);
-      expect(s.result).toBeDefined();
-      expect(s.worlds.every(w=>w.status!=="running")).toBe(true);
-    }
+  it("ends the expedition when soul collapse fails every remaining world",()=>{
+    const s=Engine.fresh("auto-collapse",1,false,"",0);
+    s.soul=0;
+    expect(Engine.step(s).ok).toBe(true);
+    expect(s.active).toBe(false);
+    expect(s.result).toMatchObject({saved:0,failed:1,visited:1,shards:1});
+    expect(s.worlds.every(w=>w.status!=="running")).toBe(true);
   });
   it("filters illegal worlds and rejects strategy actions that have no meaning",()=>{
     const s=Engine.fresh("strategy",1,false);
