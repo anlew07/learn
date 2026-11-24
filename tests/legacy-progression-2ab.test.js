@@ -14,6 +14,7 @@ describe("2AB permanent legacy progression", () => {
     const migrated = normalizeLegacyProfile(old);
     expect(migrated).toMatchObject({
       runCount: 2,
+      worldsSaved: 0,
       shards: 13,
       legacyUnlocks: [],
       activeLegacyId: "",

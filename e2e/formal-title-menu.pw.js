@@ -31,10 +31,8 @@ for (const viewport of viewports) {
     await expect(page.locator("[data-formal-title]")).toBeVisible();
     await expect(page.getByRole("heading", { name: "同时穿越" })).toBeVisible();
     const focus = page.locator('[data-action="new-run"][data-onboarding="focus"]');
-    const full = page.locator('[data-action="new-run"][data-onboarding="full"]');
     const help = page.locator('[data-formal-title] [data-action="open-help"]');
     await expect(focus).toBeVisible();
-    await expect(full).toBeVisible();
     await expect(help).toBeVisible();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,

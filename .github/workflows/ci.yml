@@ -10,7 +10,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,22 +41,32 @@ jobs:
         run: npm run legacy:balance:check
       - name: Validate opt-in sortie core loop with paired seeds
         run: npm run sortie:matrix:check
+
+  mobile-e2e:
+    name: Mobile E2E (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
       - name: Install Chromium for browser acceptance tests
         run: npx playwright install --with-deps chromium
       - name: Verify real mobile-viewport Chromium flows
-        run: npm run test:e2e
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: camp-ui-mobile-screenshots
-          path: test-results/camp-ui/*.png
-          if-no-files-found: ignore
-          retention-days: 14
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-failure-report
+          name: mobile-e2e-artifacts-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
+          if-no-files-found: ignore
           retention-days: 14

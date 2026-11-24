@@ -3,6 +3,13 @@ import { resolve } from "node:path";
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
+import {
+  OPENING_WORLD_MAX_DAYS,
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 const strategies = ["default", "growth", "clear", "rescue"];
 const worldIds = ["lingzai", "zombie", "beast"];
@@ -15,8 +22,10 @@ function runScenario(seeds, strategy, waves) {
   const totals = {};
   for (const id of worldIds) {
     totals[id] = {
+      visits: 0,
       saved: 0,
       endDay: 0,
+      endDayCount: 0,
       resource: 0,
       p: 0,
       d: 0,
@@ -30,31 +39,53 @@ function runScenario(seeds, strategy, waves) {
   let totalRunDay = 0;
 
   for (let index = 0; index < seeds; index++) {
-    const state = Engine.fresh("balance-v2-r3-" + index, 3, waves);
-    const ends = {};
-    if (strategy !== "default") {
-      for (const world of state.worlds) world.strategy = strategy;
-    }
+    const state = Engine.fresh("balance-v2-r3-" + index, 3, waves, "", 2);
+    const ends = new Map();
+    const cohort = collectOpeningWorlds(state);
+    const applyStrategy = () => {
+      if (strategy === "default") return;
+      for (const world of state.worlds) {
+        if (world.status === "running") world.strategy = strategy;
+      }
+    };
+    applyStrategy();
 
     let ticks = 0;
-    while (state.active && ticks++ < 200) {
+    while (
+      state.active &&
+      !isOpeningWorldCohortComplete(state, cohort) &&
+      ticks++ < OPENING_WORLD_MAX_DAYS
+    ) {
       const currentDay = state.day;
       Engine.step(state);
-      for (const world of state.worlds) {
-        if (world.status !== "running" && !ends[world.id]) {
-          ends[world.id] = readWorldTerminal(world, state.logs, currentDay);
+      applyStrategy();
+      collectOpeningWorlds(state, cohort);
+      for (const world of getOpeningWorlds(state, cohort)) {
+        const key = world.worldNumber;
+        if (world.status !== "running" && !ends.has(key)) {
+          ends.set(key, readWorldTerminal(world, state.logs, currentDay));
         }
       }
     }
-    if (state.active || !state.result) continue;
+    const cohortWorlds = getOpeningWorlds(state, cohort);
+    if (!isOpeningWorldCohortComplete(state, cohort)) continue;
 
     completed++;
-    allSaved += Number(state.result.saved === state.worlds.length);
-    totalRunDay += state.result.endedDay;
-    for (const world of state.worlds) {
+    allSaved += Number(
+      cohortWorlds.length > 0 && cohortWorlds.every((world) => world.status === "saved"),
+    );
+    totalRunDay += openingWorldEndDay(cohortWorlds);
+    for (const world of cohortWorlds) {
+      const key = world.worldNumber;
       const row = totals[world.id];
+      const terminal = ends.get(key);
+      if (!row) continue;
+      row.visits++;
       row.saved += Number(world.status === "saved");
-      row.endDay += ends[world.id]?.day ?? state.result.endedDay;
+      if (terminal) {
+        row.endDay += terminal.day;
+        row.endDayCount++;
+      }
       row.resource += world.resource;
       row.p += world.p;
       row.d += world.d;
@@ -62,7 +93,7 @@ function runScenario(seeds, strategy, waves) {
         row.actions[action] = (row.actions[action] || 0) + count;
       }
       if (world.status !== "saved") {
-        const reason = ends[world.id]?.reason ?? "未知原因";
+        const reason = terminal?.reason ?? "未知原因";
         row.failureReasons[reason] = (row.failureReasons[reason] || 0) + 1;
       }
     }
@@ -74,17 +105,18 @@ function runScenario(seeds, strategy, waves) {
     const actions = {};
     const failureReasons = {};
     for (const [action, count] of Object.entries(row.actions)) {
-      actions[action] = completed ? average(count, completed) : null;
+      actions[action] = row.visits ? average(count, row.visits) : null;
     }
     for (const [reason, count] of Object.entries(row.failureReasons)) {
-      failureReasons[reason] = completed ? average(count, completed) : null;
+      failureReasons[reason] = row.visits ? average(count, row.visits) : null;
     }
     worlds[id] = {
-      savedRate: completed ? average(row.saved, completed) : null,
-      meanEndDay: completed ? average(row.endDay, completed) : null,
-      meanRemainingResources: completed ? average(row.resource, completed) : null,
-      meanP: completed ? average(row.p, completed) : null,
-      meanD: completed ? average(row.d, completed) : null,
+      visits: row.visits,
+      savedRate: row.visits ? average(row.saved, row.visits) : null,
+      meanEndDay: row.endDayCount ? average(row.endDay, row.endDayCount) : null,
+      meanRemainingResources: row.visits ? average(row.resource, row.visits) : null,
+      meanP: row.visits ? average(row.p, row.visits) : null,
+      meanD: row.visits ? average(row.d, row.visits) : null,
       meanActions: actions,
       failureReasons,
     };
@@ -135,9 +167,14 @@ export function compareBeastSuppression(seeds = 100, { waves = false } = {}) {
       beastSaveRateCandidate: candidate.worlds.beast.savedRate,
       deltaBeastSaveRate: Number(difference.toFixed(3)),
       deltaAllSavedRate: Number((candidate.allSavedRate - baseline.allSavedRate).toFixed(3)),
-      otherWorldRatesUnchanged: worldIds
-        .filter((id) => id !== "beast")
-        .every((id) => baseline.worlds[id].savedRate === candidate.worlds[id].savedRate),
+      otherWorldRateDeltas: Object.fromEntries(
+        worldIds
+          .filter((id) => id !== "beast")
+          .map((id) => [
+            id,
+            Number((candidate.worlds[id].savedRate - baseline.worlds[id].savedRate).toFixed(3)),
+          ]),
+      ),
     });
   }
   return {

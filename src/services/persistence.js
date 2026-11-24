@@ -99,7 +99,14 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       !Number.isFinite(run.ap) ||
       !Number.isFinite(run.soul) ||
       !Array.isArray(run.worlds) ||
-      run.worlds.length < 2 ||
+      run.worlds.length < 1 ||
+      (run.worldsSavedCount !== undefined && (!Number.isInteger(run.worldsSavedCount) || run.worldsSavedCount < 0)) ||
+      (run.worldSlots !== undefined && (!Number.isInteger(run.worldSlots) || run.worldSlots < 1 || run.worldSlots > 3)) ||
+      (run.worldsSavedThisRun !== undefined && (!Number.isInteger(run.worldsSavedThisRun) || run.worldsSavedThisRun < 0)) ||
+      (run.worldsFailedThisRun !== undefined && (!Number.isInteger(run.worldsFailedThisRun) || run.worldsFailedThisRun < 0)) ||
+      (run.worldsVisitedThisRun !== undefined && (!Number.isInteger(run.worldsVisitedThisRun) || run.worldsVisitedThisRun < 1)) ||
+      (run.worldTypesSeen !== undefined && (!Array.isArray(run.worldTypesSeen) || run.worldTypesSeen.some((id) => !["lingzai", "zombie", "beast"].includes(id)))) ||
+      (run.worldDiscoveryArchive !== undefined && (!Array.isArray(run.worldDiscoveryArchive) || run.worldDiscoveryArchive.some((id) => typeof id !== "string"))) ||
       !Array.isArray(run.logs) ||
       !Array.isArray(run.echoes) ||
       typeof run.active !== "boolean" ||
@@ -109,6 +116,10 @@ export function assertRestorableSnapshot({ run, profile }, version) {
           !world ||
           !["lingzai", "zombie", "beast"].includes(world.id) ||
           !["running", "saved", "failed"].includes(world.status) ||
+          (world.slotId !== undefined && (!Number.isInteger(world.slotId) || world.slotId < 1)) ||
+          (world.worldNumber !== undefined && (!Number.isInteger(world.worldNumber) || world.worldNumber < 1)) ||
+          (world.transitionSettled !== undefined && typeof world.transitionSettled !== "boolean") ||
+          (world.bornDay !== undefined && (!Number.isInteger(world.bornDay) || world.bornDay < 1)) ||
           !Number.isInteger(world.level) ||
           world.level < 1 ||
           !Number.isFinite(world.resource) ||
@@ -137,6 +148,7 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       profile.runCount < 0 ||
       !Number.isFinite(profile.shards) ||
       profile.shards < 0 ||
+      (profile.worldsSaved !== undefined && (!Number.isInteger(profile.worldsSaved) || profile.worldsSaved < 0)) ||
       !hasValidLegacyProfile(profile))
   ) {
     throw new Error("ProfileState is malformed");

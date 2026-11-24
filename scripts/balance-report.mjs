@@ -1,11 +1,19 @@
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
+import {
+  OPENING_WORLD_MAX_DAYS,
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 const argumentsList = process.argv.slice(2);
 const sampleOption = argumentsList.find((arg) => arg.startsWith("--seeds="));
 const samples = Number(sampleOption?.split("=")[1] ?? 100);
 const shouldAssert = argumentsList.includes("--assert");
+const worldIds = ["lingzai", "zombie", "beast"];
 
 if (!Number.isInteger(samples) || samples < 10 || samples > 10000) {
   throw new RangeError("--seeds must be an integer between 10 and 10000");
@@ -14,20 +22,27 @@ if (!Number.isInteger(samples) || samples < 10 || samples > 10000) {
 const strategies = ["default", "growth", "clear", "rescue"];
 const reports = [];
 
+function emptyWorld() {
+  return {
+    visits: 0,
+    saved: 0,
+    actions: {},
+    failureReasons: {},
+    endDay: 0,
+    endDayCount: 0,
+  };
+}
+
 for (const runNumber of [1, 2, 3]) {
   for (const strategy of strategies) {
     for (const waves of [false, true]) {
       let fullySaved = 0;
       let totalSaved = 0;
+      let totalVisited = 0;
       let totalDays = 0;
       let incomplete = 0;
-      const savedByWorld = {};
+      const worlds = Object.fromEntries(worldIds.map((id) => [id, emptyWorld()]));
       const actionTotals = {};
-      const actionsByWorld = {};
-      const outcomeReasonsByWorld = {};
-      const endDayTotalsByWorld = {};
-      const endDayCountsByWorld = {};
-      let worldCount = 0;
       let waveBattles = 0;
       let evolutionCount = 0;
       let autoBuilds = 0;
@@ -40,56 +55,73 @@ for (const runNumber of [1, 2, 3]) {
       let waveLootModifier = 0;
 
       for (let index = 0; index < samples; index++) {
-        // Keep the same seed across strategies and wave settings for useful comparisons.
-        const state = Engine.fresh(`balance-v2-r${runNumber}-${index}`, runNumber, waves);
-        const terminalByWorld = {};
-        if (strategy !== "default") {
-          state.worlds.forEach((world) => {
-            world.strategy = strategy;
-          });
-        }
+        // Initial parallel slots follow permanent rescue progression: 1 → 2 → 3.
+        const savedBeforeRun = Math.min(2, Math.max(0, runNumber - 1));
+        const state = Engine.fresh(
+          `balance-v2-r${runNumber}-${index}`,
+          runNumber,
+          waves,
+          "",
+          savedBeforeRun,
+        );
+        const cohort = collectOpeningWorlds(state);
+        const terminalByInstance = new Map();
+        const applyStrategy = () => {
+          if (strategy === "default") return;
+          for (const world of state.worlds) {
+            if (world.status === "running") world.strategy = strategy;
+          }
+        };
+        applyStrategy();
 
         let days = 0;
-        while (state.active && days++ < 200) {
+        while (
+          state.active &&
+          !isOpeningWorldCohortComplete(state, cohort) &&
+          days++ < OPENING_WORLD_MAX_DAYS
+        ) {
           const currentDay = state.day;
           Engine.step(state);
-          for (const world of state.worlds) {
-            if (world.status !== "running" && !terminalByWorld[world.id]) {
-              terminalByWorld[world.id] = readWorldTerminal(world, state.logs, currentDay);
+          applyStrategy();
+          collectOpeningWorlds(state, cohort);
+          for (const world of getOpeningWorlds(state, cohort)) {
+            const key = world.worldNumber;
+            if (world.status !== "running" && !terminalByInstance.has(key)) {
+              terminalByInstance.set(key, readWorldTerminal(world, state.logs, currentDay));
             }
           }
         }
 
-        if (state.active || !state.result) {
+        const cohortWorlds = getOpeningWorlds(state, cohort);
+        if (!isOpeningWorldCohortComplete(state, cohort)) {
           incomplete++;
           continue;
         }
 
-        fullySaved += Number(state.result.saved === state.worlds.length);
-        totalSaved += state.result.saved;
-        totalDays += state.result.endedDay;
-        state.worlds.forEach((world) => {
-          savedByWorld[world.id] = (savedByWorld[world.id] || 0) + Number(world.status === "saved");
-          worldCount++;
+        const cohortSaved = cohortWorlds.filter((world) => world.status === "saved").length;
+        fullySaved += Number(cohortWorlds.length > 0 && cohortSaved === cohortWorlds.length);
+        totalSaved += cohortSaved;
+        totalVisited += cohortWorlds.length;
+        totalDays += openingWorldEndDay(cohortWorlds);
+
+        for (const world of cohortWorlds) {
+          const key = world.worldNumber;
+          const row = worlds[world.id];
+          const terminal = terminalByInstance.get(key);
           const metrics = world.metrics || {};
-          const worldActions = actionsByWorld[world.id] || (actionsByWorld[world.id] = {});
+          row.visits++;
+          row.saved += Number(world.status === "saved");
+          if (terminal) {
+            row.endDay += terminal.day;
+            row.endDayCount++;
+          }
           for (const [action, count] of Object.entries(metrics.actions || {})) {
             actionTotals[action] = (actionTotals[action] || 0) + count;
-            worldActions[action] = (worldActions[action] || 0) + count;
+            row.actions[action] = (row.actions[action] || 0) + count;
           }
-          const outcomes =
-            outcomeReasonsByWorld[world.id] ||
-            (outcomeReasonsByWorld[world.id] = { saved: 0, failed: {} });
-          const terminal = terminalByWorld[world.id];
-          if (world.status === "saved") {
-            outcomes.saved++;
-          } else {
+          if (world.status !== "saved") {
             const reason = terminal?.reason ?? "未知原因";
-            outcomes.failed[reason] = (outcomes.failed[reason] || 0) + 1;
-          }
-          if (terminal) {
-            endDayTotalsByWorld[world.id] = (endDayTotalsByWorld[world.id] || 0) + terminal.day;
-            endDayCountsByWorld[world.id] = (endDayCountsByWorld[world.id] || 0) + 1;
+            row.failureReasons[reason] = (row.failureReasons[reason] || 0) + 1;
           }
           waveBattles += metrics.waveCombats || 0;
           evolutionCount += metrics.evolutions || 0;
@@ -101,10 +133,11 @@ for (const runNumber of [1, 2, 3]) {
           waveClearBonus += metrics.waveClearBonus || 0;
           waveLossMitigation += metrics.waveLossMitigation || 0;
           waveLootModifier += metrics.waveLootModifier || 0;
-        });
+        }
       }
 
       const completed = samples - incomplete;
+      const worldCount = Object.values(worlds).reduce((sum, row) => sum + row.visits, 0);
       reports.push({
         runNumber,
         strategy,
@@ -113,41 +146,47 @@ for (const runNumber of [1, 2, 3]) {
         incomplete,
         allSavedRate: completed ? Number((fullySaved / completed).toFixed(3)) : null,
         meanSaved: completed ? Number((totalSaved / completed).toFixed(2)) : null,
+        meanVisitedWorlds: completed ? Number((totalVisited / completed).toFixed(2)) : null,
         meanEndDay: completed ? Number((totalDays / completed).toFixed(1)) : null,
         worldSaveRates: Object.fromEntries(
-          Object.entries(savedByWorld).map(([id, count]) => [
+          worldIds.map((id) => [
             id,
-            completed ? Number((count / completed).toFixed(3)) : null,
+            worlds[id].visits ? Number((worlds[id].saved / worlds[id].visits).toFixed(3)) : null,
           ]),
         ),
+        worldVisits: Object.fromEntries(worldIds.map((id) => [id, worlds[id].visits])),
         worldOutcomeReasons: Object.fromEntries(
-          Object.entries(outcomeReasonsByWorld).map(([id, outcomes]) => [
+          worldIds.map((id) => [
             id,
             {
-              savedRate: completed ? Number((outcomes.saved / completed).toFixed(3)) : null,
+              savedRate: worlds[id].visits
+                ? Number((worlds[id].saved / worlds[id].visits).toFixed(3))
+                : null,
               failureReasons: Object.fromEntries(
-                Object.entries(outcomes.failed).map(([reason, count]) => [
+                Object.entries(worlds[id].failureReasons).map(([reason, count]) => [
                   reason,
-                  completed ? Number((count / completed).toFixed(3)) : null,
+                  worlds[id].visits ? Number((count / worlds[id].visits).toFixed(3)) : null,
                 ]),
               ),
             },
           ]),
         ),
         meanWorldEndDay: Object.fromEntries(
-          Object.entries(endDayTotalsByWorld).map(([id, total]) => [
+          worldIds.map((id) => [
             id,
-            Number((total / endDayCountsByWorld[id]).toFixed(1)),
+            worlds[id].endDayCount
+              ? Number((worlds[id].endDay / worlds[id].endDayCount).toFixed(1))
+              : null,
           ]),
         ),
         engagement: {
           meanActionsByWorld: Object.fromEntries(
-            Object.entries(actionsByWorld).map(([id, actions]) => [
+            worldIds.map((id) => [
               id,
               Object.fromEntries(
-                Object.entries(actions).map(([action, count]) => [
+                Object.entries(worlds[id].actions).map(([action, count]) => [
                   action,
-                  completed ? Number((count / completed).toFixed(2)) : 0,
+                  worlds[id].visits ? Number((count / worlds[id].visits).toFixed(2)) : 0,
                 ]),
               ),
             ]),
@@ -195,8 +234,9 @@ if (shouldAssert) {
   const firstRunDefaultWithWaves = reports.find(
     (row) => row.runNumber === 1 && row.strategy === "default" && row.waves,
   );
-  const rates = firstRunStrategies.map((row) => row.allSavedRate);
-  const spread = Math.max(...rates) - Math.min(...rates);
+  const rescueSpread =
+    Math.max(...firstRunStrategies.map((row) => row.meanSaved)) -
+    Math.min(...firstRunStrategies.map((row) => row.meanSaved));
 
   const invalidWaveAccounting = reports.some((row) => {
     const e = row.engagement;
@@ -225,13 +265,13 @@ if (shouldAssert) {
   if (
     reports.some((row) => row.incomplete > 0) ||
     firstRunDefault.allSavedRate >= 0.98 ||
-    spread < 0.1 ||
+    rescueSpread < 0.1 ||
     firstRunDefaultWithWaves.engagement.meanWaveBattles < 0.1 ||
     firstRunDefaultWithWaves.engagement.meanWaveBattles > 5 ||
     invalidWaveAccounting
   ) {
     process.stderr.write(
-      "Balance check failed: stalled run, strategy gap, wave engagement or rewards.\n",
+      "Balance check failed: stalled run, rescue spread, wave engagement or rewards.\n",
     );
     process.exitCode = 1;
   }

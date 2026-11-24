@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function snapshot(page) {
   return page.evaluate(async () => {
@@ -8,8 +9,7 @@ async function snapshot(page) {
 }
 
 test("new players see a fixed pixel viewport", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startFirstRun(page);
   await expect(page.locator("[data-game-stage]")).toBeVisible();
   await expect(page.locator("[data-stage-canvas]")).toBeVisible();
   await expect(page.locator(".stage-bars")).toContainText("救援准备");
@@ -44,8 +44,7 @@ test("new players see a fixed pixel viewport", async ({ page }) => {
 });
 
 test("world selection and drawers never advance the game", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startProgressedRun(page, { runCount: 1, worldsSaved: 1 });
   const before = (await snapshot(page)).run;
   await page.locator('[data-action="scene-world"][data-world="zombie"]').click();
   await expect(page.locator(".stage-caption")).toContainText("废土救援");
@@ -67,8 +66,7 @@ test("world selection and drawers never advance the game", async ({ page }) => {
 });
 
 test("strategy command and reload return to pixel stage", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startFirstRun(page);
   await page.locator('[data-action="scene-panel"][data-panel="strategy"]').click();
   const strategy = page.locator('.stage-sheet-body select[data-action="strategy"]');
   await strategy.selectOption("clear");
@@ -80,9 +78,7 @@ test("strategy command and reload return to pixel stage", async ({ page }) => {
 });
 
 test("decisions from another world appear without leaving the fixed scene", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
-  await expect.poll(async () => (await snapshot(page)).run?.worlds.length).toBe(2);
+  await startProgressedRun(page, { runCount: 1, worldsSaved: 1 });
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
@@ -105,8 +101,7 @@ test("decisions from another world appear without leaving the fixed scene", asyn
 });
 
 test("drawer keeps keyboard focus and scroll during strategy changes", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startFirstRun(page);
   const opener = page.locator('.stage-actions [data-panel="strategy"]');
   await opener.click();
   const dialog = page.getByRole("dialog");
@@ -149,20 +144,12 @@ test("first-run focus guidance is visible on the default fixed game screen", asy
   await expect(page.locator('.stage-worlds [data-world="lingzai"]')).toBeVisible();
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
 
-  const expandWorlds = page.locator('.stage-worlds [data-action="show-all-worlds"]');
-  await expect(expandWorlds).toContainText("废土救援");
-  await expect(expandWorlds).toContainText("继续后同步行动");
-  await expect(expandWorlds).toHaveAttribute("aria-label", "展开全部世界");
-
   const before = (await snapshot(page)).run;
-  await expandWorlds.click();
-  await expect(page.locator('.stage-worlds [data-world="zombie"]')).toBeVisible();
-  const after = (await snapshot(page)).run;
-  expect(after.onboardingFocus).toBe(false);
-  expect(after.day).toBe(before.day);
-  expect(after.ap).toBe(before.ap);
-  expect(after.soul).toBe(before.soul);
-  expect(after.worlds).toEqual(before.worlds);
+  expect(before.onboardingFocus).toBe(true);
+  expect(before.worlds).toHaveLength(1);
+  await expect(page.locator('.stage-worlds [data-action="show-all-worlds"]')).toHaveCount(0);
+  await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
+  expect(before.day).toBe(1);
 
   const dimensions = await page.evaluate(() => ({
     width: document.documentElement.scrollWidth,

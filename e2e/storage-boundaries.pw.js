@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startFirstRun } from "./helpers/run-fixtures.js";
 
 async function snapshot(page) {
   return page.evaluate(async () => {
@@ -8,10 +9,8 @@ async function snapshot(page) {
 }
 
 async function startRun(page) {
-  await page.goto("/?debug=1");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
-  await expect(page.locator(".world")).toHaveCount(2);
-  await expect.poll(async () => (await snapshot(page)).run?.day).toBe(1);
+  await startFirstRun(page, { debug: true });
+  await expect(page.locator(".world")).toHaveCount(1);
 }
 
 test("abort after first IndexedDB put keeps run and profile together", async ({ page }) => {

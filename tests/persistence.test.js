@@ -115,10 +115,27 @@ describe("save recovery guard", () => {
     expect(() => assertRestorableSnapshot({ ...valid(), profile: null }, "0.2.0")).not.toThrow();
     expect(() => assertRestorableSnapshot(valid(), "0.2.0")).not.toThrow();
 
+    const oneWorld = {
+      run: {
+        ...valid().run,
+        worlds: [valid().run.worlds[0]],
+        worldSlots: 1,
+        worldsSavedCount: 0,
+        worldsSavedThisRun: 0,
+        worldsFailedThisRun: 0,
+        worldsVisitedThisRun: 1,
+        worldTypesSeen: ["lingzai"],
+        worldDiscoveryArchive: [],
+      },
+      profile: { runCount: 0, worldsSaved: 0, shards: 0 },
+    };
+    expect(() => assertRestorableSnapshot(oneWorld, "0.2.0")).not.toThrow();
+
     expect(() => assertRestorableSnapshot({
       ...valid(),
       profile: {
         runCount: 2,
+        worldsSaved: 2,
         shards: 8,
         legacyUnlocks: ["supply", "soul"],
         activeLegacyId: "soul",
@@ -140,6 +157,7 @@ describe("save recovery guard", () => {
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], build: { attack: [null], support: [] } }, valid().run.worlds[1]] } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], flags: [] }, valid().run.worlds[1]] } },
       { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], p: "bad" }, valid().run.worlds[1]] } },
+      { ...valid(), run: { ...valid().run, worlds: [{ ...valid().run.worlds[0], bornDay: 0 }, valid().run.worlds[1]] } },
     ];
     for (const snapshot of cases) {
       const before = JSON.stringify(snapshot);

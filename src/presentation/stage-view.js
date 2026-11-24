@@ -89,8 +89,12 @@ export function getWorldSceneState(world, day = 1) {
  * Never advances the simulation, consumes RNG, or mutates RunState.
  */
 export function getStageView(run, selectedWorldId) {
-  const worlds = Array.isArray(run?.worlds) ? run.worlds : [];
-  const selected = worlds.find((world) => world.id === selectedWorldId) || worlds[0];
+  const allWorlds = Array.isArray(run?.worlds) ? run.worlds : [];
+  const worlds = allWorlds.filter((world) => world.status === "running");
+  const selected =
+    [...worlds].reverse().find((world) => world.id === selectedWorldId) ||
+    [...allWorlds].reverse().find((world) => world.id === selectedWorldId) ||
+    worlds[0];
   if (!selected) return null;
   const pendingWorlds = worlds.filter((world) =>
     world.status === "running" &&
@@ -99,10 +103,10 @@ export function getStageView(run, selectedWorldId) {
   const number = (value) => Number.isFinite(value) ? value : 0;
   const day = Math.max(1, number(run.day));
   // world.action is a completed action, never a real-time current-day event.
-  // A stopped run may not advance the day after its final settlement.
+  // A terminal world can retain its final-day action while other worlds continue.
   const actionDay = selected.lastDecision?.day;
   const hasRecentAction = Number.isInteger(actionDay) &&
-    (actionDay === day - 1 || (!run.active && actionDay === day));
+    (actionDay === day - 1 || (selected.status !== "running" && actionDay === day));
   const recentAction = hasRecentAction ? {
     day: actionDay,
     label: actionDay === day ? "本日结算" : "上日行动",
@@ -122,8 +126,8 @@ export function getStageView(run, selectedWorldId) {
     status,
     statusCode: selected.status,
     day,
-    saved: worlds.filter((world) => world.status === "saved").length,
-    total: worlds.length,
+    saved: Number.isInteger(run.worldsSavedThisRun) ? run.worldsSavedThisRun : allWorlds.filter((world) => world.status === "saved").length,
+    total: Number.isInteger(run.worldsVisitedThisRun) ? run.worldsVisitedThisRun : allWorlds.length,
     ap: Math.max(0, number(run.ap) - number(run.apReserved)),
     soul: number(run.soul),
     rescue: percent(selected.p),

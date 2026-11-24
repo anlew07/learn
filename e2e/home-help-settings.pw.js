@@ -28,7 +28,7 @@ test("settings uses actual persistent text-size preference and returns to the sa
   mkdirSync("test-results/camp-ui", { recursive: true });
   await page.screenshot({ path: "test-results/camp-ui/settings-390.png" });
   await page.locator('[data-action="support-back"]').first().click();
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
   await expect(page.locator("[data-game-stage]")).toBeVisible();
   const originalDay = await page.locator(".stage-day").textContent();
 
@@ -61,7 +61,7 @@ test("large text does not introduce main HUD scroll at the narrowest viewport", 
   await page.locator('[data-action="open-settings"]').click();
   await page.locator('[data-action="text-size"][data-value="large"]').click();
   await page.locator('[data-action="support-back"]').first().click();
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
   const result = await page.evaluate(() => ({
     docWidth: document.documentElement.scrollWidth,
     docHeight: document.documentElement.scrollHeight,

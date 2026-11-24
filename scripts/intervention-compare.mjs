@@ -1,4 +1,11 @@
 import Engine from "../src/engine.js";
+import {
+  OPENING_WORLD_MAX_DAYS,
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 /**
  * Reproducible scripted contrasts, not a claim about actual players.
@@ -20,7 +27,7 @@ const scenarioDays = {
 };
 const rows = [];
 
-for (const runNumber of [1, 3]) {
+for (const runNumber of [2, 3]) {
   for (const scenario of Object.keys(scenarioDays)) {
     let allSaved = 0;
     let savedWorlds = 0;
@@ -32,11 +39,22 @@ for (const runNumber of [1, 3]) {
     let totalD = 0;
 
     for (let i = 0; i < seeds; i++) {
-      const state = Engine.fresh(`intervention-compare-r${runNumber}-s${i}`, runNumber, true);
+      const state = Engine.fresh(
+        `intervention-compare-r${runNumber}-s${i}`,
+        runNumber,
+        true,
+        "",
+        runNumber - 1,
+      );
       let tried = false;
       let ticks = 0;
+      const cohort = collectOpeningWorlds(state);
 
-      while (state.active && ticks++ < 200) {
+      while (
+        state.active &&
+        !isOpeningWorldCohortComplete(state, cohort) &&
+        ticks++ < OPENING_WORLD_MAX_DAYS
+      ) {
         if (!tried && state.day === scenarioDays[scenario]) {
           tried = true;
           const isStrategy = scenario === "strategy-shift";
@@ -64,15 +82,18 @@ for (const runNumber of [1, 3]) {
           }
         }
         Engine.step(state);
+        collectOpeningWorlds(state, cohort);
       }
 
-      if (state.active || !state.result) {
+      const cohortWorlds = getOpeningWorlds(state, cohort);
+      if (!isOpeningWorldCohortComplete(state, cohort)) {
         pending++;
         continue;
       }
-      allSaved += Number(state.result.saved === state.worlds.length);
-      savedWorlds += state.result.saved;
-      endDays += state.result.endedDay;
+      const cohortSaved = cohortWorlds.filter((world) => world.status === "saved").length;
+      allSaved += Number(cohortWorlds.length > 0 && cohortSaved === cohortWorlds.length);
+      savedWorlds += cohortSaved;
+      endDays += openingWorldEndDay(cohortWorlds);
     }
 
     rows.push({

@@ -31,6 +31,9 @@ export function mergeProfileSecrets(profile, run) {
       ids.add(definition.id);
     }
   }
+  for (const id of run?.worldDiscoveryArchive || []) {
+    if (KNOWN_IDS.has(id)) ids.add(id);
+  }
   for (const id of run?.crossworldSecrets || []) {
     if (KNOWN_IDS.has(id)) ids.add(id);
   }

@@ -20,11 +20,13 @@ describe("player guidance: first-time learning", () => {
     expect(start.opening.playerRole).toContain("当前已开放");
     expect(start.opening.playerRole).not.toContain("借力");
     expect(start.opening.stageHint).toContain("分身自动行动");
-    expect(start.opening.continuation).toContain("第三局");
-    expect(start.opening.shardNote).toContain("不提供");
+    expect(start.opening.continuation).toContain("最多同时守护三个世界");
+    expect(start.opening.shardNote).toContain("文明传承");
     expect(start.overview).toBeNull();
     expect(start.choices.events).toEqual([]);
     expect(start.tutorial.current.id).toBe("arrival");
+    expect(start.tutorial.current.title).toBe("为什么会穿越到新世界？");
+    expect(start.tutorial.current.text).toContain("成功救援后");
     expect(start.outcome).toBeNull();
     expect(PLAYER_GLOSSARY.map((term) => term.id)).toEqual([
       "p", "d", "ap", "level", "resource", "aid", "fusion", "build", "elite",
@@ -32,16 +34,16 @@ describe("player guidance: first-time learning", () => {
   });
 
   it("shows first-day observation without treating decisions as mandatory clicks", () => {
-    const state = Engine.fresh("guidance-day1", 1, true);
+    const state = Engine.fresh("guidance-day1", 1, true, "", 0);
     const tutorial = getTutorialGuidance(state, { seenIds: ["arrival"] });
     expect(tutorial.current.id).toBe("first-day");
     expect(tutorial.current.text).toContain("自主");
     const overview = getRunOverview(state, Engine);
-    expect(overview.total).toBe(2);
-    expect(overview.ongoing).toBe(2);
+    expect(overview.total).toBe(1);
+    expect(overview.ongoing).toBe(1);
     expect(overview.freeInterventionPoints).toBe(2);
     expect(overview.dailyFlow.automatic).toContain("一次主要行动");
-    expect(overview.worlds.map((world) => world.worldId)).toEqual(["lingzai", "zombie"]);
+    expect(overview.worlds.map((world) => world.worldId)).toEqual(["lingzai"]);
     expect(overview.worlds.every((world) => world.lastDecision === null)).toBe(true);
 
     Engine.step(state);

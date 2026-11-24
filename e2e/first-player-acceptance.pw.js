@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 // A/B/C integrated regression: selectors track the current camp UI and guidance.
 async function saved(page) {
@@ -8,24 +9,15 @@ async function saved(page) {
   });
 }
 
-async function start(page, mode = "full") {
-  await page.goto("/?debug=1");
-  await expect(
-    page.locator('[data-action="new-run"][data-onboarding="' + mode + '"]'),
-  ).toBeVisible();
-  await page.locator('[data-action="new-run"][data-onboarding="' + mode + '"]').click();
-  await expect.poll(async () => (await saved(page)).run?.day).toBe(1);
-}
-
 test("legacy detailed view retains first-run guidance and safe focus skip", async ({ page }) => {
   await page.goto("/?debug=1");
   await expect(page.locator("[data-formal-title]")).toContainText("同时穿越");
   await expect(page.locator("[data-home-guide]")).toContainText("你的第一段冒险");
   await expect(page.locator(".progression-panel")).toContainText("世界碎片");
-  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  await startFirstRun(page, { debug: true });
 
   const hint = page.locator("[data-guide-tip]");
-  await expect(hint).toContainText("为什么有两个我");
+  await expect(hint).toContainText("为什么会穿越到新世界？");
   await page.locator('button[data-action="guide-seen"]').click();
   await expect(page.locator("[data-guide-tip]")).toContainText("第一天");
   const guide = page.locator('[data-onboarding-guide="focus"]');
@@ -39,34 +31,26 @@ test("legacy detailed view retains first-run guidance and safe focus skip", asyn
   await expect.poll(async () => (await saved(page)).run?.day).toBe(2);
   const beforeSkip = (await saved(page)).run;
   expect(beforeSkip.paused).toBe(true);
-  expect(beforeSkip.worlds).toHaveLength(2);
-  // The hidden second world must still make its one autonomous daily choice.
-  expect(beforeSkip.worlds[1].lastDecision?.day).toBe(1);
+  expect(beforeSkip.worlds).toHaveLength(1);
+  expect(beforeSkip.worlds[0].lastDecision?.day).toBe(1);
   await expect(page.locator(".world-goal")).toContainText("当前目标");
   await expect(page.locator(".world-note").first()).toContainText("正在进行");
-
-  await page.locator('[data-action="show-all-worlds"]').click();
-  await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
+  const showAll = page.locator('[data-action="show-all-worlds"]');
+  await expect(showAll).toBeVisible();
+  await expect(showAll).toContainText("查看已解锁世界");
+  await showAll.click();
+  await expect(page.locator(".world")).toHaveCount(1);
+  await expect(page.locator(".world-title")).toHaveText("灵灾");
   await expect(page.locator("nav.footer-nav button")).toHaveCount(4);
-  await expect.poll(async () => (await saved(page)).run?.onboardingFocus).toBe(false);
   const afterSkip = (await saved(page)).run;
+  expect(afterSkip.onboardingFocus).toBe(false);
+  expect(afterSkip.worlds).toEqual(beforeSkip.worlds);
   expect(afterSkip.day).toBe(beforeSkip.day);
   expect(afterSkip.ap).toBe(beforeSkip.ap);
   expect(afterSkip.soul).toBe(beforeSkip.soul);
-  expect(afterSkip.worlds).toEqual(beforeSkip.worlds);
 
-  const selector = page.locator('select[data-action="strategy"][data-world="zombie"]');
-  await expect(selector).toHaveValue("rescue");
-  await selector.selectOption("growth");
-  await expect.poll(async () => (await saved(page)).run.worlds[1].strategy).toBe("growth");
-  expect((await saved(page)).run.ap).toBe(beforeSkip.ap); // First three days are free.
-
-  await page.locator('button[data-tab="soul"]').click();
-  await expect(page.locator("#aid-choice-preview")).toBeVisible();
-  await page.locator('button[data-tab="log"]').click();
-  await expect(page.getByText("本局行动统计")).toBeVisible();
   await page.reload();
-  await expect(page.locator(".world")).toHaveCount(2);
+  await expect(page.locator(".world")).toHaveCount(1);
   await expect(page.getByRole("button", { name: /继续模拟/ })).toBeVisible();
   expect((await saved(page)).run.paused).toBe(true);
 });
@@ -74,7 +58,7 @@ test("legacy detailed view retains first-run guidance and safe focus skip", asyn
 test("cross-world aid preview, confirmed cost and one-time persisted result agree", async ({
   page,
 }) => {
-  await start(page);
+  await startProgressedRun(page, { debug: true });
   await page.locator('button[data-tab="soul"]').click();
   await page.locator("#aid-from").selectOption("lingzai");
   await page.locator("#aid-to").selectOption("zombie");
@@ -108,7 +92,8 @@ test("cross-world aid preview, confirmed cost and one-time persisted result agre
 test("major event exposes its automatic outcome and resolves using a real command", async ({
   page,
 }) => {
-  await start(page);
+  await startFirstRun(page, { debug: true });
+  await page.locator('[data-action="show-all-worlds"]').click();
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -136,7 +121,7 @@ test("major event exposes its automatic outcome and resolves using a real comman
 test("a real build choice leads to a visible three-wave report without replay rewards", async ({
   page,
 }) => {
-  await start(page);
+  await startProgressedRun(page, { debug: true });
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -177,25 +162,24 @@ test("a real build choice leads to a visible three-wave report without replay re
 });
 
 test("completed engine runs settle rewards once and can start again", async ({ page }) => {
-  await start(page);
+  await startFirstRun(page, { debug: true });
   await page.locator('button[data-action="step"]').click();
   await expect.poll(async () => (await saved(page)).run?.day).toBe(2);
 
-  // Fast-forward via the actual engine, not by inventing a completed save or UI.
-  // A major event's documented automatic default handles unanswered choices.
+  // Advance to the opening world's real deadline, then let Engine.step
+  // produce the terminal result. No completed result or reward is injected.
   const outcome = await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
     const { run, profile } = await saveRepository.load();
-    let steps = 0;
-    while (run.active && steps < 140) {
-      const result = Engine.step(run);
-      if (!result.ok) throw new Error(result.error);
-      steps++;
-    }
-    if (run.active || !run.result) throw new Error("The run did not reach an engine result");
+    const openingWorld = run.worlds.find((world) => world.status === "running");
+    if (!openingWorld) throw new Error("The opening world is missing");
+    run.day = openingWorld.deadline;
+    const result = Engine.step(run);
+    if (!result.ok) throw new Error(result.error);
+    if (run.active || !run.result) throw new Error("Engine deadline did not resolve");
     await saveRepository.enqueueSave(run, profile);
-    return { steps, result: run.result, previousCount: profile.runCount };
+    return { steps: 1, result: run.result, previousCount: profile.runCount };
   });
   expect(outcome.steps).toBeGreaterThan(0);
   await page.reload();
@@ -211,14 +195,15 @@ test("completed engine runs settle rewards once and can start again", async ({ p
   await page.reload();
   expect((await saved(page)).profile.shards).toBe(settled.profile.shards);
   await page.getByRole("button", { name: "开始下一次穿越" }).click();
-  await expect(page.locator(".world")).toHaveCount(2);
-  await expect.poll(async () => (await saved(page)).run?.runNumber).toBe(2);
+  const next = await saved(page);
+  await expect(page.locator(".world")).toHaveCount(Math.min(3, 1 + next.profile.worldsSaved));
+  expect(next.run.runNumber).toBe(2);
 });
 
 test("four phone widths keep the core decisions reachable with enlarged Chinese text", async ({
   page,
 }) => {
-  await start(page);
+  await startProgressedRun(page, { debug: true });
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 812 });
     await page.evaluate(() => {

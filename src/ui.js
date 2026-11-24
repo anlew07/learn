@@ -23,7 +23,7 @@ const app = document.querySelector("#app");
 const TEMPOS = DAY_DURATION_MS;
 const labelStrategies = {growth:"成长优先",clear:"排险优先",rescue:"拯救优先"};
 const isDebug = new URLSearchParams(location.search).has("debug");
-let run = null, profile = {runCount:0,shards:0,legacyUnlocks:[],activeLegacyId:""}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
+let run = null, profile = {runCount:0,worldsSaved:0,shards:0,legacyUnlocks:[],activeLegacyId:""}, tab = isDebug ? "world" : "scene", tickStarted = performance.now();
 let sceneWorldId = "lingzai", scenePanel = "", infoPage = "";
 let tickHeldMs = 0;
 let saveError = false, restoreError = false;
@@ -43,11 +43,14 @@ const session = createExclusiveSession({
 });
 const esc = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n = value => Number(value??0).toFixed(value%1===0?0:1);
-const win = () => run?.worlds.filter(w=>w.status==="saved").length??0;
-
+const activeWorlds = () => run?.worlds.filter((world) => world.status === "running") || [];
 function queueSave() {
   if (!session.isOwner) return Promise.resolve();
-  profile = mergeProfileSecrets(normalizeLegacyProfile(profile), run);
+  profile = normalizeLegacyProfile(profile);
+  if (Number.isInteger(run?.worldsSavedCount)) {
+    profile.worldsSaved = Math.max(profile.worldsSaved, run.worldsSavedCount);
+  }
+  profile = mergeProfileSecrets(profile, run);
   return saveRepository.enqueueSave(run, profile)
     .then(() => {
       if (saveError) {
@@ -272,19 +275,19 @@ function buildHtml(w){
 
 function controls(){
  const advice=Engine.advise(run)[0];
- const mostAtRisk=run.worlds.filter(w=>w.status==="running").sort((a,b)=>b.d-a.d)[0];
+ const mostAtRisk=activeWorlds().sort((a,b)=>b.d-a.d)[0];
  const concern=advice?advice.worldName+" · "+advice.notes[0]:
  mostAtRisk?(mostAtRisk.d>0?mostAtRisk.name+" · 危机压力 "+n(mostAtRisk.d)+"%":"暂无紧急危机，可继续模拟观察分身行动"):"所有世界的救援已结束";
  return '<header class="topbar"><div class="game-brand"><div class="brand-mark" aria-hidden="true">✧</div><div>'+
  '<div class="brand">同时穿越</div><div class="micro">末日营地 · 救援手记</div></div></div>'+
  '<div class="stage-return-links"><button class="home-link" data-action="scene-return">▣ 游戏画面</button><button class="home-link" data-action="home">⌂ 首页</button></div></header>'+
  '<section class="run-dashboard'+(tab==="world"?"":" run-dashboard-compact")+'" aria-label="本局总览" data-rescue-board>'+
- '<div class="dashboard-heading"><div><span class="eyebrow">营地任务 · 三界救援</span>'+
+ '<div class="dashboard-heading"><div><span class="eyebrow">营地任务 · 同时穿越</span>'+
  '<h1>第 '+run.day+' 天 <span class="dashboard-subtitle">/ 同步推进</span></h1></div>'+
  '<span class="run-live">'+(run.active?(run.paused?'Ⅱ 已暂停':'▶ 自动进行中'):'◆ 本局结束')+'</span></div>'+
- '<p class="mission-line">你的目标：在各世界的截止日前完成救援。分身自动成长、采集、排险；你负责观察危机、决定策略与支援。</p>'+
+ '<p class="mission-line">每成功拯救一个世界，分身就会穿越到新世界；并行世界名额从1逐步成长到3。分身自动行动，你负责策略与关键支援。</p>'+
  '<div class="metrics"><div class="metric"><b>第 '+run.day+' 天</b><span>全局游戏日</span></div>'+
- '<div class="metric"><b>'+win()+' / '+run.worlds.length+'</b><span>已完成救援</span></div>'+
+ '<div class="metric"><b>'+activeWorlds().length+' / '+run.worldSlots+'</b><span>当前并行世界</span></div>'+
  '<div class="metric"><b>'+Engine.availableAP(run)+' / '+run.apMax+'</b><span>可用支援点 AP</span></div>'+
  '<div class="metric"><b>'+run.soul+'</b><span>灵魂储备</span></div></div>'+
  '<div class="camp-alert"><span class="alert-symbol" aria-hidden="true">!</span><div><b>最需要关注</b><p>'+esc(concern)+'</p></div></div>'+
@@ -298,8 +301,8 @@ function controls(){
  '</div><p class="hint camp-rule">不必每天点击行动。重大事件若不手动干预，将按事件提示自动结算。</p></section>';
 }
 function aidChoicesHtml(fromId,toId){
- const from=run.worlds.find(w=>w.id===fromId);
- const to=run.worlds.find(w=>w.id===toId);
+ const from=Engine.byId(run,fromId);
+ const to=Engine.byId(run,toId);
  const materialWarning=from&&to&&from.id!==to.id&&
    from.resource>=Engine.WORLDS[from.id].finalCost&&
    from.resource-4<Engine.WORLDS[from.id].finalCost?
@@ -392,9 +395,9 @@ function interventionHtml(limit=5){
 function statsHtml(){
  return '<section class="panel session-stats"><h2>本局行动统计</h2>'+
  '<p class="hint">真实行动次数与防线行动累计额外收益；不计入第二次战利品。</p>'+
- run.worlds.map(w=>{
+ run.worlds.slice(-8).reverse().map(w=>{
   const m=w.metrics||{},a=m.actions||{};
-  return '<div class="stats-world"><b>'+esc(w.name)+'</b>'+
+  return '<div class="stats-world"><b>第 '+(w.worldNumber||1)+' 界 · '+esc(w.name)+'</b>'+
    '<div class="muted">成长 '+(a.growth||0)+' · 采集 '+(a.gather||0)+
    ' · 排险 '+(a.fight||0)+' · 探索 '+(a.explore||0)+
    ' · 拯救准备 '+(a.rescue||0)+'</div>'+
@@ -497,8 +500,7 @@ function homeHtml(){
  '<div class="hero-actions" role="group" aria-label="主菜单操作">'+
  (run?'<button class="btn" data-action="continue" data-formal-title-primary>▶ '+(run.active?'继续第 '+run.day+' 日':'查看本局结局')+'</button>':
   profile.runCount===0?
-  '<button class="btn" data-action="new-run" data-onboarding="focus" data-formal-title-primary>▶ 开始冒险</button>'+
-  '<button class="btn-soft" data-action="new-run" data-onboarding="full">双界完整开局</button>':
+  '<button class="btn" data-action="new-run" data-onboarding="focus" data-formal-title-primary>▶ 开始冒险</button>':
   '<button class="btn" data-action="new-run" data-formal-title-primary>▶ 开始第 '+(profile.runCount+1)+' 次远征</button>')+
  (run?'<button class="btn-soft" data-action="new-run">重新开启</button>':'')+
  '</div>'+
@@ -513,18 +515,22 @@ function homeHtml(){
  '<div><b>02 · 决策</b><p>危机出现时暂停，选择救援或积蓄力量。</p></div>'+
  '<div><b>03 · 重建</b><p>积累准备和资源，让下一次行动更有把握。</p></div></div>'+
  '<p class="hint">'+esc(opening.automatic)+' '+esc(opening.playerRole)+'</p>'+
- (profile.runCount===0?'<p class="hint home-first-run">新手先聚焦灵灾世界；废土继续行动，兽潮后续解锁。</p>':'')+
+ (profile.runCount===0?'<p class="hint home-first-run">从一个世界开始。成功救援后，分身穿越新世界，并逐步增加同时经营的世界数量。</p>':'')+
  '</section>'+
  '<section class="panel progression-panel"><div class="row-between"><h2>旅程档案</h2><span class="eyebrow">本机进度</span></div>'+
- '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成局数</span></div>'+
+ '<div class="progress-summary"><div><strong>'+profile.runCount+'</strong><span>完成远征</span></div>'+
  '<div><strong>'+profile.shards+'</strong><span>世界碎片</span></div>'+
- '<div><strong>'+Math.min(3,Math.max(1,profile.runCount+1))+'</strong><span>已解锁阶段</span></div></div>'+
+ '<div><strong>'+Math.min(3,1+profile.worldsSaved)+'</strong><span>并行世界名额</span></div></div>'+
+ '<p class="hint">累计成功拯救 '+profile.worldsSaved+' 个世界；每次成功救援都会开启新的穿越。</p>'+
  '<details class="advanced-settings"><summary>进阶设置 · 防线行动</summary>'+
  '<label class="experiment-toggle"><input id="waves-enabled" type="checkbox" checked /> 启用三波防线行动与战技构筑</label></details></section>'+
  legacyProgressionHtml()+profileArchiveHtml()+'<p id="toast" class="notice" role="status" hidden></p><p class="hint footnote">开发中版本 · 进度仅保存在当前浏览器</p>';
 }
 function inQuickStart(){
- return Boolean(run?.onboardingFocus && run.active && run.day<9);
+ return Boolean(
+  run?.onboardingFocus && run.active && run.day<9 &&
+  (run.worldsSavedThisRun||0)===0 && activeWorlds().length===1
+ );
 }
 /**
  * Interrupt only when a decision becomes newly actionable. A dismissed but
@@ -581,13 +587,13 @@ function pauseForDecision(existingKeys = new Set()) {
 function quickStartHtml(){
  const phase=run.day<=4?"观察分身每天的自主成长。点击「继续模拟」，或在调试模式按天推进。":
    run.day<=6?"留意等级与救援准备的变化，战技觉醒后也可以主动选择能力。":
-   "你已经体验了几次行动与结算。到第9天就会自动展开双世界视图。";
+   "你已经体验了几次行动与结算。成功救援会开启下一个世界，逐步扩展多世界营地。";
  return '<section class="panel onboarding-card" data-onboarding-guide="focus" aria-label="快速开局引导">'+
    '<div class="row-between"><strong>第一幕 · 灵脉守护</strong><span class="pill">入门 '+run.day+' / 8</span></div>'+
    '<p>'+phase+'</p>'+
-   '<p class="hint">当前只展示灵灾分身。废土救援分身仍在自主行动，不会暂停或丢失进度。</p>'+
+   '<p class="hint">当前聚焦首个世界。成功救援后才会开启下一个世界；最多同时经营 3 个世界。</p>'+
    '<p class="hint">P 是救援准备（越高越接近目标）；D 是危机压力（达到100会失守）；AP 用于关键支援。</p>'+
-   '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看全部世界</button>'+
+   '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看已解锁世界</button>'+
    '</section>';
 }
 
@@ -595,10 +601,14 @@ function worldOverviewHtml(w) {
  const info=Engine.info(run,w);
  const guide=getWorldGuidance(run,w,Engine);
  const risk=w.status!=="running"?worldStatus(w):w.d>=75?"高危 · 尽快关注":w.d>=50?"风险上升":"持续推进";
+ const ageDay=Math.max(1,(w.status==="running"?run.day:(w.endDay||run.day))-(w.bornDay||1)+1);
+ const arriving=(w.bornDay||1)>run.day;
+ const timeLabel=arriving?"明日抵达":w.status==="running"?"世界第"+ageDay+"天 · 救援期限剩余"+Math.max(0,w.deadline-run.day+1)+"天":"世界存续"+ageDay+"天";
  return '<article class="world-brief world-'+esc(w.id)+'" data-world-overview="'+esc(w.id)+'">'+
  '<div class="brief-scene" aria-hidden="true"></div>'+
- '<div class="brief-head"><div><span class="eyebrow">世界 '+(w.id==="lingzai"?"01":w.id==="zombie"?"02":"03")+'</span>'+
+ '<div class="brief-head"><div><span class="eyebrow">第 '+String(w.worldNumber||1).padStart(2,"0")+' 个世界</span>'+
  '<h3>'+esc(w.name)+'</h3></div><span class="pill '+pill(w.status)+'">'+risk+'</span></div>'+
+ '<p class="brief-time hint">'+timeLabel+'</p>'+
  '<div class="brief-progress"><div class="bar-head"><span>救援准备</span><b>'+n(w.p)+'%</b></div>'+
  '<div class="progress-track"><div class="progress-fill p" style="width:'+Math.max(0,Math.min(100,w.p))+'%"></div></div>'+
  '<div class="bar-head"><span>危机压力</span><b>'+n(w.d)+'%</b></div>'+
@@ -652,7 +662,7 @@ function decisionQueueHtml(worlds=run.worlds) {
 function partyHtml() {
  return '<div class="stack party-page"><div class="section-banner"><div><span class="eyebrow">远征队伍</span><h2>分身与防线</h2></div></div>'+
  '<section class="panel"><p class="muted">各世界分身独立成长，自动搜集物资与战斗。战技随行动觉醒，无需手动攻击。</p></section>'+
- run.worlds.map(w=>{
+ activeWorlds().map(w=>{
  const info=Engine.info(run,w);
  const powers=[...(w.build?.attack||[]),...(w.build?.support||[])];
  return '<section class="panel party-card world-'+esc(w.id)+'" data-party-world="'+esc(w.id)+'">'+
@@ -696,9 +706,17 @@ function combatNextStepHtml(world) {
    '</div><button type="button" data-action="scene-panel" data-panel="'+
    next.panel+'">'+esc(next.label)+'</button></section>';
 }
+function recentWorldHistoryHtml(){
+ const ended=run.worlds.filter((world)=>world.status!=="running").slice(-5).reverse();
+ if(!ended.length)return "";
+ return '<section class="panel world-history"><h3>最近穿越记录</h3>'+
+  ended.map((world)=>'<div class="row-between"><span>第'+(world.worldNumber||1)+'界 · '+esc(world.name)+'</span>'+
+   '<span class="pill '+pill(world.status)+'">'+worldStatus(world)+'</span></div>'+
+   (world.endReason?'<p class="hint">'+esc(world.endReason)+'</p>':'')).join('')+'</section>';
+}
 function stagePanelHtml(view) {
  if (!scenePanel) return "";
- const selected = run.worlds.find(w => w.id === view.worldId) || run.worlds[0];
+ const selected = Engine.byId(run,view.worldId) || activeWorlds()[0];
  const titles = { strategy:"世界档案与策略", event:"待处理事件与战技", aid:"跨世界援助",
   tactic:"战前支援", team:"队伍与战技", report:"战斗记录", guide:"生存手册", all:"全部世界", menu:"更多功能" };
  let content = "";
@@ -720,7 +738,7 @@ function stagePanelHtml(view) {
   combatNextStepHtml(selected)+combatHtml(selected.lastCombat) :
   '<p class="hint">本世界暂时没有战斗记录。</p>';
  if (scenePanel === "guide") content = playerGuideHtml();
- if (scenePanel === "all") content = run.worlds.map(worldOverviewHtml).join("");
+ if (scenePanel === "all") content = activeWorlds().map(worldOverviewHtml).join("")+recentWorldHistoryHtml();
  if (scenePanel === "menu") content =
   '<p>这是自动生存模拟。你选择策略和关键干预，分身每天自主行动。</p>'+
   '<button data-action="scene-panel" data-panel="guide">玩法帮助</button>'+
@@ -739,6 +757,10 @@ function stagePanelHtml(view) {
   '<div class="stage-sheet-body">'+content+'</div></section></div>';
 }
 function sceneHtml() {
+ const running = activeWorlds();
+ if (running.length && !running.some((world) => world.id === sceneWorldId)) {
+  sceneWorldId = running[0].id;
+ }
  const view = getStageView(run,sceneWorldId);
  if (!view) return "";
  const canExplore = !inQuickStart();
@@ -767,7 +789,7 @@ function sceneHtml() {
   '<span class="stage-stat" data-stat="saved"><span>获救世界</span><b>'+view.saved+'<small>/'+view.total+'</small></b></span>'+
   '<span class="stage-stat" data-stat="ap"><span>干预点</span><b>'+view.ap+'</b></span>'+
   '<span class="stage-stat" data-stat="soul"><span>灵魂</span><b>'+view.soul+'</b></span>'+
-  '<span class="stage-stat" data-stat="resource"><span>'+esc(Engine.info(run,run.worlds.find(w=>w.id===view.worldId)).resourceName)+'</span><b>'+view.resource+'</b></span></div>'+
+  '<span class="stage-stat" data-stat="resource"><span>'+esc(Engine.info(run,Engine.byId(run,view.worldId)).resourceName)+'</span><b>'+view.resource+'</b></span></div>'+
   '<nav class="stage-worlds" aria-label="选择世界">'+
   visibleWorlds.map(w =>
    '<button data-action="scene-world" data-world="'+esc(w.id)+'"'+
@@ -840,9 +862,9 @@ function render(){
  if(!run||tab==="home"){app.innerHTML=banner+homeHtml()+persistenceBanner();return;}
  if(!run.active){
   const content=tab==="log"?statsHtml()+logsHtml():tab==="party"?partyHtml():
-   '<section class="panel result"><h2>本轮救援行动已结束</h2><p><strong>'+run.result.saved+' / '+run.worlds.length+'</strong></p>'+
-   '<p>成功拯救的世界 · 获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
-   outcomeGuidanceHtml()+statsHtml()+run.worlds.map(worldOverviewHtml).join("");
+   '<section class="panel result"><h2>本轮救援行动已结束</h2><p><strong>'+run.result.saved+' / '+(run.result.saved+run.result.failed)+'</strong></p>'+
+   '<p>本轮成功拯救 '+run.result.saved+' 个世界，救援失败 '+run.result.failed+' 个；获得世界碎片 '+run.result.shards+'</p><div class="event-actions" style="justify-content:center"><button class="btn" data-action="new-run">开始下一次穿越</button><button data-action="tab" data-tab="log">查看本局经历</button></div></section>'+
+   outcomeGuidanceHtml()+statsHtml()+run.worlds.slice(-8).reverse().map(worldOverviewHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
  if(tab==="scene"){
@@ -870,12 +892,12 @@ function render(){
   return;
  }
  const focus=inQuickStart();
- const worlds=focus?[run.worlds[0]]:run.worlds;
+ const worlds=focus?[activeWorlds()[0]].filter(Boolean):activeWorlds();
  app.innerHTML=banner+controls()+
  (tab==="world"?'<main class="stack game-content">'+
  (focus?quickStartHtml()+playerGuideHtml()+decisionQueueHtml(worlds):(run.onboardingFocus&&run.day===9?
   '<section class="panel onboarding-card"><strong>✓ 救援入门完成</strong><p class="hint">现在可以查看所有世界，或使用「调度」提供支援。</p></section>':'')+playerGuideHtml()+decisionQueueHtml())+
- '<section class="world-map" aria-label="世界总览"><div class="section-banner"><div><span class="eyebrow">三界地图</span><h2>'+(focus?'第一站 · 灵脉救援':'世界总览')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':run.worlds.length+' 个世界同步演化')+'</span></div>'+
+ '<section class="world-map" aria-label="世界总览"><div class="section-banner"><div><span class="eyebrow">穿越地图</span><h2>'+(focus?'第一站 · 灵脉救援':'当前世界')+'</h2></div><span class="section-hint">'+(focus?'当前聚焦 1 个世界':activeWorlds().length+' 个世界同步演化 · 上限 '+run.worldSlots)+'</span></div>'+
  worlds.map(worldOverviewHtml).join('')+'</section>'+interventionHtml(2)+'</main>':
  tab==="soul"?soulHtml():tab==="party"?partyHtml():statsHtml()+logsHtml())+
  footer()+'<p id="toast" class="notice" hidden></p>'+persistenceBanner();
@@ -918,12 +940,14 @@ function reward(){
 }
 function confirmNew(mode="full"){
  if(!session.isOwner || commandBusy || saveError)return false;
- if(run&&run.active&&!window.confirm("将放弃当前远征并开启新的一局。当前世界进度、分身等级、战技构筑和本局战报会重置；尚未结算的世界碎片不会发放。已完成远征数、现有碎片、永久传承解锁、纪念收藏和传承配置都会保留。确定吗？"))return false;
+ if(run&&run.active&&!window.confirm("将放弃当前远征并开启新的一局。当前世界进度、分身等级、战技构筑和本局战报会重置；尚未结算的世界碎片不会发放。已成功拯救的世界数、并行名额、已完成远征数、现有碎片、永久传承解锁与纪念收藏都会保留。确定吗？"))return false;
  tutorialSeen.clear();tutorialSkipped=false;
+ profile=normalizeLegacyProfile(profile);
+ if(Number.isInteger(run?.worldsSavedCount))profile.worldsSaved=Math.max(profile.worldsSaved,run.worldsSavedCount);
  profile=mergeProfileSecrets(profile,run);
  const seed=Date.now().toString(36)+"-"+Math.floor(Math.random()*100000);
  const waves=document.querySelector("#waves-enabled")?.checked??run?.waves??true;
- run=Engine.fresh(seed,profile.runCount+1,waves,profile.activeLegacyId);
+ run=Engine.fresh(seed,profile.runCount+1,waves,profile.activeLegacyId,profile.worldsSaved);
  run.onboardingFocus=mode==="focus"&&profile.runCount===0;
  tab=isDebug?"world":"scene";sceneWorldId="lingzai";scenePanel="";
  resetDayClock();queueSave();render();return true;
@@ -940,7 +964,7 @@ function handleClick(target){
  if(action==="retry-save"){if(session.isOwner&&!commandBusy)queueSave();return;}
  if(action==="scene-return"){tab="scene";scenePanel="";render();return;}
  if(action==="scene-classic"){tab="world";scenePanel="";render();return;}
- if(action==="scene-world"){if(run?.worlds.some(w=>w.id===id)&&!inQuickStart()){sceneWorldId=id;scenePanel="";render();}return;}
+ if(action==="scene-world"){if(activeWorlds().some(w=>w.id===id)&&!inQuickStart()){sceneWorldId=id;scenePanel="";render();}return;}
  if(action==="scene-panel"){
   const nextPanel=target.dataset.panel||"";
   if(nextPanel==="event"&&session.isOwner&&run?.active&&!run.paused&&pendingDecisions(run).length){
@@ -1126,9 +1150,11 @@ async function claimSession() {
    if(saved&&saved.version===Engine.VERSION&&Array.isArray(saved.worlds)){
      const hadUnpausedSave=!saved.paused;
      const needsReward=Boolean(acquired&&saved.result&&!saved.rewarded);
-     run=saved;run.paused=true;
+     const previousWorldsSaved=profile.worldsSaved;
+     run=Engine.restore(saved,profile.worldsSaved);run.paused=true;
+     profile.worldsSaved=Math.max(profile.worldsSaved,run.worldsSavedCount||0);
      if(needsReward)reward();
-     if(acquired&&(hadUnpausedSave||needsReward))queueSave();
+     if(acquired&&(hadUnpausedSave||needsReward||profile.worldsSaved!==previousWorldsSaved))queueSave();
    }else{
      run=null;
    }

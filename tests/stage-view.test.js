@@ -24,7 +24,7 @@ describe("read-only mobile pixel HUD", () => {
       hasEvent: true, threatActive: true, threatProgress: 2,
       paused: true, action: "探索遗迹",
     });
-    expect(view.worlds.map((x) => x.id)).toEqual(["lingzai", "zombie"]);
+    expect(view.worlds.map((x) => x.id)).toEqual(["lingzai"]);
   });
 
   it("switching viewed worlds is derived only and does not consume resources", () => {

@@ -78,20 +78,18 @@ function safePreview(callback, ...args) {
 }
 
 export function getOpeningBrief(profile = {}) {
-  const nextRun = Math.max(1, Math.floor(number(profile?.runCount)) + 1);
+  const slots = Math.min(3, 1 + Math.max(0, Math.floor(number(profile?.worldsSaved))));
   return {
-    title: "同一个意识，几处危局",
-    lead: "你的一部分意识同时抵达不同的灾变世界。为何会发生这种联系，仍没有答案。",
+    title: "同一个意识，逐步穿越多界",
+    lead: "你的一部分意识先抵达一个灾变世界。每次成功救援，分身便穿越到新的世界，并逐渐形成多界联系。",
     genre: "多世界自动生存模拟",
     mission: "尽可能帮助更多世界守住救援窗口，保留文明延续的希望。",
     automatic: "分身会按各自处境和长期策略，每个游戏日自主完成主要行动。你不需要每天替他们点击。",
     playerRole: "你决定长期策略、处理重要事件，并使用当前已开放的援助与战技。",
     stageHint: "分身自动行动；你负责策略、事件与援助。",
     stakes: "危机压力达到100或错过世界期限，救援就会失败；失败还会削弱共享的灵魂强度。",
-    continuation: nextRun === 1
-      ? "先观察两个世界如何运转；第二局解锁灵魂借力，第三局开启第三世界。"
-      : "不同策略会带来不同的救援路径；世界回响可以支援本局其他世界，跨局留存救援记录与收藏。",
-    shardNote: "世界碎片目前用于记录局外收获，不提供可购买的数值强化。",
+    continuation: "当前已解锁 " + slots + " 个并行世界名额。每成功拯救一个世界，新的世界就会加入；最多同时守护三个世界。",
+    shardNote: "世界碎片用于解锁文明传承，不直接购买数值战力。",
     glossary: PLAYER_GLOSSARY,
   };
 }
@@ -177,9 +175,12 @@ export function getRunOverview(state, rules) {
   if (!state || !Array.isArray(state.worlds)) return null;
   const worlds = validWorlds(state);
   const running = worlds.filter((world) => world.status === "running");
-  const saved = worlds.filter((world) => world.status === "saved").length;
-  const failed = worlds.filter((world) => world.status === "failed").length;
-  const worldGuidance = worlds.map((world) => getWorldGuidance(state, world, rules));
+  const saved = Number.isInteger(state.worldsSavedThisRun)
+    ? state.worldsSavedThisRun : worlds.filter((world) => world.status === "saved").length;
+  const failed = Number.isInteger(state.worldsFailedThisRun)
+    ? state.worldsFailedThisRun : worlds.filter((world) => world.status === "failed").length;
+  const total = Number.isInteger(state.worldsVisitedThisRun) ? state.worldsVisitedThisRun : worlds.length;
+  const worldGuidance = running.map((world) => getWorldGuidance(state, world, rules));
   const urgent = worldGuidance.filter((item) => item.status === "running")
     .sort((a, b) =>
       Number(Boolean(b.event)) - Number(Boolean(a.event)) ||
@@ -193,7 +194,7 @@ export function getRunOverview(state, rules) {
     rescued: saved,
     failed,
     ongoing: running.length,
-    total: worlds.length,
+    total,
     soul: number(state.soul),
     freeInterventionPoints: Math.max(0, number(state.ap) - number(state.apReserved)),
     headline: !state.active
@@ -412,15 +413,15 @@ function tutorialCatalog(state) {
   );
   return [
     {
-      id: "arrival", available: true, title: "为什么有两个我？",
-      text: "意识在不同世界醒来，原因仍是谜。分身会照顾眼前的人，你负责决定何时改变方向、何时伸出援手。",
+      id: "arrival", available: true, title: "为什么会穿越到新世界？",
+      text: "意识先在一个灾变世界醒来。成功救援后，分身会穿越到下一个世界；随着救援次数增加，最多同时守护三个世界。",
       actionHint: "开始模拟，观察第一天会发生什么。",
     },
     {
       id: "first-day", available: Boolean(state && worlds.length && number(state.day) >= 1),
       title: "第一天：观察自主行动",
       text: "每天每个分身会自主选择训练、调查、采集或排险。你调整的是长期策略，重大事件和跨界援助才需要权衡是否干预。",
-      actionHint: "查看任一世界的「正在进行」和「自主判断」，再决定是否更换策略。",
+      actionHint: "先观察当前世界的「正在进行」和「自主判断」，成功救援后再认识新世界。",
     },
     {
       id: "first-crisis", available: Boolean(crisis), title: "第一次危机：时间不是免费的",
@@ -533,17 +534,20 @@ function worldOutcome(state, world, rules) {
 export function getOutcomeGuidance(state, profile = {}, rules) {
   if (!state || state.active !== false || !Array.isArray(state.worlds)) return null;
   const worlds = validWorlds(state).filter((world) => world.status !== "running");
-  const saved = worlds.filter((world) => world.status === "saved").length;
   const result = state.result || {};
+  const saved = Number.isInteger(result.saved)
+    ? result.saved : worlds.filter((world) => world.status === "saved").length;
+  const failed = Number.isInteger(result.failed)
+    ? result.failed : worlds.length - saved;
   return {
     title: "这一轮，" + saved + "个世界守住了希望",
     summary: "每个世界的结局各自成立；未能救援的世界不会抹去其他世界的努力。",
     rescued: saved,
-    failed: worlds.length - saved,
+    failed,
     endedDay: Number.isFinite(result.endedDay) ? result.endedDay : null,
     earnedShards: Number.isFinite(result.shards) ? result.shards : null,
     profileRuns: number(profile?.runCount),
-    continuation: "再次出发可更换策略，第二局解锁灵魂借力，第三局增加生态守护世界。局外世界碎片暂不提供战力购买。",
+    continuation: "累计救援数会永久解锁并行世界名额；下一次远征从 1、2 或 3 个世界开始，最多同时三个。",
     worlds: worlds.map((world) => worldOutcome(state, world, rules)),
   };
 }
