@@ -50,7 +50,11 @@ for (const runNumber of [2, 3]) {
       let ticks = 0;
       const cohort = collectOpeningWorlds(state);
 
-      while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks++ < OPENING_WORLD_MAX_DAYS) {
+      while (
+        state.active &&
+        !isOpeningWorldCohortComplete(state, cohort) &&
+        ticks++ < OPENING_WORLD_MAX_DAYS
+      ) {
         if (!tried && state.day === scenarioDays[scenario]) {
           tried = true;
           const isStrategy = scenario === "strategy-shift";
