@@ -3,6 +3,7 @@ import Engine from "../src/engine.js";
 import { LABELS } from "../src/config/game-data.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
 import {
+  OPENING_WORLD_MAX_DAYS,
   collectOpeningWorlds,
   getOpeningWorlds,
   isOpeningWorldCohortComplete,
@@ -60,7 +61,7 @@ function simulateProfile(runNumber, profile, samples) {
     const cohort = collectOpeningWorlds(state);
     const terminalByInstance = new Map();
     let ticks = 0;
-    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks < 200) {
+    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks < OPENING_WORLD_MAX_DAYS) {
       const terminalDay = state.day;
       Engine.step(state);
       ticks++;
