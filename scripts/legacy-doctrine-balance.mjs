@@ -57,7 +57,10 @@ for (const runNumber of [1, 2, 3]) {
     const values = results[id];
     const saved = values.reduce((sum, result) => sum + result.saved, 0);
     const visited = values.reduce((sum, result) => sum + result.visited, 0);
-    const cohortShardEquivalent = values.reduce((sum, result) => sum + result.cohortShardEquivalent, 0);
+    const cohortShardEquivalent = values.reduce(
+      (sum, result) => sum + result.cohortShardEquivalent,
+      0,
+    );
     const meanEndDay = values.reduce((sum, result) => sum + result.endedDay, 0) / values.length;
     row[id] = {
       saved,
@@ -74,4 +77,15 @@ for (const runNumber of [1, 2, 3]) {
   summary.push(row);
 }
 
-console.log(JSON.stringify({ seedsPerRunNumber: seeds, measuredWorldInstancesPerRun: 3, rewardMetric: "cohort-equivalent only; not an actual run payout", summary }, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      seedsPerRunNumber: seeds,
+      measuredWorldInstancesPerRun: 3,
+      rewardMetric: "cohort-equivalent only; not an actual run payout",
+      summary,
+    },
+    null,
+    2,
+  ),
+);
