@@ -27,7 +27,6 @@ function profileId(worldIds, strategies) {
   return worldIds.map((worldId) => `${worldId}-${strategies[worldId]}`).join("__");
 }
 
-
 function simulateProfile(runNumber, profile, samples) {
   let fullySaved = 0;
   let totalSaved = 0;
