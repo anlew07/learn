@@ -19,6 +19,13 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Temporary Prettier diagnostics for 2AD E2E
+        run: |
+          npx prettier --write e2e/home-help-settings.pw.js e2e/world-progression-feedback-2ad.pw.js
+          echo "=== FORMATTED HOME HELP ==="
+          cat e2e/home-help-settings.pw.js
+          echo "=== FORMATTED WORLD PROGRESSION ==="
+          cat e2e/world-progression-feedback-2ad.pw.js
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
