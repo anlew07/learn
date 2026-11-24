@@ -243,6 +243,12 @@
   padding: 4px 6px;
   box-shadow: 2px 2px 0 #121b16;
 }
+.stage-action-line.stage-progression-feedback {
+  border-color: var(--px-positive);
+}
+.stage-action-line.stage-progression-feedback .stage-action-marker {
+  background: var(--px-positive);
+}
 .stage-action-text { color: #f6edd2; font-size: 12px; font-weight: 650; }
 .stage-action-report {
   color: #253026;
