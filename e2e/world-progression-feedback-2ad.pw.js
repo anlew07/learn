@@ -80,9 +80,7 @@ test("at the three-world cap, rescue feedback explains slot replacement", async 
   const saved = await getSavedState(page);
   expect(saved.run.worldSlots).toBe(3);
   expect(saved.run.worldsSavedThisRun).toBe(1);
-  expect(
-    saved.run.worlds.filter((world) => world.status === "running"),
-  ).toHaveLength(3);
+  expect(saved.run.worlds.filter((world) => world.status === "running")).toHaveLength(3);
   expect(saved.run.worlds.find((world) => world.worldNumber === 2).status).toBe("running");
   expect(saved.run.worlds.find((world) => world.worldNumber === 3).status).toBe("running");
 });
