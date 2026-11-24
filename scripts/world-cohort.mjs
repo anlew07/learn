@@ -9,27 +9,33 @@ function worldInstanceNumber(world) {
   return Number.isInteger(world?.worldNumber) ? world.worldNumber : null;
 }
 
-export function collectOpeningWorlds(state, cohort = new Set()) {
+export function collectOpeningWorlds(state, cohort) {
+  const result = cohort ?? { worldNumbers: new Set(), terminalWorlds: new Map() };
   for (const world of state?.worlds ?? []) {
     const number = worldInstanceNumber(world);
-    if (number !== null && number >= 1 && number <= OPENING_WORLD_LIMIT) {
-      cohort.add(number);
-    }
+    if (number === null || number < 1 || number > OPENING_WORLD_LIMIT) continue;
+    result.worldNumbers.add(number);
+    if (world.status !== "running") result.terminalWorlds.set(number, world);
   }
-  return cohort;
+  return result;
 }
 
 export function getOpeningWorlds(state, cohort) {
-  return (state?.worlds ?? []).filter((world) => cohort.has(worldInstanceNumber(world)));
+  const worlds = new Map();
+  for (const world of state?.worlds ?? []) {
+    const number = worldInstanceNumber(world);
+    if (cohort.worldNumbers.has(number)) worlds.set(number, world);
+  }
+  for (const [number, world] of cohort.terminalWorlds) worlds.set(number, world);
+  return [...worlds.values()].sort((a, b) => a.worldNumber - b.worldNumber);
 }
 
 export function isOpeningWorldCohortComplete(state, cohort) {
-  const worlds = getOpeningWorlds(state, cohort);
+  collectOpeningWorlds(state, cohort);
   if (!state?.active) return true;
   return (
-    cohort.size === OPENING_WORLD_LIMIT &&
-    worlds.length === OPENING_WORLD_LIMIT &&
-    worlds.every((world) => world.status !== "running")
+    cohort.worldNumbers.size === OPENING_WORLD_LIMIT &&
+    cohort.terminalWorlds.size === OPENING_WORLD_LIMIT
   );
 }
 
