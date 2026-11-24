@@ -93,6 +93,7 @@ test("major event exposes its automatic outcome and resolves using a real comman
   page,
 }) => {
   await startFirstRun(page, { debug: true });
+  await page.locator('[data-action="show-all-worlds"]').click();
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
