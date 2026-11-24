@@ -1,4 +1,5 @@
-import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; import "./pixel-visual-language.css"; import "./world-gates.css";
+import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; import "./pixel-visual-language.css";
+import "./world-gates.css";
 import "./support-pages.css";
 import "./formal-title.css";
 import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
