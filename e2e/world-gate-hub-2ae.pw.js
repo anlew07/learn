@@ -41,6 +41,8 @@ test("first-run gate hub exposes one real world and two locked slots", async ({ 
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('[data-gate-state="active"]')).toHaveCount(1);
   await expect(dialog.locator('[data-gate-state="locked"]')).toHaveCount(2);
+  await expect(dialog.locator('button[data-gate-state="active"]:disabled')).toHaveCount(1);
+  await expect(dialog).toContainText("入门后可切换");
   await expect(dialog).toContainText("并行世界");
   await expect(dialog).toContainText("再成功救援 1 个世界后开启");
   await expect(dialog).toContainText("再成功救援 2 个世界后开启");
@@ -64,9 +66,15 @@ test("first-run gate hub exposes one real world and two locked slots", async ({ 
   const expanded = page.getByRole("dialog", { name: "跨界航路" });
   await expect(expanded.locator('[data-gate-state="active"]')).toHaveCount(2);
   await expect(expanded.locator('[data-gate-state="locked"]')).toHaveCount(1);
-  await expect(expanded.locator('button[data-gate-state="active"]:disabled')).toHaveCount(2);
+  await expect(expanded.locator('[data-action="scene-world"]')).toHaveCount(2);
   await expect(expanded).toContainText("第 2 界");
   await expect(expanded).toContainText("第 3 界");
+
+  const beforeSwitch = await getSavedState(page);
+  await expanded.locator('[data-action="scene-world"][data-world="beast"]').click();
+  await expect(page.locator(".stage-caption b")).toHaveText("生态守护");
+  const afterSwitch = await getSavedState(page);
+  expect(JSON.stringify(afterSwitch.run)).toBe(JSON.stringify(beforeSwitch.run));
 });
 
 test("three opened gates switch the observed world without changing the run", async ({ page }) => {
