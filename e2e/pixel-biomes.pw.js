@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { startProgressedRun } from "./helpers/run-fixtures.js";
 
 // Keep the long browser acceptance flow readable without formatter reflow.
 // prettier-ignore
