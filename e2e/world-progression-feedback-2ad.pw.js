@@ -53,6 +53,7 @@ test("first rescue visibly expands one active world into two", async ({ page }) 
   }));
   expect(dimensions.width).toBeLessThanOrEqual(321);
   expect(dimensions.height).toBeLessThanOrEqual(569);
+  await page.screenshot({ path: "test-results/world-progression-2ad-320.png" });
 
   await page.locator('[data-action="scene-panel"][data-panel="guide"]').click();
   const guide = page.getByRole("dialog", { name: "生存手册" });
@@ -72,6 +73,7 @@ test("at the three-world cap, rescue feedback explains slot replacement", async 
   await expect(receipt).toContainText("新界 +1");
   await expect(receipt).toContainText("并行 3/3");
   await expect(receipt).toHaveAttribute("aria-label", /后续救援只替换获救槽位/);
+  await page.screenshot({ path: "test-results/world-progression-2ad-390.png" });
 
   const saved = await getSavedState(page);
   expect(saved.run.worldSlots).toBe(3);
