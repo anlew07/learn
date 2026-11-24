@@ -587,13 +587,13 @@ function pauseForDecision(existingKeys = new Set()) {
 function quickStartHtml(){
  const phase=run.day<=4?"观察分身每天的自主成长。点击「继续模拟」，或在调试模式按天推进。":
    run.day<=6?"留意等级与救援准备的变化，战技觉醒后也可以主动选择能力。":
-   "你已经体验了几次行动与结算。到第9天就会自动展开双世界视图。";
+   "你已经体验了几次行动与结算。成功救援会开启下一个世界，逐步扩展多世界营地。";
  return '<section class="panel onboarding-card" data-onboarding-guide="focus" aria-label="快速开局引导">'+
    '<div class="row-between"><strong>第一幕 · 灵脉守护</strong><span class="pill">入门 '+run.day+' / 8</span></div>'+
    '<p>'+phase+'</p>'+
-   '<p class="hint">当前只展示灵灾分身。废土救援分身仍在自主行动，不会暂停或丢失进度。</p>'+
+   '<p class="hint">当前聚焦首个世界。成功救援后才会开启下一个世界；最多同时经营 3 个世界。</p>'+
    '<p class="hint">P 是救援准备（越高越接近目标）；D 是危机压力（达到100会失守）；AP 用于关键支援。</p>'+
-   '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看全部世界</button>'+
+   '<button class="btn-soft" data-action="show-all-worlds">立即进入深入模式 · 查看已解锁世界</button>'+
    '</section>';
 }
 

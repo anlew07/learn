@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { startProgressedRun } from "./helpers/run-fixtures.js";
 
 // Keep the long browser acceptance flow readable without formatter reflow.
 // prettier-ignore
 test("three worlds use distinct pixel scenes", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await page.locator("[data-action=new-run][data-onboarding=full]").click();
+  await startProgressedRun(page, { runCount: 1, worldsSaved: 1 });
   const canvas = page.locator("[data-stage-canvas]");
   await expect(canvas).toBeVisible();
 

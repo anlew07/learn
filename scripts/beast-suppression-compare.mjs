@@ -3,16 +3,19 @@ import { resolve } from "node:path";
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
+import {
+  OPENING_WORLD_MAX_DAYS,
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 const strategies = ["default", "growth", "clear", "rescue"];
 const worldIds = ["lingzai", "zombie", "beast"];
 
 function average(value, count) {
   return Number((value / count).toFixed(3));
-}
-
-function instanceId(world) {
-  return world.worldNumber ?? world.slotId ?? world.id;
 }
 
 function runScenario(seeds, strategy, waves) {
@@ -37,8 +40,8 @@ function runScenario(seeds, strategy, waves) {
 
   for (let index = 0; index < seeds; index++) {
     const state = Engine.fresh("balance-v2-r3-" + index, 3, waves, "", 2);
-    const finishedWorlds = new Map();
     const ends = new Map();
+    const cohort = collectOpeningWorlds(state);
     const applyStrategy = () => {
       if (strategy === "default") return;
       for (const world of state.worlds) {
@@ -48,24 +51,32 @@ function runScenario(seeds, strategy, waves) {
     applyStrategy();
 
     let ticks = 0;
-    while (state.active && ticks++ < 200) {
+    while (
+      state.active &&
+      !isOpeningWorldCohortComplete(state, cohort) &&
+      ticks++ < OPENING_WORLD_MAX_DAYS
+    ) {
       const currentDay = state.day;
       Engine.step(state);
       applyStrategy();
-      for (const world of state.worlds) {
-        const key = instanceId(world);
-        if (world.status !== "running" && !finishedWorlds.has(key)) {
-          finishedWorlds.set(key, world);
+      collectOpeningWorlds(state, cohort);
+      for (const world of getOpeningWorlds(state, cohort)) {
+        const key = world.worldNumber;
+        if (world.status !== "running" && !ends.has(key)) {
           ends.set(key, readWorldTerminal(world, state.logs, currentDay));
         }
       }
     }
-    if (state.active || !state.result) continue;
+    const cohortWorlds = getOpeningWorlds(state, cohort);
+    if (!isOpeningWorldCohortComplete(state, cohort)) continue;
 
     completed++;
-    allSaved += Number(state.result.saved === state.result.visited);
-    totalRunDay += state.result.endedDay;
-    for (const [key, world] of finishedWorlds) {
+    allSaved += Number(
+      cohortWorlds.length > 0 && cohortWorlds.every((world) => world.status === "saved"),
+    );
+    totalRunDay += openingWorldEndDay(cohortWorlds);
+    for (const world of cohortWorlds) {
+      const key = world.worldNumber;
       const row = totals[world.id];
       const terminal = ends.get(key);
       if (!row) continue;

@@ -1,10 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function openRun(page) {
-  await page.goto("/");
-  const action = page.locator('[data-action="new-run"][data-onboarding="full"]');
-  await expect(action).toBeVisible();
-  await action.click();
+  await startProgressedRun(page, { runCount: 1, worldsSaved: 1 });
   await page.locator('[data-action="scene-panel"][data-panel="menu"]').click();
   await page.locator('[data-action="scene-classic"]').click();
   await expect(page.locator(".world")).toHaveCount(2);

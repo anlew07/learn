@@ -2,6 +2,13 @@ import { pathToFileURL } from "node:url";
 import Engine from "../src/engine.js";
 import { LABELS } from "../src/config/game-data.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
+import {
+  OPENING_WORLD_MAX_DAYS,
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 import { buildStrategyProfiles, STRATEGY_IDS } from "./strategy-matrix-core.mjs";
 
 const params = process.argv.slice(2);
@@ -19,10 +26,6 @@ function round(value, digits = 3) {
 
 function profileId(worldIds, strategies) {
   return worldIds.map((worldId) => `${worldId}-${strategies[worldId]}`).join("__");
-}
-
-function instanceId(world) {
-  return world.worldNumber ?? world.slotId ?? world.id;
 }
 
 function simulateProfile(runNumber, profile, samples) {
@@ -55,33 +58,40 @@ function simulateProfile(runNumber, profile, samples) {
     };
     applyProfile();
 
+    const cohort = collectOpeningWorlds(state);
     const terminalByInstance = new Map();
-    const finishedWorlds = new Map();
     let ticks = 0;
-    while (state.active && ticks < 200) {
+    while (
+      state.active &&
+      !isOpeningWorldCohortComplete(state, cohort) &&
+      ticks < OPENING_WORLD_MAX_DAYS
+    ) {
       const terminalDay = state.day;
       Engine.step(state);
       ticks++;
       applyProfile();
-      for (const world of state.worlds) {
-        const key = instanceId(world);
-        if (world.status !== "running" && !finishedWorlds.has(key)) {
-          finishedWorlds.set(key, world);
+      collectOpeningWorlds(state, cohort);
+      for (const world of getOpeningWorlds(state, cohort)) {
+        const key = world.worldNumber;
+        if (world.status !== "running" && !terminalByInstance.has(key)) {
           terminalByInstance.set(key, readWorldTerminal(world, state.logs, terminalDay));
         }
       }
     }
 
-    if (state.active || !state.result) {
+    const cohortWorlds = getOpeningWorlds(state, cohort);
+    if (!isOpeningWorldCohortComplete(state, cohort)) {
       incomplete++;
       continue;
     }
 
-    fullySaved += Number(state.result.saved === state.result.visited);
-    totalSaved += state.result.saved;
-    totalEndDay += state.result.endedDay;
+    const cohortSaved = cohortWorlds.filter((world) => world.status === "saved").length;
+    fullySaved += Number(cohortWorlds.length > 0 && cohortSaved === cohortWorlds.length);
+    totalSaved += cohortSaved;
+    totalEndDay += openingWorldEndDay(cohortWorlds);
 
-    for (const [key, world] of finishedWorlds) {
+    for (const world of cohortWorlds) {
+      const key = world.worldNumber;
       const row = totals[world.id];
       const terminal = terminalByInstance.get(key);
       if (!row) continue;
@@ -244,7 +254,7 @@ function runMatrix(samples) {
     strategyIds: STRATEGY_IDS,
     strategyLabels: LABELS,
     simulationMode:
-      "战潮关闭；不执行玩家主动干预；新穿越的世界沿用已配置的同类型策略，否则使用默认策略。",
+      "战潮关闭；不执行玩家主动干预；只统计每局最先访问的三个世界实例，新穿越的后续实例不纳入本轮样本。新世界沿用已配置的同类型策略，否则使用默认策略。",
     interpretation:
       "各策略组合使用相同的初始种子编号；策略导致行动分歧后，后续随机流可能不同。结果按世界实例访问次数归一，用于描述策略组合，不构成玩家行为或严格因果保证。",
     runs,

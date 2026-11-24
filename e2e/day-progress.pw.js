@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { startFirstRun } from "./helpers/run-fixtures.js";
 
 async function start(page) {
   await page.clock.install({ time: new Date("2026-11-17T00:00:00Z") });
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startFirstRun(page);
   await expect(page.locator("[data-game-stage]")).toBeVisible();
 }
 

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { startProgressedRun } from "./helpers/run-fixtures.js";
 
 const captures = "test-results/camp-ui";
 mkdirSync(captures, { recursive: true });
@@ -17,7 +18,7 @@ for (const width of [320, 375, 390, 430]) {
       animations: "disabled",
     });
 
-    await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+    await startProgressedRun(page, { runCount: 1, worldsSaved: 1 });
     await page.locator('[data-action="scene-panel"][data-panel="menu"]').click();
     await page.locator('[data-action="scene-classic"]').click();
     await expect(page.locator("[data-rescue-board]")).toBeVisible();

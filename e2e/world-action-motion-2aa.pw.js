@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { startFirstRun } from "./helpers/run-fixtures.js";
 
 mkdirSync("test-results/camp-ui", { recursive: true });
 
@@ -15,8 +16,7 @@ for (const viewport of [
       viewport.height,
     async ({ page }) => {
       await page.setViewportSize(viewport);
-      await page.goto("/");
-      await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+      await startFirstRun(page);
       const canvas = page.locator("[data-stage-canvas]");
       await expect(canvas).toBeVisible();
 

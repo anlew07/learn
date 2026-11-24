@@ -413,15 +413,15 @@ function tutorialCatalog(state) {
   );
   return [
     {
-      id: "arrival", available: true, title: "为什么有两个我？",
-      text: "意识在不同世界醒来，原因仍是谜。分身会照顾眼前的人，你负责决定何时改变方向、何时伸出援手。",
+      id: "arrival", available: true, title: "为什么会穿越到新世界？",
+      text: "意识先在一个灾变世界醒来。成功救援后，分身会穿越到下一个世界；随着救援次数增加，最多同时守护三个世界。",
       actionHint: "开始模拟，观察第一天会发生什么。",
     },
     {
       id: "first-day", available: Boolean(state && worlds.length && number(state.day) >= 1),
       title: "第一天：观察自主行动",
       text: "每天每个分身会自主选择训练、调查、采集或排险。你调整的是长期策略，重大事件和跨界援助才需要权衡是否干预。",
-      actionHint: "查看任一世界的「正在进行」和「自主判断」，再决定是否更换策略。",
+      actionHint: "先观察当前世界的「正在进行」和「自主判断」，成功救援后再认识新世界。",
     },
     {
       id: "first-crisis", available: Boolean(crisis), title: "第一次危机：时间不是免费的",

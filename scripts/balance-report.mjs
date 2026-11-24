@@ -1,6 +1,13 @@
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
+import {
+  OPENING_WORLD_MAX_DAYS,
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 const argumentsList = process.argv.slice(2);
 const sampleOption = argumentsList.find((arg) => arg.startsWith("--seeds="));
@@ -24,10 +31,6 @@ function emptyWorld() {
     endDay: 0,
     endDayCount: 0,
   };
-}
-
-function instanceId(world) {
-  return world.worldNumber ?? world.slotId ?? world.id;
 }
 
 for (const runNumber of [1, 2, 3]) {
@@ -61,7 +64,7 @@ for (const runNumber of [1, 2, 3]) {
           "",
           savedBeforeRun,
         );
-        const finishedWorlds = new Map();
+        const cohort = collectOpeningWorlds(state);
         const terminalByInstance = new Map();
         const applyStrategy = () => {
           if (strategy === "default") return;
@@ -72,30 +75,37 @@ for (const runNumber of [1, 2, 3]) {
         applyStrategy();
 
         let days = 0;
-        while (state.active && days++ < 200) {
+        while (
+          state.active &&
+          !isOpeningWorldCohortComplete(state, cohort) &&
+          days++ < OPENING_WORLD_MAX_DAYS
+        ) {
           const currentDay = state.day;
           Engine.step(state);
           applyStrategy();
-          for (const world of state.worlds) {
-            const key = instanceId(world);
-            if (world.status !== "running" && !finishedWorlds.has(key)) {
-              finishedWorlds.set(key, world);
+          collectOpeningWorlds(state, cohort);
+          for (const world of getOpeningWorlds(state, cohort)) {
+            const key = world.worldNumber;
+            if (world.status !== "running" && !terminalByInstance.has(key)) {
               terminalByInstance.set(key, readWorldTerminal(world, state.logs, currentDay));
             }
           }
         }
 
-        if (state.active || !state.result) {
+        const cohortWorlds = getOpeningWorlds(state, cohort);
+        if (!isOpeningWorldCohortComplete(state, cohort)) {
           incomplete++;
           continue;
         }
 
-        fullySaved += Number(state.result.saved === state.result.visited);
-        totalSaved += state.result.saved;
-        totalVisited += state.result.visited;
-        totalDays += state.result.endedDay;
+        const cohortSaved = cohortWorlds.filter((world) => world.status === "saved").length;
+        fullySaved += Number(cohortWorlds.length > 0 && cohortSaved === cohortWorlds.length);
+        totalSaved += cohortSaved;
+        totalVisited += cohortWorlds.length;
+        totalDays += openingWorldEndDay(cohortWorlds);
 
-        for (const [key, world] of finishedWorlds) {
+        for (const world of cohortWorlds) {
+          const key = world.worldNumber;
           const row = worlds[world.id];
           const terminal = terminalByInstance.get(key);
           const metrics = world.metrics || {};

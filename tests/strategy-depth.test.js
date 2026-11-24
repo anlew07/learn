@@ -92,7 +92,7 @@ describe("rescue-first beast threat opportunity cost", () => {
     BALANCE.actions.beastRescueNestPriorityDoom = original;
   });
 
-  it("maintains deterministic same-seed A/B and never changes the first two runs", () => {
+  it("maintains deterministic same-seed A/B across progressive opening cohorts", () => {
     const original = BALANCE.actions.beastRescueNestPriorityDoom;
     const first = compareRescueNestPriority(100);
     expect(BALANCE.actions.beastRescueNestPriorityDoom).toBe(original);
@@ -106,8 +106,13 @@ describe("rescue-first beast threat opportunity cost", () => {
         .every((entry) =>
           Object.entries(entry.worldDeltas)
             .filter(([worldId]) => worldId !== "beast")
-            .every(([, delta]) => delta === 0),
+            .every(([, delta]) => delta === null || delta === 0),
         ),
+    ).toBe(true);
+    expect(
+      first.differences.some(
+        (entry) => entry.runNumber === 3 && Number.isFinite(entry.worldDeltas.beast),
+      ),
     ).toBe(true);
     console.info(
       "SECOND_PHASE_SEEDED_BASELINE",
