@@ -2,7 +2,12 @@ import { pathToFileURL } from "node:url";
 import Engine from "../src/engine.js";
 import { LABELS } from "../src/config/game-data.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
-import { collectOpeningWorlds, getOpeningWorlds, isOpeningWorldCohortComplete, openingWorldEndDay } from "./world-cohort.mjs";
+import {
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 import { buildStrategyProfiles, STRATEGY_IDS } from "./strategy-matrix-core.mjs";
 
 const params = process.argv.slice(2);
