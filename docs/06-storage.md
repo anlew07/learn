@@ -4,7 +4,7 @@
 
 - Definitions：静态配置及稳定 ID，运行中不能被 UI 修改。
 - RunState：runId、当前游戏日与阶段、世界集合、灵魂/AP、活动事件、经历/威胁/状态、随机流、结算状态和近期日志。
-- ProfileState：本局之外的世界碎片、已完成远征数、永久发现/称号、文明传承解锁与下一局启用配置。
+- ProfileState：本局之外的世界碎片、累计成功拯救数（worldsSaved）、已完成远征数、永久发现/称号、文明传承解锁与下一局启用配置。
 - Settings/Analytics：速度、暂停设置、测试与统计。
 
 每世界 WorldState 至少包含：worldId、状态、deadlineDay、P/D、等级经验资源、策略、当前行动目标、经历标记、事件实例/冷却、持续威胁、特殊机制、终局状态、独立随机状态。
@@ -27,7 +27,7 @@
 
 ## 跨世界状态的存储边界
 
-SoulLinkState 保存：每来源世界成功广播次数、已广播 memoryKey 和上次广播日；每目标援助 nextEligibleDay（P与D共用）；全局融合 nextEligibleDay；已发放和已消费的世界回响；已处理 operationId 与结算签名。提供者的未来3日虚弱效果以 world.statusEffects 保存，不新建独立战斗等级。所有援助及融合需原子提交双世界变化、AP/魂、冷却和目标事件实例结果。详见[双世界联动内容包01](../content/packages/soul-link/01-dual-world.md)。
+SoulLinkState 保存：每来源世界成功广播次数、已广播 memoryKey 和上次广播日；每目标援助 nextEligibleDay（P与D共用）；全局融合 nextEligibleDay；已发放和已消费的世界回响；已处理 operationId 与结算签名。提供者的未来3日虚弱效果以 world.statusEffects 保存，不新建独立战斗等级。所有援助及融合需原子提交涉及的世界状态变化、AP/魂、冷却和目标事件实例结果；世界名额变化、世界替换与永久救援计数也必须与 RunState/ProfileState 在同一批次保存。详见[双世界联动内容包01](../content/packages/soul-link/01-dual-world.md)。
 
 ## V0.2 · 多标签页与指令去重
 

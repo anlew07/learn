@@ -219,3 +219,14 @@ Playwright新增两条移动尺寸真实页面用例：在`万我同源`切换�
 - `npm run balance:matrix:check` 纳入 CI，每个组合使用100个固定种子，检查都能在200个游戏日内结束、默认组合存在、失败原因均可归类。它只做实验与断言，不修改引擎、平衡配置、随机种子规则或玩家存档。
 
 100 种子结果已记录于[各世界独立策略组合矩阵报告](balance/2026-11-17-per-world-strategy-matrix.md)。当前仍只作为平衡诊断，不代表真人胜率，也没有据此调整任何游戏数值。
+
+
+## 2026-11-24 · 2AC 世界 cohort 与主线发布验收
+
+- 固定种子实验统一使用 opening-world cohort，测量每局最先访问的三个世界实例；若远征提前结束，按实际访问数统计。
+- cohort 终结快照独立于 RunState 最近30个终结世界历史，避免历史裁剪导致样本不完整。
+- 数值实验观察上限为300天；实验不会通过强制结束模拟来伪造终局。
+- 移动端 Playwright 拆成4个独立 Chromium shard，每个30分钟超时；保留现有显式 skip，并在 CI 报告中显示，不为缩短耗时临时删减用例。
+- 2026-11-24 main Validate H5 Run #801：Vitest、生产构建、balance、matrix、intervention、legacy fixed-seed、sortie paired-seed 全部通过；Playwright 4/4 shards 全部通过（160 passed、1 skipped）。
+- 同一主线提交的 GitHub Pages 发布 Run #77：Pages 检查、Vite `/learn/` 构建、artifact 上传与 deploy-pages 全部成功。
+- 仍待完成：Android/iOS 真机、TapTap 容器和低端设备性能验收；浏览器 CI 通过不等于真机验收通过。
