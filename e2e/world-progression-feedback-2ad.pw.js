@@ -1,18 +1,12 @@
 import { expect, test } from "@playwright/test";
-import {
-  getSavedState,
-  startFirstRun,
-  startProgressedRun,
-} from "./helpers/run-fixtures.js";
+import { getSavedState, startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function resolveWorldThroughEngine(page, worldId) {
   await page.evaluate(async (id) => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
     const saved = await saveRepository.load();
-    const world = saved.run.worlds.find(
-      (item) => item.id === id && item.status === "running",
-    );
+    const world = saved.run.worlds.find((item) => item.id === id && item.status === "running");
     if (!world) throw new Error("Missing running world fixture: " + id);
 
     world.p = 100;
@@ -51,9 +45,7 @@ test("first rescue visibly expands one active world into two", async ({ page }) 
   const saved = await getSavedState(page);
   expect(saved.run.worldSlots).toBe(2);
   expect(saved.run.worldsSavedThisRun).toBe(1);
-  expect(
-    saved.run.worlds.filter((world) => world.status === "running"),
-  ).toHaveLength(2);
+  expect(saved.run.worlds.filter((world) => world.status === "running")).toHaveLength(2);
 
   const dimensions = await page.evaluate(() => ({
     width: document.documentElement.scrollWidth,
@@ -79,10 +71,7 @@ test("at the three-world cap, rescue feedback explains slot replacement", async 
   await expect(receipt).toContainText("灵灾获救");
   await expect(receipt).toContainText("新界 +1");
   await expect(receipt).toContainText("并行 3/3");
-  await expect(receipt).toHaveAttribute(
-    "aria-label",
-    /后续救援只替换获救槽位/,
-  );
+  await expect(receipt).toHaveAttribute("aria-label", /后续救援只替换获救槽位/);
 
   const saved = await getSavedState(page);
   expect(saved.run.worldSlots).toBe(3);
@@ -90,10 +79,6 @@ test("at the three-world cap, rescue feedback explains slot replacement", async 
   expect(
     saved.run.worlds.filter((world) => world.status === "running"),
   ).toHaveLength(3);
-  expect(saved.run.worlds.find((world) => world.worldNumber === 2).status).toBe(
-    "running",
-  );
-  expect(saved.run.worlds.find((world) => world.worldNumber === 3).status).toBe(
-    "running",
-  );
+  expect(saved.run.worlds.find((world) => world.worldNumber === 2).status).toBe("running");
+  expect(saved.run.worlds.find((world) => world.worldNumber === 3).status).toBe("running");
 });
