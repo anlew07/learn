@@ -1,5 +1,10 @@
 import Engine from "../src/engine.js";
-import { collectOpeningWorlds, getOpeningWorlds, isOpeningWorldCohortComplete, openingWorldEndDay } from "./world-cohort.mjs";
+import {
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 const seeds = Number(process.argv.find((arg) => arg.startsWith("--seeds="))?.split("=")[1] || 40);
 const assert = process.argv.includes("--assert");
