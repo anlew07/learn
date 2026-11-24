@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function saved(page) {
   return page.evaluate(async () => {
@@ -8,11 +9,7 @@ async function saved(page) {
 }
 
 async function start(page) {
-  await page.goto("/?debug=1");
-  await expect(page.locator('[data-action="new-run"][data-onboarding="full"]')).toBeVisible();
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
-  await expect(page.locator(".world")).toHaveCount(2);
-  await expect.poll(async () => (await saved(page)).run?.day).toBe(1);
+  await startProgressedRun(page, { debug: true });
 }
 
 test("automatic day timer advances one day per cycle and respects event interrupts", async ({
