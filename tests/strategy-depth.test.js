@@ -101,11 +101,13 @@ describe("rescue-first beast threat opportunity cost", () => {
     expect(same).toEqual(repeated);
     expect(first.rows.every((row) => row.incomplete === 0)).toBe(true);
     expect(
-      first.differences.every((entry) =>
-        Object.values(entry.worldDeltas).every(
-          (delta) => delta === null || (Number.isFinite(delta) && Math.abs(delta) <= 1),
+      first.differences
+        .filter((entry) => entry.runNumber < 3)
+        .every((entry) =>
+          Object.entries(entry.worldDeltas)
+            .filter(([worldId]) => worldId !== "beast")
+            .every(([, delta]) => delta === 0),
         ),
-      ),
     ).toBe(true);
     expect(
       first.differences.some(
