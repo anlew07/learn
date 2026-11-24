@@ -19,10 +19,6 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - name: Temporary Prettier diagnostics for 2AD screenshots
-        run: |
-          npx prettier --write e2e/world-progression-feedback-2ad.pw.js
-          cat e2e/world-progression-feedback-2ad.pw.js
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
