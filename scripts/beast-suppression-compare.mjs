@@ -4,6 +4,7 @@ import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
 import {
+  OPENING_WORLD_MAX_DAYS,
   collectOpeningWorlds,
   getOpeningWorlds,
   isOpeningWorldCohortComplete,
@@ -50,7 +51,7 @@ function runScenario(seeds, strategy, waves) {
     applyStrategy();
 
     let ticks = 0;
-    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks++ < 200) {
+    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks++ < OPENING_WORLD_MAX_DAYS) {
       const currentDay = state.day;
       Engine.step(state);
       applyStrategy();
