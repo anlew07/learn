@@ -4,6 +4,8 @@
  * indefinitely; this bounded cohort keeps paired-seed experiments comparable.
  */
 export const OPENING_WORLD_LIMIT = 3;
+// Three sequential 76-day worlds need at most 228 days in the first run.
+export const OPENING_WORLD_MAX_DAYS = 300;
 
 function worldInstanceNumber(world) {
   return Number.isInteger(world?.worldNumber) ? world.worldNumber : null;
