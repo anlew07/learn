@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { startFirstRun } from "./helpers/run-fixtures.js";
 
 const captures = "test-results/camp-ui";
 mkdirSync(captures, { recursive: true });
@@ -8,8 +9,7 @@ test("the same world has visibly different calm, critical and rescued pixel scen
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startFirstRun(page);
 
   const canvas = page.locator("[data-stage-canvas]");
   await expect(canvas).toBeVisible();
