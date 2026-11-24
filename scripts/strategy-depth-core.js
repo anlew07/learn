@@ -94,7 +94,7 @@ function simulate(runNumber, strategy, waves, samples) {
       const metrics = world.metrics || {};
       row.visits++;
       row.saved += Number(world.status === "saved");
-      row.day += outcome?.day ?? state.result.endedDay;
+      row.day += outcome?.day ?? world.endDay ?? state.day;
       row.resources += world.resource;
       row.p += world.p;
       row.d += world.d;
