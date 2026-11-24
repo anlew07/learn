@@ -1285,5 +1285,5 @@
 "src/world-gates.js","222","动态拼接/需复原","常规核对","return `<section class=""world-gate-panel"" aria-label=""跨界航路：${view.activeCount}/3 个世界正在运行"">"
 "src/world-gates.js","224","静态/待复核","常规核对","<div><small>WORLD NEXUS</small><h3>跨界航路</h3></div>"
 "src/world-gates.js","225","动态拼接/需复原","常规核对","<div class=""world-gate-count""><strong>${view.activeCount}/3</strong><span>并行世界</span><small>本局已穿越 ${view.visitedCount} 个世界</small></div>"
-"src/world-gates.js","228","动态拼接/需复原","常规核对","<div class=""world-gate-hub""><span>✦ 界枢</span><small>已连接 ${view.unlockedSlots}/3 道界门</small></div>"
+"src/world-gates.js","228","动态拼接/需复原","常规核对","<div class=""world-gate-hub""><span>✦ 界枢</span><small>已开启 ${view.unlockedSlots}/3 道界门</small></div>"
 "src/world-gates.js","231","动态拼接/需复原","常规核对","<section class=""world-gate-history""><h4>穿越记录 · 已救援 ${view.savedCount} 个</h4>${history}</section>"
