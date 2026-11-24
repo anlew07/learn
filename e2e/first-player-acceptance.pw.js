@@ -17,7 +17,7 @@ test("legacy detailed view retains first-run guidance and safe focus skip", asyn
   await startFirstRun(page, { debug: true });
 
   const hint = page.locator("[data-guide-tip]");
-  await expect(hint).toContainText("为什么有两个我");
+  await expect(hint).toContainText("为什么会穿越到新世界？");
   await page.locator('button[data-action="guide-seen"]').click();
   await expect(page.locator("[data-guide-tip]")).toContainText("第一天");
   const guide = page.locator('[data-onboarding-guide="focus"]');
@@ -35,8 +35,19 @@ test("legacy detailed view retains first-run guidance and safe focus skip", asyn
   expect(beforeSkip.worlds[0].lastDecision?.day).toBe(1);
   await expect(page.locator(".world-goal")).toContainText("当前目标");
   await expect(page.locator(".world-note").first()).toContainText("正在进行");
-  await expect(page.locator('[data-action="show-all-worlds"]')).toHaveCount(0);
-  await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
+  const showAll = page.locator('[data-action="show-all-worlds"]');
+  await expect(showAll).toBeVisible();
+  await expect(showAll).toContainText("查看已解锁世界");
+  await showAll.click();
+  await expect(page.locator(".world")).toHaveCount(1);
+  await expect(page.locator(".world-title")).toHaveText("灵灾");
+  await expect(page.locator("nav.footer-nav button")).toHaveCount(4);
+  const afterSkip = (await saved(page)).run;
+  expect(afterSkip.onboardingFocus).toBe(false);
+  expect(afterSkip.worlds).toEqual(beforeSkip.worlds);
+  expect(afterSkip.day).toBe(beforeSkip.day);
+  expect(afterSkip.ap).toBe(beforeSkip.ap);
+  expect(afterSkip.soul).toBe(beforeSkip.soul);
 
   await page.reload();
   await expect(page.locator(".world")).toHaveCount(1);
