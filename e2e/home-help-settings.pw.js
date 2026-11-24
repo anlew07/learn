@@ -7,7 +7,8 @@ test("help works before creating a save and returns to first-session entry", asy
   await page.locator('[data-action="open-help"]').click();
   await expect(page.locator('[data-support-page="help"]')).toBeVisible();
   await expect(page.locator('[data-support-page="help"]')).toContainText("P100");
-  await expect(page.locator('[data-support-page="help"]')).toContainText("同步运行");
+  await expect(page.locator('[data-support-page="help"]')).toContainText("新档首局只有灵灾一个世界");
+  await expect(page.locator('[data-support-page="help"]')).toContainText("最多同时守护三个世界");
   await page.locator('[data-action="support-back"]').first().click();
   await expect(page.locator("[data-formal-title]")).toBeVisible();
   await expect(page.locator('[data-action="new-run"][data-onboarding="focus"]')).toBeVisible();
