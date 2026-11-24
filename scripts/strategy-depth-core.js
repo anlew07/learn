@@ -1,7 +1,12 @@
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
-import { collectOpeningWorlds, getOpeningWorlds, isOpeningWorldCohortComplete, openingWorldEndDay } from "./world-cohort.mjs";
+import {
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 const strategies = ["default", "growth", "clear", "rescue"];
 
