@@ -2,6 +2,7 @@ import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
 import {
+  OPENING_WORLD_MAX_DAYS,
   collectOpeningWorlds,
   getOpeningWorlds,
   isOpeningWorldCohortComplete,
@@ -74,7 +75,7 @@ for (const runNumber of [1, 2, 3]) {
         applyStrategy();
 
         let days = 0;
-        while (state.active && !isOpeningWorldCohortComplete(state, cohort) && days++ < 200) {
+        while (state.active && !isOpeningWorldCohortComplete(state, cohort) && days++ < OPENING_WORLD_MAX_DAYS) {
           const currentDay = state.day;
           Engine.step(state);
           applyStrategy();
