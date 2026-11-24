@@ -12,9 +12,6 @@ function average(value, count) {
   return Number((value / count).toFixed(3));
 }
 
-function instanceId(world) {
-  return world.worldNumber ?? world.slotId ?? world.id;
-}
 
 function runScenario(seeds, strategy, waves) {
   const totals = {};
