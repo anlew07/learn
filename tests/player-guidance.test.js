@@ -27,6 +27,7 @@ describe("player guidance: first-time learning", () => {
     expect(start.tutorial.current.id).toBe("arrival");
     expect(start.tutorial.current.title).toBe("为什么会穿越到新世界？");
     expect(start.tutorial.current.text).toContain("成功救援后");
+    expect(start.tutorial.current.text).toContain("本次远征从已解锁的并行名额开始");
     expect(start.outcome).toBeNull();
     expect(PLAYER_GLOSSARY.map((term) => term.id)).toEqual([
       "p", "d", "ap", "level", "resource", "aid", "fusion", "build", "elite",
