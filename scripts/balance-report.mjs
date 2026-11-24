@@ -75,7 +75,11 @@ for (const runNumber of [1, 2, 3]) {
         applyStrategy();
 
         let days = 0;
-        while (state.active && !isOpeningWorldCohortComplete(state, cohort) && days++ < OPENING_WORLD_MAX_DAYS) {
+        while (
+          state.active &&
+          !isOpeningWorldCohortComplete(state, cohort) &&
+          days++ < OPENING_WORLD_MAX_DAYS
+        ) {
           const currentDay = state.day;
           Engine.step(state);
           applyStrategy();
