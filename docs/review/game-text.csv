@@ -296,7 +296,7 @@
 "src/presentation/player-guidance.js","417","静态/待复核","常规核对","? ""下一次成功救援将继续解锁并行名额。"""
 "src/presentation/player-guidance.js","418","静态/待复核","常规核对",": ""已达到3个并行名额上限；后续救援只替换获救槽位，其他世界继续行动。"";"
 "src/presentation/player-guidance.js","421","静态/待复核","常规核对","id: ""arrival"", available: true, title: ""为什么会穿越到新世界？"","
-"src/presentation/player-guidance.js","422","静态/待复核","常规核对","text: ""新档首局从一个灾变世界开始。成功救援后，分身会穿越到新世界，并逐步解锁更多并行名额；最多同时守护三个世界。"","
+"src/presentation/player-guidance.js","422","静态/待复核","常规核对","text: ""本次远征从已解锁的并行名额开始。成功救援后，分身会穿越到新世界，并在未达上限时增加名额；最多同时守护三个世界。"","
 "src/presentation/player-guidance.js","423","静态/待复核","常规核对","actionHint: ""开始模拟，观察第一天会发生什么。"","
 "src/presentation/player-guidance.js","427","静态/待复核","常规核对","title: ""第一天：观察自主行动"","
 "src/presentation/player-guidance.js","428","静态/待复核","常规核对","text: ""每天每个分身会自主选择训练、调查、采集或排险。你调整的是长期策略，重大事件和跨界援助才需要权衡是否干预。"","
