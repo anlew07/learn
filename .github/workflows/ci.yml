@@ -27,6 +27,10 @@ jobs:
           echo "=== FORMATTED WORLD PROGRESSION ==="
           cat e2e/world-progression-feedback-2ad.pw.js
       - run: npm run format:check
+      - name: Temporary export 2AD text review inventory
+        run: |
+          npm run text:export
+          git diff -- docs/review/game-text.csv
       - run: npm run text:check
       - run: npm run text:runtime
       - run: npm run text:review
