@@ -419,7 +419,7 @@ function tutorialCatalog(state) {
   return [
     {
       id: "arrival", available: true, title: "为什么会穿越到新世界？",
-      text: "新档首局从一个灾变世界开始。成功救援后，分身会穿越到新世界，并逐步解锁更多并行名额；最多同时守护三个世界。",
+      text: "本次远征从已解锁的并行名额开始。成功救援后，分身会穿越到新世界，并在未达上限时增加名额；最多同时守护三个世界。",
       actionHint: "开始模拟，观察第一天会发生什么。",
     },
     {
