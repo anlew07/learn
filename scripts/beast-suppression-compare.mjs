@@ -51,7 +51,11 @@ function runScenario(seeds, strategy, waves) {
     applyStrategy();
 
     let ticks = 0;
-    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks++ < OPENING_WORLD_MAX_DAYS) {
+    while (
+      state.active &&
+      !isOpeningWorldCohortComplete(state, cohort) &&
+      ticks++ < OPENING_WORLD_MAX_DAYS
+    ) {
       const currentDay = state.day;
       Engine.step(state);
       applyStrategy();
