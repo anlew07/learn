@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { startFirstRun } from "./helpers/run-fixtures.js";
 
 const screenshots = "test-results/camp-ui";
 mkdirSync(screenshots, { recursive: true });
@@ -27,8 +28,7 @@ for (const viewport of [
   test("2X actual tactical command is usable and durable " +
     viewport.width + "x" + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/");
-    await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+    await startFirstRun(page);
     await expect(page.locator("[data-game-stage]")).toBeVisible();
     await expect(page.locator('[data-stat="ap"] b')).toContainText("2");
     await fingerTap(page, '[data-action="scene-panel"][data-panel="tactic"]');
