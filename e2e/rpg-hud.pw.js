@@ -55,8 +55,7 @@ test("RPG HUD keeps the scene dominant and the primary action reachable", async 
 });
 
 test("RPG game controls preserve existing actions and world-scene ownership", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-action="new-run"][data-onboarding="full"]').click();
+  await startProgressedRun(page, { runCount: 1, worldsSaved: 1 });
   await expect(page.locator(".stage-worlds .stage-world-thumb").first()).toBeVisible();
   await expect(page.locator(".stage-worlds .stage-world-risk").first()).toBeVisible();
   await expect(page.locator(".stage-bars .stage-meter")).toHaveCount(2);
