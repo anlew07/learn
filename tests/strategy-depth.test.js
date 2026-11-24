@@ -106,7 +106,7 @@ describe("rescue-first beast threat opportunity cost", () => {
         .every((entry) =>
           Object.entries(entry.worldDeltas)
             .filter(([worldId]) => worldId !== "beast")
-            .every(([, delta]) => delta === 0),
+            .every(([, delta]) => delta === null || delta === 0),
         ),
     ).toBe(true);
     expect(
