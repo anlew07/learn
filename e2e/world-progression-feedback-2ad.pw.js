@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { mkdirSync } from "node:fs";
 import { getSavedState, startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function resolveWorldThroughEngine(page, worldId) {
+  mkdirSync("test-results", { recursive: true });
   await page.evaluate(async (id) => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
