@@ -738,7 +738,7 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
   page,
 }) => {
   await startMultiworldRun(page);
-  await expect(page.locator(".run-dashboard")).toContainText("营地任务 · 三界救援");
+  await expect(page.locator(".run-dashboard")).toContainText("营地任务 · 同时穿越");
   await expect(page.locator(".run-dashboard .metric")).toHaveCount(4);
   await expect(page.locator('[data-world-card="lingzai"] .world-kicker')).toContainText(
     "CULTIVATION",
@@ -887,18 +887,25 @@ test("first run defaults to a focused rescue tutorial without prematurely unlock
   expect(restored.run.onboardingFocus).toBe(true);
 });
 
-test("quick start can reveal both worlds immediately without paying AP or losing progress", async ({
+test("quick start opens the detailed view without unlocking worlds or spending resources", async ({
   page,
 }) => {
-  await startProgressedRun(page, { debug: true, focus: true });
+  await startFirstRun(page, { debug: true });
+  await page.locator('button[data-action="step"]').click();
+  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(2);
   const before = await getSnapshot(page);
+  expect(before.run.worlds).toHaveLength(1);
   await page.locator('[data-action="show-all-worlds"]').click();
-  await expect(page.locator(".world")).toHaveCount(2);
+  await expect(page.locator(".world")).toHaveCount(1);
+  await expect(page.locator(".world-title")).toHaveText("灵灾");
+  await expect(page.locator('[data-world="zombie"]')).toHaveCount(0);
+  await expect(page.locator('[aria-label="主要导航"] button')).toHaveCount(4);
   await expect.poll(async () => (await getSnapshot(page)).run.onboardingFocus).toBe(false);
   const after = await getSnapshot(page);
+  expect(after.run.worlds).toEqual(before.run.worlds);
   expect(after.run.day).toBe(before.run.day);
   expect(after.run.ap).toBe(before.run.ap);
   expect(after.run.soul).toBe(before.run.soul);
   await page.reload();
-  await expect(page.locator(".world")).toHaveCount(2);
+  await expect(page.locator(".world")).toHaveCount(1);
 });
