@@ -27,6 +27,7 @@ describe("player guidance: first-time learning", () => {
     expect(start.tutorial.current.id).toBe("arrival");
     expect(start.tutorial.current.title).toBe("为什么会穿越到新世界？");
     expect(start.tutorial.current.text).toContain("成功救援后");
+    expect(start.tutorial.current.text).toContain("本次远征从已解锁的并行名额开始");
     expect(start.outcome).toBeNull();
     expect(PLAYER_GLOSSARY.map((term) => term.id)).toEqual([
       "p", "d", "ap", "level", "resource", "aid", "fusion", "build", "elite",
@@ -51,14 +52,30 @@ describe("player guidance: first-time learning", () => {
     expect(after.worlds.every((world) => world.lastDecision?.reason)).toBe(true);
   });
 
+  it("teaches the first rescue as the point where parallel-world slots expand", () => {
+    const state = Engine.fresh("guidance-first-rescue", 1, true, "", 0);
+    state.worldsSavedThisRun = 1;
+    state.worldsSavedCount = 1;
+    state.worldSlots = 2;
+    const tutorial = getTutorialGuidance(state, {
+      seenIds: ["arrival", "first-day"],
+    });
+    expect(tutorial.current.id).toBe("first-rescue");
+    expect(tutorial.current.text).toContain("已成功救援1个世界");
+    expect(tutorial.current.text).toContain("已开放2个并行名额");
+    expect(tutorial.current.text).toContain("下一次成功救援将继续解锁");
+    expect(tutorial.current.actionHint).toContain("其他世界不会重置");
+  });
+
   it("allows skipping and reviewing every stage without modifying a saved run", () => {
     const state = Engine.fresh("guidance-skip", 1, false);
     const before = JSON.stringify(state);
     const ignored = getTutorialGuidance(state, { skipped: true });
     expect(ignored.current).toBeNull();
     expect(ignored.canReview).toBe(true);
-    expect(ignored.steps.length).toBe(5);
+    expect(ignored.steps.length).toBe(6);
     expect(ignored.steps.find((card) => card.id === "first-battle").available).toBe(false);
+    expect(ignored.steps.find((card) => card.id === "first-rescue").available).toBe(false);
     const reviewed = getTutorialGuidance(state, { seenIds: ["arrival", "first-day"] });
     expect(reviewed.steps[0].seen).toBe(true);
     expect(reviewed.current).toBeNull();

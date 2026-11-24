@@ -767,17 +767,17 @@ function sceneHtml() {
  const visibleWorlds = canExplore ? view.worlds : view.worlds.filter(w=>w.id==="lingzai");
  const pending = view.pendingCount > 0;
  const statusText = view.paused ? "已暂停" : "自动进行中";
- const actionMarker = view.encounter ? "昨日战报" :
-   view.recentAction?.label ?? (view.statusCode === "running" ? "尚未行动" : "世界状态");
- const actionText = view.encounter ?
+ const actionMarker = view.progression?.marker ?? (view.encounter ? "昨日战报" :
+   view.recentAction?.label ?? (view.statusCode === "running" ? "尚未行动" : "世界状态"));
+ const actionText = view.progression?.shortText ?? (view.encounter ?
    "击退 " + view.encounter.defeated + "/" + view.encounter.encountered +
      (view.tacticResult ? " · 支援 +" + view.tacticResult.extraDefeated +
        " · 危机 −" + n(view.tacticResult.dangerRelief) : "") :
    view.recentAction?.text ??
-     (view.statusCode === "running" ? "分身待命 · 继续模拟推进" : view.status);
- const canvasSummary = view.encounter ? "上日交战回顾" :
+     (view.statusCode === "running" ? "分身待命 · 继续模拟推进" : view.status));
+ const canvasSummary = view.progression?.announcement ?? (view.encounter ? "上日交战回顾" :
    view.recentAction ? view.recentAction.label + " · " + view.recentAction.text :
-     (view.statusCode === "running" ? "等待自动行动" : view.status);
+     (view.statusCode === "running" ? "等待自动行动" : view.status));
  return '<main class="stage-game" data-stage-phase="'+esc(view.scene.phase)+'" aria-label="固定游戏主屏" data-game-stage>'+
   '<header class="stage-top">'+
   '<div class="stage-brand-group"><span class="stage-brand-seal" aria-hidden="true">✦</span>'+
@@ -786,7 +786,7 @@ function sceneHtml() {
   '<span class="stage-time-progress" role="progressbar" aria-label="距下一天的计时进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="跟随真实模拟计时；日夜光照只是视觉提示"><span class="stage-time-fill"></span></span></span>'+
   '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能" title="更多功能">☰</button></header>'+
   '<div class="stage-counters" aria-label="全局状态">'+
-  '<span class="stage-stat" data-stat="saved"><span>获救世界</span><b>'+view.saved+'<small>/'+view.total+'</small></b></span>'+
+  '<span class="stage-stat" data-stat="parallel" aria-label="当前同时守护'+view.activeWorldCount+'个世界，最多3个；本局已救援'+view.saved+'个"><span>并行世界</span><b>'+view.activeWorldCount+'<small>/3</small></b></span>'+
   '<span class="stage-stat" data-stat="ap"><span>干预点</span><b>'+view.ap+'</b></span>'+
   '<span class="stage-stat" data-stat="soul"><span>灵魂</span><b>'+view.soul+'</b></span>'+
   '<span class="stage-stat" data-stat="resource"><span>'+esc(Engine.info(run,Engine.byId(run,view.worldId)).resourceName)+'</span><b>'+view.resource+'</b></span></div>'+
@@ -812,7 +812,7 @@ function sceneHtml() {
   '<div class="stage-daylight" aria-hidden="true"></div>'+
   '<div class="stage-caption"><small>当前世界 · WORLD</small><b>'+esc(view.title)+'</b><span>Lv'+view.level+' · '+esc(view.status)+' · 剩余'+view.deadline+'天</span></div>'+
   '<div class="stage-scene-status" data-scene-phase="'+esc(view.scene.phase)+'"><span class="stage-status-dot"></span>'+esc(view.scene.summary)+'</div>'+
-  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+'" aria-live="polite" aria-label="世界状态与当前行动">'+
+  '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+(view.progression?' stage-progression-feedback':'')+'" aria-live="polite" aria-label="'+esc(view.progression?.announcement||"世界状态与当前行动")+'"'+(view.progression?' data-world-progression title="'+esc(view.progression.announcement)+'"':'')+'>'+
   '<span class="stage-action-marker">'+esc(actionMarker)+'</span><span class="stage-action-text">'+
   esc(inQuickStart()?getOpeningBrief(profile).stageHint:actionText)+'</span>'+
   (view.encounter&&!inQuickStart()?

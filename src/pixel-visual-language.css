@@ -115,7 +115,7 @@
 .stage-stat > span { font-size: 10px; }
 .stage-stat b { color: #ffdfaa; font-size: 15px; line-height: 1; }
 .stage-stat b small { color: var(--px-muted); margin-left: 1px; }
-.stage-stat[data-stat="saved"] b { color: #b8e0a9; }
+.stage-stat[data-stat="parallel"] b { color: #b8e0a9; }
 .stage-stat[data-stat="ap"] b { color: #f7d396; }
 .stage-stat[data-stat="soul"] b { color: #d8cee8; }
 .stage-stat[data-stat="resource"] b { color: #ffca8e; }
@@ -242,6 +242,12 @@
   background: #d7b779;
   padding: 4px 6px;
   box-shadow: 2px 2px 0 #121b16;
+}
+.stage-action-line.stage-progression-feedback {
+  border-color: var(--px-positive);
+}
+.stage-action-line.stage-progression-feedback .stage-action-marker {
+  background: var(--px-positive);
 }
 .stage-action-text { color: #f6edd2; font-size: 12px; font-weight: 650; }
 .stage-action-report {

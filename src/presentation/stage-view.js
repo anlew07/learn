@@ -1,5 +1,7 @@
 import { getRecentEncounter } from "./encounter-view.js";
 
+const MAX_PARALLEL_WORLDS = 3;
+
 const clampPercent = (value) =>
   Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
 
@@ -115,6 +117,33 @@ export function getStageView(run, selectedWorldId) {
   const percent = clampPercent;
   const status = selected.status === "saved" ? "救援完成" :
     selected.status === "failed" ? "救援未完成" : "正在求生";
+  const worldSlots = Math.min(
+    MAX_PARALLEL_WORLDS,
+    Math.max(1, Number.isInteger(run.worldSlots) ? run.worldSlots : worlds.length || 1),
+  );
+  const recentRescues = allWorlds.filter((world) =>
+    world.status === "saved" && world.transitionSettled === true && world.endDay === day - 1,
+  );
+  const arrivals = worlds.filter((world) => world.bornDay === day);
+  const progression = recentRescues.length ? (() => {
+    const rescuedNames = recentRescues.map((world) => world.name || world.id);
+    const arrivalNames = arrivals.map((world) =>
+      (world.name || world.id) + "（第" +
+      (Number.isInteger(world.worldNumber) ? world.worldNumber : "?") + "界）",
+    );
+    return {
+      marker: recentRescues.length === 1 ? rescuedNames[0] + "获救" : "救援成功",
+      shortText: "新界 +" + arrivals.length + " · 并行 " +
+        worlds.length + "/" + MAX_PARALLEL_WORLDS,
+      announcement: "成功救援：" + rescuedNames.join("、") + "。" +
+        (arrivalNames.length ? "新世界已加入：" + arrivalNames.join("、") + "。" : "") +
+        "当前同时守护" + worlds.length + "个世界，已开放" + worldSlots +
+        "个并行名额（最多" + MAX_PARALLEL_WORLDS + "个）。" +
+        (worldSlots < MAX_PARALLEL_WORLDS
+          ? "下一次成功救援将继续解锁并行名额。"
+          : "已达到并行名额上限；后续救援只替换获救槽位，其他世界继续行动。"),
+    };
+  })() : null;
   return {
     scene: getWorldSceneState(selected, day),
     encounter: getRecentEncounter(selected, day),
@@ -128,6 +157,9 @@ export function getStageView(run, selectedWorldId) {
     day,
     saved: Number.isInteger(run.worldsSavedThisRun) ? run.worldsSavedThisRun : allWorlds.filter((world) => world.status === "saved").length,
     total: Number.isInteger(run.worldsVisitedThisRun) ? run.worldsVisitedThisRun : allWorlds.length,
+    activeWorldCount: worlds.length,
+    worldSlots,
+    progression,
     ap: Math.max(0, number(run.ap) - number(run.apReserved)),
     soul: number(run.soul),
     rescue: percent(selected.p),
