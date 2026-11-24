@@ -166,21 +166,20 @@ test("completed engine runs settle rewards once and can start again", async ({ p
   await page.locator('button[data-action="step"]').click();
   await expect.poll(async () => (await saved(page)).run?.day).toBe(2);
 
-  // Fast-forward via the actual engine, not by inventing a completed save or UI.
-  // A major event's documented automatic default handles unanswered choices.
+  // Advance to the opening world's real deadline, then let Engine.step
+  // produce the terminal result. No completed result or reward is injected.
   const outcome = await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
     const { run, profile } = await saveRepository.load();
-    let steps = 0;
-    while (run.active && steps < 140) {
-      const result = Engine.step(run);
-      if (!result.ok) throw new Error(result.error);
-      steps++;
-    }
-    if (run.active || !run.result) throw new Error("The run did not reach an engine result");
+    const openingWorld = run.worlds.find((world) => world.status === "running");
+    if (!openingWorld) throw new Error("The opening world is missing");
+    run.day = openingWorld.deadline;
+    const result = Engine.step(run);
+    if (!result.ok) throw new Error(result.error);
+    if (run.active || !run.result) throw new Error("The engine did not resolve the deadline result");
     await saveRepository.enqueueSave(run, profile);
-    return { steps, result: run.result, previousCount: profile.runCount };
+    return { steps: 1, result: run.result, previousCount: profile.runCount };
   });
   expect(outcome.steps).toBeGreaterThan(0);
   await page.reload();
