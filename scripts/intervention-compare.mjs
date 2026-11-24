@@ -1,5 +1,10 @@
 import Engine from "../src/engine.js";
-import { collectOpeningWorlds, getOpeningWorlds, isOpeningWorldCohortComplete, openingWorldEndDay } from "./world-cohort.mjs";
+import {
+  collectOpeningWorlds,
+  getOpeningWorlds,
+  isOpeningWorldCohortComplete,
+  openingWorldEndDay,
+} from "./world-cohort.mjs";
 
 /**
  * Reproducible scripted contrasts, not a claim about actual players.
