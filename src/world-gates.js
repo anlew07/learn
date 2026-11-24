@@ -119,7 +119,7 @@ export function getWorldGateView(run, selectedWorldId) {
   });
 
   const history = worlds
-    .filter((world) => world?.status !== "running")
+    .filter((world) => world && world.status !== "running")
     .sort((left, right) => worldNumber(right, 0) - worldNumber(left, 0))
     .slice(0, 3)
     .map((world) => ({
@@ -225,7 +225,7 @@ export function worldGatePanelHtml(view, { canSwitch = true } = {}) {
       <div class="world-gate-count"><strong>${view.activeCount}/3</strong><span>并行世界</span><small>本局已穿越 ${view.visitedCount} 个世界</small></div>
     </header>
     <p class="world-gate-description">${switchHint}</p>
-    <div class="world-gate-hub"><span>✦ 界枢</span><small>已连接 ${view.unlockedSlots}/3 道界门</small></div>
+    <div class="world-gate-hub"><span>✦ 界枢</span><small>已开启 ${view.unlockedSlots}/3 道界门</small></div>
     <div class="world-gate-grid">${cards}</div>
     <p class="world-gate-next-hint">${view.nextHint}</p>
     <section class="world-gate-history"><h4>穿越记录 · 已救援 ${view.savedCount} 个</h4>${history}</section>

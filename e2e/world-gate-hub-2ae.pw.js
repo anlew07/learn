@@ -81,6 +81,7 @@ test("three opened gates switch the observed world without changing the run", as
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  mkdirSync("test-results", { recursive: true });
   await startProgressedRun(page, { runCount: 2, worldsSaved: 2 });
 
   const before = await getSavedState(page);
