@@ -177,7 +177,7 @@ test("completed engine runs settle rewards once and can start again", async ({ p
     run.day = openingWorld.deadline;
     const result = Engine.step(run);
     if (!result.ok) throw new Error(result.error);
-    if (run.active || !run.result) throw new Error("The engine did not resolve the deadline result");
+    if (run.active || !run.result) throw new Error("Engine deadline did not resolve");
     await saveRepository.enqueueSave(run, profile);
     return { steps: 1, result: run.result, previousCount: profile.runCount };
   });
