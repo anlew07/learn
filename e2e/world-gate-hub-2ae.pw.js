@@ -1,19 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
-import {
-  getSavedState,
-  startFirstRun,
-  startProgressedRun,
-} from "./helpers/run-fixtures.js";
+import { getSavedState, startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function resolveWorldThroughEngine(page, worldId) {
   await page.evaluate(async (id) => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { default: Engine } = await import("/src/engine.js");
     const saved = await saveRepository.load();
-    const world = saved.run.worlds.find(
-      (item) => item.id === id && item.status === "running",
-    );
+    const world = saved.run.worlds.find((item) => item.id === id && item.status === "running");
     if (!world) throw new Error("Missing running world fixture: " + id);
 
     world.p = 100;
@@ -36,9 +30,7 @@ async function resolveWorldThroughEngine(page, worldId) {
   await page.reload();
 }
 
-test("first-run gate hub exposes one real world and two locked slots", async ({
-  page,
-}) => {
+test("first-run gate hub exposes one real world and two locked slots", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await startFirstRun(page);
 
@@ -77,9 +69,7 @@ test("first-run gate hub exposes one real world and two locked slots", async ({
   await expect(expanded).toContainText("第 3 界");
 });
 
-test("three opened gates switch the observed world without changing the run", async ({
-  page,
-}) => {
+test("three opened gates switch the observed world without changing the run", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   mkdirSync("test-results", { recursive: true });
   await startProgressedRun(page, { runCount: 2, worldsSaved: 2 });
