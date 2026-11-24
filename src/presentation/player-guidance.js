@@ -88,7 +88,7 @@ export function getOpeningBrief(profile = {}) {
     playerRole: "你决定长期策略、处理重要事件，并使用当前已开放的援助与战技。",
     stageHint: "分身自动行动；你负责策略、事件与援助。",
     stakes: "危机压力达到100或错过世界期限，救援就会失败；失败还会削弱共享的灵魂强度。",
-    continuation: "当前已解锁 " + slots + " 个并行世界名额。每成功拯救一个世界，新的世界就会加入；最多同时守护三个世界。",
+    continuation: "当前已解锁 " + slots + " 个并行世界名额。成功救援会让分身穿越新世界，并逐步开放更多并行名额；最多同时守护三个世界。",
     shardNote: "世界碎片用于解锁文明传承，不直接购买数值战力。",
     glossary: PLAYER_GLOSSARY,
   };
@@ -411,10 +411,15 @@ function tutorialCatalog(state) {
     world.lastCombat || number(world.metrics?.actions?.fight) > 0 ||
     world.lastDecision?.actionId === "fight" || Boolean(world.build?.pending)
   );
+  const savedThisRun = Math.max(0, Math.floor(number(state?.worldsSavedThisRun)));
+  const worldSlots = Math.min(3, Math.max(1, Math.floor(number(state?.worldSlots, active.length || 1))));
+  const rescueProgressText = worldSlots < 3
+    ? "下一次成功救援将继续解锁并行名额。"
+    : "已达到3个并行名额上限；后续救援只替换获救槽位，其他世界继续行动。";
   return [
     {
       id: "arrival", available: true, title: "为什么会穿越到新世界？",
-      text: "意识先在一个灾变世界醒来。成功救援后，分身会穿越到下一个世界；随着救援次数增加，最多同时守护三个世界。",
+      text: "新档首局从一个灾变世界开始。成功救援后，分身会穿越到新世界，并逐步解锁更多并行名额；最多同时守护三个世界。",
       actionHint: "开始模拟，观察第一天会发生什么。",
     },
     {
@@ -422,6 +427,12 @@ function tutorialCatalog(state) {
       title: "第一天：观察自主行动",
       text: "每天每个分身会自主选择训练、调查、采集或排险。你调整的是长期策略，重大事件和跨界援助才需要权衡是否干预。",
       actionHint: "先观察当前世界的「正在进行」和「自主判断」，成功救援后再认识新世界。",
+    },
+    {
+      id: "first-rescue", available: savedThisRun > 0, title: "第一次救援：世界名额会成长",
+      text: "本局已成功救援" + savedThisRun + "个世界，当前有" + active.length +
+        "个世界在运行，已开放" + worldSlots + "个并行名额。" + rescueProgressText,
+      actionHint: "打开全部世界，观察新世界从下一游戏日开始行动；仍在运行的其他世界不会重置。",
     },
     {
       id: "first-crisis", available: Boolean(crisis), title: "第一次危机：时间不是免费的",
