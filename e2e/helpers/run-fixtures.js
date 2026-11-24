@@ -19,7 +19,7 @@ export async function startFirstRun(page, { debug = false } = {}) {
 
 export async function startProgressedRun(
   page,
-  { debug = false, runCount = 1, worldsSaved = 1, focus = false } = {},
+  { debug = false, runCount = 1, worldsSaved = 1 } = {},
 ) {
   if (!Number.isInteger(runCount) || runCount < 1) {
     throw new RangeError("runCount must be a positive integer");
@@ -50,15 +50,5 @@ export async function startProgressedRun(
   await expect
     .poll(async () => (await getSavedState(page)).run?.worlds?.length)
     .toBe(expectedWorlds);
-
-  if (focus) {
-    await page.evaluate(async () => {
-      const { saveRepository } = await import("/src/services/persistence.js");
-      const saved = await saveRepository.load();
-      saved.run.onboardingFocus = true;
-      await saveRepository.enqueueSave(saved.run, saved.profile);
-    });
-    await page.reload();
-  }
   return getSavedState(page);
 }
