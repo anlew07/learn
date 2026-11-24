@@ -1,6 +1,7 @@
 import Engine from "../src/engine.js";
 import { BALANCE } from "../src/config/balance.js";
 import { readWorldTerminal } from "./balance-outcome.mjs";
+import { collectOpeningWorlds, getOpeningWorlds, isOpeningWorldCohortComplete, openingWorldEndDay } from "./world-cohort.mjs";
 
 const strategies = ["default", "growth", "clear", "rescue"];
 
@@ -52,34 +53,36 @@ function simulate(runNumber, strategy, waves, samples) {
       for (const world of state.worlds) world.strategy = strategy;
     }
     const terminal = new Map();
-    const finishedWorlds = new Map();
+    const cohort = collectOpeningWorlds(state);
     let steps = 0;
-    while (state.active && steps++ < 200) {
+    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && steps++ < 200) {
       const day = state.day;
       Engine.step(state);
-      // A strategy experiment applies the same policy to every newly crossed
-      // world, not only the worlds that happened to exist at run start.
+      // Apply the same policy to every new world while measuring only the
+      // first three world instances, which form the opening progression cohort.
       if (strategy !== "default") {
         for (const world of state.worlds) {
           if (world.status === "running") world.strategy = strategy;
         }
       }
-      for (const world of state.worlds) {
-        const instanceId = world.worldNumber ?? world.slotId ?? world.id;
-        if (!finishedWorlds.has(instanceId) && world.status !== "running") {
-          finishedWorlds.set(instanceId, world);
+      collectOpeningWorlds(state, cohort);
+      for (const world of getOpeningWorlds(state, cohort)) {
+        const instanceId = world.worldNumber;
+        if (!terminal.has(instanceId) && world.status !== "running") {
           terminal.set(instanceId, readWorldTerminal(world, state.logs, day));
         }
       }
     }
-    if (state.active || !state.result) {
+    const cohortWorlds = getOpeningWorlds(state, cohort);
+    if (!isOpeningWorldCohortComplete(state, cohort)) {
       incomplete++;
       continue;
     }
 
-    allSaved += Number(state.result.saved === state.result.visited);
-    runDay += state.result.endedDay;
-    for (const [instanceId, world] of finishedWorlds) {
+    allSaved += Number(cohortWorlds.length > 0 && cohortWorlds.every((world) => world.status === "saved"));
+    runDay += openingWorldEndDay(cohortWorlds);
+    for (const world of cohortWorlds) {
+      const instanceId = world.worldNumber;
       const row = totals[world.id];
       if (!row) continue;
       const outcome = terminal.get(instanceId);
@@ -189,9 +192,12 @@ export function compareRescueNestPriority(samples = 100, { waves = false } = {})
       );
       const worldDeltas = {};
       for (const id of Object.keys(baseline.worlds)) {
-        worldDeltas[id] = Number(
-          (candidate.worlds[id].saveRate - baseline.worlds[id].saveRate).toFixed(3),
-        );
+        const candidateRate = candidate.worlds[id].saveRate;
+        const baselineRate = baseline.worlds[id].saveRate;
+        worldDeltas[id] =
+          Number.isFinite(candidateRate) && Number.isFinite(baselineRate)
+            ? Number((candidateRate - baselineRate).toFixed(3))
+            : null;
       }
       differences.push({ runNumber, strategy, worldDeltas });
     }
