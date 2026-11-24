@@ -7,12 +7,15 @@ import {
 } from "../src/ui/support-pages.js";
 
 describe("first-session help and local settings", () => {
-  it("explains actual rules, two initial worlds and non-reward replays", () => {
+  it("explains the single-world opening and rescue-driven 1→2→3 progression", () => {
     const html = supportPageHtml("help");
     expect(html).toContain("分身自动行动");
     expect(html).toContain("P100");
-    expect(html).toContain("废土世界仍在同步运行");
+    expect(html).toContain("新档首局只有灵灾一个世界");
+    expect(html).toContain("逐步解锁更多并行名额");
+    expect(html).toContain("最多同时守护三个世界");
     expect(html).toContain("不额外获得奖励");
+    expect(html).not.toContain("废土世界仍在同步运行");
     expect(html).not.toContain("购买");
   });
 
