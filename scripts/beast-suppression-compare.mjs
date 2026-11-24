@@ -17,7 +17,6 @@ function average(value, count) {
   return Number((value / count).toFixed(3));
 }
 
-
 function runScenario(seeds, strategy, waves) {
   const totals = {};
   for (const id of worldIds) {
@@ -67,7 +66,9 @@ function runScenario(seeds, strategy, waves) {
     if (!isOpeningWorldCohortComplete(state, cohort)) continue;
 
     completed++;
-    allSaved += Number(cohortWorlds.length > 0 && cohortWorlds.every((world) => world.status === "saved"));
+    allSaved += Number(
+      cohortWorlds.length > 0 && cohortWorlds.every((world) => world.status === "saved"),
+    );
     totalRunDay += openingWorldEndDay(cohortWorlds);
     for (const world of cohortWorlds) {
       const key = world.worldNumber;
