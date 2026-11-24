@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { startProgressedRun } from "./helpers/run-fixtures.js";
+import { startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function snapshot(page) {
   return page.evaluate(async () => {
@@ -8,8 +8,8 @@ async function snapshot(page) {
   });
 }
 
-async function newRun(page, mode = "full") {
-  await startProgressedRun(page, { focus: mode === "focus" });
+async function newRun(page) {
+  await startProgressedRun(page);
   await expect(page.locator("[data-game-stage]")).toBeVisible();
 }
 
@@ -160,18 +160,18 @@ test("existing event and skill choice in a saved run reopen safely and can be di
   expect((await snapshot(page)).run.day).toBe(before.day);
 });
 
-test("focus mode displays a hidden world's urgent event without unlocking its scene", async ({
+test("focus mode pauses for the opening world's urgent event without exposing locked worlds", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await newRun(page, "focus");
+  await startFirstRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
-    run.worlds[1].pendingEvent = {
-      id: "zombie/clue/focus-qa",
+    run.worlds[0].pendingEvent = {
+      id: "lingzai/clue/focus-qa",
       type: "clue",
-      title: "失联广播",
+      title: "雾谷古碑",
       state: "active",
       expiresDay: run.day + 2,
     };
@@ -179,11 +179,13 @@ test("focus mode displays a hidden world's urgent event without unlocking its sc
   });
   await page.reload();
   const dialog = page.getByRole("dialog", { name: "待处理事件与战技" });
-  await expect(dialog).toContainText("失联广播");
-  await expect(dialog).toContainText("废土救援");
+  await expect(dialog).toContainText("雾谷古碑");
+  await expect(dialog).toContainText("灵灾");
   await expect(page.locator(".stage-caption")).toContainText("灵灾");
   await expect(page.locator('.stage-worlds [data-world="zombie"]')).toHaveCount(0);
-  expect((await snapshot(page)).run.onboardingFocus).toBe(true);
+  const state = await snapshot(page);
+  expect(state.run.onboardingFocus).toBe(true);
+  expect(state.run.worlds).toHaveLength(1);
   const geometry = await page.evaluate(() => ({
     width: document.documentElement.scrollWidth,
     height: document.documentElement.scrollHeight,
