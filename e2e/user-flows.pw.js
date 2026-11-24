@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startFirstRun, startProgressedRun } from "./helpers/run-fixtures.js";
 
 async function getSnapshot(page) {
   return page.evaluate(async () => {
@@ -7,18 +8,14 @@ async function getSnapshot(page) {
   });
 }
 
-async function startFirstRun(page) {
-  await page.goto("/?debug=1");
-  const newRun = page.locator('[data-action="new-run"][data-onboarding="full"]');
-  await expect(newRun).toBeVisible();
-  await newRun.click();
+async function startMultiworldRun(page) {
+  await startProgressedRun(page, { debug: true });
   await expect(page.locator(".world")).toHaveCount(2);
   await expect(page.getByRole("button", { name: /继续模拟/ })).toBeVisible();
-  await expect.poll(async () => (await getSnapshot(page)).run?.day).toBe(1);
 }
 
 test("new mobile session saves one day and restores it after refresh", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
 
   await page.locator('button[data-action="step"]').click();
@@ -39,7 +36,7 @@ test("another tab remains read-only, then takes over the latest committed state"
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const first = await context.newPage();
   try {
-    await startFirstRun(first);
+    await startMultiworldRun(first);
     const second = await context.newPage();
     try {
       await second.goto("/?debug=1");
@@ -66,7 +63,7 @@ test("another tab remains read-only, then takes over the latest committed state"
 
 test("one cross-world aid is committed once and survives reload", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-tab="soul"]').click();
   await expect(page.locator("#aid-from")).toBeVisible();
   await page.locator("#aid-from").selectOption("lingzai");
@@ -88,7 +85,7 @@ test("one cross-world aid is committed once and survives reload", async ({ page 
 });
 
 test("world cards explain decisions and recent wave combat", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('select[data-action="strategy"][data-world="zombie"]').selectOption("clear");
   await expect
     .poll(async () => {
@@ -145,7 +142,7 @@ test("world cards explain decisions and recent wave combat", async ({ page }) =>
 });
 
 test("event preview describes odds, default and action costs", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -178,7 +175,7 @@ test("event preview describes odds, default and action costs", async ({ page }) 
 });
 
 test("battle log tab displays recorded actions and wave bonuses", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-action="step"]').click();
   await page.locator('button[data-tab="log"]').click();
   await expect(page.getByText("本局行动统计")).toBeVisible();
@@ -190,7 +187,7 @@ test("battle log tab displays recorded actions and wave bonuses", async ({ page 
 });
 
 test("finished runs can open their archived battle log", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -210,7 +207,7 @@ test("finished runs can open their archived battle log", async ({ page }) => {
 });
 
 test("near-finale world cards reveal each real requirement and its shortfall", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -251,7 +248,7 @@ test("near-finale world cards reveal each real requirement and its shortfall", a
 });
 
 test("a new major event pauses real 4× simulation before another day passes", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -282,7 +279,7 @@ test("a new major event pauses real 4× simulation before another day passes", a
 test("fusion previews show real eligibility and charge exactly once on success", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-tab="soul"]').click();
   await expect(page.locator(".fusion-row")).toHaveCount(2);
   await expect(page.locator('.fusion-row button[data-action="fusion"]:disabled')).toHaveCount(2);
@@ -318,7 +315,7 @@ test("fusion previews show real eligibility and charge exactly once on success",
 
 test("aid preview blocks wasted progress and shows real cost", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-tab="soul"]').click();
 
   const preview = page.locator("#aid-choice-preview");
@@ -357,7 +354,7 @@ test("aid preview blocks wasted progress and shows real cost", async ({ page }) 
 test("aid compares a partial doom reduction without offering a wasted intervention", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -376,7 +373,7 @@ test("aid compares a partial doom reduction without offering a wasted interventi
 test("strategy switching shows AP cost and never misrepresents an unavailable choice", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -418,7 +415,7 @@ test("committed aid consequences remain visible after reload and in the battle l
   page,
 }) => {
   page.on("dialog", (dialog) => dialog.accept());
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-tab="soul"]').click();
   await page.locator('button[data-action="aid"][data-mode="p"]').click();
   const activity = page.locator(".intervention-history").first();
@@ -439,7 +436,7 @@ test("committed aid consequences remain visible after reload and in the battle l
 test("paid strategy choice records its cause without claiming immediate doom reduction", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -459,7 +456,7 @@ test("paid strategy choice records its cause without claiming immediate doom red
 test("crisis advisory compares a legal rescue without spending or changing the world", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await expect(page.locator(".crisis-panel")).toHaveCount(0);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
@@ -485,7 +482,7 @@ test("crisis advisory compares a legal rescue without spending or changing the w
 });
 
 test("expiring event is shown first and opens its existing choice screen", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -515,7 +512,7 @@ test("expiring event is shown first and opens its existing choice screen", async
 test("a P100 materials-only finale displays a blocker, not an invalid aid shortcut", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -540,7 +537,7 @@ test("a P100 materials-only finale displays a blocker, not an invalid aid shortc
 test("Lingzai follow-up lets players invest into a visible seven-day seal effect", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -594,7 +591,7 @@ test("Lingzai follow-up lets players invest into a visible seven-day seal effect
 });
 
 test("follow-up event can automatically choose the safe path at expiry", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -631,7 +628,7 @@ test("follow-up event can automatically choose the safe path at expiry", async (
 test("the secret collection stays locked until discovery and survives a reload", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-tab="log"]').click();
   const collection = page.locator("[data-collection]");
   await expect(collection).toContainText("0 / 2");
@@ -657,7 +654,7 @@ test("the secret collection stays locked until discovery and survives a reload",
 test("cross-world secret unlocks in the game and persists as a revealed collection entry", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -682,7 +679,7 @@ test("cross-world secret unlocks in the game and persists as a revealed collecti
 
 test("permanent archive survives restarting and refresh", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -711,7 +708,7 @@ test("permanent archive survives restarting and refresh", async ({ page }) => {
 test("earned archive title can be equipped on the home screen and survives reload", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -740,7 +737,7 @@ test("earned archive title can be equipped on the home screen and survives reloa
 test("refreshed dashboard exposes distinct world identities and keyboard-safe navigation", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await expect(page.locator(".run-dashboard")).toContainText("营地任务 · 三界救援");
   await expect(page.locator(".run-dashboard .metric")).toHaveCount(4);
   await expect(page.locator('[data-world-card="lingzai"] .world-kicker')).toContainText(
@@ -759,7 +756,7 @@ test("refreshed dashboard exposes distinct world identities and keyboard-safe na
 });
 
 test("world intelligence is collapsible without hiding key survival bars", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   const first = page.locator('[data-world-card="lingzai"]');
   await expect(first.locator(".bars")).toBeVisible();
   const intel = first.locator(".world-intel");
@@ -771,7 +768,7 @@ test("world intelligence is collapsible without hiding key survival bars", async
 });
 
 test("home archive keeps collections compact until explicitly expanded", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.locator('button[data-action="home"]').click();
   const archive = page.locator("[data-profile-archive]");
   const details = archive.locator(".archive-discoveries");
@@ -783,7 +780,7 @@ test("home archive keeps collections compact until explicitly expanded", async (
 });
 
 test("cautious clue outcome reveals the actual four-day protective status", async ({ page }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -811,7 +808,7 @@ test("cautious clue outcome reveals the actual four-day protective status", asyn
 test("real evolved zombie build unleashes the steel-rain ultimate in mobile replay", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -844,7 +841,7 @@ test("real evolved zombie build unleashes the steel-rain ultimate in mobile repl
 test("skill awakening reveals elite enemy counters before committing a choice", async ({
   page,
 }) => {
-  await startFirstRun(page);
+  await startMultiworldRun(page);
   await page.evaluate(async () => {
     const { saveRepository } = await import("/src/services/persistence.js");
     const { run, profile } = await saveRepository.load();
@@ -869,38 +866,31 @@ test("skill awakening reveals elite enemy counters before committing a choice", 
   ).toHaveCount(0);
 });
 
-test("first run defaults to a focused rescue tutorial without changing the simulation", async ({
+test("first run defaults to a focused rescue tutorial without prematurely unlocking another world", async ({
   page,
 }) => {
-  await page.goto("/?debug=1");
-  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  await startFirstRun(page, { debug: true });
   await expect(page.locator(".world")).toHaveCount(1);
   await expect(page.locator(".world-title")).toHaveText("灵灾");
   await expect(page.locator('[data-onboarding-guide="focus"]')).toContainText("救援准备");
   await expect(page.locator("nav.footer-nav")).toHaveCount(0);
   const initial = await getSnapshot(page);
-  expect(initial.run.worlds).toHaveLength(2);
+  expect(initial.run.worlds).toHaveLength(1);
   expect(initial.run.onboardingFocus).toBe(true);
 
   await page.locator('button[data-action="step"]').click();
   await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(2);
   await page.reload();
   await expect(page.locator(".world")).toHaveCount(1);
-  for (let index = 0; index < 7; index++) {
-    await page.locator('button[data-action="step"]').click();
-  }
-  await expect(page.locator(".world")).toHaveCount(2);
-  await expect(page.locator(".world-title")).toHaveText(["灵灾", "废土救援"]);
-  await expect.poll(async () => (await getSnapshot(page)).run.day).toBe(9);
-  const completed = await getSnapshot(page);
-  expect(completed.run.worlds).toHaveLength(2);
+  const restored = await getSnapshot(page);
+  expect(restored.run.worlds).toHaveLength(1);
+  expect(restored.run.onboardingFocus).toBe(true);
 });
 
 test("quick start can reveal both worlds immediately without paying AP or losing progress", async ({
   page,
 }) => {
-  await page.goto("/?debug=1");
-  await page.locator('[data-action="new-run"][data-onboarding="focus"]').click();
+  await startProgressedRun(page, { debug: true, focus: true });
   const before = await getSnapshot(page);
   await page.locator('[data-action="show-all-worlds"]').click();
   await expect(page.locator(".world")).toHaveCount(2);
