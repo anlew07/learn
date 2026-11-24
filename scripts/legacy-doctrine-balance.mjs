@@ -1,5 +1,6 @@
 import Engine from "../src/engine.js";
 import {
+  OPENING_WORLD_MAX_DAYS,
   collectOpeningWorlds,
   getOpeningWorlds,
   isOpeningWorldCohortComplete,
@@ -16,7 +17,7 @@ function simulate(seed, runNumber, legacyId) {
   const cohort = collectOpeningWorlds(run);
   for (
     let day = 0;
-    day < 160 && run.active && !isOpeningWorldCohortComplete(run, cohort);
+    day < OPENING_WORLD_MAX_DAYS && run.active && !isOpeningWorldCohortComplete(run, cohort);
     day += 1
   ) {
     Engine.step(run);
