@@ -430,9 +430,9 @@ function tutorialCatalog(state) {
     },
     {
       id: "first-rescue", available: savedThisRun > 0, title: "第一次救援：世界名额会成长",
-      text: "本局已成功救援" + savedThisRun + "个世界，当前有" + active.length +
-        "个世界在运行，已开放" + worldSlots + "个并行名额。" + rescueProgressText,
-      actionHint: "打开全部世界，观察新世界从下一游戏日开始行动；仍在运行的其他世界不会重置。",
+      text: "本局已成功救援" + savedThisRun + "个世界，当前已开放" +
+        worldSlots + "个并行名额。" + rescueProgressText,
+      actionHint: "查看上方世界列表，新世界从下一游戏日开始行动；仍在运行的其他世界不会重置。",
     },
     {
       id: "first-crisis", available: Boolean(crisis), title: "第一次危机：时间不是免费的",
