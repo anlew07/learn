@@ -32,7 +32,6 @@ function emptyWorld() {
   };
 }
 
-
 for (const runNumber of [1, 2, 3]) {
   for (const strategy of strategies) {
     for (const waves of [false, true]) {
