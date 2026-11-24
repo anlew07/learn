@@ -61,7 +61,11 @@ function simulateProfile(runNumber, profile, samples) {
     const cohort = collectOpeningWorlds(state);
     const terminalByInstance = new Map();
     let ticks = 0;
-    while (state.active && !isOpeningWorldCohortComplete(state, cohort) && ticks < OPENING_WORLD_MAX_DAYS) {
+    while (
+      state.active &&
+      !isOpeningWorldCohortComplete(state, cohort) &&
+      ticks < OPENING_WORLD_MAX_DAYS
+    ) {
       const terminalDay = state.day;
       Engine.step(state);
       ticks++;
