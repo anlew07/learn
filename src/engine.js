@@ -664,6 +664,33 @@ const MultiworldEngine = (function () {
   }
   function step(s){return tickDay(s,null);}
 
+  /**
+   * Predict the exact next daily action by stepping a disposable snapshot.
+   * This mirrors all event activation and seeded action selection without
+   * consuming RNG, advancing the day, or mutating the caller's RunState.
+   */
+  function previewNextAction(s,worldId){
+    if(!s||typeof s!=="object"||!Array.isArray(s.worlds)||!Number.isInteger(s.day))
+      return {ok:false,error:"模拟状态无效"};
+    if(!s.active)return {ok:false,error:"本局已经结束"};
+    if(typeof worldId!=="string"||!byId(s,worldId))
+      return {ok:false,error:"目标世界不存在"};
+    var day=s.day;
+    var snapshot=JSON.parse(JSON.stringify(s));
+    var outcome=tickDay(snapshot,null);
+    if(!outcome.ok)return {ok:false,error:outcome.error};
+    var world=byId(snapshot,worldId);
+    var decision=world?.lastDecision;
+    var acted=Boolean(decision&&decision.day===day);
+    return {
+      ok:true,worldId:worldId,day:day,
+      actionId:acted?decision.actionId:null,
+      reason:acted?decision.reason:"",
+      alternatives:acted&&Array.isArray(decision.alternatives)?decision.alternatives.slice():[],
+      status:world?.status??null
+    };
+  }
+
   function captureSortieWorld(w) {
     return {
       id:w.id,status:w.status,level:w.level,xp:w.xp,
@@ -873,7 +900,7 @@ const MultiworldEngine = (function () {
       fusion:previewFusion,aid:previewResourceAid});
   }
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
-    fresh:fresh,restore:restore,step:step,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
+    fresh:fresh,restore:restore,step:step,previewNextAction:previewNextAction,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
     resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
