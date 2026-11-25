@@ -81,6 +81,42 @@ export function createSaveRepository(driver = { getMany, setMany }) {
 
 export const saveRepository = createSaveRepository();
 
+function isValidPendingEncounter(pending, day) {
+  if (
+    !pending ||
+    typeof pending !== "object" ||
+    Array.isArray(pending) ||
+    typeof pending.id !== "string" ||
+    pending.worldId !== "lingzai" ||
+    pending.day !== day ||
+    typeof pending.seed !== "string" ||
+    !Number.isFinite(pending.danger) ||
+    pending.danger < 0 ||
+    pending.danger > 100 ||
+    !Number.isInteger(pending.forgeLevel) ||
+    pending.forgeLevel < 0 ||
+    pending.forgeLevel > 1 ||
+    !["safe", "salvage"].includes(pending.missionId) ||
+    typeof pending.reason !== "string" ||
+    !["choice", "player", "ai"].includes(pending.controller) ||
+    !Array.isArray(pending.actions) ||
+    pending.actions.length > 4564
+  ) return false;
+
+  return pending.actions.every((action) => {
+    if (!Array.isArray(action) || typeof action[0] !== "string") return false;
+    if (action[0] === "tick") {
+      return action.length === 3 &&
+        Number.isFinite(action[1]) && Math.abs(action[1]) <= 1 &&
+        Number.isFinite(action[2]) && Math.abs(action[2]) <= 1;
+    }
+    if (action[0] === "skill" || action[0] === "cast") {
+      return action.length === 2 && typeof action[1] === "string";
+    }
+    return action[0] === "retreat" && action.length === 1;
+  });
+}
+
 /**
  * Reject incompatible or malformed snapshots before enabling a new writer.
  * This intentionally does not repair, delete or overwrite browser data.
@@ -111,6 +147,19 @@ export function assertRestorableSnapshot({ run, profile }, version) {
       !Array.isArray(run.echoes) ||
       typeof run.active !== "boolean" ||
       typeof run.paused !== "boolean" ||
+      (run.encounterPreference !== undefined &&
+        !["ask", "player", "ai"].includes(run.encounterPreference)) ||
+      (run.pendingEncounter !== undefined &&
+        run.pendingEncounter !== null &&
+        !isValidPendingEncounter(run.pendingEncounter, run.day)) ||
+      (run.lastEncounter !== undefined && run.lastEncounter !== null &&
+        (typeof run.lastEncounter !== "object" ||
+          Array.isArray(run.lastEncounter) ||
+          typeof run.lastEncounter.id !== "string" ||
+          !Number.isInteger(run.lastEncounter.day) ||
+          !Number.isInteger(run.lastEncounter.nextDay) ||
+          !run.lastEncounter.battle ||
+          !Array.isArray(run.lastEncounter.worlds))) ||
       run.worlds.some(
         (world) =>
           !world ||
