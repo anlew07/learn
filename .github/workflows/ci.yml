@@ -19,8 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - name: Inspect canonical formal encounter E2E formatting
-        run: npx prettier --write e2e/formal-world-encounter-2ag-c.pw.js && cat e2e/formal-world-encounter-2ag-c.pw.js
+      - name: Inspect generated game text review diff
+        run: npm run text:export && git diff -- docs/review/game-text.csv
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
