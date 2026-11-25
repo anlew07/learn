@@ -13,7 +13,7 @@ import {
 import { getAutonomousEncounterDecision } from "../src/systems/encounter-controller.js";
 import { assertRestorableSnapshot } from "../src/services/persistence.js";
 
-function readyRun(seed = "2ag-c-formal-fight") {
+function readyRun(seed = "2ag-preview-fight") {
   const run = Engine.fresh(seed, 1, true);
   Engine.byId(run, "lingzai").strategy = "clear";
   return run;
