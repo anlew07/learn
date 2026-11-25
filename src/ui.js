@@ -1542,6 +1542,8 @@ setInterval(()=>{
  }
 },300);
 async function claimSession() {
+ let resumeAiEncounter=false;
+ let settleRecoveredEncounter=false;
  sessionStatus="starting";
  render();
  const acquired=await session.acquire();
@@ -1556,6 +1558,13 @@ async function claimSession() {
      const needsReward=Boolean(acquired&&saved.result&&!saved.rewarded);
      const previousWorldsSaved=profile.worldsSaved;
      run=Engine.restore(saved,profile.worldsSaved);run.paused=true;
+     if(run.pendingEncounter){
+      const restored=restoreEncounterBattle();
+      if(!restored.ok)throw new Error("正式遭遇恢复失败："+restored.error);
+      resumeAiEncounter=run.pendingEncounter.controller==="ai";
+      settleRecoveredEncounter=run.pendingEncounter.controller==="player"&&
+       encounterBattle.outcome!=="running";
+     }
      profile.worldsSaved=Math.max(profile.worldsSaved,run.worldsSavedCount||0);
      if(needsReward)reward();
      if(acquired&&(hadUnpausedSave||needsReward||profile.worldsSaved!==previousWorldsSaved))queueSave();
@@ -1563,11 +1572,15 @@ async function claimSession() {
      run=null;
    }
    if(acquired){
-    tab=isDebug?"world":"scene";saveError=false;restoreError=false;
-    scenePanel="";
-    // Older saves may already contain a choice that was never surfaced.
-    // Reopening the dialog must not re-run the choice or advance a day.
-    pauseForDecision();
+    tab=run?.pendingEncounter?"scene":isDebug?"world":"scene";
+    saveError=false;restoreError=false;
+    scenePanel=run?.pendingEncounter?.controller==="choice"?"encounter":"";
+    if(run?.pendingEncounter)sceneWorldId="lingzai";
+    else {
+     // Older saves may already contain a choice that was never surfaced.
+     // Reopening the dialog must not re-run the choice or advance a day.
+     pauseForDecision();
+    }
    }
  }catch(error){
    restoreError=true;
@@ -1577,5 +1590,7 @@ async function claimSession() {
  }
  resetDayClock();
  render();
+ if(acquired&&resumeAiEncounter)void runEncounterWithAI();
+ else if(acquired&&settleRecoveredEncounter)void commitEncounterResult();
 }
 claimSession();
