@@ -141,9 +141,7 @@ test("formal encounter keeps its pending trace when the final save fails", async
   await page.locator('[data-action="retry-save"]').tap();
   await expect(page.locator('[data-action="retry-save"]')).toHaveCount(0);
   await expect
-    .poll(async () =>
-      (await getSavedState(page)).run?.pendingEncounter?.actions.at(-1)?.[0],
-    )
+    .poll(async () => (await getSavedState(page)).run?.pendingEncounter?.actions.at(-1)?.[0])
     .toBe("retreat");
   await page.locator('[data-action="encounter-settle"]').tap();
   await expect.poll(async () => (await getSavedState(page)).run?.day).toBe(2);
