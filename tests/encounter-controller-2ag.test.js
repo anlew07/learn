@@ -255,11 +255,16 @@ describe("2AG shared encounter controller", () => {
     expect(chooseSortieSkill(battle, "thunder").ok).toBe(true);
     expect(battle.thunderHits).toBe(0);
 
+    battle.enemies.push({ id: 1, kind: "wolf", x: 250, y: 224, hp: 2 });
+    battle.nextShotTick = 10000;
+    battle.hero.invulnerable = 10000;
+    for (let tick = 0; tick < 240; tick++) stepSortie(battle, { x: 0, y: 0 });
+    expect(battle.thunderHits).toBe(0);
+
     const emptyCast = castSortieSkill(battle);
     expect(emptyCast.ok).toBe(false);
     expect(battle.thunderNextTick).toBe(0);
 
-    battle.enemies.push({ id: 1, kind: "wolf", x: 250, y: 224, hp: 2 });
     const cast = castSortieSkill(battle);
     expect(cast).toMatchObject({ ok: true, skillId: "thunder", targets: 1 });
     expect(battle.thunderHits).toBe(1);
