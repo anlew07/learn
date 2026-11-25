@@ -108,3 +108,47 @@ for (const viewport of [
     },
   );
 }
+
+test("formal encounter keeps its pending trace when the final save fails", async ({ page }) => {
+  await installFightFixture(page);
+  await page.locator('[data-action="step"]').tap();
+  await page.locator('[data-action="encounter-player"]').tap();
+  await expect(page.locator("[data-encounter-screen]")).toBeVisible();
+  await page.locator('[data-action="encounter-toggle"]').tap();
+  await expect
+    .poll(async () => (await getSavedState(page)).run?.pendingEncounter?.controller)
+    .toBe("player");
+
+  await page.evaluate(async () => {
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const original = saveRepository.enqueueSave.bind(saveRepository);
+    let failFinalSave = true;
+    saveRepository.enqueueSave = (run, profile) => {
+      if (failFinalSave && run?.lastEncounter && !run.pendingEncounter) {
+        failFinalSave = false;
+        return Promise.reject(new Error("injected final encounter save failure"));
+      }
+      return original(run, profile);
+    };
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator('[data-action="encounter-retreat"]').tap();
+  await expect(page.locator('[data-action="retry-save"]')).toBeVisible();
+  await expect(page.locator('[data-action="encounter-settle"]')).toBeVisible();
+  await expect(page.locator('[data-stage-panel="encounter-result"]')).toHaveCount(0);
+  expect((await getSavedState(page)).run.day).toBe(1);
+
+  await page.locator('[data-action="retry-save"]').tap();
+  await expect(page.locator('[data-action="retry-save"]')).toHaveCount(0);
+  await expect
+    .poll(async () =>
+      (await getSavedState(page)).run?.pendingEncounter?.actions.at(-1)?.[0],
+    )
+    .toBe("retreat");
+  await page.locator('[data-action="encounter-settle"]').tap();
+  await expect.poll(async () => (await getSavedState(page)).run?.day).toBe(2);
+  const saved = await getSavedState(page);
+  expect(saved.run.pendingEncounter).toBeNull();
+  expect(saved.run.lastEncounter.battle.outcome).toBe("retreated");
+  expect(saved.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight).toBe(1);
+});
