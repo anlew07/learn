@@ -860,8 +860,8 @@ function startEncounterLoop() {
  };
  encounterFrameId=requestAnimationFrame(frame);
 }
-async function commitEncounterResult() {
- if(!run?.pendingEncounter||commandBusy)return;
+async function commitEncounterResult(alreadyBusy=false) {
+ if(!run?.pendingEncounter||(commandBusy&&!alreadyBusy))return;
  commandBusy=true;
  stopEncounterLoop();
  resetEncounterInput();
@@ -915,7 +915,7 @@ async function runEncounterWithAI() {
   }
   if(encounterBattle.outcome==="running"||encounterBattle.skillChoicePending)
    throw new Error("AI遭遇未能在规定时长内结束");
-  await commitEncounterResult();
+  await commitEncounterResult(true);
  }catch(error){
   run.paused=true;
   queueSave();
