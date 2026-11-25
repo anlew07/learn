@@ -75,7 +75,7 @@ export async function openCampChoiceSandbox() {
         "  prep.cost!==3||prep.hpBonus!==2||typeof prep.operationId!==\"string\"))",
         "  return {ok:false,error:\"战前准备试验状态非法\"};",
         "var prepHp=prep?.charges===1?2:0;",
-        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,"auto",prepHp);",
+        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,\"auto\",prepHp);",
       ].join("\n"),
     );
     replace(
