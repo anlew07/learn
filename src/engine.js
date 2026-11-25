@@ -583,7 +583,7 @@ const MultiworldEngine = (function () {
   }
   // Keep the ordinary step unchanged; an optional validated battle replaces
   // only Lingzai's daily main action, never a second bonus action.
-  function tickDay(s,sortie){
+  function tickDay(s,sortie,formalEncounter){
     if(!s||!s.active)return {ok:false,error:"本局已经结束"};
     if(s.day>1&&(s.day-1)%8===0){s.ap=Math.min(s.apMax,s.ap+2);log(s,null,"灵魂行动点恢复2点。","minor");}
     s.worlds.forEach(function(w){
@@ -607,11 +607,14 @@ const MultiworldEngine = (function () {
           w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
         }
       }else if(sortie&&w.id==="lingzai"){
-        recordWorldAction(w,"fight");
-        w.action="雾谷排险 · "+(sortie.outcome==="won"?"维持结界":"谨慎撤离");
+        recordWorldAction(w,formalEncounter?"fight":"sortie");
+        w.action=(formalEncounter?"雾谷排险 · ":"雾谷出击 · ")+
+          (sortie.outcome==="won"?"维持结界":"谨慎撤离");
         w.lastDecision={
-          day:s.day,actionId:"fight",
-          reason:"本日真实排险行动由统一遭遇模拟器完成，不再重复执行自动排险",
+          day:s.day,actionId:formalEncounter?"fight":"sortie",
+          reason:formalEncounter?
+            "本日真实排险行动由统一遭遇模拟器完成，不再重复执行自动排险":
+            "本日主要行动由独立出击结算替代，不再执行其他自动行动",
           alternatives:[]
         };
         if(sortie.stones)produce(s,w,"resource",sortie.stones);
@@ -712,7 +715,7 @@ const MultiworldEngine = (function () {
     // an event that closes the world before the action, changes no caller data.
     var next=JSON.parse(JSON.stringify(s));
     var before=next.worlds.map(captureSortieWorld);
-    var outcome=tickDay(next,reward);
+    var outcome=tickDay(next,reward,request.formalEncounter===true);
     if(!outcome.ok||!byId(next,"lingzai").lastSortie||
       byId(next,"lingzai").lastSortie.day!==s.day){
       return {ok:false,error:"今日事件已阻止出击结算"};
@@ -985,7 +988,7 @@ const MultiworldEngine = (function () {
       preview.pendingEvent||preview.pendingBuild)
       return {ok:false,error:"当前日期已不再允许结算排险遭遇"};
     var result=settleSortie(s,{
-      sortieId:pending.id,actions:pending.actions,missionId:pending.missionId
+      sortieId:pending.id,actions:pending.actions,missionId:pending.missionId,formalEncounter:true
     });
     if(!result.ok)return result;
     var next=result.replayed?JSON.parse(JSON.stringify(s)):result.run;
