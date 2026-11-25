@@ -83,6 +83,7 @@ const MultiworldEngine = (function () {
       worldSequence:ids.length,nextSlotId:ids.length+1,
       worldTypesSeen:ids.slice(),worldDiscoveryArchive:[],
       waves:!!waves,speed:1,paused:true,soul:8+(legacy?.startingSoul||0),ap:2+(legacy?.startingAP||0),apReserved:0,apMax:4,
+      encounterPreference:"ask",pendingEncounter:null,lastEncounter:null,
       aidNext:{},fusionNext:1,echoes:[],memory:{},sequence:0,
       operationResults:{},operationOrder:[],
       worlds:ids.map(function(id,index){return newWorld(id,seed,no,legacy?.startingResource||0,index+1,index+1,1);}),logs:[],
@@ -147,6 +148,9 @@ const MultiworldEngine = (function () {
   }
   function restore(s,savedWorldsCount) {
     if(!s||!Array.isArray(s.worlds))return s;
+    if(s.encounterPreference===undefined)s.encounterPreference="ask";
+    if(s.pendingEncounter===undefined)s.pendingEncounter=null;
+    if(s.lastEncounter===undefined)s.lastEncounter=null;
     var hasProgression=Number.isInteger(s.worldsSavedCount)&&Array.isArray(s.worldTypesSeen);
     if(hasProgression){
       s.worldsSavedCount=Math.max(s.worldsSavedCount,Number(savedWorldsCount)||0);
@@ -603,11 +607,11 @@ const MultiworldEngine = (function () {
           w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
         }
       }else if(sortie&&w.id==="lingzai"){
-        recordWorldAction(w,"sortie");
-        w.action="雾谷出击 · "+(sortie.outcome==="won"?"维持结界":"谨慎撤离");
+        recordWorldAction(w,"fight");
+        w.action="雾谷排险 · "+(sortie.outcome==="won"?"维持结界":"谨慎撤离");
         w.lastDecision={
-          day:s.day,actionId:"sortie",
-          reason:"本日主要行动已由亲自出击替代，不再执行自动采集、训练或排险",
+          day:s.day,actionId:"fight",
+          reason:"本日真实排险行动由统一遭遇模拟器完成，不再重复执行自动排险",
           alternatives:[]
         };
         if(sortie.stones)produce(s,w,"resource",sortie.stones);
@@ -895,12 +899,107 @@ const MultiworldEngine = (function () {
       actionId:acted?decision.actionId:null,
       reason:acted?decision.reason:"",
       alternatives:acted&&Array.isArray(decision.alternatives)?decision.alternatives.slice():[],
-      status:world?.status??null
+      status:world?.status??null,
+      pendingEvent:world?.pendingEvent?.state==="active",
+      pendingBuild:Boolean(world?.build?.pending)
     };
   }
 
+  /** Start a real Lingzai fight only when the authoritative next action is fight. */
+  function beginEncounter(s,worldId){
+    if(!s||!s.active||!Array.isArray(s.worlds))return {ok:false,error:"当前远征不可进行战斗"};
+    if(worldId!=="lingzai")return {ok:false,error:"首个实时遭遇暂时只开放灵灾世界"};
+    if(s.pendingEncounter){
+      if(s.pendingEncounter.id===sortieIdentity(s)&&s.pendingEncounter.day===s.day)
+        return {ok:true,replayed:true,pending:s.pendingEncounter};
+      return {ok:false,error:"已有未完成的遭遇，不能开启第二场战斗"};
+    }
+    var world=byId(s,worldId);
+    if(!world||world.status!=="running"||world.retreat||
+      world.pendingEvent?.state==="active"||world.build?.pending){
+      return {ok:false,error:"当前世界有待处理事务，暂时不能进入战斗"};
+    }
+    var preview=previewNextAction(s,worldId);
+    if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
+      preview.pendingEvent||preview.pendingBuild){
+      return {ok:false,error:"下一次真实行动不是可接管的排险战斗"};
+    }
+    var forgeLevel=s.sortieCamp?.forgeLevel??0;
+    var missionId=sortieMissionFromCamp(s);
+    if(!Number.isInteger(forgeLevel)||forgeLevel<0||forgeLevel>SORTIE.forge.maxLevel||missionId===null)
+      return {ok:false,error:"当前战斗准备状态不合法"};
+    var pending={
+      id:sortieIdentity(s),worldId:worldId,day:s.day,
+      seed:sortieSeed(s),danger:world.d,forgeLevel:forgeLevel,missionId:missionId,
+      reason:preview.reason,actions:[],controller:"choice"
+    };
+    s.pendingEncounter=pending;
+    s.paused=true;
+    return {ok:true,pending:pending};
+  }
+
+  /** Choose the controller for this real encounter and remember the preference. */
+  function setEncounterMode(s,mode){
+    var pending=s?.pendingEncounter;
+    if(!pending||pending.controller!=="choice"||!["ai","player"].includes(mode))
+      return {ok:false,error:"当前没有等待选择的遭遇"};
+    pending.controller=mode;
+    s.encounterPreference=mode;
+    s.paused=mode!=="player";
+    return {ok:true,controller:mode};
+  }
+
+  /** Hand the same live encounter back to the AI without resetting its state. */
+  function handoffEncounterToAI(s){
+    var pending=s?.pendingEncounter;
+    if(!pending||pending.controller!=="player")
+      return {ok:false,error:"当前没有可交还托管的战斗"};
+    pending.controller="ai";
+    s.paused=true;
+    return {ok:true,controller:"ai"};
+  }
+
+  /** Settle the stored trace once; never accept client-authored reward numbers. */
+  function settleEncounter(s,request){
+    var pending=s?.pendingEncounter;
+    var requestedId=request?.sortieId;
+    if(!pending){
+      var previous=requestedId&&s?.sortieLedger?.[requestedId];
+      if(previous)return {ok:true,replayed:true,run:s,receipt:previous.receipt};
+      return {ok:false,error:"没有可结算的正式遭遇"};
+    }
+    if(requestedId&&requestedId!==pending.id)
+      return {ok:false,error:"遭遇编号与当前待结算战斗不匹配"};
+    if(!s.active||pending.worldId!=="lingzai"||pending.day!==s.day||
+      pending.id!==sortieIdentity(s)||pending.seed!==sortieSeed(s)||
+      !["player","ai"].includes(pending.controller)||!Array.isArray(pending.actions))
+      return {ok:false,error:"正式遭遇状态无效或已过期"};
+    var world=byId(s,"lingzai");
+    if(!world||world.status!=="running"||world.d!==pending.danger||world.retreat)
+      return {ok:false,error:"遭遇期间世界状态发生变化，拒绝结算"};
+    var preview=previewNextAction(s,"lingzai");
+    if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
+      preview.pendingEvent||preview.pendingBuild)
+      return {ok:false,error:"当前日期已不再允许结算排险遭遇"};
+    var result=settleSortie(s,{
+      sortieId:pending.id,actions:pending.actions,missionId:pending.missionId
+    });
+    if(!result.ok)return result;
+    var next=result.run;
+    next.pendingEncounter=null;
+    next.paused=true;
+    next.encounterPreference=s.encounterPreference||pending.controller;
+    next.lastEncounter={
+      id:pending.id,day:result.receipt.day,nextDay:result.receipt.nextDay,
+      battle:result.receipt.battle,worlds:result.receipt.worlds
+    };
+    return {...result,run:next};
+  }
+
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
-    fresh:fresh,restore:restore,step:step,previewNextAction:previewNextAction,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
+    fresh:fresh,restore:restore,step:step,previewNextAction:previewNextAction,beginEncounter:beginEncounter,
+    setEncounterMode:setEncounterMode,handoffEncounterToAI:handoffEncounterToAI,
+    settleEncounter:settleEncounter,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
     setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
     resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
