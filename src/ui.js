@@ -1103,9 +1103,9 @@ function sceneHtml() {
   '<div class="stage-action-line'+(inQuickStart()?' stage-onboarding-hint':'')+(view.progression?' stage-progression-feedback':'')+'" aria-live="polite" aria-label="'+esc(view.progression?.announcement||"世界状态与当前行动")+'"'+(view.progression?' data-world-progression title="'+esc(view.progression.announcement)+'"':'')+'>'+
   '<span class="stage-action-marker">'+esc(actionMarker)+'</span><span class="stage-action-text">'+
   esc(inQuickStart()?getOpeningBrief(profile).stageHint:actionText)+'</span>'+
-  (view.encounter&&!inQuickStart()?
+  ((view.encounter||(view.worldId==="lingzai"&&run.lastEncounter?.day===run.day-1))&&!inQuickStart()?
     '<button type="button" class="stage-action-report" data-action="scene-panel" data-panel="report" aria-label="查看第'+
-      view.encounter.day+'日真实战报">战报 ›</button>':'')+'</div>'+
+      (view.encounter?.day??run.lastEncounter.day)+'日真实战报">战报 ›</button>':'')+'</div>'+
   '</section>'+
   '<section class="stage-bars" aria-label="当前世界状况">'+
   '<div class="stage-meter stage-meter-rescue"><div class="stage-meter-head"><span>救援准备</span><b>'+Math.round(view.rescue)+'<small>%</small></b></div>'+
@@ -1491,6 +1491,7 @@ window.addEventListener("keydown",e=>{
  }
  if(scenePanel&&tab==="scene"){
   if(e.key==="Escape"){
+   if(scenePanel==="encounter"){e.preventDefault();return;}
    const closingPanel=scenePanel;
    scenePanel="";render();
    app.querySelector('[data-action="scene-panel"][data-panel="'+closingPanel+'"]')?.focus({preventScroll:true});
