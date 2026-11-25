@@ -35,10 +35,12 @@ function aliveEnemies(battle, hero) {
       Number(enemy.hp) > 0,
     )
     .map((enemy) => ({ enemy, range: distance(hero, enemy) }))
-    .sort((a, b) =>
-      a.range - b.range ||
-      String(a.enemy.id ?? "").localeCompare(String(b.enemy.id ?? "")),
-    );
+    .sort((a, b) => {
+      if (a.range !== b.range) return a.range - b.range;
+      const left = String(a.enemy.id ?? "");
+      const right = String(b.enemy.id ?? "");
+      return left < right ? -1 : left > right ? 1 : 0;
+    });
 }
 
 function projectileThreat(shot, hero, options, index) {
@@ -191,7 +193,14 @@ export function chooseAutonomousEncounterSkill(
   battle,
   options = ["thunder", "rune"],
 ) {
-  if (!battle?.skillChoicePending || !Array.isArray(options) || !options.length) {
+  if (
+    !battle?.skillChoicePending ||
+    !battle.hero ||
+    !Number.isFinite(battle.hero.x) ||
+    !Number.isFinite(battle.hero.y) ||
+    !Array.isArray(options) ||
+    !options.length
+  ) {
     return null;
   }
   const available = options.filter((id) => typeof id === "string");
