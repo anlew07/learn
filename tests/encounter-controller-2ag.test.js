@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import Engine from "../src/engine.js";
 import { createSortie, DURATION_TICKS, stepSortie, chooseSortieSkill } from "../src/systems/sortie-sim.js";
 import {
   chooseAutonomousEncounterSkill,
@@ -142,6 +143,61 @@ describe("2AG shared encounter controller", () => {
     expect(beforeAutopilot).toBeGreaterThan(beforeManual);
     expect(battle.tick).toBeGreaterThan(beforeAutopilot);
     expect(battle.seed).toBe("2ag-handoff");
+  });
+
+  it("previews a real Lingzai fight without mutating the official RunState", () => {
+    const run = Engine.fresh("2ag-preview-fight", 1, true);
+    Engine.byId(run, "lingzai").strategy = "clear";
+    const before = JSON.stringify(run);
+
+    const preview = Engine.previewNextAction(run, "lingzai");
+
+    expect(preview).toMatchObject({
+      ok: true,
+      worldId: "lingzai",
+      day: 1,
+      actionId: "fight",
+    });
+    expect(JSON.stringify(run)).toBe(before);
+
+    const result = Engine.step(run);
+    expect(result.ok).toBe(true);
+    expect(Engine.byId(run, "lingzai").lastDecision).toMatchObject({
+      day: preview.day,
+      actionId: preview.actionId,
+    });
+  });
+
+  it("matches the next Engine.step action for all active worlds across fixed seeds", () => {
+    for (let index = 0; index < 40; index++) {
+      const run = Engine.fresh("2ag-action-preview-" + index, 1, true, "", 2);
+      for (let dayIndex = 0; dayIndex < 2; dayIndex++) {
+        const day = run.day;
+        const before = JSON.stringify(run);
+        const previews = run.worlds.map((world) =>
+          Engine.previewNextAction(run, world.id),
+        );
+        expect(JSON.stringify(run)).toBe(before);
+        expect(previews.every((preview) => preview.ok)).toBe(true);
+
+        expect(Engine.step(run).ok).toBe(true);
+        for (const preview of previews) {
+          const actual = Engine.byId(run, preview.worldId).lastDecision;
+          expect(actual).toMatchObject({
+            day,
+            actionId: preview.actionId,
+          });
+        }
+      }
+    }
+  });
+
+  it("rejects invalid preview targets without touching the run", () => {
+    const run = Engine.fresh("2ag-preview-invalid", 1, true);
+    const before = JSON.stringify(run);
+    expect(Engine.previewNextAction(run, "missing-world").ok).toBe(false);
+    expect(Engine.previewNextAction(null, "lingzai").ok).toBe(false);
+    expect(JSON.stringify(run)).toBe(before);
   });
 
   it("replays the same autonomous decisions for 40 fixed seeds", () => {
