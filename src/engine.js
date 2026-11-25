@@ -698,8 +698,11 @@ const MultiworldEngine = (function () {
    * Caller may display the receipt only after persisting the returned state.
    * Both same-ID and different-operation-ID replay are idempotent.
    */
+  function isFormalReceipt(entry){
+    return entry?.receipt?.formalEncounter===true||Boolean(entry?.receipt?.worlds?.some(function(w){return w.id==="lingzai"&&w.actionId==="fight";}));
+  }
   function settleSortie(s,request){
-    if(s?.pendingEncounter)return encounterLocked();
+    if(s?.pendingEncounter||request?.formalEncounter===true)return encounterLocked();
     return settleSortieTransaction(s,request,false);
   }
   function settleSortieTransaction(s,request,formalEncounter){
@@ -708,7 +711,7 @@ const MultiworldEngine = (function () {
     var fingerprint=sortieTraceFingerprint(request.actions);
     var previously=s.sortieLedger&&s.sortieLedger[request.sortieId];
     if(previously){
-      if((previously.receipt?.formalEncounter===true)!==formalEncounter)
+      if(isFormalReceipt(previously)!==formalEncounter)
         return {ok:false,error:"结算类型与已有回执不匹配"};
       if(previously.fingerprint!==fingerprint){
         return {ok:false,error:"本次出击已结算，提交内容不匹配"};
@@ -939,6 +942,7 @@ const MultiworldEngine = (function () {
         return {ok:true,replayed:true,pending:s.pendingEncounter};
       return {ok:false,error:"已有未完成的遭遇，不能开启第二场战斗"};
     }
+    if(s.sortieLedger?.[sortieIdentity(s)])return {ok:false,error:"本日遭遇已经结算"};
     var world=byId(s,worldId);
     if(!world||world.status!=="running"||world.retreat||
       world.pendingEvent?.state==="active"||world.build?.pending){
@@ -993,7 +997,7 @@ const MultiworldEngine = (function () {
     var requestedId=request?.sortieId;
     if(!pending){
       var previous=requestedId&&s?.sortieLedger?.[requestedId];
-      if(previous?.receipt?.formalEncounter===true)return {ok:true,replayed:true,run:s,receipt:previous.receipt};
+      if(isFormalReceipt(previous))return {ok:true,replayed:true,run:s,receipt:previous.receipt};
       return {ok:false,error:"没有可结算的正式遭遇"};
     }
     if(requestedId&&requestedId!==pending.id)
