@@ -975,8 +975,11 @@ const MultiworldEngine = (function () {
       !["player","ai"].includes(pending.controller)||!Array.isArray(pending.actions))
       return {ok:false,error:"正式遭遇状态无效或已过期"};
     var world=byId(s,"lingzai");
-    if(!world||world.status!=="running"||world.d!==pending.danger||world.retreat)
-      return {ok:false,error:"遭遇期间世界状态发生变化，拒绝结算"};
+    var currentForgeLevel=s.sortieCamp?.forgeLevel??0;
+    var currentMissionId=sortieMissionFromCamp(s);
+    if(!world||world.status!=="running"||world.d!==pending.danger||world.retreat||
+      pending.forgeLevel!==currentForgeLevel||pending.missionId!==currentMissionId)
+      return {ok:false,error:"遭遇期间世界或战斗准备状态发生变化，拒绝结算"};
     var preview=previewNextAction(s,"lingzai");
     if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
       preview.pendingEvent||preview.pendingBuild)
@@ -985,7 +988,7 @@ const MultiworldEngine = (function () {
       sortieId:pending.id,actions:pending.actions,missionId:pending.missionId
     });
     if(!result.ok)return result;
-    var next=result.run;
+    var next=result.replayed?JSON.parse(JSON.stringify(s)):result.run;
     next.pendingEncounter=null;
     next.paused=true;
     next.encounterPreference=s.encounterPreference||pending.controller;
