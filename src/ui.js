@@ -1140,6 +1140,24 @@ function render(){
    outcomeGuidanceHtml()+statsHtml()+run.worlds.slice(-8).reverse().map(worldOverviewHtml).join("");
   app.innerHTML=banner+controls()+'<div class="stack">'+content+'</div>'+footer()+persistenceBanner();return;
  }
+ if(tab==="scene"&&run.pendingEncounter?.controller==="player"){
+  stopPixelStage();
+  if(!encounterBattle){
+   const restored=restoreEncounterBattle();
+   if(!restored.ok){
+    run.paused=true;restoreError=true;
+    app.innerHTML=banner+'<section class="encounter-recovery-error" role="alert"><h2>战斗记录无法恢复</h2><p>'+
+     esc(restored.error)+'</p><p>已停止写入以保护正式存档，请不要清除浏览器数据。</p></section>'+persistenceBanner();
+    return;
+   }
+  }
+  app.innerHTML=banner+encounterHtml()+persistenceBanner();
+  const canvas=app.querySelector("[data-encounter-canvas]");
+  if(canvas)drawSortie(canvas,encounterBattle);
+  if(!run.paused&&!encounterBattle.skillChoicePending)startEncounterLoop();
+  else stopEncounterLoop();
+  return;
+ }
  if(tab==="scene"){
   // Preserve drawer scroll and focus during ordinary updates. Urgent choices
   // interrupt the simulation instead of silently evolving behind the drawer.
