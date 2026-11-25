@@ -18,19 +18,7 @@ export function sortieSeed(run) {
   return run.seed + "/run-" + run.runNumber + "/lingzai/day-" + run.day;
 }
 
-/**
- * Re-evaluate an action prefix from a new battlefield.
- * A prefix may end while the encounter is running or at a skill-choice pause.
- */
-function replayActions(
-  seed,
-  danger,
-  actions,
-  forgeLevel,
-  missionId,
-  skillReleaseMode,
-  requireFinished,
-) {
+function replayActions(battle, actions, requireFinished) {
   if (
     !Array.isArray(actions) ||
     actions.length > MAX_TRACE_ACTIONS ||
@@ -38,19 +26,7 @@ function replayActions(
   ) {
     return { ok: false, error: "出击记录长度不合法" };
   }
-  if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
-    return { ok: false, error: "护灵剑台状态不合法" };
-  }
-  if (!["safe", "salvage"].includes(missionId)) {
-    return { ok: false, error: "Invalid sortie mission" };
-  }
-  if (!["auto", "manual"].includes(skillReleaseMode)) {
-    return { ok: false, error: "战技释放方式不合法" };
-  }
-
-  const battle = createSortie(seed, danger, forgeLevel, missionId, {
-    skillReleaseMode,
-  });
+  let moveCount = 0;
   for (const action of actions) {
     if (
       !Array.isArray(action) ||
@@ -75,6 +51,7 @@ function replayActions(
       if (battle.tick !== before + 1) {
         return { ok: false, error: "战场时钟未按规定推进" };
       }
+      moveCount++;
     } else if (action[0] === "skill") {
       if (
         action.length !== 2 ||
@@ -96,10 +73,11 @@ function replayActions(
   }
 
   if (
-    requireFinished &&
-    (battle.outcome === "running" ||
-      battle.skillChoicePending ||
-      battle.tick > DURATION_TICKS)
+    battle.tick !== moveCount ||
+    (requireFinished &&
+      (battle.outcome === "running" ||
+        battle.skillChoicePending ||
+        battle.tick > DURATION_TICKS))
   ) {
     return { ok: false, error: "出击尚未结束，不能结算" };
   }
@@ -115,35 +93,34 @@ export function replaySortieProgress(
   missionId = "safe",
   skillReleaseMode = "auto",
 ) {
-  return replayActions(
-    seed,
-    danger,
-    actions,
-    forgeLevel,
-    missionId,
+  if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
+    return { ok: false, error: "护灵剑台状态不合法" };
+  }
+  if (!["safe", "salvage"].includes(missionId)) {
+    return { ok: false, error: "Invalid sortie mission" };
+  }
+  if (!["auto", "manual"].includes(skillReleaseMode)) {
+    return { ok: false, error: "战技释放方式不合法" };
+  }
+  const battle = createSortie(seed, danger, forgeLevel, missionId, {
     skillReleaseMode,
-    false,
-  );
+  });
+  return replayActions(battle, actions, false);
 }
 
 /** Strict authoritative replay used only when a finished encounter is settled. */
-export function replaySortieTrace(
-  seed,
-  danger,
-  actions,
-  forgeLevel = 0,
-  missionId = "safe",
-  skillReleaseMode = "auto",
-) {
-  return replayActions(
-    seed,
-    danger,
-    actions,
-    forgeLevel,
-    missionId,
-    skillReleaseMode,
-    true,
-  );
+export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto") {
+  if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
+    return { ok: false, error: "护灵剑台状态不合法" };
+  }
+  if (!["safe", "salvage"].includes(missionId)) {
+    return { ok: false, error: "Invalid sortie mission" };
+  }
+  if (!["auto", "manual"].includes(skillReleaseMode)) {
+    return { ok: false, error: "战技释放方式不合法" };
+  }
+  const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode });
+  return replayActions(battle, actions, true);
 }
 
 /** Lightweight idempotence check, not a cryptographic anti-cheat guarantee. */
