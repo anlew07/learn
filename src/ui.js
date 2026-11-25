@@ -749,6 +749,21 @@ function restoreEncounterBattle() {
  encounterBattle=restored.battle;
  return {ok:true,battle:encounterBattle};
 }
+function moveEncounterPointer(event) {
+ const joystick=app.querySelector("[data-encounter-joystick]");
+ const knob=app.querySelector("[data-encounter-knob]");
+ if(!joystick||!knob)return;
+ const rect=joystick.getBoundingClientRect();
+ const dx=event.clientX-rect.left-rect.width/2;
+ const dy=event.clientY-rect.top-rect.height/2;
+ const length=Math.hypot(dx,dy);
+ const maxDistance=Math.max(1,rect.width*.3);
+ const ratio=Math.min(1,length/maxDistance);
+ encounterVector=length?{x:dx/length*ratio,y:dy/length*ratio}:{x:0,y:0};
+ knob.style.transform="translate("+
+  (encounterVector.x*maxDistance).toFixed(0)+"px, "+
+  (encounterVector.y*maxDistance).toFixed(0)+"px)";
+}
 function encounterInput() {
  let x=encounterVector.x,y=encounterVector.y;
  if(encounterKeys.has("ArrowLeft")||encounterKeys.has("a"))x-=1;
@@ -1411,6 +1426,32 @@ function handleClick(target){
  }
 }
 app.addEventListener("click",event=>{const t=event.target.closest("[data-action]");if(t)handleClick(t);});
+app.addEventListener("pointerdown",event=>{
+ const joystick=event.target.closest("[data-encounter-joystick]");
+ if(!joystick||!run?.pendingEncounter||run.pendingEncounter.controller!=="player"||
+  run.paused||encounterPointerId!==null||event.isPrimary===false||
+  (event.pointerType==="mouse"&&event.button!==0))return;
+ event.preventDefault();
+ encounterPointerId=event.pointerId;
+ try{joystick.setPointerCapture(event.pointerId);}
+ catch{encounterPointerId=null;return;}
+ moveEncounterPointer(event);
+});
+app.addEventListener("pointermove",event=>{
+ if(encounterPointerId!==event.pointerId||run?.paused)return;
+ if(event.cancelable)event.preventDefault();
+ moveEncounterPointer(event);
+});
+function releaseEncounterPointer(event){
+ if(encounterPointerId!==event.pointerId)return;
+ encounterPointerId=null;
+ encounterVector={x:0,y:0};
+ const knob=app.querySelector("[data-encounter-knob]");
+ if(knob)knob.style.transform="translate(0px, 0px)";
+}
+for(const kind of ["pointerup","pointercancel","lostpointercapture"]){
+ app.addEventListener(kind,releaseEncounterPointer);
+}
 app.addEventListener("change",event=>{
  const t=event.target,action=t.dataset.action;
  if(!run||!session.isOwner||commandBusy||saveError)return;
