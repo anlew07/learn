@@ -5,7 +5,7 @@ import "./world-encounter.css";
 import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
 applyTextSize();
 import Engine from "./engine.js";
-import { createSortie, stepSortie, advanceSortie, chooseSortieSkill, retreatSortie, DURATION_TICKS } from "./systems/sortie-sim.js";
+import { stepSortie, advanceSortie, chooseSortieSkill, retreatSortie, DURATION_TICKS } from "./systems/sortie-sim.js";
 import { replaySortieProgress } from "./systems/sortie-trace.js";
 import { getAutonomousEncounterDecision } from "./systems/encounter-controller.js";
 import { drawSortie } from "./ui/sortie-stage.js";
