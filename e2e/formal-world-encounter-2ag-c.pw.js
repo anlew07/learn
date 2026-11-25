@@ -6,9 +6,7 @@ async function installFightFixture(page) {
   const preview = await page.evaluate(async () => {
     const Engine = (await import("/src/engine.js")).default;
     const { saveRepository } = await import("/src/services/persistence.js");
-    const { normalizeLegacyProfile } = await import(
-      "/src/systems/legacy-progression.js"
-    );
+    const { normalizeLegacyProfile } = await import("/src/systems/legacy-progression.js");
     const run = Engine.fresh("2ag-preview-fight", 1, true);
     Engine.byId(run, "lingzai").strategy = "clear";
     run.paused = true;
@@ -73,10 +71,12 @@ for (const viewport of [
 
       await page.waitForTimeout(1200);
       await page.locator('[data-action="encounter-toggle"]').tap();
-      await expect.poll(async () => {
-        const saved = await getSavedState(page);
-        return saved.run.pendingEncounter?.actions?.length || 0;
-      }).toBeGreaterThan(0);
+      await expect
+        .poll(async () => {
+          const saved = await getSavedState(page);
+          return saved.run.pendingEncounter?.actions?.length || 0;
+        })
+        .toBeGreaterThan(0);
 
       const beforeReload = await getSavedState(page);
       expect(beforeReload.run.day).toBe(1);
