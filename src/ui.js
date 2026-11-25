@@ -1469,10 +1469,26 @@ app.addEventListener("change",event=>{
  }
 });
 document.addEventListener("visibilitychange",()=>{
- if(document.hidden&&run&&session.isOwner&&!run.paused){pauseDayClock();run.paused=true;queueSave();render();}
+ if(document.hidden&&run&&session.isOwner&&!run.paused){
+  if(run.pendingEncounter?.controller==="player"){
+   resetEncounterInput();stopEncounterLoop();
+  }else pauseDayClock();
+  run.paused=true;queueSave();render();
+ }
 });
-window.addEventListener("pagehide",()=>{if(run&&session.isOwner)queueSave();});
+window.addEventListener("pagehide",()=>{
+ if(run&&session.isOwner){
+  if(run.pendingEncounter?.controller==="player"){resetEncounterInput();stopEncounterLoop();}
+  queueSave();
+ }
+});
 window.addEventListener("keydown",e=>{
+ if(run?.pendingEncounter?.controller==="player"&&!run.paused&&!encounterBattle?.skillChoicePending){
+  const key=e.key.length===1?e.key.toLowerCase():e.key;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d"].includes(key)){
+   e.preventDefault();encounterKeys.add(key);return;
+  }
+ }
  if(scenePanel&&tab==="scene"){
   if(e.key==="Escape"){
    const closingPanel=scenePanel;
@@ -1494,6 +1510,11 @@ window.addEventListener("keydown",e=>{
  }
  if(e.key==="Escape"&&run&&tab!=="world"){tab="world";render();}
 });
+window.addEventListener("keyup",e=>{
+ const key=e.key.length===1?e.key.toLowerCase():e.key;
+ encounterKeys.delete(key);
+});
+window.addEventListener("blur",resetEncounterInput);
 setInterval(()=>{
  if(!session.isOwner||commandBusy||saveError||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
  const now=performance.now();
