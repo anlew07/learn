@@ -13,8 +13,8 @@ import {
 import { getAutonomousEncounterDecision } from "../src/systems/encounter-controller.js";
 import { assertRestorableSnapshot } from "../src/services/persistence.js";
 
-function readyRun(seed = "2ag-preview-fight") {
-  const run = Engine.fresh(seed, 1, true);
+function readyRun() {
+  const run = Engine.fresh("2ag-preview-fight", 1, true);
   Engine.byId(run, "lingzai").strategy = "clear";
   return run;
 }
@@ -38,14 +38,13 @@ function finishWithAi(battle, actions) {
 
 describe("2AG-C formal world encounter transaction", () => {
   it("starts only when the real next Lingzai action is fight", () => {
-    const run = Engine.fresh("2ag-c-not-fight", 1, true);
-    const world = Engine.byId(run, "lingzai");
-    const before = JSON.stringify(run);
-    expect(Engine.previewNextAction(run, "lingzai").actionId).not.toBe("fight");
-    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(false);
-    expect(JSON.stringify(run)).toBe(before);
+    const notFight = Engine.fresh("2ag-c-not-fight", 1, true);
+    const before = JSON.stringify(notFight);
+    expect(Engine.previewNextAction(notFight, "lingzai").actionId).not.toBe("fight");
+    expect(Engine.beginEncounter(notFight, "lingzai").ok).toBe(false);
+    expect(JSON.stringify(notFight)).toBe(before);
 
-    world.strategy = "clear";
+    const run = readyRun();
     const preview = Engine.previewNextAction(run, "lingzai");
     expect(preview).toMatchObject({ ok: true, actionId: "fight", status: "running" });
     const started = Engine.beginEncounter(run, "lingzai");
@@ -118,7 +117,7 @@ describe("2AG-C formal world encounter transaction", () => {
   });
 
   it("hands the same live battle from the player to AI and settles one world day once", () => {
-    const run = readyRun("2ag-c-handoff-settlement");
+    const run = readyRun();
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
     const pending = run.pendingEncounter;
@@ -173,7 +172,7 @@ describe("2AG-C formal world encounter transaction", () => {
   });
 
   it("rejects a forged or stale trace without mutating the official run", () => {
-    const run = readyRun("2ag-c-invalid-trace");
+    const run = readyRun();
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
     run.pendingEncounter.actions = [["tick", 2, 0]];
