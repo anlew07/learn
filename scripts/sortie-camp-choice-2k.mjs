@@ -48,7 +48,7 @@ export async function openCampChoiceSandbox() {
     writeFileSync(join(root, "package.json"), '{"private":true,"type":"module"}\n');
     replace(
       "src/systems/sortie-sim.js",
-      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe") {',
+      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", options = {}, prepHp = 0) {',
       'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", prepHp = 0) {',
     );
     replace(
@@ -58,12 +58,12 @@ export async function openCampChoiceSandbox() {
     );
     replace(
       "src/systems/sortie-trace.js",
-      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe") {',
+      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto", prepHp = 0) {',
       'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", prepHp = 0) {',
     );
     replace(
       "src/systems/sortie-trace.js",
-      "const battle = createSortie(seed, danger, forgeLevel, missionId);",
+      "const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode }, prepHp);",
       "const battle = createSortie(seed, danger, forgeLevel, missionId, prepHp);",
     );
     replace(
@@ -75,7 +75,7 @@ export async function openCampChoiceSandbox() {
         "  prep.cost!==3||prep.hpBonus!==2||typeof prep.operationId!==\"string\"))",
         "  return {ok:false,error:\"战前准备试验状态非法\"};",
         "var prepHp=prep?.charges===1?2:0;",
-        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,prepHp);",
+        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,"auto",prepHp);",
       ].join("\n"),
     );
     replace(
