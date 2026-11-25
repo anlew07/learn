@@ -664,7 +664,6 @@ const MultiworldEngine = (function () {
   }
   function step(s){return tickDay(s,null);}
 
-
   function captureSortieWorld(w) {
     return {
       id:w.id,status:w.status,level:w.level,xp:w.xp,
