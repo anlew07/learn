@@ -48,8 +48,8 @@ export async function openCampChoiceSandbox() {
     writeFileSync(join(root, "package.json"), '{"private":true,"type":"module"}\n');
     replace(
       "src/systems/sortie-sim.js",
+      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", options = {}) {',
       'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", options = {}, prepHp = 0) {',
-      'export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", prepHp = 0) {',
     );
     replace(
       "src/systems/sortie-sim.js",
@@ -58,13 +58,13 @@ export async function openCampChoiceSandbox() {
     );
     replace(
       "src/systems/sortie-trace.js",
+      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto") {',
       'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto", prepHp = 0) {',
-      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", prepHp = 0) {',
     );
     replace(
       "src/systems/sortie-trace.js",
+      "const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode });",
       "const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode }, prepHp);",
-      "const battle = createSortie(seed, danger, forgeLevel, missionId, prepHp);",
     );
     replace(
       "src/engine.js",
@@ -173,7 +173,7 @@ export function replayExperimentalSortie(env, archive, skill, route) {
   if (!ready.ok) return { available: false, reason: ready.error };
   const prepCharges = ready.archive.run.sortieCamp?.prepared?.charges ?? 0;
   const prepHp = prepCharges === 1 ? PREP_HP : 0;
-  const battle = env.sim.createSortie(ready.seed, ready.danger, ready.forgeLevel, "safe", prepHp);
+  const battle = env.sim.createSortie(ready.seed, ready.danger, ready.forgeLevel, "safe", {}, prepHp);
   const actions = [];
   let ticks = 0;
   while (battle.outcome === "running" && ticks <= env.sim.DURATION_TICKS) {
