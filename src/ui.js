@@ -726,6 +726,248 @@ function recentWorldHistoryHtml(){
    '<span class="pill '+pill(world.status)+'">'+worldStatus(world)+'</span></div>'+
    (world.endReason?'<p class="hint">'+esc(world.endReason)+'</p>':'')).join('')+'</section>';
 }
+function resetEncounterInput() {
+ encounterPointerId=null;
+ encounterVector={x:0,y:0};
+ encounterKeys.clear();
+ app.querySelector("[data-encounter-knob]")?.style.setProperty(
+  "transform","translate(0px, 0px)"
+ );
+}
+function stopEncounterLoop() {
+ if(encounterFrameId)cancelAnimationFrame(encounterFrameId);
+ encounterFrameId=0;
+ encounterLastFrame=null;
+}
+function restoreEncounterBattle() {
+ const pending=run?.pendingEncounter;
+ if(!pending){encounterBattle=null;return {ok:true};}
+ const restored=replaySortieProgress(
+  pending.seed,pending.danger,pending.actions,pending.forgeLevel,pending.missionId
+ );
+ if(!restored.ok)return restored;
+ encounterBattle=restored.battle;
+ return {ok:true,battle:encounterBattle};
+}
+function encounterInput() {
+ let x=encounterVector.x,y=encounterVector.y;
+ if(encounterKeys.has("ArrowLeft")||encounterKeys.has("a"))x-=1;
+ if(encounterKeys.has("ArrowRight")||encounterKeys.has("d"))x+=1;
+ if(encounterKeys.has("ArrowUp")||encounterKeys.has("w"))y-=1;
+ if(encounterKeys.has("ArrowDown")||encounterKeys.has("s"))y+=1;
+ const length=Math.hypot(x,y);
+ if(length>1){x/=length;y/=length;}
+ return {x,y};
+}
+function encounterHtml() {
+ const pending=run.pendingEncounter;
+ const battle=encounterBattle;
+ if(!pending||!battle)return "";
+ const remaining=Math.max(0,Math.ceil((DURATION_TICKS-battle.tick)/60));
+ const skillChoice=battle.skillChoicePending;
+ const powerName=battle.skillId==="rune"?"聚灵阵纹":
+  battle.skillId==="thunder"?"驭雷符":"等待觉醒";
+ return '<main class="encounter-screen" data-encounter-screen aria-label="灵灾实时遭遇">'+
+  '<header class="encounter-top"><div><small>本源意识 · 正式世界遭遇</small><strong>灵灾 · 第'+pending.day+'日排险</strong></div>'+
+  '<span class="encounter-state">'+(run.paused?(skillChoice?"战技选择":"战斗暂停"):"意识接管")+'</span></header>'+
+  '<section class="encounter-hud" aria-label="战斗状态">'+
+  '<div><small>生命</small><b data-encounter-hp>'+battle.hero.hp+'/'+8+'</b></div>'+
+  '<div><small>剩余</small><b data-encounter-time>'+remaining+'秒</b></div>'+
+  '<div><small>击退</small><b data-encounter-defeated>'+battle.defeated+'</b></div>'+
+  '<div><small>碎片</small><b data-encounter-shards>'+battle.collectedShards+'</b></div>'+
+  '<div class="encounter-skill"><small>战技</small><b>'+esc(powerName)+'</b></div></section>'+
+  '<section class="encounter-field" aria-label="灵灾战场">'+
+  '<canvas width="320" height="448" data-encounter-canvas role="img" aria-label="灵灾战场：分身自动攻击，玩家控制走位"></canvas>'+
+  '<div class="encounter-controls">'+
+  '<div class="encounter-joystick" data-encounter-joystick role="group" aria-label="移动摇杆" aria-describedby="encounter-control-hint">'+
+  '<span data-encounter-knob></span></div>'+
+  '<div class="encounter-buttons">'+
+  '<button data-action="encounter-toggle">'+(run.paused?"继续战斗":"暂停战斗")+'</button>'+
+  '<button data-action="encounter-ai-handoff">交还 AI</button>'+
+  '<button data-action="encounter-retreat">撤离</button>'+
+  '<small id="encounter-control-hint">自动攻击 · 拖动走位 · 松手停止</small></div></div></section>'+
+  '<p class="encounter-footnote">战斗期间世界日期暂停；结束后灵灾排险与其他世界本日行动只结算一次。</p>'+
+  (skillChoice?'<div class="encounter-choice" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="encounter-choice-title">'+
+   '<small>战斗暂停 · 第'+remaining+'秒</small><h2 id="encounter-choice-title">战技觉醒</h2>'+
+   '<p>选择本场携带的战技。普通攻击仍会自动进行。</p>'+
+   '<button data-action="encounter-skill" data-skill="thunder"><b>驭雷符</b><small>自动索敌雷击，偏进攻</small></button>'+
+   '<button data-action="encounter-skill" data-skill="rune"><b>聚灵阵纹</b><small>获得一次护盾，偏防御</small></button>'+
+   '</section></div>':"")+
+  '</main>';
+}
+function encounterResultHtml() {
+ const result=run?.lastEncounter;
+ if(!result)return '<p class="hint">暂无已结算的实时遭遇。</p>';
+ const battle=result.battle||{};
+ const worlds=Array.isArray(result.worlds)?result.worlds:[];
+ const ling=worlds.find(world=>world.id==="lingzai");
+ return '<section class="encounter-result">'+
+  '<div class="encounter-result-heading"><small>灵灾 · 第'+result.day+'日</small>'+
+  '<h3>'+(battle.outcome==="won"?"排险完成":"分身已撤离")+'</h3>'+
+  '<p>击退 '+n(battle.defeated)+' · 受伤 '+n(battle.hurt)+' · 回收碎片 '+n(battle.collectedShards)+'</p></div>'+
+  '<div class="encounter-result-gains"><span>灵石 <b>+'+n(battle.stones)+'</b></span>'+
+  '<span>经验 <b>+'+n(battle.experience)+'</b></span>'+
+  '<span>救援准备 <b>+'+n(battle.progress)+'%</b></span></div>'+
+  (ling?'<p>灵灾世界：资源 '+(ling.resourceDelta>=0?"+":"")+n(ling.resourceDelta)+
+   ' · 危机 '+(ling.dDelta>=0?"+":"")+n(ling.dDelta)+'%</p>':"")+
+  '<p class="hint">第'+result.nextDay+'日已开启。其他世界也已完成本日唯一一次行动。</p>'+
+  '<div class="encounter-world-deltas">'+worlds.filter(world=>world.id!=="lingzai").map(world=>
+   '<div><b>'+esc(Engine.WORLDS[world.id]?.name||world.id)+'</b><span>资源 '+(world.resourceDelta>=0?"+":"")+n(world.resourceDelta)+
+   ' · 危机 '+(world.dDelta>=0?"+":"")+n(world.dDelta)+'%</span></div>').join("")+'</div></section>';
+}
+function startEncounterLoop() {
+ if(encounterFrameId||!run?.pendingEncounter||run.pendingEncounter.controller!=="player"||
+  run.paused||document.hidden||!session.isOwner||!encounterBattle||
+  encounterBattle.skillChoicePending||saveError)return;
+ const frame=(now)=>{
+  encounterFrameId=0;
+  if(!run?.pendingEncounter||run.pendingEncounter.controller!=="player"||
+   run.paused||document.hidden||!session.isOwner||saveError)return;
+  if(encounterLastFrame===null)encounterLastFrame=now;
+  const elapsed=Math.min(50,Math.max(0,now-encounterLastFrame));
+  encounterLastFrame=now;
+  advanceSortie(encounterBattle,encounterInput(),elapsed,(_battle,input)=>{
+   run.pendingEncounter.actions.push(["tick",input.x,input.y]);
+  });
+  const canvas=app.querySelector("[data-encounter-canvas]");
+  if(canvas)drawSortie(canvas,encounterBattle);
+  const hp=app.querySelector("[data-encounter-hp]");
+  const time=app.querySelector("[data-encounter-time]");
+  const defeated=app.querySelector("[data-encounter-defeated]");
+  const shards=app.querySelector("[data-encounter-shards]");
+  if(hp)hp.textContent=encounterBattle.hero.hp+"/8";
+  if(time)time.textContent=Math.max(0,Math.ceil((DURATION_TICKS-encounterBattle.tick)/60))+"秒";
+  if(defeated)defeated.textContent=String(encounterBattle.defeated);
+  if(shards)shards.textContent=String(encounterBattle.collectedShards);
+  if(encounterBattle.skillChoicePending){
+   stopEncounterLoop();
+   run.paused=true;
+   resetEncounterInput();
+   queueSave();
+   render();
+   return;
+  }
+  if(encounterBattle.outcome!=="running"){
+   stopEncounterLoop();
+   void commitEncounterResult();
+   return;
+  }
+  if(now-encounterLastSaveAt>=1000){
+   encounterLastSaveAt=now;
+   queueSave();
+  }
+  encounterFrameId=requestAnimationFrame(frame);
+ };
+ encounterFrameId=requestAnimationFrame(frame);
+}
+async function commitEncounterResult() {
+ if(!run?.pendingEncounter||commandBusy)return;
+ commandBusy=true;
+ stopEncounterLoop();
+ resetEncounterInput();
+ const previousKeys=new Set(pendingDecisions(run).map(item=>item.key));
+ const pendingId=run.pendingEncounter.id;
+ const result=Engine.settleEncounter(run,{sortieId:pendingId});
+ if(!result.ok){
+  run.paused=true;
+  queueSave();
+  commandBusy=false;
+  render();
+  report(result.error||"战斗结算失败，请保留当前存档");
+  return;
+ }
+ run=result.run;
+ encounterBattle=null;
+ if(!run.active)reward();
+ const interrupted=pauseForDecision(previousKeys);
+ if(!interrupted)scenePanel="encounter-result";
+ tab="scene";infoPage="";sceneWorldId="lingzai";
+ const saved=queueSave();
+ render();
+ await saved;
+ commandBusy=false;
+ render();
+}
+async function runEncounterWithAI() {
+ if(!session.isOwner||commandBusy||!run?.pendingEncounter||
+  run.pendingEncounter.controller!=="ai")return;
+ commandBusy=true;
+ stopEncounterLoop();
+ resetEncounterInput();
+ try{
+  if(!encounterBattle){
+   const restored=restoreEncounterBattle();
+   if(!restored.ok)throw new Error(restored.error);
+  }
+  const pending=run.pendingEncounter;
+  let guard=0;
+  while(encounterBattle.outcome==="running"&&guard<DURATION_TICKS+2){
+   const decision=getAutonomousEncounterDecision(encounterBattle);
+   if(decision.skillId){
+    const selected=chooseSortieSkill(encounterBattle,decision.skillId);
+    if(!selected.ok)throw new Error(selected.error);
+    pending.actions.push(["skill",decision.skillId]);
+   }else{
+    stepSortie(encounterBattle,decision.input);
+    pending.actions.push(["tick",decision.input.x,decision.input.y]);
+   }
+   guard++;
+  }
+  if(encounterBattle.outcome==="running"||encounterBattle.skillChoicePending)
+   throw new Error("AI遭遇未能在规定时长内结束");
+  await commitEncounterResult();
+ }catch(error){
+  run.paused=true;
+  queueSave();
+  commandBusy=false;
+  render();
+  report(error?.message||"AI托管遭遇失败");
+ }
+}
+function chooseEncounterController(mode) {
+ if(!run?.pendingEncounter||commandBusy||!session.isOwner)return;
+ const selected=Engine.setEncounterMode(run,mode);
+ if(!selected.ok){report(selected.error);return;}
+ if(mode==="ai"){
+  queueSave();
+  render();
+  void runEncounterWithAI();
+  return;
+ }
+ const restored=restoreEncounterBattle();
+ if(!restored.ok){
+  run.paused=true;queueSave();render();report(restored.error);return;
+ }
+ tab="scene";scenePanel="";infoPage="";sceneWorldId="lingzai";
+ encounterLastSaveAt=performance.now();
+ queueSave();
+ render();
+ startEncounterLoop();
+}
+function beginEncounterBeforeStep() {
+ if(!run?.active||run.pendingEncounter)return Boolean(run?.pendingEncounter);
+ const preview=Engine.previewNextAction(run,"lingzai");
+ if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
+  preview.pendingEvent||preview.pendingBuild)return false;
+ const started=Engine.beginEncounter(run,"lingzai");
+ if(!started.ok)return false;
+ tab="scene";infoPage="";sceneWorldId="lingzai";
+ if(run.encounterPreference==="ai"){
+  Engine.setEncounterMode(run,"ai");
+  queueSave();render();void runEncounterWithAI();return true;
+ }
+ if(run.encounterPreference==="player"){
+  Engine.setEncounterMode(run,"player");
+  const restored=restoreEncounterBattle();
+  if(!restored.ok){run.paused=true;queueSave();render();report(restored.error);return true;}
+  encounterLastSaveAt=performance.now();
+  queueSave();render();startEncounterLoop();return true;
+ }
+ scenePanel="encounter";
+ queueSave();render();
+ return true;
+}
+
 function stagePanelHtml(view) {
  if (!scenePanel) return "";
  const selected = Engine.byId(run,view.worldId) || activeWorlds()[0];
