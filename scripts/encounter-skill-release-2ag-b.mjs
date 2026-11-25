@@ -5,9 +5,7 @@ import {
   chooseSortieSkill,
   castSortieSkill,
 } from "../src/systems/sortie-sim.js";
-import {
-  getAutonomousEncounterDecision,
-} from "../src/systems/encounter-controller.js";
+import { getAutonomousEncounterDecision } from "../src/systems/encounter-controller.js";
 import { replaySortieTrace } from "../src/systems/sortie-trace.js";
 
 const SEEDS = 40;
@@ -56,7 +54,10 @@ function runMode(seed, danger, mode) {
 
   const result = summarize(battle);
   const replay = replaySortieTrace(seed, danger, actions, 0, "safe", mode);
-  if (!replay.ok || JSON.stringify(summarize(replay.battle)) !== JSON.stringify(result)) {
+  if (
+    !replay.ok ||
+    JSON.stringify(summarize(replay.battle)) !== JSON.stringify(result)
+  ) {
     throw new Error("Authoritative replay drift for " + seed + " (" + mode + ")");
   }
   return { ...result, casts };
@@ -65,11 +66,12 @@ function runMode(seed, danger, mode) {
 function aggregate(samples) {
   const count = samples.length;
   const sum = (key) => samples.reduce((total, item) => total + item[key], 0);
+  const wins = samples.filter((item) => item.outcome === "won").length;
   return {
-    wins: samples.filter((item) => item.outcome === "won").length,
+    wins,
     losses: samples.filter((item) => item.outcome === "lost").length,
     retreats: samples.filter((item) => item.outcome === "retreated").length,
-    winRatePct: Number((samples.filter((item) => item.outcome === "won").length / count * 100).toFixed(1)),
+    winRatePct: Number(((wins / count) * 100).toFixed(1)),
     avgHpRemaining: Number((sum("hp") / count).toFixed(2)),
     avgDefeated: Number((sum("defeated") / count).toFixed(2)),
     totalHurt: sum("hurt"),
@@ -92,7 +94,7 @@ for (let index = 0; index < SEEDS; index++) {
   paired.push({
     seed,
     danger,
-    winDelta: Number((Number(manual.outcome === "won") - Number(auto.outcome === "won")).toFixed(0)),
+    winDelta: Number(manual.outcome === "won") - Number(auto.outcome === "won"),
     hpDelta: manual.hp - auto.hp,
     defeatedDelta: manual.defeated - auto.defeated,
     hurtDelta: manual.hurt - auto.hurt,
@@ -113,8 +115,13 @@ const report = {
     manualWins: paired.filter((item) => item.winDelta > 0).length,
     autoWins: paired.filter((item) => item.winDelta < 0).length,
     sameOutcome: paired.filter((item) => item.winDelta === 0).length,
-    avgHpDelta: Number((paired.reduce((total, item) => total + item.hpDelta, 0) / SEEDS).toFixed(2)),
-    totalDefeatedDelta: paired.reduce((total, item) => total + item.defeatedDelta, 0),
+    avgHpDelta: Number(
+      (paired.reduce((total, item) => total + item.hpDelta, 0) / SEEDS).toFixed(2),
+    ),
+    totalDefeatedDelta: paired.reduce(
+      (total, item) => total + item.defeatedDelta,
+      0,
+    ),
     totalHurtDelta: paired.reduce((total, item) => total + item.hurtDelta, 0),
     totalShardDelta: paired.reduce((total, item) => total + item.shardDelta, 0),
   },
