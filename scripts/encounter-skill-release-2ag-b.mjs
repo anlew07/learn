@@ -5,9 +5,7 @@ import {
   chooseSortieSkill,
   castSortieSkill,
 } from "../src/systems/sortie-sim.js";
-import {
-  getAutonomousEncounterDecision,
-} from "../src/systems/encounter-controller.js";
+import { getAutonomousEncounterDecision } from "../src/systems/encounter-controller.js";
 import { replaySortieTrace } from "../src/systems/sortie-trace.js";
 
 const SEEDS = 40;
@@ -58,13 +56,8 @@ function runMode(seed, danger, mode) {
 
   const result = summarize(battle);
   const replay = replaySortieTrace(seed, danger, actions, 0, "safe", mode);
-  if (
-    !replay.ok ||
-    JSON.stringify(summarize(replay.battle)) !== JSON.stringify(result)
-  ) {
-    throw new Error(
-      "Authoritative replay drift for " + seed + " (" + mode + ")",
-    );
+  if (!replay.ok || JSON.stringify(summarize(replay.battle)) !== JSON.stringify(result)) {
+    throw new Error("Authoritative replay drift for " + seed + " (" + mode + ")");
   }
   return { ...result, casts };
 }
@@ -122,20 +115,13 @@ const report = {
     autoWins: paired.filter((item) => item.winDelta < 0).length,
     sameOutcome: paired.filter((item) => item.winDelta === 0).length,
     avgHpDelta: Number(
-      (
-        paired.reduce((total, item) => total + item.hpDelta, 0) / SEEDS
-      ).toFixed(2),
+      (paired.reduce((total, item) => total + item.hpDelta, 0) / SEEDS).toFixed(2),
     ),
-    totalDefeatedDelta: paired.reduce(
-      (total, item) => total + item.defeatedDelta,
-      0,
-    ),
+    totalDefeatedDelta: paired.reduce((total, item) => total + item.defeatedDelta, 0),
     totalHurtDelta: paired.reduce((total, item) => total + item.hurtDelta, 0),
     totalShardDelta: paired.reduce((total, item) => total + item.shardDelta, 0),
   },
-  caveat:
-    "AI timing comparison only; " +
-    "it does not replace real-player usability testing.",
+  caveat: "AI timing comparison only; " + "it does not replace real-player usability testing.",
 };
 
 if (process.argv.includes("--assert")) {
