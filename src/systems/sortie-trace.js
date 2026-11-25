@@ -1,6 +1,6 @@
-import { createSortie, stepSortie, chooseSortieSkill, retreatSortie, DURATION_TICKS } from "./sortie-sim.js";
+import { createSortie, stepSortie, chooseSortieSkill, castSortieSkill, retreatSortie, DURATION_TICKS } from "./sortie-sim.js";
 
-export const MAX_TRACE_ACTIONS = DURATION_TICKS + 2;
+export const MAX_TRACE_ACTIONS = DURATION_TICKS + 64;
 
 /** A deterministic identity tied to this run/day; no UI-supplied reward numbers. */
 export function sortieIdentity(run) {
@@ -15,7 +15,7 @@ export function sortieSeed(run) {
  * Re-evaluate each fixed movement tick from a new battlefield and the recorded
  * one-time skill choice/retreat. Invalid traces never reach the world engine.
  */
-export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe") {
+export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto") {
   if (!Array.isArray(actions) || actions.length < 1 || actions.length > MAX_TRACE_ACTIONS) {
     return { ok: false, error: "出击记录长度不合法" };
   }
@@ -25,10 +25,13 @@ export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, mission
   if (!["safe", "salvage"].includes(missionId)) {
     return { ok: false, error: "Invalid sortie mission" };
   }
-  const battle = createSortie(seed, danger, forgeLevel, missionId);
+  if (!["auto", "manual"].includes(skillReleaseMode)) {
+    return { ok: false, error: "战技释放方式不合法" };
+  }
+  const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode });
   let moveCount = 0;
   for (const action of actions) {
-    if (!Array.isArray(action) || !["tick", "skill", "retreat"].includes(action[0])) {
+    if (!Array.isArray(action) || !["tick", "skill", "cast", "retreat"].includes(action[0])) {
       return { ok: false, error: "出击记录格式无效" };
     }
     if (action[0] === "tick") {
@@ -47,6 +50,10 @@ export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, mission
     } else if (action[0] === "skill") {
       if (action.length !== 2 || !chooseSortieSkill(battle, action[1]).ok) {
         return { ok: false, error: "战技选择记录不合法" };
+      }
+    } else if (action[0] === "cast") {
+      if (action.length !== 2 || action[1] !== battle.skillId || !castSortieSkill(battle).ok) {
+        return { ok: false, error: "战技释放记录不合法" };
       }
     } else if (action.length !== 1 || !retreatSortie(battle).ok) {
       return { ok: false, error: "撤离记录不合法" };
