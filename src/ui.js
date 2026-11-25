@@ -914,6 +914,8 @@ async function runEncounterWithAI() {
  stopEncounterLoop();
  resetEncounterInput();
  try{
+  await queueSave();
+  if(saveError)throw new Error("正式存档写入失败，AI托管已暂停");
   if(!encounterBattle){
    const restored=restoreEncounterBattle();
    if(!restored.ok)throw new Error(restored.error);
@@ -937,6 +939,10 @@ async function runEncounterWithAI() {
   await commitEncounterResult(true);
  }catch(error){
   run.paused=true;
+  if(run.pendingEncounter?.controller==="ai"){
+   run.pendingEncounter.controller="player";
+   run.pendingEncounter.error=error?.message||"AI托管遭遇失败";
+  }
   queueSave();
   commandBusy=false;
   render();
