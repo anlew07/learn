@@ -972,8 +972,22 @@ function stagePanelHtml(view) {
  if (!scenePanel) return "";
  const selected = Engine.byId(run,view.worldId) || activeWorlds()[0];
  const titles = { strategy:"世界档案与策略", event:"待处理事件与战技", aid:"跨世界援助",
-  tactic:"战前支援", team:"队伍与战技", report:"战斗记录", guide:"生存手册", all:"全部世界", menu:"更多功能" };
+  tactic:"战前支援", team:"队伍与战技", report:"战斗记录", guide:"生存手册",
+  encounter:"真实排险遭遇", "encounter-result":"排险结算", all:"全部世界", menu:"更多功能" };
+ const locked=scenePanel==="encounter";
  let content = "";
+ if (scenePanel === "encounter") {
+  const pending=run.pendingEncounter;
+  content=pending?
+   '<p class="stage-decision-alert">第'+pending.day+'日，灵灾分身的真实自主行动为「排险」。这场战斗会替代当天排险，不会额外推进日期或重复发奖。</p>'+
+   '<p>'+esc(pending.reason)+'</p>'+
+   '<div class="encounter-mode-choices">'+
+   '<button class="btn" data-action="encounter-ai">让分身自主处理</button>'+
+   '<button class="btn-soft" data-action="encounter-player">本源意识接管</button></div>'+
+   '<p class="hint">选择将作为本局默认方式；战斗中随时可以交还 AI。其他世界会在这场战斗结束后完成本日行动。</p>':
+   '<p class="hint">当前没有等待接管的遭遇。</p>';
+ }
+ if (scenePanel === "encounter-result") content=encounterResultHtml();
  if (scenePanel === "strategy") content = worldHtml(selected);
  if (scenePanel === "event") {
   const decisions = run.worlds.filter(w=>w.status==="running").flatMap(w=>[
@@ -988,9 +1002,13 @@ function stagePanelHtml(view) {
  if (scenePanel === "aid") content = soulHtml();
  if (scenePanel === "tactic") content = tacticalPanelHtml(selected);
  if (scenePanel === "team") content = partyHtml();
- if (scenePanel === "report") content = selected.lastCombat ?
-  combatNextStepHtml(selected)+combatHtml(selected.lastCombat) :
-  '<p class="hint">本世界暂时没有战斗记录。</p>';
+ if (scenePanel === "report") {
+  const combat=selected.lastCombat?
+   combatNextStepHtml(selected)+combatHtml(selected.lastCombat):"";
+  const sortie=selected.id==="lingzai"&&run.lastEncounter?.day===run.day-1?
+   encounterResultHtml():"";
+  content=combat+sortie||'<p class="hint">本世界暂时没有战斗记录。</p>';
+ }
  if (scenePanel === "guide") content = playerGuideHtml();
  if (scenePanel === "all") content = activeWorlds().map(worldOverviewHtml).join("")+recentWorldHistoryHtml();
  if (scenePanel === "menu") content =
@@ -1003,11 +1021,12 @@ function stagePanelHtml(view) {
   '<button data-action="home">返回首页</button>'+
   '<p class="hint">存档仅在当前浏览器。设置支持字号调整，不提供云同步。</p>';
  return '<div class="stage-modal" role="presentation" data-stage-modal>'+
-  '<button class="stage-shade" aria-label="关闭面板" data-action="scene-close"></button>'+
+  (locked?'<div class="stage-shade" aria-hidden="true"></div>':
+   '<button class="stage-shade" aria-label="关闭面板" data-action="scene-close"></button>')+
   '<section class="stage-sheet" data-stage-panel="'+esc(scenePanel)+'" role="dialog" aria-modal="true" aria-label="'+
   esc(titles[scenePanel]||"详细信息")+'">'+
   '<div class="stage-sheet-head"><strong>'+esc(titles[scenePanel]||"详细信息")+
-  '</strong><button data-action="scene-close" aria-label="关闭面板">✕</button></div>'+
+  '</strong>'+(locked?"":'<button data-action="scene-close" aria-label="关闭面板">✕</button>')+'</div>'+
   '<div class="stage-sheet-body">'+content+'</div></section></div>';
 }
 function sceneHtml() {
