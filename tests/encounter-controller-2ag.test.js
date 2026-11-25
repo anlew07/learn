@@ -291,7 +291,7 @@ describe("2AG shared encounter controller", () => {
       skillReleaseMode: "manual",
     });
     thunder.skillId = "thunder";
-    thunder.enemies.push({ id: 1, kind: "wolf", x: 230, y: 224, hp: 2 });
+    thunder.enemies.push({ id: 1, kind: "wolf", x: 250, y: 224, hp: 2 });
     expect(shouldAutonomousCastEncounterSkill(thunder)).toBe(false);
     thunder.enemies[0].x = 220;
     expect(shouldAutonomousCastEncounterSkill(thunder)).toBe(true);
