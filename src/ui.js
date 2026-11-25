@@ -41,6 +41,7 @@ const encounterKeys = new Set();
 let saveError = false, restoreError = false;
 let sessionStatus = "starting";
 let commandBusy = false;
+let encounterCommitPending = false;
 let aidSourceId = null;
 let aidTargetId = null;
 let legacyTreeOpen = false;
@@ -56,13 +57,17 @@ const session = createExclusiveSession({
 const esc = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n = value => Number(value??0).toFixed(value%1===0?0:1);
 const activeWorlds = () => run?.worlds.filter((world) => world.status === "running") || [];
-function queueSave() {
-  if (!session.isOwner) return Promise.resolve();
-  profile = normalizeLegacyProfile(profile);
-  if (Number.isInteger(run?.worldsSavedCount)) {
-    profile.worldsSaved = Math.max(profile.worldsSaved, run.worldsSavedCount);
+function profileForRun(targetRun,targetProfile) {
+  const next = normalizeLegacyProfile(targetProfile);
+  if (Number.isInteger(targetRun?.worldsSavedCount)) {
+    next.worldsSaved = Math.max(next.worldsSaved, targetRun.worldsSavedCount);
   }
-  profile = mergeProfileSecrets(profile, run);
+  return mergeProfileSecrets(next,targetRun);
+}
+function queueSave() {
+  // A pagehide or visibility save must never overwrite a pending atomic settlement.
+  if (!session.isOwner||encounterCommitPending) return Promise.resolve();
+  profile = profileForRun(run,profile);
   return saveRepository.enqueueSave(run, profile)
     .then(() => {
       if (saveError) {
@@ -878,7 +883,7 @@ function startEncounterLoop() {
  encounterFrameId=requestAnimationFrame(frame);
 }
 async function commitEncounterResult(alreadyBusy=false) {
- if(!run?.pendingEncounter||(commandBusy&&!alreadyBusy))return;
+ if(!session.isOwner||saveError||!run?.pendingEncounter||(commandBusy&&!alreadyBusy))return;
  commandBusy=true;
  stopEncounterLoop();
  resetEncounterInput();
@@ -895,17 +900,27 @@ async function commitEncounterResult(alreadyBusy=false) {
   report(result.error||"战斗结算失败，请保留当前存档");
   return;
  }
- run=result.run;
- encounterBattle=null;
- if(!run.active)reward();
- const interrupted=pauseForDecision(previousKeys);
- if(!interrupted)scenePanel="encounter-result";
- tab="scene";infoPage="";sceneWorldId="lingzai";
- const saved=queueSave();
- render();
- await saved;
- commandBusy=false;
- render();
+ const nextRun=result.run;
+ let nextProfile=profileForRun(nextRun,profile);
+ if(nextRun.result&&!nextRun.rewarded){
+  nextRun.rewarded=true;nextProfile.runCount++;nextProfile.shards+=nextRun.result.shards;
+ }
+ // Publish the candidate only after RunState and ProfileState commit together.
+ encounterCommitPending=true;
+ try{
+  await saveRepository.enqueueSave(nextRun,nextProfile);
+  run=nextRun;profile=nextProfile;encounterBattle=null;
+  saveError=false;
+  tab="scene";infoPage="";sceneWorldId="lingzai";
+  const interrupted=pauseForDecision(previousKeys);
+  if(!interrupted)scenePanel="encounter-result";
+ }catch(error){
+  saveError=true;run.paused=true;
+  if(run.pendingEncounter.controller==="ai")run.pendingEncounter.controller="player";
+  console.error("存档失败",error);
+ }finally{
+  encounterCommitPending=false;commandBusy=false;render();
+ }
 }
 async function runEncounterWithAI() {
  if(!session.isOwner||commandBusy||!run?.pendingEncounter||
@@ -1148,6 +1163,11 @@ function sceneHtml() {
 }
 
 function render(){
+ // A pending encounter cannot be hidden behind another page or dismissed drawer.
+ if(run?.pendingEncounter){
+  tab="scene";infoPage="";sceneWorldId="lingzai";
+  scenePanel=run.pendingEncounter.controller==="choice"?"encounter":"";
+ }
  app.classList.toggle("readonly",!session.isOwner);
  app.classList.toggle("formal-title-mode", Boolean((!run||tab==="home")&&!infoPage));
  app.classList.toggle("stage-mode",Boolean(run?.active && tab==="scene" && !infoPage));
@@ -1229,7 +1249,7 @@ function footer(){if(inQuickStart())return "";
  '<button data-action="tab" data-tab="log" class="'+(tab==="log"?"active":"")+'"'+(tab==="log"?' aria-current="page"':'')+'><span class="nav-glyph" aria-hidden="true">▤</span><span>手记</span></button></nav>';
 }
 async function execute(type,args){
- if(!session.isOwner || commandBusy || saveError || !run) return;
+ if(!session.isOwner || commandBusy || saveError || !run||run.pendingEncounter) return;
  commandBusy=true;
  const result=Engine.applyCommand(run,{
    operationId:crypto.randomUUID(),
@@ -1273,6 +1293,9 @@ function confirmNew(mode="full"){
 }
 function handleClick(target){
  const action=target.dataset.action,id=target.dataset.world,mode=target.dataset.mode;
+ if(run?.pendingEncounter&&!action?.startsWith("encounter-")&&
+  !["retry-save","retry-session"].includes(action))return;
+ if(encounterCommitPending)return;
  if(action==="open-help"||action==="open-settings"){
   infoPage=action==="open-help"?"help":"settings";
   scenePanel="";render();return;
