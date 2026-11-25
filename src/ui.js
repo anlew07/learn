@@ -1516,19 +1516,29 @@ window.addEventListener("keyup",e=>{
 });
 window.addEventListener("blur",resetEncounterInput);
 setInterval(()=>{
- if(!session.isOwner||commandBusy||saveError||!run||run.paused||!run.active||document.hidden){tickStarted=performance.now();return;}
+ if(!session.isOwner||commandBusy||saveError||!run||!run.active||document.hidden){
+  tickStarted=performance.now();return;
+ }
+ if(run.pendingEncounter){
+  tickStarted=performance.now();
+  if(run.pendingEncounter.controller==="player"&&!run.paused)startEncounterLoop();
+  else if(run.pendingEncounter.controller==="ai"&&!commandBusy)void runEncounterWithAI();
+  return;
+ }
+ if(run.paused){tickStarted=performance.now();return;}
  const now=performance.now();
  if(now-tickStarted >= (TEMPOS[run.speed] || TEMPOS[1])){
-   // Single day maximum per timer tick: never batch unseen days after background throttling.
-   resetDayClock(now);
-   const previous=new Set(pendingDecisions(run).map(item=>item.key));
-   const result=Engine.step(run);
-   if(!result.ok)run.paused=true;
-   pauseForDecision(previous);
-   if(!run.active)reward();
-   queueSave();render();
+  // Only start a real-time battle when the authoritative next action is fight.
+  resetDayClock(now);
+  if(beginEncounterBeforeStep())return;
+  const previous=new Set(pendingDecisions(run).map(item=>item.key));
+  const result=Engine.step(run);
+  if(!result.ok)run.paused=true;
+  pauseForDecision(previous);
+  if(!run.active)reward();
+  queueSave();render();
  }else{
-   updateDayClock(now);
+  updateDayClock(now);
  }
 },300);
 async function claimSession() {
