@@ -1311,6 +1311,39 @@ function handleClick(target){
  if(action==="new-run"){confirmNew(target.dataset.onboarding||"full");return;}
  if(action==="show-all-worlds"&&run){run.onboardingFocus=false;queueSave();render();return;}
  if(!run)return;
+ if(action==="encounter-ai"){chooseEncounterController("ai");return;}
+ if(action==="encounter-player"){chooseEncounterController("player");return;}
+ if(action==="encounter-toggle"){
+  if(!run.pendingEncounter||run.pendingEncounter.controller!=="player")return;
+  if(run.paused){run.paused=false;encounterLastFrame=null;}
+  else {run.paused=true;resetEncounterInput();stopEncounterLoop();}
+  queueSave();render();
+  if(!run.paused)startEncounterLoop();
+  return;
+ }
+ if(action==="encounter-ai-handoff"){
+  const handed=Engine.handoffEncounterToAI(run);
+  if(!handed.ok){report(handed.error);return;}
+  resetEncounterInput();stopEncounterLoop();scenePanel="";
+  queueSave();void runEncounterWithAI();return;
+ }
+ if(action==="encounter-skill"){
+  if(!encounterBattle||!encounterBattle.skillChoicePending)return;
+  const selected=chooseSortieSkill(encounterBattle,target.dataset.skill);
+  if(!selected.ok){report(selected.error);return;}
+  run.pendingEncounter.actions.push(["skill",target.dataset.skill]);
+  run.paused=false;encounterLastFrame=null;
+  queueSave();render();startEncounterLoop();return;
+ }
+ if(action==="encounter-retreat"){
+  if(!encounterBattle||encounterBattle.outcome!=="running")return;
+  if(!window.confirm("撤离将结束本次排险，并消耗灵灾世界今天唯一的主要行动。确定撤离吗？"))return;
+  const retreated=retreatSortie(encounterBattle);
+  if(!retreated.ok){report(retreated.error);return;}
+  run.pendingEncounter.actions.push(["retreat"]);
+  run.paused=true;resetEncounterInput();stopEncounterLoop();
+  void commitEncounterResult();return;
+ }
  if(action==="crisis-aid"){
    const choices=Engine.advise(run);
    const selected=choices.find(item=>item.worldId===id)?.actions.find(item=>
@@ -1335,11 +1368,19 @@ function handleClick(target){
    return;
  }
  if(action==="toggle"){
+  if(run.pendingEncounter?.controller==="player"){
+   if(run.paused){run.paused=false;encounterLastFrame=null;}
+   else {run.paused=true;resetEncounterInput();stopEncounterLoop();}
+   queueSave();render();
+   if(!run.paused)startEncounterLoop();
+   return;
+  }
   if(run.paused){run.paused=false;resumeDayClock();}
   else {pauseDayClock();run.paused=true;}
   queueSave();render();return;
  }
  if(action==="step"){
+  if(beginEncounterBeforeStep())return;
   const previous=new Set(pendingDecisions(run).map(item=>item.key));
   const result=Engine.step(run);resetDayClock();pauseForDecision(previous);
   if(!run.active)reward();queueSave();render();if(!result.ok)report(result.error);return;
