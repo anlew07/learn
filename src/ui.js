@@ -797,9 +797,11 @@ function encounterHtml() {
   '<div class="encounter-joystick" data-encounter-joystick role="group" aria-label="移动摇杆" aria-describedby="encounter-control-hint">'+
   '<span data-encounter-knob></span></div>'+
   '<div class="encounter-buttons">'+
-  '<button data-action="encounter-toggle">'+(run.paused?"继续战斗":"暂停战斗")+'</button>'+
-  '<button data-action="encounter-ai-handoff">交还 AI</button>'+
-  '<button data-action="encounter-retreat">撤离</button>'+
+  (pending.error?'<small class="encounter-error" role="alert">'+esc(pending.error)+'</small>':"")+
+  (battle.outcome!=="running"?'<button data-action="encounter-settle">重试结算</button>':
+   '<button data-action="encounter-toggle">'+(run.paused?"继续战斗":"暂停战斗")+'</button>')+
+  (battle.outcome==="running"?'<button data-action="encounter-ai-handoff">交还 AI</button>':'')+
+  (battle.outcome==="running"?'<button data-action="encounter-retreat">撤离</button>':'')+
   '<small id="encounter-control-hint">自动攻击 · 拖动走位 · 松手停止</small></div></div></section>'+
   '<p class="encounter-footnote">战斗期间世界日期暂停；结束后灵灾排险与其他世界本日行动只结算一次。</p>'+
   (skillChoice?'<div class="encounter-choice" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="encounter-choice-title">'+
@@ -833,7 +835,7 @@ function encounterResultHtml() {
 function startEncounterLoop() {
  if(encounterFrameId||!run?.pendingEncounter||run.pendingEncounter.controller!=="player"||
   run.paused||document.hidden||!session.isOwner||!encounterBattle||
-  encounterBattle.skillChoicePending||saveError)return;
+  encounterBattle.outcome!=="running"||encounterBattle.skillChoicePending||saveError)return;
  const frame=(now)=>{
   encounterFrameId=0;
   if(!run?.pendingEncounter||run.pendingEncounter.controller!=="player"||
@@ -885,6 +887,8 @@ async function commitEncounterResult(alreadyBusy=false) {
  const result=Engine.settleEncounter(run,{sortieId:pendingId});
  if(!result.ok){
   run.paused=true;
+  if(run.pendingEncounter.controller==="ai")run.pendingEncounter.controller="player";
+  run.pendingEncounter.error=result.error;
   queueSave();
   commandBusy=false;
   render();
@@ -943,6 +947,7 @@ function chooseEncounterController(mode) {
  if(!run?.pendingEncounter||commandBusy||!session.isOwner)return;
  const selected=Engine.setEncounterMode(run,mode);
  if(!selected.ok){report(selected.error);return;}
+ scenePanel="";
  if(mode==="ai"){
   queueSave();
   render();
@@ -968,10 +973,12 @@ function beginEncounterBeforeStep() {
  if(!started.ok)return false;
  tab="scene";infoPage="";sceneWorldId="lingzai";
  if(run.encounterPreference==="ai"){
+  scenePanel="";
   Engine.setEncounterMode(run,"ai");
   queueSave();render();void runEncounterWithAI();return true;
  }
  if(run.encounterPreference==="player"){
+  scenePanel="";
   Engine.setEncounterMode(run,"player");
   const restored=restoreEncounterBattle();
   if(!restored.ok){run.paused=true;queueSave();render();report(restored.error);return true;}
@@ -1327,6 +1334,7 @@ function handleClick(target){
  if(action==="show-all-worlds"&&run){run.onboardingFocus=false;queueSave();render();return;}
  if(!run)return;
  if(action==="encounter-ai"){chooseEncounterController("ai");return;}
+ if(action==="encounter-settle"){void commitEncounterResult();return;}
  if(action==="encounter-player"){chooseEncounterController("player");return;}
  if(action==="encounter-toggle"){
   if(!run.pendingEncounter||run.pendingEncounter.controller!=="player")return;
