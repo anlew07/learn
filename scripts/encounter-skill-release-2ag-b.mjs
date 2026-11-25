@@ -134,7 +134,8 @@ const report = {
     totalShardDelta: paired.reduce((total, item) => total + item.shardDelta, 0),
   },
   caveat:
-    "AI timing comparison only; it does not replace real-player usability testing.",
+    "AI timing comparison only; " +
+    "it does not replace real-player usability testing.",
 };
 
 if (process.argv.includes("--assert")) {
