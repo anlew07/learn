@@ -820,7 +820,7 @@ function encounterResultHtml() {
  const ling=worlds.find(world=>world.id==="lingzai");
  return '<section class="encounter-result">'+
   '<div class="encounter-result-heading"><small>灵灾 · 第'+result.day+'日</small>'+
-  '<h3>'+(battle.outcome==="won"?"排险完成":"分身已撤离")+'</h3>'+
+  '<h3>'+(battle.outcome==="won"?"排险完成":battle.outcome==="retreated"?"分身已撤离":"分身倒下")+'</h3>'+
   '<p>击退 '+n(battle.defeated)+' · 受伤 '+n(battle.hurt)+' · 回收碎片 '+n(battle.collectedShards)+'</p></div>'+
   '<div class="encounter-result-gains"><span>灵石 <b>+'+n(battle.stones)+'</b></span>'+
   '<span>经验 <b>+'+n(battle.experience)+'</b></span>'+
@@ -1502,6 +1502,13 @@ window.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d"].includes(key)){
    e.preventDefault();encounterKeys.add(key);return;
   }
+ }
+ if(run?.pendingEncounter){
+  if(e.key==="Escape"&&run.pendingEncounter.controller==="player"&&!run.paused){
+   run.paused=true;resetEncounterInput();stopEncounterLoop();queueSave();render();
+  }
+  if(e.key==="Escape")e.preventDefault();
+  return;
  }
  if(scenePanel&&tab==="scene"){
   if(e.key==="Escape"){
