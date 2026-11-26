@@ -748,7 +748,8 @@ function restoreEncounterBattle() {
  const pending=run?.pendingEncounter;
  if(!pending){encounterBattle=null;return {ok:true};}
  const restored=replaySortieProgress(
-  pending.seed,pending.danger,pending.actions,pending.forgeLevel,pending.missionId
+  pending.seed,pending.danger,pending.actions,pending.forgeLevel,pending.missionId,
+  "auto",pending.combatLevel??1
  );
  if(!restored.ok)return restored;
  encounterBattle=restored.battle;
@@ -791,7 +792,7 @@ function encounterHtml() {
   '<header class="encounter-top"><div><small>本源意识 · 正式世界遭遇</small><strong>灵灾 · 第'+pending.day+'日排险</strong></div>'+
   '<span class="encounter-state">'+(run.paused?(skillChoice?"战技选择":"战斗暂停"):"意识接管")+'</span></header>'+
   '<section class="encounter-hud" aria-label="战斗状态">'+
-  '<div><small>生命</small><b data-encounter-hp>'+battle.hero.hp+'/'+8+'</b></div>'+
+  '<div><small>生命</small><b data-encounter-hp>'+battle.hero.hp+'/'+battle.maxHp+'</b></div>'+
   '<div><small>剩余</small><b data-encounter-time>'+remaining+'秒</b></div>'+
   '<div><small>击退</small><b data-encounter-defeated>'+battle.defeated+'</b></div>'+
   '<div><small>碎片</small><b data-encounter-shards>'+battle.collectedShards+'</b></div>'+
@@ -857,7 +858,7 @@ function startEncounterLoop() {
   const time=app.querySelector("[data-encounter-time]");
   const defeated=app.querySelector("[data-encounter-defeated]");
   const shards=app.querySelector("[data-encounter-shards]");
-  if(hp)hp.textContent=encounterBattle.hero.hp+"/8";
+  if(hp)hp.textContent=encounterBattle.hero.hp+"/"+encounterBattle.maxHp;
   if(time)time.textContent=Math.max(0,Math.ceil((DURATION_TICKS-encounterBattle.tick)/60))+"秒";
   if(defeated)defeated.textContent=String(encounterBattle.defeated);
   if(shards)shards.textContent=String(encounterBattle.collectedShards);
