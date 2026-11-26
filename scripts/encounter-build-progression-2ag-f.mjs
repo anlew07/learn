@@ -216,12 +216,22 @@ if (process.argv.includes("--assert")) {
         const sample = results[control][danger][profile.id];
         if (sample.samples !== SEEDS) {
           throw new Error(
-            "Unexpected sample count: " + control + " D" + danger + " " + profile.id,
+            [
+              "Unexpected sample count:",
+              control,
+              "D" + danger,
+              profile.id,
+            ].join(" "),
           );
         }
         if (sample.avgHpRemaining < 0 || sample.avgHpRemaining > 8) {
           throw new Error(
-            "Invalid remaining HP: " + control + " D" + danger + " " + profile.id,
+            [
+              "Invalid remaining HP:",
+              control,
+              "D" + danger,
+              profile.id,
+            ].join(" "),
           );
         }
       }
