@@ -96,6 +96,34 @@ describe("2AG-F world build effects in real-time combat", () => {
     expect(battle.runeShield).toBe(3);
   });
 
+  it("consumes one stored shield per separate real hit", () => {
+    const battle = createSortie("rune-charge-consumption", 0, 0, "safe", {
+      combatBuild: { thunderLevel: 0, runeLevel: 1 },
+    });
+    battle.skillId = "rune";
+    battle.runeShield = 2;
+    battle.runeNextTick = 999999;
+    battle.nextSpawn = battle.schedule.length;
+    battle.enemies.push({
+      id: 101,
+      kind: "wolf",
+      x: battle.hero.x,
+      y: battle.hero.y,
+      hp: 999,
+    });
+
+    stepSortie(battle);
+    expect(battle.runeShield).toBe(1);
+    expect(battle.shieldBlocks).toBe(1);
+    expect(battle.hero.hp).toBe(8);
+
+    battle.hero.invulnerable = 0;
+    stepSortie(battle);
+    expect(battle.runeShield).toBe(0);
+    expect(battle.shieldBlocks).toBe(2);
+    expect(battle.hero.hp).toBe(8);
+  });
+
   it("allows manual rune to store charges up to the build capacity", () => {
     const battle = createSortie("manual-rune-build", 0, 0, "safe", {
       skillReleaseMode: "manual",
