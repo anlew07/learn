@@ -145,9 +145,7 @@ for (const control of CONTROLS) {
       const current = results[control][danger][level];
       pairedAgainstLevel1[control][danger][level] = {
         winRateDelta: Number((current.winRatePct - base.winRatePct).toFixed(1)),
-        avgHpRemainingDelta: Number(
-          (current.avgHpRemaining - base.avgHpRemaining).toFixed(2),
-        ),
+        avgHpRemainingDelta: Number((current.avgHpRemaining - base.avgHpRemaining).toFixed(2)),
         avgHurtDelta: Number((current.avgHurt - base.avgHurt).toFixed(2)),
         avgDefeatedDelta: Number((current.avgDefeated - base.avgDefeated).toFixed(2)),
         avgShardsDelta: Number((current.avgShards - base.avgShards).toFixed(2)),
@@ -179,12 +177,7 @@ if (process.argv.includes("--assert")) {
         const sample = results[control][danger][level];
         if (sample.samples !== SEEDS || sample.avgMaxHp !== 7 + level) {
           throw new Error(
-            "Invalid sample count or health scaling: " +
-              control +
-              " D" +
-              danger +
-              " Lv" +
-              level,
+            "Invalid sample count or health scaling: " + control + " D" + danger + " Lv" + level,
           );
         }
       }
@@ -193,9 +186,7 @@ if (process.argv.includes("--assert")) {
 
   for (const level of LEVELS) {
     if (results["salvage-hold"][100][level].missionTriggered !== SEEDS) {
-      throw new Error(
-        "The salvage-hold pressure case did not trigger all guards at Lv" + level,
-      );
+      throw new Error("The salvage-hold pressure case did not trigger all guards at Lv" + level);
     }
   }
 }
