@@ -23,8 +23,7 @@ function runBattle(seed, danger, combatLevel, control) {
         control === "ai"
           ? getAutonomousEncounterDecision(battle)
           : {
-              skillId:
-                battle.hero.hp <= Math.ceil(battle.maxHp / 2) ? "rune" : "thunder",
+              skillId: battle.hero.hp <= Math.ceil(battle.maxHp / 2) ? "rune" : "thunder",
             };
       const chosen = chooseSortieSkill(battle, decision.skillId);
       if (!chosen.ok) throw new Error("Skill choice failed: " + chosen.error);
@@ -53,15 +52,7 @@ function runBattle(seed, danger, combatLevel, control) {
     defeated: battle.defeated,
     collectedShards: battle.collectedShards,
   };
-  const replay = replaySortieTrace(
-    seed,
-    danger,
-    actions,
-    0,
-    "safe",
-    "auto",
-    combatLevel,
-  );
+  const replay = replaySortieTrace(seed, danger, actions, 0, "safe", "auto", combatLevel);
   const replayResult = replay.ok
     ? {
         outcome: replay.battle.outcome,
@@ -128,16 +119,12 @@ for (const control of CONTROLS) {
     if (level === 1) continue;
     pairedAgainstLevel1[control][level] = {
       avgHpRemainingDelta: Number(
-        (
-          samples[control][level].avgHpRemaining -
-          samples[control][1].avgHpRemaining
-        ).toFixed(2),
+        (samples[control][level].avgHpRemaining - samples[control][1].avgHpRemaining).toFixed(2),
       ),
       winRateDelta: Number(
         (samples[control][level].winRatePct - samples[control][1].winRatePct).toFixed(1),
       ),
-      totalHurtDelta:
-        samples[control][level].totalHurt - samples[control][1].totalHurt,
+      totalHurtDelta: samples[control][level].totalHurt - samples[control][1].totalHurt,
     };
   }
 }
@@ -160,9 +147,7 @@ if (process.argv.includes("--assert")) {
     for (const level of LEVELS) {
       const result = samples[control][level];
       if (result.samples !== SEEDS || result.avgMaxHp !== 7 + level) {
-        throw new Error(
-          "Unexpected sample count or health scaling at " + control + " Lv" + level,
-        );
+        throw new Error("Unexpected sample count or health scaling at " + control + " Lv" + level);
       }
     }
   }
