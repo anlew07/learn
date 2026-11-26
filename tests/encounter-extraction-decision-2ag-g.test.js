@@ -81,7 +81,7 @@ describe("2AG-G recovery objective extraction decision", () => {
   });
 
   it("replays a real early extraction immediately after completing the recovery site", () => {
-    const seed = "2AG-F-1";
+    const seed = "2ag-f-build-45-0";
     const danger = 45;
     const battle = createSortie(seed, danger, 0, "salvage");
     const actions = [];

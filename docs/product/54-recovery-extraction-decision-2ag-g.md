@@ -30,7 +30,7 @@
 
 ## 3. 固定种子实验
 
-- 40 seeds。
+- 40 seeds；每个危险档复用 2AG-F 的精确种子命名：`2ag-f-build-${danger}-${index}`（index 0–39）。
 - 危险档：D0 / D45 / D80。
 - 目标完成前：接近回收点，触发守卫并完成目标。
 - 目标完成后：采用项目既有 `experimentInput(battle, "pickup")`，主动追踪真实掉落并带有近敌规避；不再原地站桩。
