@@ -271,7 +271,9 @@ export function castSortieSkill(battle) {
     return { ok: true, skillId: "thunder", targets: targets.length };
   }
   if (battle.skillId === "rune") {
-    if (battle.runeShield > 0) return { ok: false, error: "护盾尚未消耗" };
+    if (battle.runeShield >= 1 + battle.combatBuild.runeLevel) {
+      return { ok: false, error: "护盾储备已满" };
+    }
     if (battle.tick < battle.runeNextTick) {
       return { ok: false, error: "聚灵阵纹仍在充能" };
     }
