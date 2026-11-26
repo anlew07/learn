@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Print Prettier-normalized 2AG-G script (temporary)
+        run: npx prettier scripts/encounter-extraction-decision-2ag-g.mjs
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
