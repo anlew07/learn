@@ -29,7 +29,8 @@
     "legacy:balance:check": "node scripts/legacy-doctrine-balance.mjs --seeds=40 --assert",
     "encounter:skill-release:check": "node scripts/encounter-skill-release-2ag-b.mjs --assert",
     "encounter:level-progression:check": "node scripts/encounter-level-progression-2ag-e.mjs --assert",
-    "encounter:level-pressure:check": "node scripts/encounter-level-pressure-2ag-e-b.mjs --assert"
+    "encounter:level-pressure:check": "node scripts/encounter-level-pressure-2ag-e-b.mjs --assert",
+    "encounter:build-progression:check": "node scripts/encounter-build-progression-2ag-f.mjs --assert"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",
