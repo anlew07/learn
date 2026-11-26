@@ -208,6 +208,7 @@ const MultiworldEngine = (function () {
     return 0;
   }
   function effectiveLevel(s,w,bonus){return Math.max(0,w.level+(bonus||0)-(w.injuryUntil>=s.day?1:0));}
+  function encounterCombatLevel(s,w){return clamp(Math.max(1,effectiveLevel(s,w)),1,4);}
   function demand(w){
     if(w.p<65)return "调查灾变根源";
     if(w.p<100)return "完善最终拯救准备";
@@ -705,7 +706,8 @@ const MultiworldEngine = (function () {
     if(s?.pendingEncounter||request?.formalEncounter===true)return encounterLocked();
     return settleSortieTransaction(s,request,false);
   }
-  function settleSortieTransaction(s,request,formalEncounter){
+  function settleSortieTransaction(s,request,formalEncounter,combatLevel){
+    combatLevel=combatLevel??1;
     if(!s||!request||typeof request.sortieId!=="string"||
       !Array.isArray(request.actions))return {ok:false,error:"出击结算参数无效"};
     var fingerprint=sortieTraceFingerprint(request.actions);
@@ -730,7 +732,7 @@ const MultiworldEngine = (function () {
     if(missionId===null||(request.missionId!==undefined&&request.missionId!==missionId)){
       return {ok:false,error:"Invalid sortie mission receipt"};
     }
-    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId);
+    var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,"auto",combatLevel);
     if(!verified.ok)return {ok:false,error:verified.error};
     var reward=previewSortieRewards(verified.battle);
     if(!reward)return {ok:false,error:"战斗未完成"};
@@ -962,6 +964,7 @@ const MultiworldEngine = (function () {
       return {ok:false,error:"当前战斗准备状态不合法"};
     var pending={
       id:sortieIdentity(s),worldId:worldId,day:s.day,
+      combatLevel:encounterCombatLevel(s,world),
       seed:sortieSeed(s),danger:world.d,forgeLevel:forgeLevel,missionId:missionId,
       reason:preview.reason,actions:[],controller:"choice"
     };
@@ -1009,8 +1012,10 @@ const MultiworldEngine = (function () {
     var world=byId(s,"lingzai");
     var currentForgeLevel=s.sortieCamp?.forgeLevel??0;
     var currentMissionId=sortieMissionFromCamp(s);
+    var combatLevel=pending.combatLevel??1;
     if(!world||world.status!=="running"||world.d!==pending.danger||world.retreat||
-      pending.forgeLevel!==currentForgeLevel||pending.missionId!==currentMissionId)
+      pending.forgeLevel!==currentForgeLevel||pending.missionId!==currentMissionId||
+      (pending.combatLevel!==undefined&&combatLevel!==encounterCombatLevel(s,world)))
       return {ok:false,error:"遭遇期间世界或战斗准备状态发生变化，拒绝结算"};
     var preview=previewNextAction(s,"lingzai");
     if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
@@ -1019,7 +1024,7 @@ const MultiworldEngine = (function () {
     if(s.waves&&world.tacticalAssist?.kind===TACTICAL_ASSIST.id)return encounterLocked();
     var result=settleSortieTransaction(s,{
       sortieId:pending.id,actions:pending.actions,missionId:pending.missionId
-    },true);
+    },true,combatLevel);
     if(!result.ok)return result;
     var next=result.replayed?JSON.parse(JSON.stringify(s)):result.run;
     next.pendingEncounter=null;
