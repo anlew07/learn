@@ -58,7 +58,9 @@ function runBattle(seed, danger, control, profile) {
   }
 
   if (battle.outcome === "running" || battle.skillChoicePending) {
-    throw new Error("Battle exceeded fixed tick budget: " + seed + " / " + profile.id);
+    throw new Error(
+      "Battle exceeded fixed tick budget: " + seed + " / " + profile.id,
+    );
   }
 
   const result = {
@@ -85,7 +87,9 @@ function runBattle(seed, danger, control, profile) {
     1,
     combatBuild,
   );
-  if (!replay.ok) throw new Error("Trace replay failed: " + seed + " / " + profile.id);
+  if (!replay.ok) {
+    throw new Error("Trace replay failed: " + seed + " / " + profile.id);
+  }
 
   const replayBattle = replay.battle;
   const replayResult = {
@@ -103,7 +107,9 @@ function runBattle(seed, danger, control, profile) {
   };
 
   if (JSON.stringify(replayResult) !== JSON.stringify(result)) {
-    throw new Error("Replay drift: " + seed + " / " + control + " / " + profile.id);
+    throw new Error(
+      "Replay drift: " + seed + " / " + control + " / " + profile.id,
+    );
   }
 
   return result;
@@ -124,7 +130,9 @@ function aggregate(samples) {
     avgThunderHits: Number((sum("thunderHits") / samples.length).toFixed(2)),
     totalShieldBlocks: sum("shieldBlocks"),
     missionTriggered: samples.filter((item) => item.guardCount > 0).length,
-    missionCompleted: samples.filter((item) => item.missionStatus === "completed").length,
+    missionCompleted: samples.filter(
+      (item) => item.missionStatus === "completed",
+    ).length,
     avgGuardDamage: Number((sum("guardDamage") / samples.length).toFixed(2)),
   };
 }
@@ -155,13 +163,24 @@ for (const control of CONTROLS) {
       for (const rank of [1, 2]) {
         const current = results[control][danger][type + "-" + rank];
         pairedAgainstRank0[control][danger][type + "-" + rank] = {
-          winRateDelta: Number((current.winRatePct - baseline.winRatePct).toFixed(1)),
-          avgHpRemainingDelta: Number((current.avgHpRemaining - baseline.avgHpRemaining).toFixed(2)),
+          winRateDelta: Number(
+            (current.winRatePct - baseline.winRatePct).toFixed(1),
+          ),
+          avgHpRemainingDelta: Number(
+            (current.avgHpRemaining - baseline.avgHpRemaining).toFixed(2),
+          ),
           avgHurtDelta: Number((current.avgHurt - baseline.avgHurt).toFixed(2)),
-          avgDefeatedDelta: Number((current.avgDefeated - baseline.avgDefeated).toFixed(2)),
-          avgShardsDelta: Number((current.avgShards - baseline.avgShards).toFixed(2)),
-          avgThunderHitsDelta: Number((current.avgThunderHits - baseline.avgThunderHits).toFixed(2)),
-          totalShieldBlocksDelta: current.totalShieldBlocks - baseline.totalShieldBlocks,
+          avgDefeatedDelta: Number(
+            (current.avgDefeated - baseline.avgDefeated).toFixed(2),
+          ),
+          avgShardsDelta: Number(
+            (current.avgShards - baseline.avgShards).toFixed(2),
+          ),
+          avgThunderHitsDelta: Number(
+            (current.avgThunderHits - baseline.avgThunderHits).toFixed(2),
+          ),
+          totalShieldBlocksDelta:
+            current.totalShieldBlocks - baseline.totalShieldBlocks,
         };
       }
     }
@@ -169,12 +188,14 @@ for (const control of CONTROLS) {
 }
 
 const report = {
-  experiment: "2AG-F paired test of persistent world build effects in real-time combat",
+  experiment:
+    "2AG-F paired test of persistent world build effects in real-time combat",
   seedsPerDangerAndProfile: SEEDS,
   dangerBands: DANGER_BANDS,
   controls: {
     stationary: "fixed position, selecting the matching skill",
-    salvageHold: "move to the recovery site, trigger guards, then hold position",
+    salvageHold:
+      "move to the recovery site, trigger guards, then hold position",
   },
   profiles: PROFILES.map((profile) => ({
     id: profile.id,
@@ -184,7 +205,8 @@ const report = {
   totalBattles: CONTROLS.length * DANGER_BANDS.length * PROFILES.length * SEEDS,
   results,
   pairedAgainstRank0,
-  caveat: "Deterministic pressure scripts are not substitutes for real mobile-player testing.",
+  caveat:
+    "Deterministic pressure scripts are not substitutes for real mobile-player testing.",
 };
 
 if (process.argv.includes("--assert")) {
@@ -193,10 +215,14 @@ if (process.argv.includes("--assert")) {
       for (const profile of PROFILES) {
         const sample = results[control][danger][profile.id];
         if (sample.samples !== SEEDS) {
-          throw new Error("Unexpected sample count: " + control + " D" + danger + " " + profile.id);
+          throw new Error(
+            "Unexpected sample count: " + control + " D" + danger + " " + profile.id,
+          );
         }
         if (sample.avgHpRemaining < 0 || sample.avgHpRemaining > 8) {
-          throw new Error("Invalid remaining HP: " + control + " D" + danger + " " + profile.id);
+          throw new Error(
+            "Invalid remaining HP: " + control + " D" + danger + " " + profile.id,
+          );
         }
       }
     }
