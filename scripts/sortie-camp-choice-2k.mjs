@@ -97,6 +97,7 @@ export async function openCampChoiceSandbox() {
         "  combatLevel,",
         "  combatBuild: safeCombatBuild,",
         "});",
+        "return replayActions(battle, actions, true);",
       ].join("\n"),
       [
         "const battle = createSortie(seed, danger, forgeLevel, missionId, {",
@@ -104,6 +105,7 @@ export async function openCampChoiceSandbox() {
         "  combatLevel,",
         "  combatBuild: safeCombatBuild,",
         "}, prepHp);",
+        "return replayActions(battle, actions, true);",
       ].join("\n"),
     );
     replace(
