@@ -23,14 +23,19 @@ async function installLevelFourFightFixture(page) {
   await expect(page.locator('[data-action="step"]')).toBeVisible();
 }
 
-async function installFightFixture(page) {
+async function installFightFixture(page, { permanentRune = false } = {}) {
   await page.goto("/?debug=1");
-  const preview = await page.evaluate(async () => {
+  const preview = await page.evaluate(async (permanentRune) => {
     const Engine = (await import("/src/engine.js")).default;
     const { saveRepository } = await import("/src/services/persistence.js");
     const { normalizeLegacyProfile } = await import("/src/systems/legacy-progression.js");
     const run = Engine.fresh("2ag-preview-fight", 1, true);
-    Engine.byId(run, "lingzai").strategy = "clear";
+    const world = Engine.byId(run, "lingzai");
+    world.strategy = "clear";
+    if (permanentRune) {
+      world.build.support = [{ id: "rune", lv: 1 }];
+      world.build.count = 1;
+    }
     run.paused = true;
     const profile = normalizeLegacyProfile({
       runCount: 0,
@@ -40,7 +45,7 @@ async function installFightFixture(page) {
     const next = Engine.previewNextAction(run, "lingzai");
     await saveRepository.enqueueSave(run, profile);
     return next;
-  });
+  }, permanentRune);
   expect(preview).toMatchObject({
     ok: true,
     actionId: "fight",
@@ -189,4 +194,22 @@ test("effective world level is visible and survives a formal encounter reload", 
   const saved = await getSavedState(page);
   expect(saved.run.pendingEncounter.combatLevel).toBe(4);
   expect(saved.run.day).toBe(1);
+});
+
+test("permanent rune support is snapshotted, visible and restored with its shield", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installFightFixture(page, { permanentRune: true });
+
+  await page.locator('[data-action="step"]').tap();
+  const pending = await getSavedState(page);
+  expect(pending.run.pendingEncounter.permanentRune).toBe(true);
+
+  await page.locator('[data-action="encounter-player"]').tap();
+  await expect(page.locator("[data-encounter-screen]")).toBeVisible();
+  await expect(page.locator("[data-encounter-shield]")).toHaveText("可用");
+
+  await page.reload();
+  await expect(page.locator("[data-encounter-screen]")).toBeVisible();
+  await expect(page.locator("[data-encounter-shield]")).toHaveText("可用");
+  expect((await getSavedState(page)).run.pendingEncounter.permanentRune).toBe(true);
 });
