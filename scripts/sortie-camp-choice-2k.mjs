@@ -63,13 +63,48 @@ export async function openCampChoiceSandbox() {
     );
     replace(
       "src/systems/sortie-trace.js",
-      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto", combatLevel = 1) {',
-      'export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto", combatLevel = 1, prepHp = 0) {',
+      [
+        "export function replaySortieTrace(",
+        "  seed,",
+        "  danger,",
+        "  actions,",
+        "  forgeLevel = 0,",
+        '  missionId = "safe",',
+        '  skillReleaseMode = "auto",',
+        "  combatLevel = 1,",
+        "  combatBuild,",
+        ") {",
+      ].join("\n"),
+      [
+        "export function replaySortieTrace(",
+        "  seed,",
+        "  danger,",
+        "  actions,",
+        "  forgeLevel = 0,",
+        '  missionId = "safe",',
+        '  skillReleaseMode = "auto",',
+        "  combatLevel = 1,",
+        "  combatBuild,",
+        "  prepHp = 0,",
+        ") {",
+      ].join("\n"),
     );
     replace(
       "src/systems/sortie-trace.js",
-      "const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode, combatLevel });",
-      "const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode, combatLevel }, prepHp);",
+      [
+        "const battle = createSortie(seed, danger, forgeLevel, missionId, {",
+        "  skillReleaseMode,",
+        "  combatLevel,",
+        "  combatBuild: safeCombatBuild,",
+        "});",
+      ].join("\n"),
+      [
+        "const battle = createSortie(seed, danger, forgeLevel, missionId, {",
+        "  skillReleaseMode,",
+        "  combatLevel,",
+        "  combatBuild: safeCombatBuild,",
+        "}, prepHp);",
+      ].join("\n"),
     );
     replace(
       "src/engine.js",
@@ -80,7 +115,7 @@ export async function openCampChoiceSandbox() {
         "  prep.cost!==3||prep.hpBonus!==2||typeof prep.operationId!==\"string\"))",
         "  return {ok:false,error:\"战前准备试验状态非法\"};",
         "var prepHp=prep?.charges===1?2:0;",
-        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,\"auto\",combatLevel,prepHp);",
+        "var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,\"auto\",combatLevel,undefined,prepHp);",
       ].join("\n"),
     );
     replace(
