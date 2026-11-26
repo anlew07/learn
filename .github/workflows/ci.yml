@@ -18,8 +18,6 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Print Prettier-normalized 2AG-F experiment script (temporary)
-        run: npx prettier scripts/encounter-build-progression-2ag-f.mjs
       - run: npm run lint
       - run: npm run format:check
       - run: npm run text:check
