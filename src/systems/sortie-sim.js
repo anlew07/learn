@@ -17,6 +17,26 @@ function random(battle) {
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
+export const EMPTY_SORTIE_COMBAT_BUILD = Object.freeze({
+  thunderLevel: 0,
+  runeLevel: 0,
+});
+
+export function normalizeSortieCombatBuild(value) {
+  if (value === undefined || value === null) return { ...EMPTY_SORTIE_COMBAT_BUILD };
+  if (typeof value !== "object" || Array.isArray(value) ||
+    Object.keys(value).some((key) => !["thunderLevel", "runeLevel"].includes(key))) {
+    throw new Error("Invalid combat build");
+  }
+  const thunderLevel = value.thunderLevel ?? 0;
+  const runeLevel = value.runeLevel ?? 0;
+  if (![thunderLevel, runeLevel].every((level) =>
+    Number.isInteger(level) && level >= 0 && level <= 2)) {
+    throw new Error("Invalid combat build");
+  }
+  return { thunderLevel, runeLevel };
+}
+
 function makeSchedule(danger) {
   return SORTIE.waves.flatMap((wave) => {
     const count = wave.count + (wave.start === 50 ? (danger >= 75 ? 6 : danger >= 40 ? 3 : 0) : 0);
@@ -34,12 +54,13 @@ export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, 
   if (!Number.isInteger(combatLevel) || combatLevel < 1 || combatLevel > 4) {
     throw new Error("Invalid combat level");
   }
+  const combatBuild = normalizeSortieCombatBuild(options?.combatBuild);
   const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100);
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 ||
     forgeLevel > SORTIE.forge.maxLevel) throw new Error("Invalid forge level");
   return {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
-    skillReleaseMode, combatLevel,
+    skillReleaseMode, combatLevel, combatBuild,
     maxHp: SORTIE.player.hp + combatLevel - 1,
     forgeLevel, weaponDamage: SORTIE.weapon.damage + forgeLevel * SORTIE.forge.damageBonus,
     hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp + combatLevel - 1, invulnerable: 0 },
@@ -128,7 +149,7 @@ function applySkillEffects(battle) {
       .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
       .filter(({ enemy, range }) => enemy.hp > 0 && range <= SORTIE.skills.thunderRange)
       .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)
-      .slice(0, SORTIE.skills.thunderTargets)
+      .slice(0, SORTIE.skills.thunderTargets + battle.combatBuild.thunderLevel)
       .map(({ enemy }) => enemy);
     if (targets.length) {
       battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
@@ -142,7 +163,10 @@ function applySkillEffects(battle) {
     battle.runeNextTick += Math.round(
       SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond,
     );
-    battle.runeShield = 1;
+    battle.runeShield = Math.min(
+      1 + battle.combatBuild.runeLevel,
+      battle.runeShield + 1,
+    );
   }
 }
 
@@ -227,22 +251,24 @@ export function castSortieSkill(battle) {
     if (battle.tick < battle.thunderNextTick) {
       return { ok: false, error: "驭雷符仍在冷却" };
     }
-    const target = battle.enemies
+    const targets = battle.enemies
       .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
       .filter(({ enemy, range }) =>
         enemy.hp > 0 && range <= SORTIE.skills.thunderRange,
       )
-      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)[0];
-    if (!target) return { ok: false, error: "攻击范围内没有目标" };
+      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)
+      .slice(0, SORTIE.skills.thunderTargets + battle.combatBuild.thunderLevel)
+      .map(({ enemy }) => enemy);
+    if (!targets.length) return { ok: false, error: "攻击范围内没有目标" };
 
     battle.thunderNextTick =
       battle.tick + Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
-    battle.flashTargets = [{ x: target.enemy.x, y: target.enemy.y }];
+    battle.flashTargets = targets.map(({ x, y }) => ({ x, y }));
     battle.flashUntil = battle.tick + 15;
-    battle.thunderHits++;
-    damageEnemy(battle, target.enemy, SORTIE.skills.thunderDamage);
+    battle.thunderHits += targets.length;
+    for (const enemy of targets) damageEnemy(battle, enemy, SORTIE.skills.thunderDamage);
     battle.enemies = battle.enemies.filter((enemy) => enemy.hp > 0);
-    return { ok: true, skillId: "thunder", targets: 1 };
+    return { ok: true, skillId: "thunder", targets: targets.length };
   }
   if (battle.skillId === "rune") {
     if (battle.runeShield > 0) return { ok: false, error: "护盾尚未消耗" };
@@ -251,8 +277,11 @@ export function castSortieSkill(battle) {
     }
     battle.runeNextTick =
       battle.tick + Math.round(SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond);
-    battle.runeShield = 1;
-    return { ok: true, skillId: "rune", shield: 1 };
+    battle.runeShield = Math.min(
+      1 + battle.combatBuild.runeLevel,
+      battle.runeShield + 1,
+    );
+    return { ok: true, skillId: "rune", shield: battle.runeShield };
   }
   return { ok: false, error: "尚未选择战技" };
 }
