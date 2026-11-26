@@ -327,3 +327,71 @@ describe("2AG-D encounter transaction regression", () => {
     expect(world.metrics.actions.fight).toBe(1);
   });
 });
+
+
+  it("snapshots permanent rune support and replays its opening shield exactly once", () => {
+    const run = readyRun();
+    const world = Engine.byId(run, "lingzai");
+    world.build.support = [{ id: "rune", lv: 1 }];
+    world.build.count = 1;
+
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(run.pendingEncounter.permanentRune).toBe(true);
+    expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
+
+    const pending = run.pendingEncounter;
+    const battle = createSortie(
+      pending.seed,
+      pending.danger,
+      pending.forgeLevel,
+      pending.missionId,
+      { combatLevel: pending.combatLevel, permanentRune: pending.permanentRune },
+    );
+    expect(battle.runeShield).toBe(1);
+
+    const actions = [];
+    let guard = 0;
+    while (battle.outcome === "running" && battle.shieldBlocks === 0 && guard < 2000) {
+      if (battle.skillChoicePending) {
+        expect(chooseSortieSkill(battle, "thunder").ok).toBe(true);
+        actions.push(["skill", "thunder"]);
+      } else {
+        stepSortie(battle, { x: 0, y: 0 });
+        actions.push(["tick", 0, 0]);
+      }
+      guard++;
+    }
+    expect(battle.shieldBlocks).toBe(1);
+    expect(battle.runeShield).toBe(0);
+    expect(battle.hurt).toBe(0);
+
+    const restored = replaySortieProgress(
+      pending.seed,
+      pending.danger,
+      actions,
+      pending.forgeLevel,
+      pending.missionId,
+      "auto",
+      pending.combatLevel,
+      true,
+    );
+    expect(restored.ok).toBe(true);
+    expect(restored.battle.shieldBlocks).toBe(1);
+    expect(restored.battle.hero).toEqual(battle.hero);
+
+    finishWithAi(battle, actions);
+    expect(battle.outcome).not.toBe("running");
+    pending.actions = actions;
+
+    const originalSupport = world.build.support;
+    world.build.support = [];
+    expect(Engine.settleEncounter(run, { sortieId: pending.id }).ok).toBe(false);
+    world.build.support = originalSupport;
+
+    const settled = Engine.settleEncounter(run, { sortieId: pending.id });
+    expect(settled.ok).toBe(true);
+    expect(settled.receipt.battle).toMatchObject({
+      permanentRune: true,
+      shieldBlocks: 1,
+    });
+  });
