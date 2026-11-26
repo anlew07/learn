@@ -324,7 +324,7 @@ export function stepSortie(battle, input = { x: 0, y: 0 }) {
     let damaged = bodyContact || projectile.contact;
     if (damaged && battle.runeShield > 0) {
       // One rune charge blocks the next damage source, including ranged projectiles.
-      battle.runeShield = 0;
+      battle.runeShield = Math.max(0, battle.runeShield - 1);
       battle.shieldBlocks++;
       battle.hero.invulnerable = Math.round(
         SORTIE.player.hurtSeconds * SORTIE.ticksPerSecond,
