@@ -9,6 +9,8 @@ async function installLevelFourFightFixture(page) {
     const { normalizeLegacyProfile } = await import("/src/systems/legacy-progression.js");
     const run = Engine.fresh("2ag-level-four-hud", 1, true);
     Engine.byId(run, "lingzai").level = 4;
+    Engine.byId(run, "lingzai").p = 100;
+    Engine.byId(run, "lingzai").resource = 20;
     Engine.byId(run, "lingzai").strategy = "clear";
     run.paused = true;
     const profile = normalizeLegacyProfile({ runCount: 0, worldsSaved: 0, shards: 0 });
