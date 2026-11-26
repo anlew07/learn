@@ -5,6 +5,7 @@ import {
   chooseSortieSkill,
   SORTIE,
 } from "../src/systems/sortie-sim.js";
+import { SORTIE } from "../src/config/sortie-data.js";
 import { replaySortieTrace } from "../src/systems/sortie-trace.js";
 
 const SEEDS = 40;
