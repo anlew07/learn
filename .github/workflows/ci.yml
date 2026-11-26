@@ -37,6 +37,8 @@ jobs:
       - run: npm test -- --maxWorkers=2
       - name: Compare automatic and manual encounter skill release
         run: npm run encounter:skill-release:check
+      - name: Compare effective world levels in formal encounters
+        run: npm run encounter:level-progression:check
       - run: npm run build
       - run: npm run balance:check
       - run: npm run balance:matrix:check
