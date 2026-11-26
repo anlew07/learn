@@ -688,6 +688,8 @@ const MultiworldEngine = (function () {
 
   function captureSortieWorld(w) {
     return {
+      key:w.worldNumber!==undefined?"world:"+w.worldNumber:
+        w.slotId!==undefined?"slot:"+w.slotId:"id:"+w.id,
       id:w.id,status:w.status,level:w.level,xp:w.xp,
       resource:w.resource,p:w.p,d:w.d,action:w.action,
       decision:w.lastDecision?JSON.parse(JSON.stringify(w.lastDecision)):null
@@ -745,16 +747,19 @@ const MultiworldEngine = (function () {
       byId(next,"lingzai").lastSortie.day!==s.day){
       return {ok:false,error:"今日事件已阻止出击结算"};
     }
+    var beforeByKey=new Map(before.map(function(w){return [w.key,w];}));
     var after=next.worlds.map(captureSortieWorld);
-    var changes=after.map(function(w,index){
-      var original=before[index];
+    var changes=after.map(function(w){
+      var original=beforeByKey.get(w.key);
+      if(!original)return null; // Newly opened worlds begin acting on their born day.
+      var snapshot={...w};delete snapshot.key;
       return {
-        ...w,resourceDelta:r2(w.resource-original.resource),
+        ...snapshot,resourceDelta:r2(w.resource-original.resource),
         xpDelta:r2(w.xp-original.xp),pDelta:r2(w.p-original.p),
         dDelta:r2(w.d-original.d),
         actionId:w.decision&&w.decision.day===s.day?w.decision.actionId:null
       };
-    });
+    }).filter(Boolean);
     var receipt={
       sortieId:request.sortieId,day:s.day,nextDay:next.day,
       battle:reward,missionId:missionId,objectiveStones:reward.objectiveStones,
