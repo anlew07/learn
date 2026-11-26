@@ -139,7 +139,7 @@ describe("2AG-F world build effects in real-time combat", () => {
     });
   });
 
-  it("replays and records the exact combat build without changing reward rules", () => {
+  it("replays the exact combat build without changing the reward contract", () => {
     const combatBuild = { thunderLevel: 1, runeLevel: 2 };
     const replay = replaySortieTrace(
       "combat-build-replay",
@@ -153,12 +153,13 @@ describe("2AG-F world build effects in real-time combat", () => {
     );
     expect(replay.ok).toBe(true);
     expect(replay.battle.combatBuild).toEqual(combatBuild);
-    expect(previewSortieRewards(replay.battle)).toMatchObject({
-      combatBuild,
+    const rewards = previewSortieRewards(replay.battle);
+    expect(rewards).toMatchObject({
       stones: 0,
       experience: 0,
       progress: 0,
     });
+    expect(rewards).not.toHaveProperty("combatBuild");
     expect(replaySortieTrace(
       "combat-build-invalid",
       0,
