@@ -163,7 +163,7 @@ function main() {
   for (const danger of DANGER_BANDS) {
     for (const strategy of STRATEGIES) {
       for (let seed = 1; seed <= SEED_COUNT; seed++) {
-        samples.push(runBattle("2AG-G-" + seed, danger, strategy));
+        samples.push(runBattle("2AG-F-" + seed, danger, strategy));
       }
     }
   }
