@@ -34,12 +34,14 @@ export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, 
   if (!Number.isInteger(combatLevel) || combatLevel < 1 || combatLevel > 4) {
     throw new Error("Invalid combat level");
   }
+  const permanentRune = options?.permanentRune ?? false;
+  if (typeof permanentRune !== "boolean") throw new Error("Invalid permanent rune build");
   const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100);
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 ||
     forgeLevel > SORTIE.forge.maxLevel) throw new Error("Invalid forge level");
   return {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
-    skillReleaseMode, combatLevel,
+    skillReleaseMode, combatLevel, permanentRune,
     maxHp: SORTIE.player.hp + combatLevel - 1,
     forgeLevel, weaponDamage: SORTIE.weapon.damage + forgeLevel * SORTIE.forge.damageBonus,
     hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp + combatLevel - 1, invulnerable: 0 },
@@ -47,7 +49,7 @@ export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, 
     drops: [], collectedShards: 0,
     skillOffered: false, skillChoicePending: false, skillId: null,
     thunderNextTick: 0, thunderHits: 0, flashTargets: [], flashUntil: 0,
-    runeShield: 0, runeNextTick: 0, shieldBlocks: 0,
+    runeShield: permanentRune ? 1 : 0, runeNextTick: 0, shieldBlocks: 0,
     nextId: 1, nextShotTick: 1, fired: 0, defeated: 0, hurt: 0, outcome: "running", mission: createRecoveryMission(missionId),
   };
 }
