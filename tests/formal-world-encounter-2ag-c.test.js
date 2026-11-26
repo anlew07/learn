@@ -247,17 +247,17 @@ describe("2AG-D encounter transaction regression", () => {
   it("uses injury-adjusted effective level and rejects a forged combat level", () => {
     const run = readyRun("2ag-e-injury");
     const world = Engine.byId(run, "lingzai");
-    world.level = 3;
+    world.level = 4;
     world.p = 100;
     world.resource = 20;
     world.injuryUntil = run.day + 2;
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
-    expect(run.pendingEncounter.combatLevel).toBe(2);
+    expect(run.pendingEncounter.combatLevel).toBe(3);
     run.pendingEncounter.combatLevel = 4;
     const forged = JSON.stringify(run);
     expect(Engine.settleEncounter(run, { sortieId: run.pendingEncounter.id }).ok).toBe(false);
     expect(JSON.stringify(run)).toBe(forged);
-    run.pendingEncounter.combatLevel = 2;
+    run.pendingEncounter.combatLevel = 3;
     expect(() => assertRestorableSnapshot({ run, profile: null }, Engine.VERSION)).not.toThrow();
     const malformed = JSON.parse(JSON.stringify(run));
     malformed.pendingEncounter.combatLevel = 5;
