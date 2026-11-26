@@ -10,6 +10,7 @@ import {
 } from "../src/systems/sortie-sim.js";
 import { previewSortieRewards } from "../src/systems/sortie-rewards.js";
 import { replaySortieTrace } from "../src/systems/sortie-trace.js";
+import { experimentInput } from "./sortie-experiment.mjs";
 
 const SEED_COUNT = 40;
 const DANGER_BANDS = [0, 45, 80];
@@ -37,6 +38,9 @@ export function previewExtractionDecisionRewards(battle) {
 }
 
 function inputFor(battle) {
+  if (battle.mission.status === "completed") {
+    return experimentInput(battle, "pickup");
+  }
   const dx = battle.mission.x - battle.hero.x;
   const dy = battle.mission.y - battle.hero.y;
   const range = Math.hypot(dx, dy);
