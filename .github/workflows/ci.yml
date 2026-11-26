@@ -39,6 +39,8 @@ jobs:
         run: npm run encounter:skill-release:check
       - name: Compare effective world levels in formal encounters
         run: npm run encounter:level-progression:check
+      - name: Compare offensive and defensive world builds in real-time encounters
+        run: npm run encounter:build-progression:check
       - name: Stress effective world levels with stationary and guarded objective play
         run: npm run encounter:level-pressure:check
       - run: npm run build
