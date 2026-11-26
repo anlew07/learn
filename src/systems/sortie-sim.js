@@ -30,14 +30,19 @@ export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, 
   if (!SORTIE.mission.options.includes(missionId)) throw new Error("Invalid sortie mission");
   const skillReleaseMode = options?.skillReleaseMode ?? "auto";
   if (!["auto", "manual"].includes(skillReleaseMode)) throw new Error("Invalid skill release mode");
+  const combatLevel = options?.combatLevel ?? 1;
+  if (!Number.isInteger(combatLevel) || combatLevel < 1 || combatLevel > 4) {
+    throw new Error("Invalid combat level");
+  }
   const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100);
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 ||
     forgeLevel > SORTIE.forge.maxLevel) throw new Error("Invalid forge level");
   return {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
-    skillReleaseMode,
+    skillReleaseMode, combatLevel,
+    maxHp: SORTIE.player.hp + combatLevel - 1,
     forgeLevel, weaponDamage: SORTIE.weapon.damage + forgeLevel * SORTIE.forge.damageBonus,
-    hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp, invulnerable: 0 },
+    hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp + combatLevel - 1, invulnerable: 0 },
     enemies: [], shots: [], hostileShots: [], schedule: makeSchedule(safeDanger), nextSpawn: 0,
     drops: [], collectedShards: 0,
     skillOffered: false, skillChoicePending: false, skillId: null,
