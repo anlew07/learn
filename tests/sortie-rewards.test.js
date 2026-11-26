@@ -185,3 +185,37 @@ describe("physical fragments and isolated reward preview", () => {
     expect(battle.skillId).toBe("thunder");
   });
 });
+
+describe("formal salvage extraction reward policy", () => {
+  it("banks the completed objective on formal extraction but not in the isolated prototype", () => {
+    const battle = createSortie("formal-salvage-retreat", 45, 0, "salvage");
+    battle.mission.status = "completed";
+    expect(retreatSortie(battle).ok).toBe(true);
+    expect(previewSortieRewards(battle).objectiveStones).toBe(0);
+    expect(previewSortieRewards(battle, { bankObjectiveOnRetreat: true }).objectiveStones)
+      .toBe(SORTIE.mission.rewardStones);
+    expect(previewSortieRewards(battle, { bankObjectiveOnRetreat: true }).stones)
+      .toBe(SORTIE.mission.rewardStones);
+  });
+
+  it("does not bank the objective on death or an incomplete retreat", () => {
+    const lost = createSortie("formal-salvage-lost", 80, 0, "salvage");
+    lost.mission.status = "completed";
+    lost.outcome = "lost";
+    expect(previewSortieRewards(lost, { bankObjectiveOnRetreat: true }).objectiveStones).toBe(0);
+
+    const incomplete = createSortie("formal-salvage-incomplete", 45, 0, "salvage");
+    expect(retreatSortie(incomplete).ok).toBe(true);
+    expect(previewSortieRewards(incomplete, { bankObjectiveOnRetreat: true }).objectiveStones).toBe(0);
+  });
+
+  it("keeps the existing completed-objective victory reward unchanged", () => {
+    const battle = createSortie("formal-salvage-win", 45, 0, "salvage");
+    battle.mission.status = "completed";
+    battle.outcome = "won";
+    const baseline = previewSortieRewards(battle);
+    const formal = previewSortieRewards(battle, { bankObjectiveOnRetreat: true });
+    expect(formal.objectiveStones).toBe(SORTIE.mission.rewardStones);
+    expect(formal.stones).toBe(baseline.stones);
+  });
+});

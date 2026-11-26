@@ -190,3 +190,26 @@ test("effective world level is visible and survives a formal encounter reload", 
   expect(saved.run.pendingEncounter.combatLevel).toBe(4);
   expect(saved.run.day).toBe(1);
 });
+
+test("formal recovery mission is selectable and its HUD fits the smallest mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await installFightFixture(page);
+  await page.locator('[data-action="step"]').tap();
+  const safe = page.locator('[data-action="encounter-mission"][data-mission="safe"]');
+  const salvage = page.locator('[data-action="encounter-mission"][data-mission="salvage"]');
+  await expect(safe).toHaveAttribute("aria-pressed", "true");
+  await salvage.tap();
+  await expect(salvage).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-action="encounter-ai"]')).toBeDisabled();
+  await expect(page.locator('[data-action="encounter-player"]')).toBeEnabled();
+  await page.locator('[data-action="encounter-player"]').tap();
+  await expect(page.locator("[data-encounter-screen][data-mission='salvage']")).toBeVisible();
+  const objective = page.locator("[data-encounter-objective]");
+  await expect(objective).toBeVisible();
+  await expect(page.locator("[data-encounter-objective-label]")).toContainText("回收点");
+  const box = await objective.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(320);
+  expect(box.y + box.height).toBeLessThanOrEqual(568);
+});
