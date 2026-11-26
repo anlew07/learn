@@ -4,7 +4,7 @@ import { SORTIE } from "../config/sortie-data.js";
  * Pure battle outcome summary. It MUST NOT mutate Engine, RunState or ProfileState.
  * The official Engine validates the trace and commits this summary exactly once.
  */
-export function previewSortieRewards(battle) {
+export function previewSortieRewards(battle, options = {}) {
   if (!battle || battle.outcome === "running") return null;
   const { rewards } = SORTIE;
   const collectedShards = Math.max(0, Math.floor(battle.collectedShards || 0));
@@ -13,7 +13,9 @@ export function previewSortieRewards(battle) {
   const won = battle.outcome === "won";
   const baseStones = won ? rewards.baseStonesOnWin : 0;
   const mission = battle.mission;
-  const missionBonusStones = won && mission?.id === "salvage" &&
+  const mayBankObjective = won ||
+    (options?.bankObjectiveOnRetreat === true && battle.outcome === "retreated");
+  const missionBonusStones = mayBankObjective && mission?.id === "salvage" &&
     mission.status === "completed" ? SORTIE.mission.rewardStones : 0;
   return Object.freeze({
     outcome: battle.outcome,

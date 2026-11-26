@@ -5,12 +5,14 @@ import "./world-encounter.css";
 import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
 applyTextSize();
 import Engine from "./engine.js";
+import { SORTIE } from "./config/sortie-data.js";
 import { stepSortie, advanceSortie, chooseSortieSkill, retreatSortie, DURATION_TICKS } from "./systems/sortie-sim.js";
 import { replaySortieProgress } from "./systems/sortie-trace.js";
 import { getAutonomousEncounterDecision } from "./systems/encounter-controller.js";
 import { drawSortie } from "./ui/sortie-stage.js";
 import { getStageView } from "./presentation/stage-view.js";
 import { getCombatNextStep } from "./presentation/combat-next-step.js";
+import { getEncounterMissionResult, getEncounterMissionView } from "./presentation/encounter-mission.js";
 import { DAY_DURATION_MS, readDayProgress } from "./presentation/day-progress.js";
 import { nextNewDecision, pendingDecisions } from "./presentation/decision-attention.js";
 import { startPixelStage, stopPixelStage } from "./ui/pixel-stage.js";
@@ -786,9 +788,11 @@ function encounterHtml() {
  if(!pending||!battle)return "";
  const remaining=Math.max(0,Math.ceil((DURATION_TICKS-battle.tick)/60));
  const skillChoice=battle.skillChoicePending;
+ const missionView=getEncounterMissionView(battle.mission,battle.tick,SORTIE.mission.rewardStones);
+ const missionId=battle.mission?.id==="salvage"?"salvage":"safe";
  const powerName=battle.skillId==="rune"?"聚灵阵纹":
   battle.skillId==="thunder"?"驭雷符":"等待觉醒";
- return '<main class="encounter-screen" data-encounter-screen aria-label="灵灾实时遭遇">'+
+ return '<main class="encounter-screen" data-mission="'+missionId+'" data-encounter-screen aria-label="灵灾实时遭遇">'+
   '<header class="encounter-top"><div><small>本源意识 · 正式世界遭遇</small><strong>灵灾 · 第'+pending.day+'日排险</strong></div>'+
   '<span class="encounter-state">'+(run.paused?(skillChoice?"战技选择":"战斗暂停"):"意识接管")+'</span></header>'+
   '<section class="encounter-hud" aria-label="战斗状态">'+
@@ -797,6 +801,9 @@ function encounterHtml() {
   '<div><small>击退</small><b data-encounter-defeated>'+battle.defeated+'</b></div>'+
   '<div><small>碎片</small><b data-encounter-shards>'+battle.collectedShards+'</b></div>'+
   '<div class="encounter-skill"><small>战技</small><b>'+esc(powerName)+'</b></div></section>'+
+  (missionView?'<section class="encounter-objective" data-state="'+missionView.state+'" data-encounter-objective aria-label="险地回收进度">'+
+   '<span data-encounter-objective-label>'+esc(missionView.label)+'</span>'+
+   '<div class="encounter-objective-track"><i data-encounter-objective-fill style="width:'+missionView.progress+'%"></i></div></section>':"")+
   '<section class="encounter-field" aria-label="灵灾战场">'+
   '<canvas width="320" height="448" data-encounter-canvas role="img" aria-label="灵灾战场：分身自动攻击，玩家控制走位"></canvas>'+
   '<div class="encounter-controls">'+
@@ -807,7 +814,7 @@ function encounterHtml() {
   (battle.outcome!=="running"?'<button data-action="encounter-settle">重试结算</button>':
    '<button data-action="encounter-toggle">'+(run.paused?"继续战斗":"暂停战斗")+'</button>')+
   (battle.outcome==="running"?'<button data-action="encounter-ai-handoff">交还 AI</button>':'')+
-  (battle.outcome==="running"?'<button data-action="encounter-retreat">撤离</button>':'')+
+  (battle.outcome==="running"?'<button data-action="encounter-retreat">'+(missionView?.canBankObjective?"撤离 · +"+SORTIE.mission.rewardStones+"灵石":"撤离")+'</button>':'')+
   '<small id="encounter-control-hint">自动攻击 · 拖动走位 · 松手停止</small></div></div></section>'+
   '<p class="encounter-footnote">战斗期间世界日期暂停；结束后灵灾排险与其他世界本日行动只结算一次。</p>'+
   (skillChoice?'<div class="encounter-choice" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="encounter-choice-title">'+
@@ -824,10 +831,12 @@ function encounterResultHtml() {
  const battle=result.battle||{};
  const worlds=Array.isArray(result.worlds)?result.worlds:[];
  const ling=worlds.find(world=>world.id==="lingzai");
+ const missionResult=getEncounterMissionResult(battle);
  return '<section class="encounter-result">'+
   '<div class="encounter-result-heading"><small>灵灾 · 第'+result.day+'日</small>'+
   '<h3>'+(battle.outcome==="won"?"排险完成":battle.outcome==="retreated"?"分身已撤离":"分身倒下")+'</h3>'+
   '<p>击退 '+n(battle.defeated)+' · 受伤 '+n(battle.hurt)+' · 回收碎片 '+n(battle.collectedShards)+'</p></div>'+
+  (missionResult?'<p class="encounter-objective-result" data-state="'+missionResult.state+'">'+esc(missionResult.label)+'</p>':"")+
   '<div class="encounter-result-gains"><span>灵石 <b>+'+n(battle.stones)+'</b></span>'+
   '<span>经验 <b>+'+n(battle.experience)+'</b></span>'+
   '<span>救援准备 <b>+'+n(battle.progress)+'%</b></span></div>'+
@@ -862,6 +871,22 @@ function startEncounterLoop() {
   if(time)time.textContent=Math.max(0,Math.ceil((DURATION_TICKS-encounterBattle.tick)/60))+"秒";
   if(defeated)defeated.textContent=String(encounterBattle.defeated);
   if(shards)shards.textContent=String(encounterBattle.collectedShards);
+  const missionView=getEncounterMissionView(encounterBattle.mission,encounterBattle.tick,SORTIE.mission.rewardStones);
+  const objective=app.querySelector("[data-encounter-objective]");
+  if(objective&&missionView){
+   objective.dataset.state=missionView.state;
+   const label=objective.querySelector("[data-encounter-objective-label]");
+   const fill=objective.querySelector("[data-encounter-objective-fill]");
+   if(label)label.textContent=missionView.label;
+   if(fill)fill.style.width=missionView.progress+"%";
+  }
+  const retreatButton=app.querySelector('[data-action="encounter-retreat"]');
+  if(retreatButton)retreatButton.textContent=missionView?.canBankObjective?
+   "撤离 · +"+SORTIE.mission.rewardStones+"灵石":"撤离";
+  const handoffButton=app.querySelector('[data-action="encounter-ai-handoff"]');
+  if(handoffButton)handoffButton.textContent=
+   encounterBattle.mission?.id==="salvage"&&encounterBattle.mission.status!=="completed"?
+    "交还 AI（放弃回收）":"交还 AI";
   if(encounterBattle.skillChoicePending){
    stopEncounterLoop();
    run.paused=true;
@@ -994,19 +1019,7 @@ function beginEncounterBeforeStep() {
  const started=Engine.beginEncounter(run,"lingzai");
  if(!started.ok)return false;
  tab="scene";infoPage="";sceneWorldId="lingzai";
- if(run.encounterPreference==="ai"){
-  scenePanel="";
-  Engine.setEncounterMode(run,"ai");
-  queueSave();render();void runEncounterWithAI();return true;
- }
- if(run.encounterPreference==="player"){
-  scenePanel="";
-  Engine.setEncounterMode(run,"player");
-  const restored=restoreEncounterBattle();
-  if(!restored.ok){run.paused=true;queueSave();render();report(restored.error);return true;}
-  encounterLastSaveAt=performance.now();
-  queueSave();render();startEncounterLoop();return true;
- }
+ // Every encounter exposes the mission choice; the last controller remains the default hint.
  scenePanel="encounter";
  queueSave();render();
  return true;
@@ -1022,13 +1035,18 @@ function stagePanelHtml(view) {
  let content = "";
  if (scenePanel === "encounter") {
   const pending=run.pendingEncounter;
+  const missionId=pending?.missionId==="salvage"?"salvage":"safe";
+  const salvageSelected=missionId==="salvage";
   content=pending?
    '<p class="stage-decision-alert">第'+pending.day+'日，灵灾分身的真实自主行动为「排险」。这场战斗会替代当天排险，不会额外推进日期或重复发奖。</p>'+
    '<p>'+esc(pending.reason)+'</p>'+
+   '<div class="encounter-mission-choices" role="group" aria-label="本场任务">'+
+   '<button data-action="encounter-mission" data-mission="safe" aria-pressed="'+String(missionId==="safe")+'"><b>稳妥巡护</b><small>专注生存与清场</small></button>'+
+   '<button data-action="encounter-mission" data-mission="salvage" aria-pressed="'+String(salvageSelected)+'"><b>险地回收</b><small>完成后撤离保留 +'+SORTIE.mission.rewardStones+' 灵石</small></button></div>'+
    '<div class="encounter-mode-choices">'+
-   '<button class="btn" data-action="encounter-ai">让分身自主处理</button>'+
-   '<button class="btn-soft" data-action="encounter-player">本源意识接管</button></div>'+
-   '<p class="hint">选择将作为本局默认方式；战斗中随时可以交还 AI。其他世界会在这场战斗结束后完成本日行动。</p>':
+   '<button class="btn" data-action="encounter-ai"'+(salvageSelected?" disabled":"")+'>'+(run.encounterPreference==="ai"?"继续交给 AI":"让分身自主处理")+'</button>'+
+   '<button class="btn-soft" data-action="encounter-player">'+(run.encounterPreference==="player"?"继续本源接管":"本源意识接管")+'</button></div>'+
+   '<p class="hint">'+(salvageSelected?"险地回收需要本源意识接管；完成后可撤离保留 +"+SORTIE.mission.rewardStones+" 灵石，继续战斗可争取更多碎片与胜利奖励。":"控制方式会记住上次选择；战斗中可以交还 AI 或主动撤离。")+'其他世界会在这场战斗结束后完成本日行动。</p>':
    '<p class="hint">当前没有等待接管的遭遇。</p>';
  }
  if (scenePanel === "encounter-result") content=encounterResultHtml();
@@ -1363,6 +1381,11 @@ function handleClick(target){
  if(action==="new-run"){confirmNew(target.dataset.onboarding||"full");return;}
  if(action==="show-all-worlds"&&run){run.onboardingFocus=false;queueSave();render();return;}
  if(!run)return;
+ if(action==="encounter-mission"){
+  const selected=Engine.setEncounterMission(run,target.dataset.mission);
+  if(!selected.ok){report(selected.error);return;}
+  queueSave();render();return;
+ }
  if(action==="encounter-ai"){chooseEncounterController("ai");return;}
  if(action==="encounter-settle"){void commitEncounterResult();return;}
  if(action==="encounter-player"){chooseEncounterController("player");return;}
