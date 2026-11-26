@@ -749,7 +749,7 @@ function restoreEncounterBattle() {
  if(!pending){encounterBattle=null;return {ok:true};}
  const restored=replaySortieProgress(
   pending.seed,pending.danger,pending.actions,pending.forgeLevel,pending.missionId,
-  "auto",pending.combatLevel??1
+  "auto",pending.combatLevel??1,pending.permanentRune??false
  );
  if(!restored.ok)return restored;
  encounterBattle=restored.battle;
@@ -788,11 +788,13 @@ function encounterHtml() {
  const skillChoice=battle.skillChoicePending;
  const powerName=battle.skillId==="rune"?"聚灵阵纹":
   battle.skillId==="thunder"?"驭雷符":"等待觉醒";
+ const shieldLabel=battle.runeShield>0?"可用":"无";
  return '<main class="encounter-screen" data-encounter-screen aria-label="灵灾实时遭遇">'+
   '<header class="encounter-top"><div><small>本源意识 · 正式世界遭遇</small><strong>灵灾 · 第'+pending.day+'日排险</strong></div>'+
   '<span class="encounter-state">'+(run.paused?(skillChoice?"战技选择":"战斗暂停"):"意识接管")+'</span></header>'+
   '<section class="encounter-hud" aria-label="战斗状态">'+
   '<div><small>生命</small><b data-encounter-hp>'+battle.hero.hp+'/'+battle.maxHp+'</b></div>'+
+  '<div><small>护盾</small><b data-encounter-shield>'+shieldLabel+'</b></div>'+
   '<div><small>剩余</small><b data-encounter-time>'+remaining+'秒</b></div>'+
   '<div><small>击退</small><b data-encounter-defeated>'+battle.defeated+'</b></div>'+
   '<div><small>碎片</small><b data-encounter-shards>'+battle.collectedShards+'</b></div>'+
@@ -855,10 +857,12 @@ function startEncounterLoop() {
   const canvas=app.querySelector("[data-encounter-canvas]");
   if(canvas)drawSortie(canvas,encounterBattle);
   const hp=app.querySelector("[data-encounter-hp]");
+  const shield=app.querySelector("[data-encounter-shield]");
   const time=app.querySelector("[data-encounter-time]");
   const defeated=app.querySelector("[data-encounter-defeated]");
   const shards=app.querySelector("[data-encounter-shards]");
   if(hp)hp.textContent=encounterBattle.hero.hp+"/"+encounterBattle.maxHp;
+  if(shield)shield.textContent=encounterBattle.runeShield>0?"可用":"无";
   if(time)time.textContent=Math.max(0,Math.ceil((DURATION_TICKS-encounterBattle.tick)/60))+"秒";
   if(defeated)defeated.textContent=String(encounterBattle.defeated);
   if(shards)shards.textContent=String(encounterBattle.collectedShards);
