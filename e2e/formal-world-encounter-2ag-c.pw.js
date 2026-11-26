@@ -173,9 +173,9 @@ test("formal encounter keeps its pending trace when the final save fails", async
   expect(saved.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight).toBe(1);
 });
 
-test(
-  "effective world level is visible and survives a formal encounter reload",
-  async ({ page }) => {
+test("effective world level is visible and survives a formal encounter reload", async ({
+  page,
+}) => {
   await installLevelFourFightFixture(page);
   await page.locator('[data-action="step"]').tap();
   await page.locator('[data-action="encounter-player"]').tap();
@@ -189,5 +189,4 @@ test(
   const saved = await getSavedState(page);
   expect(saved.run.pendingEncounter.combatLevel).toBe(4);
   expect(saved.run.day).toBe(1);
-  },
-);
+});
