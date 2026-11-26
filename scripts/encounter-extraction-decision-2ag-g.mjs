@@ -25,13 +25,9 @@ export function previewExtractionDecisionRewards(battle) {
   if (!baseline) return null;
   const missionCompleted =
     battle.mission?.id === "salvage" && battle.mission.status === "completed";
-  const canBankObjective =
-    missionCompleted && ["won", "retreated"].includes(battle.outcome);
-  const candidateObjectiveStones = canBankObjective
-    ? SORTIE.mission.rewardStones
-    : 0;
-  const candidateStones =
-    baseline.stones - baseline.objectiveStones + candidateObjectiveStones;
+  const canBankObjective = missionCompleted && ["won", "retreated"].includes(battle.outcome);
+  const candidateObjectiveStones = canBankObjective ? SORTIE.mission.rewardStones : 0;
+  const candidateStones = baseline.stones - baseline.objectiveStones + candidateObjectiveStones;
   return Object.freeze({
     ...baseline,
     candidateObjectiveStones,
@@ -80,10 +76,7 @@ function runBattle(seed, danger, strategy) {
     stepSortie(battle, input);
     actions.push(["tick", input.x, input.y]);
 
-    if (
-      objectiveCompletedTick === null &&
-      battle.mission.status === "completed"
-    ) {
+    if (objectiveCompletedTick === null && battle.mission.status === "completed") {
       objectiveCompletedTick = battle.mission.completedTick ?? battle.tick;
     }
 
@@ -91,8 +84,7 @@ function runBattle(seed, danger, strategy) {
       objectiveCompletedTick !== null &&
       strategy.delaySeconds !== null &&
       battle.outcome === "running" &&
-      battle.tick - objectiveCompletedTick >=
-        strategy.delaySeconds * SORTIE.ticksPerSecond
+      battle.tick - objectiveCompletedTick >= strategy.delaySeconds * SORTIE.ticksPerSecond
     ) {
       const retreat = retreatSortie(battle);
       if (!retreat.ok) throw new Error("Voluntary extraction was rejected");
@@ -108,10 +100,7 @@ function runBattle(seed, danger, strategy) {
   if (!replay.ok) {
     throw new Error("Authoritative replay failed: " + seed + " / " + strategy.id);
   }
-  if (
-    JSON.stringify(replaySignature(replay.battle)) !==
-    JSON.stringify(replaySignature(battle))
-  ) {
+  if (JSON.stringify(replaySignature(replay.battle)) !== JSON.stringify(replaySignature(battle))) {
     throw new Error("Replay drift: " + seed + " / " + strategy.id);
   }
 
@@ -174,9 +163,7 @@ function main() {
   for (const danger of DANGER_BANDS) {
     for (const strategy of STRATEGIES) {
       for (let seed = 1; seed <= SEED_COUNT; seed++) {
-        samples.push(
-          runBattle("2AG-G-" + seed, danger, strategy),
-        );
+        samples.push(runBattle("2AG-G-" + seed, danger, strategy));
       }
     }
   }
@@ -186,9 +173,7 @@ function main() {
     results["D" + danger] = {};
     for (const strategy of STRATEGIES) {
       results["D" + danger][strategy.id] = summarize(
-        samples.filter(
-          (sample) => sample.danger === danger && sample.strategy === strategy.id,
-        ),
+        samples.filter((sample) => sample.danger === danger && sample.strategy === strategy.id),
       );
     }
   }
@@ -216,8 +201,7 @@ function main() {
   }
 
   const report = {
-    experiment:
-      "2AG-G: recovery objective completion and voluntary extraction decision",
+    experiment: "2AG-G: recovery objective completion and voluntary extraction decision",
     seedCount: SEED_COUNT,
     totalBattles: samples.length,
     dangers: DANGER_BANDS,
@@ -239,22 +223,25 @@ function main() {
       if (!sample.objectiveCompleted) {
         throw new Error("Recovery objective did not complete: " + sample.seed);
       }
-      if (sample.outcome === "retreated" && sample.candidateObjectiveStones !== SORTIE.mission.rewardStones) {
+      if (
+        sample.outcome === "retreated" &&
+        sample.candidateObjectiveStones !== SORTIE.mission.rewardStones
+      ) {
         throw new Error("Completed extraction did not bank the candidate objective reward");
       }
       if (sample.outcome === "lost" && sample.candidateObjectiveStones !== 0) {
         throw new Error("Death incorrectly banked the candidate objective reward");
       }
-      if (sample.outcome === "won" && sample.candidateObjectiveStones !== SORTIE.mission.rewardStones) {
+      if (
+        sample.outcome === "won" &&
+        sample.candidateObjectiveStones !== SORTIE.mission.rewardStones
+      ) {
         throw new Error("Victory did not retain the objective reward");
       }
     }
   }
 }
 
-if (
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main();
 }
