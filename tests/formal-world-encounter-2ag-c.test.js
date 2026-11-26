@@ -218,6 +218,8 @@ describe("2AG-D encounter transaction regression", () => {
     const run = readyRun("2ag-e-world-level");
     const world = Engine.byId(run, "lingzai");
     world.level = 4;
+    world.p = 100;
+    world.resource = 20;
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     expect(run.pendingEncounter.combatLevel).toBe(4);
     expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
@@ -246,6 +248,8 @@ describe("2AG-D encounter transaction regression", () => {
     const run = readyRun("2ag-e-injury");
     const world = Engine.byId(run, "lingzai");
     world.level = 3;
+    world.p = 100;
+    world.resource = 20;
     world.injuryUntil = run.day + 2;
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     expect(run.pendingEncounter.combatLevel).toBe(2);
