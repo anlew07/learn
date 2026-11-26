@@ -191,7 +191,9 @@ test("effective world level is visible and survives a formal encounter reload", 
   expect(saved.run.day).toBe(1);
 });
 
-test("formal recovery mission is selectable and its HUD fits the smallest mobile viewport", async ({ page }) => {
+test("formal recovery mission is selectable and its HUD fits the smallest mobile viewport", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await installFightFixture(page);
   await page.locator('[data-action="step"]').tap();
