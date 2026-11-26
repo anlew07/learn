@@ -5,6 +5,7 @@ import {
   castSortieSkill,
   retreatSortie,
   DURATION_TICKS,
+  normalizeSortieCombatBuild,
 } from "./sortie-sim.js";
 
 export const MAX_TRACE_ACTIONS = DURATION_TICKS + 64;
@@ -93,6 +94,7 @@ export function replaySortieProgress(
   missionId = "safe",
   skillReleaseMode = "auto",
   combatLevel = 1,
+  combatBuild,
 ) {
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
     return { ok: false, error: "护灵剑台状态不合法" };
@@ -106,15 +108,31 @@ export function replaySortieProgress(
   if (!Number.isInteger(combatLevel) || combatLevel < 1 || combatLevel > 4) {
     return { ok: false, error: "分身战斗等级不合法" };
   }
+  let safeCombatBuild;
+  try {
+    safeCombatBuild = normalizeSortieCombatBuild(combatBuild);
+  } catch {
+    return { ok: false, error: "战斗构筑状态不合法" };
+  }
   const battle = createSortie(seed, danger, forgeLevel, missionId, {
     skillReleaseMode,
     combatLevel,
+    combatBuild: safeCombatBuild,
   });
   return replayActions(battle, actions, false);
 }
 
 /** Strict authoritative replay used only when a finished encounter is settled. */
-export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, missionId = "safe", skillReleaseMode = "auto", combatLevel = 1) {
+export function replaySortieTrace(
+  seed,
+  danger,
+  actions,
+  forgeLevel = 0,
+  missionId = "safe",
+  skillReleaseMode = "auto",
+  combatLevel = 1,
+  combatBuild,
+) {
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 || forgeLevel > 1) {
     return { ok: false, error: "护灵剑台状态不合法" };
   }
@@ -127,7 +145,17 @@ export function replaySortieTrace(seed, danger, actions, forgeLevel = 0, mission
   if (!Number.isInteger(combatLevel) || combatLevel < 1 || combatLevel > 4) {
     return { ok: false, error: "分身战斗等级不合法" };
   }
-  const battle = createSortie(seed, danger, forgeLevel, missionId, { skillReleaseMode, combatLevel });
+  let safeCombatBuild;
+  try {
+    safeCombatBuild = normalizeSortieCombatBuild(combatBuild);
+  } catch {
+    return { ok: false, error: "战斗构筑状态不合法" };
+  }
+  const battle = createSortie(seed, danger, forgeLevel, missionId, {
+    skillReleaseMode,
+    combatLevel,
+    combatBuild: safeCombatBuild,
+  });
   return replayActions(battle, actions, true);
 }
 
