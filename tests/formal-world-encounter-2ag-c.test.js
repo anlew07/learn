@@ -227,24 +227,17 @@ describe("2AG-D encounter transaction regression", () => {
     expect(battle.maxHp).toBe(11);
     expect(battle.hero.hp).toBe(11);
     const actions = [];
-    battle.hero.invulnerable = DURATION_TICKS + 1;
-    for (let tick = 0; tick < DURATION_TICKS; tick++) {
-      if (battle.skillChoicePending) {
-        expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
-        actions.push(["skill", "rune"]);
-      } else {
-        stepSortie(battle);
-        actions.push(["tick", 0, 0]);
-      }
-    }
+    finishWithAi(battle, actions);
+    expect(battle.outcome).toBe("won");
     pending.actions = actions;
     const settled = Engine.settleEncounter(run, { sortieId: pending.id });
     expect(settled.ok).toBe(true);
     expect(settled.receipt.battle).toMatchObject({
       combatLevel: 4,
       maxHp: 11,
-      hpRemaining: 11,
     });
+    expect(settled.receipt.battle.hpRemaining).toBeGreaterThan(0);
+    expect(settled.receipt.battle.hpRemaining).toBeLessThanOrEqual(11);
     expect(settled.run.day).toBe(2);
   });
 
@@ -255,7 +248,6 @@ describe("2AG-D encounter transaction regression", () => {
     world.injuryUntil = run.day + 2;
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     expect(run.pendingEncounter.combatLevel).toBe(2);
-    const before = JSON.stringify(run);
     run.pendingEncounter.combatLevel = 4;
     const forged = JSON.stringify(run);
     expect(Engine.settleEncounter(run, { sortieId: run.pendingEncounter.id }).ok).toBe(false);
@@ -265,7 +257,6 @@ describe("2AG-D encounter transaction regression", () => {
     const malformed = JSON.parse(JSON.stringify(run));
     malformed.pendingEncounter.combatLevel = 5;
     expect(() => assertRestorableSnapshot({ run: malformed, profile: null }, Engine.VERSION)).toThrow();
-    expect(before).not.toBe(forged);
   });
 
   it("locks ordinary steps, commands and direct intervention APIs while pending", () => {
