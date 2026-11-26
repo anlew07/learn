@@ -92,20 +92,20 @@ export async function openCampChoiceSandbox() {
     replace(
       "src/systems/sortie-trace.js",
       [
-        "const battle = createSortie(seed, danger, forgeLevel, missionId, {",
-        "  skillReleaseMode,",
-        "  combatLevel,",
-        "  combatBuild: safeCombatBuild,",
-        "});",
-        "return replayActions(battle, actions, true);",
+        "  const battle = createSortie(seed, danger, forgeLevel, missionId, {",
+        "    skillReleaseMode,",
+        "    combatLevel,",
+        "    combatBuild: safeCombatBuild,",
+        "  });",
+        "  return replayActions(battle, actions, true);",
       ].join("\n"),
       [
-        "const battle = createSortie(seed, danger, forgeLevel, missionId, {",
-        "  skillReleaseMode,",
-        "  combatLevel,",
-        "  combatBuild: safeCombatBuild,",
-        "}, prepHp);",
-        "return replayActions(battle, actions, true);",
+        "  const battle = createSortie(seed, danger, forgeLevel, missionId, {",
+        "    skillReleaseMode,",
+        "    combatLevel,",
+        "    combatBuild: safeCombatBuild,",
+        "  }, prepHp);",
+        "  return replayActions(battle, actions, true);",
       ].join("\n"),
     );
     replace(
