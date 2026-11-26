@@ -19,6 +19,12 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Inspect exact Prettier corrections for 2AG-E
+        run: |
+          npx prettier scripts/encounter-level-progression-2ag-e.mjs > /tmp/level-script.mjs
+          diff -u scripts/encounter-level-progression-2ag-e.mjs /tmp/level-script.mjs || true
+          npx prettier e2e/formal-world-encounter-2ag-c.pw.js > /tmp/encounter-e2e.pw.js
+          diff -u e2e/formal-world-encounter-2ag-c.pw.js /tmp/encounter-e2e.pw.js || true
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
