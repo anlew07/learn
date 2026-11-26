@@ -19,19 +19,24 @@ function runBattle(seed, danger, combatLevel, control) {
 
   while (battle.outcome === "running" && guard < DURATION_TICKS + 2) {
     if (battle.skillChoicePending) {
-      const decision = control === "ai"
-        ? getAutonomousEncounterDecision(battle)
-        : { skillId: battle.hero.hp <= Math.ceil(battle.maxHp / 2) ? "rune" : "thunder" };
+      const decision =
+        control === "ai"
+          ? getAutonomousEncounterDecision(battle)
+          : {
+              skillId:
+                battle.hero.hp <= Math.ceil(battle.maxHp / 2) ? "rune" : "thunder",
+            };
       const chosen = chooseSortieSkill(battle, decision.skillId);
       if (!chosen.ok) throw new Error("Skill choice failed: " + chosen.error);
       actions.push(["skill", decision.skillId]);
     } else {
-      const input = control === "ai"
-        ? getAutonomousEncounterDecision(battle).input
-        : {
-            x: Math.sin(battle.tick / 67),
-            y: Math.cos(battle.tick / 83),
-          };
+      const input =
+        control === "ai"
+          ? getAutonomousEncounterDecision(battle).input
+          : {
+              x: Math.sin(battle.tick / 67),
+              y: Math.cos(battle.tick / 83),
+            };
       stepSortie(battle, input);
       actions.push(["tick", input.x, input.y]);
     }
@@ -49,17 +54,26 @@ function runBattle(seed, danger, combatLevel, control) {
     collectedShards: battle.collectedShards,
   };
   const replay = replaySortieTrace(
-    seed, danger, actions, 0, "safe", "auto", combatLevel,
+    seed,
+    danger,
+    actions,
+    0,
+    "safe",
+    "auto",
+    combatLevel,
   );
-  if (!replay.ok || JSON.stringify({
-    outcome: replay.battle.outcome,
-    combatLevel: replay.battle.combatLevel,
-    maxHp: replay.battle.maxHp,
-    hpRemaining: replay.battle.hero.hp,
-    hurt: replay.battle.hurt,
-    defeated: replay.battle.defeated,
-    collectedShards: replay.battle.collectedShards,
-  }) !== JSON.stringify({
+  const replayResult = replay.ok
+    ? {
+        outcome: replay.battle.outcome,
+        combatLevel: replay.battle.combatLevel,
+        maxHp: replay.battle.maxHp,
+        hpRemaining: replay.battle.hero.hp,
+        hurt: replay.battle.hurt,
+        defeated: replay.battle.defeated,
+        collectedShards: replay.battle.collectedShards,
+      }
+    : null;
+  const expectedResult = {
     outcome: result.outcome,
     combatLevel: result.combatLevel,
     maxHp: result.maxHp,
@@ -67,7 +81,8 @@ function runBattle(seed, danger, combatLevel, control) {
     hurt: result.hurt,
     defeated: result.defeated,
     collectedShards: result.collectedShards,
-  })) {
+  };
+  if (!replay.ok || JSON.stringify(replayResult) !== JSON.stringify(expectedResult)) {
     throw new Error("Authoritative replay drift: " + seed + " / Lv" + combatLevel);
   }
   return result;
@@ -82,7 +97,7 @@ function aggregate(samples) {
     wins,
     losses: samples.filter((item) => item.outcome === "lost").length,
     retreats: samples.filter((item) => item.outcome === "retreated").length,
-    winRatePct: Number((wins / count * 100).toFixed(1)),
+    winRatePct: Number(((wins / count) * 100).toFixed(1)),
     avgMaxHp: Number((sum("maxHp") / count).toFixed(2)),
     avgHpRemaining: Number((sum("hpRemaining") / count).toFixed(2)),
     avgHpRatio: Number((sum("hpRatio") / count).toFixed(3)),
@@ -106,6 +121,27 @@ for (const control of CONTROLS) {
   }
 }
 
+const pairedAgainstLevel1 = {};
+for (const control of CONTROLS) {
+  pairedAgainstLevel1[control] = {};
+  for (const level of LEVELS) {
+    if (level === 1) continue;
+    pairedAgainstLevel1[control][level] = {
+      avgHpRemainingDelta: Number(
+        (
+          samples[control][level].avgHpRemaining -
+          samples[control][1].avgHpRemaining
+        ).toFixed(2),
+      ),
+      winRateDelta: Number(
+        (samples[control][level].winRatePct - samples[control][1].winRatePct).toFixed(1),
+      ),
+      totalHurtDelta:
+        samples[control][level].totalHurt - samples[control][1].totalHurt,
+    };
+  }
+}
+
 const report = {
   experiment: "2AG-E effective world level -> formal encounter health",
   seeds: SEEDS,
@@ -116,24 +152,7 @@ const report = {
     scriptedWander: "deterministic sinusoidal movement; not a substitute for human play",
   },
   results: samples,
-  pairedAgainstLevel1: Object.fromEntries(CONTROLS.map((control) => [
-    control,
-    Object.fromEntries(LEVELS.filter((level) => level > 1).map((level) => [
-      level,
-      {
-        avgHpRemainingDelta: Number((
-          samples[control][level].avgHpRemaining -
-          samples[control][1].avgHpRemaining
-        ).toFixed(2)),
-        winRateDelta: Number((
-          samples[control][level].winRatePct -
-          samples[control][1].winRatePct
-        ).toFixed(1)),
-        totalHurtDelta: samples[control][level].totalHurt -
-          samples[control][1].totalHurt,
-      },
-    ])),
-  ])),
+  pairedAgainstLevel1,
 };
 
 if (process.argv.includes("--assert")) {
@@ -141,7 +160,9 @@ if (process.argv.includes("--assert")) {
     for (const level of LEVELS) {
       const result = samples[control][level];
       if (result.samples !== SEEDS || result.avgMaxHp !== 7 + level) {
-        throw new Error("Unexpected sample count or health scaling at " + control + " Lv" + level);
+        throw new Error(
+          "Unexpected sample count or health scaling at " + control + " Lv" + level,
+        );
       }
     }
   }
