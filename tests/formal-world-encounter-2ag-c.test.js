@@ -126,6 +126,7 @@ describe("2AG-C formal world encounter transaction", () => {
     const pending = run.pendingEncounter;
     const battle = createSortie(
       pending.seed, pending.danger, pending.forgeLevel, pending.missionId,
+      { combatLevel: pending.combatLevel },
     );
     const identity = battle;
     const actions = [];
