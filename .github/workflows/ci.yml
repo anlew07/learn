@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Temporary Prettier formatter for pressure experiment
+        run: npx prettier --write scripts/encounter-level-pressure-2ag-e-b.mjs && cat scripts/encounter-level-pressure-2ag-e-b.mjs
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
