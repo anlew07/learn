@@ -23,10 +23,6 @@ export function previewSortieRewards(battle) {
     hpRemaining: battle.hero?.hp ?? 0,
     maxHp: battle.maxHp ?? SORTIE.player.hp,
     combatLevel: battle.combatLevel ?? 1,
-    combatBuild: {
-      thunderLevel: battle.combatBuild?.thunderLevel ?? 0,
-      runeLevel: battle.combatBuild?.runeLevel ?? 0,
-    },
     thunderHits: battle.thunderHits,
     shieldBlocks: battle.shieldBlocks,
     weaponDamage: battle.weaponDamage,
