@@ -20,8 +20,6 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run format:check
-      - name: Preview generated game-text review diff (temporary)
-        run: npm run text:export && git diff -- docs/review/game-text.csv
       - run: npm run text:check
       - run: npm run text:runtime
       - run: npm run text:review
