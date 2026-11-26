@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Print Prettier-normalized 2AG-H E2E (temporary)
+        run: npx prettier e2e/formal-world-encounter-2ag-c.pw.js
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
