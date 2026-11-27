@@ -19,10 +19,6 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - name: Temporary Prettier diagnostic for 2AG-I
-        run: |
-          npx prettier e2e/formal-world-encounter-2ag-c.pw.js > /tmp/formatted.pw.js
-          diff -u e2e/formal-world-encounter-2ag-c.pw.js /tmp/formatted.pw.js || true
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
