@@ -607,6 +607,9 @@ const MultiworldEngine = (function () {
           w.retreat=null;s.apReserved=Math.max(0,s.apReserved-1);
         }
       }else if(sortie&&w.id==="lingzai"){
+        // Consume the real action decision RNG exactly once, as in an ordinary day.
+        if(formalEncounter&&chooseAction(s,w)!=="fight")return;
+        var clearingThreat=formalEncounter&&threatActive(w)&&w.level>=2&&w.threat.progress<2;
         recordWorldAction(w,formalEncounter?"fight":"sortie");
         w.action=(formalEncounter?"雾谷排险 · ":"雾谷出击 · ")+
           (sortie.outcome==="won"?"维持结界":"谨慎撤离");
@@ -620,6 +623,13 @@ const MultiworldEngine = (function () {
         if(sortie.stones)produce(s,w,"resource",sortie.stones);
         if(sortie.experience)produce(s,w,"xp",sortie.experience);
         if(sortie.progress)addProgress(s,w,sortie.progress);
+        // A real victory advances the existing threat contract, without a second loot payout.
+        if(formalEncounter&&sortie.outcome==="won"){
+          if(clearingThreat){
+            w.threat.progress++;addD(w,-0.6);
+            if(w.threat.progress>=2){w.queuedBoss=true;w.threat.status="awaiting_alpha";log(s,w.id,"巢群外围已肃清，首领挑战即将开启。","major");}
+          }else addD(w,-BALANCE.actions.combatDoomReduction);
+        }
         w.lastSortie={
           day:s.day,outcome:sortie.outcome,defeated:sortie.defeated,
           collectedShards:sortie.collectedShards,stones:sortie.stones,
@@ -669,7 +679,11 @@ const MultiworldEngine = (function () {
     if(s.active)s.day++;
     return {ok:true};
   }
-  function step(s){return tickDay(s,null);}
+  function encounterLocked(){return {ok:false,error:"正式遭遇尚未结算，请先结束战斗"};}
+  function outsideEncounter(handler){
+    return function(s,...args){return s?.pendingEncounter?encounterLocked():handler(s,...args);};
+  }
+  function step(s){return s?.pendingEncounter?encounterLocked():tickDay(s,null);}
 
   function captureSortieWorld(w) {
     return {
@@ -684,12 +698,21 @@ const MultiworldEngine = (function () {
    * Caller may display the receipt only after persisting the returned state.
    * Both same-ID and different-operation-ID replay are idempotent.
    */
+  function isFormalReceipt(entry){
+    return entry?.receipt?.formalEncounter===true||Boolean(entry?.receipt?.worlds?.some(function(w){return w.id==="lingzai"&&w.actionId==="fight";}));
+  }
   function settleSortie(s,request){
+    if(s?.pendingEncounter||request?.formalEncounter===true)return encounterLocked();
+    return settleSortieTransaction(s,request,false);
+  }
+  function settleSortieTransaction(s,request,formalEncounter){
     if(!s||!request||typeof request.sortieId!=="string"||
       !Array.isArray(request.actions))return {ok:false,error:"出击结算参数无效"};
     var fingerprint=sortieTraceFingerprint(request.actions);
     var previously=s.sortieLedger&&s.sortieLedger[request.sortieId];
     if(previously){
+      if(isFormalReceipt(previously)!==formalEncounter)
+        return {ok:false,error:"结算类型与已有回执不匹配"};
       if(previously.fingerprint!==fingerprint){
         return {ok:false,error:"本次出击已结算，提交内容不匹配"};
       }
@@ -715,7 +738,7 @@ const MultiworldEngine = (function () {
     // an event that closes the world before the action, changes no caller data.
     var next=JSON.parse(JSON.stringify(s));
     var before=next.worlds.map(captureSortieWorld);
-    var outcome=tickDay(next,reward,request.formalEncounter===true);
+    var outcome=tickDay(next,reward,formalEncounter);
     if(!outcome.ok||!byId(next,"lingzai").lastSortie||
       byId(next,"lingzai").lastSortie.day!==s.day){
       return {ok:false,error:"今日事件已阻止出击结算"};
@@ -733,6 +756,7 @@ const MultiworldEngine = (function () {
     var receipt={
       sortieId:request.sortieId,day:s.day,nextDay:next.day,
       battle:reward,missionId:missionId,objectiveStones:reward.objectiveStones,
+      ...(formalEncounter?{formalEncounter:true}:{}),
       worlds:changes,
       newLogs:next.logs.slice(s.logs.length).map(function(entry){return {...entry};})
     };
@@ -857,6 +881,7 @@ const MultiworldEngine = (function () {
       if(saved.signature!==signature)return {ok:false,error:"操作ID与已有指令不匹配"};
       return {...saved.result,replayed:true};
     }
+    if(s.pendingEncounter)return encounterLocked();
     var before=captureIntervention(s);
     var result=handlers[command.type](s,...command.args);
     if(result.ok)recordIntervention(s,command,before);
@@ -917,11 +942,15 @@ const MultiworldEngine = (function () {
         return {ok:true,replayed:true,pending:s.pendingEncounter};
       return {ok:false,error:"已有未完成的遭遇，不能开启第二场战斗"};
     }
+    if(s.sortieLedger?.[sortieIdentity(s)])return {ok:false,error:"本日遭遇已经结算"};
     var world=byId(s,worldId);
     if(!world||world.status!=="running"||world.retreat||
       world.pendingEvent?.state==="active"||world.build?.pending){
       return {ok:false,error:"当前世界有待处理事务，暂时不能进入战斗"};
     }
+    // Paid tactical support belongs to the old wave resolver until mapped to real combat.
+    if(s.waves&&world.tacticalAssist?.kind===TACTICAL_ASSIST.id)
+      return {ok:false,error:"已安排集中火力，本次沿用自动排险"};
     var preview=previewNextAction(s,worldId);
     if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
       preview.pendingEvent||preview.pendingBuild){
@@ -968,7 +997,7 @@ const MultiworldEngine = (function () {
     var requestedId=request?.sortieId;
     if(!pending){
       var previous=requestedId&&s?.sortieLedger?.[requestedId];
-      if(previous)return {ok:true,replayed:true,run:s,receipt:previous.receipt};
+      if(isFormalReceipt(previous))return {ok:true,replayed:true,run:s,receipt:previous.receipt};
       return {ok:false,error:"没有可结算的正式遭遇"};
     }
     if(requestedId&&requestedId!==pending.id)
@@ -987,9 +1016,10 @@ const MultiworldEngine = (function () {
     if(!preview.ok||preview.actionId!=="fight"||preview.status!=="running"||
       preview.pendingEvent||preview.pendingBuild)
       return {ok:false,error:"当前日期已不再允许结算排险遭遇"};
-    var result=settleSortie(s,{
-      sortieId:pending.id,actions:pending.actions,missionId:pending.missionId,formalEncounter:true
-    });
+    if(s.waves&&world.tacticalAssist?.kind===TACTICAL_ASSIST.id)return encounterLocked();
+    var result=settleSortieTransaction(s,{
+      sortieId:pending.id,actions:pending.actions,missionId:pending.missionId
+    },true);
     if(!result.ok)return result;
     var next=result.replayed?JSON.parse(JSON.stringify(s)):result.run;
     next.pendingEncounter=null;
@@ -1005,9 +1035,9 @@ const MultiworldEngine = (function () {
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,restore:restore,step:step,previewNextAction:previewNextAction,beginEncounter:beginEncounter,
     setEncounterMode:setEncounterMode,handoffEncounterToAI:handoffEncounterToAI,
-    settleEncounter:settleEncounter,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:chooseBuild,
-    setStrategy:setStrategy,retreat:retreat,exitRetreat:exitRetreat,aid:aid,fuse:fuse,
-    resolveEvent:resolveEvent,previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:useEcho,applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
+    settleEncounter:settleEncounter,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:outsideEncounter(chooseBuild),
+    setStrategy:outsideEncounter(setStrategy),retreat:outsideEncounter(retreat),exitRetreat:outsideEncounter(exitRetreat),aid:outsideEncounter(aid),fuse:outsideEncounter(fuse),
+    resolveEvent:outsideEncounter(resolveEvent),previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:outsideEncounter(useEcho),applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
 })();
 export default MultiworldEngine;
 /** Validated persisted camp selection; client-side request bonuses are ignored. */

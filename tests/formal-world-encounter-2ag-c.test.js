@@ -209,3 +209,93 @@ describe("2AG-C formal world encounter transaction", () => {
     expect(JSON.stringify(run)).toBe(before);
   });
 });
+
+describe("2AG-D encounter transaction regression", () => {
+  function threatRun() {
+    const run = readyRun();
+    const world = Engine.byId(run, "lingzai");
+    world.level = 2;
+    world.resource = 20;
+    world.d = 20;
+    world.threat = { id: "lingzai/threat/1", status: "active", progress: 1, retryDay: 1 };
+    return run;
+  }
+
+  function finishEncounter(run, retreat = false) {
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(Engine.setEncounterMode(run, "ai").ok).toBe(true);
+    const pending = run.pendingEncounter;
+    if (retreat) pending.actions.push(["retreat"]);
+    else {
+      const battle = createSortie(pending.seed, pending.danger, pending.forgeLevel, pending.missionId);
+      finishWithAi(battle, pending.actions);
+      expect(battle.outcome).toBe("won");
+    }
+    return Engine.settleEncounter(run, { sortieId: pending.id });
+  }
+
+  it("locks ordinary steps and direct intervention APIs while pending without mutating the pending encounter or run", () => {
+    const run = readyRun();
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    const pendingId = run.pendingEncounter.id;
+    const before = JSON.stringify(run);
+    expect(Engine.step(run).ok).toBe(false);
+    expect(Engine.applyCommand(run, { operationId: "pending-command", type: "strategy", args: ["lingzai", "growth"] }).ok).toBe(false);
+    expect(Engine.setStrategy(run, "lingzai", "growth").ok).toBe(false);
+    expect(Engine.chooseBuild(run, "lingzai", "thunder").ok).toBe(false);
+    expect(Engine.aid(run, "zombie", "lingzai", "resource").ok).toBe(false);
+    expect(Engine.settleSortie(run, { sortieId: run.pendingEncounter.id, actions: [["retreat"]] }).ok).toBe(false);
+    expect(run.pendingEncounter.id).toBe(pendingId);
+    expect(JSON.stringify(run)).toBe(before);
+  });
+
+  it("advances a persistent threat on real victory, but never on retreat", () => {
+    const win = finishEncounter(threatRun());
+    expect(win.ok).toBe(true);
+    const world = Engine.byId(win.run, "lingzai");
+    expect(world.threat.progress).toBe(2);
+    expect(world.threat.status).toBe("awaiting_alpha");
+    expect(world.queuedBoss).toBe(true);
+    expect(world.metrics.actions.fight).toBe(1);
+    expect(win.receipt.formalEncounter).toBe(true);
+    expect(Engine.settleEncounter(win.run, { sortieId: win.receipt.sortieId }).replayed).toBe(true);
+
+    const retreat = finishEncounter(threatRun(), true);
+    expect(retreat.ok).toBe(true);
+    const retreatWorld = Engine.byId(retreat.run, "lingzai");
+    expect(retreatWorld.threat.progress).toBe(1);
+    expect(retreatWorld.queuedBoss).toBeFalsy();
+    expect(retreat.receipt.battle.outcome).toBe("retreated");
+    expect(retreatWorld.metrics.actions.fight).toBe(1);
+    expect(retreat.run.day).toBe(2);
+  });
+
+  it("does not allow the prototype settlement endpoint to claim formal authority", () => {
+    const run = readyRun();
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    const id = run.pendingEncounter.id;
+    const independent = readyRun();
+    const before = JSON.stringify(independent);
+    expect(Engine.settleSortie(independent, {
+      sortieId: id, actions: [["retreat"]], formalEncounter: true,
+    }).ok).toBe(false);
+    expect(JSON.stringify(independent)).toBe(before);
+    const legacy = Engine.settleSortie(independent, { sortieId: id, actions: [["retreat"]] });
+    expect(legacy.ok).toBe(true);
+    expect(Engine.settleEncounter(legacy.run, { sortieId: id }).ok).toBe(false);
+    expect(Engine.settleSortie(legacy.run, { sortieId: id, actions: [["retreat"]] }).replayed).toBe(true);
+  });
+
+  it("honors an already purchased tactical order through the existing wave resolver", () => {
+    const run = readyRun();
+    expect(Engine.applyCommand(run, { operationId: "2ag-d-focus", type: "tactic", args: ["lingzai"] }).ok).toBe(true);
+    const before = JSON.stringify(run);
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(false);
+    expect(JSON.stringify(run)).toBe(before);
+    expect(Engine.step(run).ok).toBe(true);
+    const world = Engine.byId(run, "lingzai");
+    expect(world.tacticalAssist).toBeNull();
+    expect(world.lastCombat.tactic.kind).toBe("focus");
+    expect(world.metrics.actions.fight).toBe(1);
+  });
+});

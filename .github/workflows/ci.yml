@@ -19,8 +19,6 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - name: Inspect generated game text review diff
-        run: npm run text:export && git diff -- docs/review/game-text.csv
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
@@ -33,6 +31,8 @@ jobs:
             docs/review/human-review-worklist.csv
           if-no-files-found: error
           retention-days: 14
+      - name: Verify formal encounter transaction integrity
+        run: npx vitest run tests/formal-world-encounter-2ag-c.test.js
       # Bound CPU-heavy fixed seed suites to avoid worker starvation.
       - run: npm test -- --maxWorkers=2
       - name: Compare automatic and manual encounter skill release
