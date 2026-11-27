@@ -206,6 +206,7 @@ describe("2AG-C formal world encounter transaction", () => {
     const before = JSON.stringify(run);
     const result = Engine.settleEncounter(run, { sortieId: run.pendingEncounter.id });
     expect(result.ok).toBe(false);
+    expect(run.pendingEncounter.id).toBe(pendingId);
     expect(JSON.stringify(run)).toBe(before);
   });
 });
@@ -237,6 +238,7 @@ describe("2AG-D encounter transaction regression", () => {
   it("locks ordinary steps, commands and direct intervention APIs while pending without mutating the run", () => {
     const run = readyRun();
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    const pendingId = run.pendingEncounter.id;
     const before = JSON.stringify(run);
     expect(Engine.step(run).ok).toBe(false);
     expect(Engine.applyCommand(run, { operationId: "pending-command", type: "strategy", args: ["lingzai", "growth"] }).ok).toBe(false);
