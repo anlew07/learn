@@ -20,7 +20,7 @@ export function getEncounterMissionView(
   if (mission.status === "completed") {
     return {
       state: "completed",
-      label: "回收完成 · 撤离保留 +" + reward + "灵石",
+      label: "回收完成 · 撤离可锁定 +" + reward + "灵石",
       progress: 100,
       canBankObjective: true,
     };
@@ -47,14 +47,14 @@ export function getEncounterMissionView(
   if (mission.guardTriggeredTick !== null && mission.guardTriggeredTick !== undefined) {
     return {
       state: "active",
-      label: "守卫来袭 · 回收 " + progress + "%",
+      label: "守住回收点 · " + progress + "%",
       progress,
       canBankObjective: false,
     };
   }
   return {
     state: "available",
-    label: "靠近回收点 · 完成可得 +" + reward + "灵石",
+    label: "前往回收点 · 守住1秒可得 +" + reward + "灵石",
     progress: 0,
     canBankObjective: false,
   };
