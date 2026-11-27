@@ -216,6 +216,7 @@ test("formal recovery mission is selectable and its HUD fits the smallest mobile
   expect(box.y + box.height).toBeLessThanOrEqual(568);
 });
 
+// Temporary trigger for the CI Prettier diagnostic.
 async function startSalvageEncounter(page, viewport) {
   await page.setViewportSize(viewport);
   await installFightFixture(page);
