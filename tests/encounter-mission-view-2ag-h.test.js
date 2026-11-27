@@ -5,7 +5,7 @@ import {
   getEncounterMissionView,
 } from "../src/presentation/encounter-mission.js";
 
-describe("2AG-H formal recovery objective HUD", () => {
+describe("2AG-K formal recovery objective comprehension", () => {
   it("shows a countdown before the recovery site appears", () => {
     const view = getEncounterMissionView({
       id: "salvage", status: "scheduled", appearsAtTick: 600,
