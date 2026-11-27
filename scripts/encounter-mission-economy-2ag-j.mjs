@@ -116,8 +116,7 @@ export function runMissionEconomyScenario(seed, danger, combatLevel, profileId) 
       continue;
     }
 
-    const decision =
-      profile.controller === "ai" ? getAutonomousEncounterDecision(battle) : null;
+    const decision = profile.controller === "ai" ? getAutonomousEncounterDecision(battle) : null;
     const input =
       decision?.input ??
       (profile.missionId === "salvage" && battle.mission.status !== "completed"
