@@ -277,7 +277,7 @@ test(
   async ({ page }) => {
     const viewport = { width: 390, height: 844 };
     await startSalvageEncounter(page, viewport);
-  
+
     await page.evaluate(() => {
       window.__encounterPointerTypes = [];
       document.querySelector("[data-encounter-joystick]").addEventListener(
@@ -287,7 +287,7 @@ test(
       );
       window.scrollTo(0, 0);
     });
-  
+
     const joystick = page.locator("[data-encounter-joystick]");
     const bounds = await joystick.boundingBox();
     expect(bounds).not.toBeNull();
@@ -301,7 +301,7 @@ test(
       y: center.y - maxDistance * 0.803,
     };
     await dragJoystickWithTouch(page, center, target, 1850);
-  
+
     const touchResult = await page.evaluate(() => ({
       pointerTypes: window.__encounterPointerTypes,
       scrollX: window.scrollX,
@@ -314,7 +314,7 @@ test(
     expect(touchResult.scrollY).toBe(0);
     expect(touchResult.width).toBeLessThanOrEqual(viewport.width + 1);
     expect(touchResult.height).toBeLessThanOrEqual(viewport.height + 1);
-  
+
     await expect
       .poll(async () => {
         const saved = await getSavedState(page);
@@ -325,7 +325,7 @@ test(
         );
       })
       .toBe(true);
-  
+
     await expect(page.locator("[data-encounter-objective-label]")).toContainText(
       "回收完成",
       { timeout: 20_000 },
@@ -334,7 +334,7 @@ test(
     await expect(retreat).toContainText("+2灵石");
     page.once("dialog", (dialog) => dialog.accept());
     await retreat.tap();
-  
+
     await expect.poll(async () => (await getSavedState(page)).run.day).toBe(2);
     const settled = await getSavedState(page);
     expect(settled.run.pendingEncounter).toBeNull();
