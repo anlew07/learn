@@ -5,7 +5,7 @@ import {
   getEncounterMissionView,
 } from "../src/presentation/encounter-mission.js";
 
-describe("2AG-H formal recovery objective HUD", () => {
+describe("2AG-K formal recovery objective comprehension", () => {
   it("shows a countdown before the recovery site appears", () => {
     const view = getEncounterMissionView({
       id: "salvage", status: "scheduled", appearsAtTick: 600,
@@ -17,13 +17,26 @@ describe("2AG-H formal recovery objective HUD", () => {
     });
   });
 
+  it("tells the player exactly how to complete the recovery objective", () => {
+    const view = getEncounterMissionView({
+      id: "salvage", status: "available", appearsAtTick: 600,
+      requiredTicks: 60, progressTicks: 0, guardTriggeredTick: null,
+    }, 600);
+    expect(view).toMatchObject({
+      state: "available",
+      label: "前往回收点 · 守住1秒可得 +2灵石",
+      progress: 0,
+      canBankObjective: false,
+    });
+  });
+
   it("shows real guardian hold progress without inventing completion", () => {
     const view = getEncounterMissionView({
       id: "salvage", status: "available", appearsAtTick: 600,
       requiredTicks: 60, progressTicks: 30, guardTriggeredTick: 600,
     }, 630);
     expect(view).toMatchObject({
-      state: "active", label: "守卫来袭 · 回收 50%",
+      state: "active", label: "守住回收点 · 50%",
       progress: 50, canBankObjective: false,
     });
   });
@@ -33,7 +46,7 @@ describe("2AG-H formal recovery objective HUD", () => {
       id: "salvage", status: "completed", requiredTicks: 60, progressTicks: 60,
     }, 700, SORTIE.mission.rewardStones);
     expect(view).toMatchObject({
-      state: "completed", label: "回收完成 · 撤离保留 +2灵石",
+      state: "completed", label: "回收完成 · 撤离可锁定 +2灵石",
       progress: 100, canBankObjective: true,
     });
   });

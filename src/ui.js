@@ -1042,13 +1042,18 @@ function stagePanelHtml(view) {
   content=pending?
    '<p class="stage-decision-alert">第'+pending.day+'日，灵灾分身的真实自主行动为「排险」。这场战斗会替代当天排险，不会额外推进日期或重复发奖。</p>'+
    '<p>'+esc(pending.reason)+'</p>'+
-   '<div class="encounter-mission-choices" role="group" aria-label="本场任务">'+
-   '<button data-action="encounter-mission" data-mission="safe" aria-pressed="'+String(missionId==="safe")+'"><b>稳妥巡护</b><small>专注生存与清场</small></button>'+
-   '<button data-action="encounter-mission" data-mission="salvage" aria-pressed="'+String(salvageSelected)+'"><b>险地回收</b><small>完成后撤离保留 +'+SORTIE.mission.rewardStones+' 灵石</small></button></div>'+
+   '<div class="encounter-mission-choices" role="group" aria-label="本场任务" aria-describedby="encounter-mission-help">'+
+   '<button data-action="encounter-mission" data-mission="safe" aria-pressed="'+String(missionId==="safe")+'"><b>稳妥巡护</b><small>不接回收目标 · 专注生存与击退</small></button>'+
+   '<button data-action="encounter-mission" data-mission="salvage" aria-pressed="'+String(salvageSelected)+'"><b>险地回收</b><small>10秒后出现 · 到达并守住1秒</small></button></div>'+
    '<div class="encounter-mode-choices">'+
    '<button class="btn" data-action="encounter-ai"'+(salvageSelected?" disabled":"")+'>'+(run.encounterPreference==="ai"?"继续交给 AI":"让分身自主处理")+'</button>'+
    '<button class="btn-soft" data-action="encounter-player">'+(run.encounterPreference==="player"?"继续本源接管":"本源意识接管")+'</button></div>'+
-   '<p class="hint">'+(salvageSelected?"险地回收需要本源意识接管；完成后可撤离保留 +"+SORTIE.mission.rewardStones+" 灵石，继续战斗可争取更多碎片与胜利奖励。":"控制方式会记住上次选择；战斗中可以交还 AI 或主动撤离。")+'其他世界会在这场战斗结束后完成本日行动。</p>':
+   '<p class="hint" id="encounter-mission-help">'+
+   "险地回收：10秒后出现回收点，到达并守住1秒。完成后撤离可锁定 +"+
+   SORTIE.mission.rewardStones+
+   " 灵石；继续战斗可争取更多碎片与胜利奖励，但倒下会失去目标奖励。"+
+   (salvageSelected?"本场需要本源意识接管。":"")+
+   '其他世界会在这场战斗结束后完成本日行动。</p>':
    '<p class="hint">当前没有等待接管的遭遇。</p>';
  }
  if (scenePanel === "encounter-result") content=encounterResultHtml();

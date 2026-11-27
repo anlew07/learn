@@ -216,6 +216,55 @@ test("formal recovery mission is selectable and its HUD fits the smallest mobile
   expect(box.y + box.height).toBeLessThanOrEqual(568);
 });
 
+for (const viewport of [
+  { width: 320, height: 568 },
+  { width: 390, height: 844 },
+  { width: 430, height: 932 },
+]) {
+  test(
+    "salvage briefing explains the action, reward and failure risk at " +
+      viewport.width +
+      "x" +
+      viewport.height,
+    async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await installFightFixture(page);
+      await page.locator('[data-action="step"]').tap();
+
+      const group = page.locator(".encounter-mission-choices");
+      const safe = page.locator('[data-action="encounter-mission"][data-mission="safe"]');
+      const salvage = page.locator(
+        '[data-action="encounter-mission"][data-mission="salvage"]',
+      );
+      const help = page.locator("#encounter-mission-help");
+
+      await expect(group).toHaveAttribute(
+        "aria-describedby",
+        "encounter-mission-help",
+      );
+      await expect(safe).toContainText("不接回收目标");
+      await expect(salvage).toContainText("10秒后出现");
+      await expect(salvage).toContainText("守住1秒");
+      await expect(help).toBeVisible();
+      await expect(help).toContainText("完成后撤离可锁定 +2 灵石");
+      await expect(help).toContainText("倒下会失去目标奖励");
+
+      await salvage.tap();
+      await expect(salvage).toHaveAttribute("aria-pressed", "true");
+      await expect(help).toContainText("本场需要本源意识接管");
+      await expect(page.locator('[data-action="encounter-ai"]')).toBeDisabled();
+      await expect(page.locator('[data-action="encounter-player"]')).toBeEnabled();
+
+      const layout = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      expect(layout.width).toBeLessThanOrEqual(viewport.width + 1);
+      expect(layout.height).toBeLessThanOrEqual(viewport.height + 1);
+    },
+  );
+}
+
 async function startSalvageEncounter(page, viewport) {
   await page.setViewportSize(viewport);
   await installFightFixture(page);
