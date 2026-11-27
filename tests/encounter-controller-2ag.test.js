@@ -247,6 +247,21 @@ describe("2AG shared encounter controller", () => {
     expect(battle.runeShield).toBe(1);
   });
 
+  it("rejects manual cast commands in automatic mode without changing the selected skill", () => {
+    const battle = createSortie("2ag-auto-cast-rejected");
+    battle.skillChoicePending = true;
+    expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+    const shield = battle.runeShield;
+    const nextTick = battle.runeNextTick;
+
+    expect(castSortieSkill(battle)).toMatchObject({
+      ok: false,
+      error: "当前战技采用自动释放",
+    });
+    expect(battle.runeShield).toBe(shield);
+    expect(battle.runeNextTick).toBe(nextTick);
+  });
+
   it("manual thunder waits for a deliberate cast and does not spend cooldown without a target", () => {
     const battle = createSortie("2ag-manual-thunder", 0, 0, "safe", {
       skillReleaseMode: "manual",
