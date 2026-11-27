@@ -106,9 +106,7 @@ export function runMissionEconomyScenario(seed, danger, combatLevel, profileId) 
     guard++;
     if (battle.skillChoicePending) {
       const skillId =
-        profile.controller === "ai"
-          ? getAutonomousEncounterDecision(battle).skillId
-          : "rune";
+        profile.controller === "ai" ? getAutonomousEncounterDecision(battle).skillId : "rune";
       if (!skillId) throw new Error("AI did not select a skill: " + seed);
       const choice = chooseSortieSkill(battle, skillId);
       if (!choice.ok) throw new Error("Skill choice failed: " + choice.error);
@@ -155,9 +153,7 @@ export function runMissionEconomyScenario(seed, danger, combatLevel, profileId) 
     combatLevel,
   );
   if (!replay.ok) throw new Error("Authoritative replay failed: " + seed + " / " + profile.id);
-  if (
-    JSON.stringify(replaySignature(replay.battle)) !== JSON.stringify(replaySignature(battle))
-  ) {
+  if (JSON.stringify(replaySignature(replay.battle)) !== JSON.stringify(replaySignature(battle))) {
     throw new Error("Replay drift: " + seed + " / " + profile.id);
   }
 
@@ -192,9 +188,7 @@ export function runMissionEconomyScenario(seed, danger, combatLevel, profileId) 
     objectiveStones: rewards.objectiveStones,
     stones: rewards.stones,
     stonesPerBattleMinute:
-      survivedSeconds > 0
-        ? Number((rewards.stones / (survivedSeconds / 60)).toFixed(3))
-        : 0,
+      survivedSeconds > 0 ? Number((rewards.stones / (survivedSeconds / 60)).toFixed(3)) : 0,
     experience: rewards.experience,
     progress: rewards.progress,
     actionCount: actions.length,
@@ -329,12 +323,7 @@ function main() {
         for (const profile of salvageProfiles) {
           if (byProfile[profile.id].objectiveCompleted !== SEED_COUNT) {
             throw new Error(
-              "Salvage objective completion drift: " +
-                level +
-                " / " +
-                danger +
-                " / " +
-                profile.id,
+              "Salvage objective completion drift: " + level + " / " + danger + " / " + profile.id,
             );
           }
         }
