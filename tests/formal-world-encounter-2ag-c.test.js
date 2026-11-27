@@ -61,7 +61,7 @@ describe("2AG-C formal world encounter transaction", () => {
   });
 
   it("keeps formal encounters on automatic skill release", () => {
-    const run = readyRun("2ag-c-auto-skill-release");
+    const run = readyRun();
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
     const pending = run.pendingEncounter;
@@ -70,6 +70,7 @@ describe("2AG-C formal world encounter transaction", () => {
       pending.danger,
       pending.forgeLevel,
       pending.missionId,
+      { combatLevel: pending.combatLevel },
     );
 
     expect(battle.skillReleaseMode).toBe("auto");
@@ -113,6 +114,7 @@ describe("2AG-C formal world encounter transaction", () => {
     const pending = run.pendingEncounter;
     const battle = createSortie(
       pending.seed, pending.danger, pending.forgeLevel, pending.missionId,
+      { combatLevel: pending.combatLevel },
     );
     const actions = [];
     for (let tick = 0; tick < 1500; tick++) {
@@ -125,6 +127,7 @@ describe("2AG-C formal world encounter transaction", () => {
     const restored = replaySortieProgress(
       pending.seed, pending.danger, pending.actions,
       pending.forgeLevel, pending.missionId,
+      "auto", pending.combatLevel,
     );
     expect(restored.ok).toBe(true);
     expect(restored.battle.tick).toBe(1500);
@@ -133,6 +136,7 @@ describe("2AG-C formal world encounter transaction", () => {
     expect(replaySortieTrace(
       pending.seed, pending.danger, pending.actions,
       pending.forgeLevel, pending.missionId,
+      "auto", pending.combatLevel,
     ).ok).toBe(false);
 
     expect(() => assertRestorableSnapshot({ run, profile: null }, Engine.VERSION)).not.toThrow();
@@ -150,6 +154,7 @@ describe("2AG-C formal world encounter transaction", () => {
     const pending = run.pendingEncounter;
     const battle = createSortie(
       pending.seed, pending.danger, pending.forgeLevel, pending.missionId,
+      { combatLevel: pending.combatLevel },
     );
     const identity = battle;
     const actions = [];
@@ -227,14 +232,67 @@ describe("2AG-D encounter transaction regression", () => {
     const pending = run.pendingEncounter;
     if (retreat) pending.actions.push(["retreat"]);
     else {
-      const battle = createSortie(pending.seed, pending.danger, pending.forgeLevel, pending.missionId);
+      const battle = createSortie(pending.seed, pending.danger, pending.forgeLevel, pending.missionId, {
+        combatLevel: pending.combatLevel,
+      });
       finishWithAi(battle, pending.actions);
       expect(battle.outcome).toBe("won");
     }
     return Engine.settleEncounter(run, { sortieId: pending.id });
   }
 
-  it("locks ordinary steps and direct intervention APIs while pending without mutating the pending encounter or run", () => {
+
+  it("snapshots effective world level into battle health and verifies it on settlement", () => {
+    const run = readyRun("2ag-e-world-level");
+    const world = Engine.byId(run, "lingzai");
+    world.level = 4;
+    world.p = 100;
+    world.resource = 20;
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(run.pendingEncounter.combatLevel).toBe(4);
+    expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
+    const pending = run.pendingEncounter;
+    const battle = createSortie(pending.seed, pending.danger, pending.forgeLevel, pending.missionId, {
+      combatLevel: pending.combatLevel,
+    });
+    expect(battle.maxHp).toBe(11);
+    expect(battle.hero.hp).toBe(11);
+    const actions = [];
+    finishWithAi(battle, actions);
+    expect(battle.outcome).toBe("won");
+    pending.actions = actions;
+    const settled = Engine.settleEncounter(run, { sortieId: pending.id });
+    expect(settled.ok).toBe(true);
+    expect(settled.receipt.battle).toMatchObject({
+      combatLevel: 4,
+      maxHp: 11,
+    });
+    expect(settled.receipt.battle.hpRemaining).toBeGreaterThan(0);
+    expect(settled.receipt.battle.hpRemaining).toBeLessThanOrEqual(11);
+    expect(settled.run.day).toBe(2);
+  });
+
+  it("uses injury-adjusted effective level and rejects a forged combat-level snapshot", () => {
+    const run = readyRun("2ag-e-injury");
+    const world = Engine.byId(run, "lingzai");
+    world.level = 4;
+    world.p = 100;
+    world.resource = 20;
+    world.injuryUntil = run.day + 2;
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(run.pendingEncounter.combatLevel).toBe(3);
+    run.pendingEncounter.combatLevel = 4;
+    const forged = JSON.stringify(run);
+    expect(Engine.settleEncounter(run, { sortieId: run.pendingEncounter.id }).ok).toBe(false);
+    expect(JSON.stringify(run)).toBe(forged);
+    run.pendingEncounter.combatLevel = 3;
+    expect(() => assertRestorableSnapshot({ run, profile: null }, Engine.VERSION)).not.toThrow();
+    const malformed = JSON.parse(JSON.stringify(run));
+    malformed.pendingEncounter.combatLevel = 5;
+    expect(() => assertRestorableSnapshot({ run: malformed, profile: null }, Engine.VERSION)).toThrow();
+  });
+
+  it("locks ordinary steps, commands and direct intervention APIs while pending without mutating the pending encounter or run", () => {
     const run = readyRun();
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     const pendingId = run.pendingEncounter.id;

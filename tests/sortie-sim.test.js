@@ -12,10 +12,23 @@ describe("isolated Lingzai battle", () => {
   it("starts with 24 enemies on schedule and no official world or rewards", () => {
     const b = createSortie("first");
     expect(b.hero.hp).toBe(8);
+    expect(b.maxHp).toBe(8);
+    expect(b.combatLevel).toBe(1);
     expect(b.tick).toBe(0);
     expect(b.schedule).toHaveLength(24);
     expect(b).not.toHaveProperty("worlds");
     expect(b).not.toHaveProperty("resource");
+  });
+
+
+  it("maps effective world level to a bounded battle health reserve", () => {
+    expect(createSortie("level-1", 0, 0, "safe", { combatLevel: 1 }).maxHp).toBe(8);
+    expect(createSortie("level-2", 0, 0, "safe", { combatLevel: 2 }).maxHp).toBe(9);
+    expect(createSortie("level-3", 0, 0, "safe", { combatLevel: 3 }).maxHp).toBe(10);
+    expect(createSortie("level-4", 0, 0, "safe", { combatLevel: 4 }).maxHp).toBe(11);
+    expect(() => createSortie("bad-level", 0, 0, "safe", { combatLevel: 0 })).toThrow();
+    expect(() => createSortie("bad-level", 0, 0, "safe", { combatLevel: 5 })).toThrow();
+    expect(() => createSortie("bad-level", 0, 0, "safe", { combatLevel: 1.5 })).toThrow();
   });
 
   it("normalizes diagonal movement, clamps edges and freezes on termination", () => {

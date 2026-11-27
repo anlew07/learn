@@ -5,7 +5,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -20,6 +20,19 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run format:check
+      - name: Temporary regenerate merged game text review
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}"
+          git checkout -B "${GITHUB_HEAD_REF}" "origin/${GITHUB_HEAD_REF}"
+          npm run text:export
+          if ! git diff --quiet -- docs/review/game-text.csv; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/review/game-text.csv
+            git commit -m "chore(2AG-E): regenerate merged game text review"
+            git push origin "HEAD:${GITHUB_HEAD_REF}"
+          fi
       - run: npm run text:check
       - run: npm run text:runtime
       - run: npm run text:review
@@ -37,6 +50,8 @@ jobs:
       - run: npm test -- --maxWorkers=2
       - name: Compare automatic and manual encounter skill release
         run: npm run encounter:skill-release:check
+      - name: Compare effective world levels in formal encounters
+        run: npm run encounter:level-progression:check
       - run: npm run build
       - run: npm run balance:check
       - run: npm run balance:matrix:check

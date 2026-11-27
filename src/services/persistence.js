@@ -96,6 +96,8 @@ function isValidPendingEncounter(pending, day) {
     !Number.isInteger(pending.forgeLevel) ||
     pending.forgeLevel < 0 ||
     pending.forgeLevel > 1 ||
+    (pending.combatLevel !== undefined &&
+      (!Number.isInteger(pending.combatLevel) || pending.combatLevel < 1 || pending.combatLevel > 4)) ||
     !["safe", "salvage"].includes(pending.missionId) ||
     typeof pending.reason !== "string" ||
     !["choice", "player", "ai"].includes(pending.controller) ||

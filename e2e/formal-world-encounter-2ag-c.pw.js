@@ -1,6 +1,28 @@
 import { expect, test } from "@playwright/test";
 import { getSavedState } from "./helpers/run-fixtures.js";
 
+async function installLevelFourFightFixture(page) {
+  await page.goto("/?debug=1");
+  const preview = await page.evaluate(async () => {
+    const Engine = (await import("/src/engine.js")).default;
+    const { saveRepository } = await import("/src/services/persistence.js");
+    const { normalizeLegacyProfile } = await import("/src/systems/legacy-progression.js");
+    const run = Engine.fresh("2ag-level-four-hud", 1, true);
+    Engine.byId(run, "lingzai").level = 4;
+    Engine.byId(run, "lingzai").p = 100;
+    Engine.byId(run, "lingzai").resource = 20;
+    Engine.byId(run, "lingzai").strategy = "clear";
+    run.paused = true;
+    const profile = normalizeLegacyProfile({ runCount: 0, worldsSaved: 0, shards: 0 });
+    const next = Engine.previewNextAction(run, "lingzai");
+    await saveRepository.enqueueSave(run, profile);
+    return next;
+  });
+  expect(preview).toMatchObject({ ok: true, actionId: "fight" });
+  await page.reload();
+  await expect(page.locator('[data-action="step"]')).toBeVisible();
+}
+
 async function installFightFixture(page) {
   await page.goto("/?debug=1");
   const preview = await page.evaluate(async () => {
@@ -149,4 +171,22 @@ test("formal encounter keeps its pending trace when the final save fails", async
   expect(saved.run.pendingEncounter).toBeNull();
   expect(saved.run.lastEncounter.battle.outcome).toBe("retreated");
   expect(saved.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight).toBe(1);
+});
+
+test("effective world level is visible and survives a formal encounter reload", async ({
+  page,
+}) => {
+  await installLevelFourFightFixture(page);
+  await page.locator('[data-action="step"]').tap();
+  await page.locator('[data-action="encounter-player"]').tap();
+  await expect(page.locator("[data-encounter-hp]")).toHaveText("11/11");
+  await page.locator('[data-action="encounter-toggle"]').tap();
+  await expect
+    .poll(async () => (await getSavedState(page)).run?.pendingEncounter?.combatLevel)
+    .toBe(4);
+  await page.reload();
+  await expect(page.locator("[data-encounter-hp]")).toHaveText("11/11");
+  const saved = await getSavedState(page);
+  expect(saved.run.pendingEncounter.combatLevel).toBe(4);
+  expect(saved.run.day).toBe(1);
 });
