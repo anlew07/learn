@@ -216,7 +216,6 @@ test("formal recovery mission is selectable and its HUD fits the smallest mobile
   expect(box.y + box.height).toBeLessThanOrEqual(568);
 });
 
-// Temporary trigger for the CI Prettier diagnostic.
 async function startSalvageEncounter(page, viewport) {
   await page.setViewportSize(viewport);
   await installFightFixture(page);
@@ -273,81 +272,78 @@ for (const viewport of [
   );
 }
 
-test(
-  "real touch movement completes salvage and formal extraction banks its reward",
-  async ({ page }) => {
-    const viewport = { width: 390, height: 844 };
-    await startSalvageEncounter(page, viewport);
+test("real touch movement completes salvage and formal extraction banks its reward", async ({
+  page,
+}) => {
+  const viewport = { width: 390, height: 844 };
+  await startSalvageEncounter(page, viewport);
 
-    await page.evaluate(() => {
-      window.__encounterPointerTypes = [];
-      document.querySelector("[data-encounter-joystick]").addEventListener(
+  await page.evaluate(() => {
+    window.__encounterPointerTypes = [];
+    document
+      .querySelector("[data-encounter-joystick]")
+      .addEventListener(
         "pointerdown",
         (event) => window.__encounterPointerTypes.push(event.pointerType),
         { once: true },
       );
-      window.scrollTo(0, 0);
-    });
+    window.scrollTo(0, 0);
+  });
 
-    const joystick = page.locator("[data-encounter-joystick]");
-    const bounds = await joystick.boundingBox();
-    expect(bounds).not.toBeNull();
-    const center = {
-      x: bounds.x + bounds.width / 2,
-      y: bounds.y + bounds.height / 2,
-    };
-    const maxDistance = bounds.width * 0.3;
-    const target = {
-      x: center.x + maxDistance * 0.596,
-      y: center.y - maxDistance * 0.803,
-    };
-    await dragJoystickWithTouch(page, center, target, 1850);
+  const joystick = page.locator("[data-encounter-joystick]");
+  const bounds = await joystick.boundingBox();
+  expect(bounds).not.toBeNull();
+  const center = {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y + bounds.height / 2,
+  };
+  const maxDistance = bounds.width * 0.3;
+  const target = {
+    x: center.x + maxDistance * 0.596,
+    y: center.y - maxDistance * 0.803,
+  };
+  await dragJoystickWithTouch(page, center, target, 1850);
 
-    const touchResult = await page.evaluate(() => ({
-      pointerTypes: window.__encounterPointerTypes,
-      scrollX: window.scrollX,
-      scrollY: window.scrollY,
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-    expect(touchResult.pointerTypes).toContain("touch");
-    expect(touchResult.scrollX).toBe(0);
-    expect(touchResult.scrollY).toBe(0);
-    expect(touchResult.width).toBeLessThanOrEqual(viewport.width + 1);
-    expect(touchResult.height).toBeLessThanOrEqual(viewport.height + 1);
+  const touchResult = await page.evaluate(() => ({
+    pointerTypes: window.__encounterPointerTypes,
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+    width: document.documentElement.scrollWidth,
+    height: document.documentElement.scrollHeight,
+  }));
+  expect(touchResult.pointerTypes).toContain("touch");
+  expect(touchResult.scrollX).toBe(0);
+  expect(touchResult.scrollY).toBe(0);
+  expect(touchResult.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(touchResult.height).toBeLessThanOrEqual(viewport.height + 1);
 
-    await expect
-      .poll(async () => {
-        const saved = await getSavedState(page);
-        return saved.run.pendingEncounter.actions.some(
-          (action) =>
-            action[0] === "tick" &&
-            (Math.abs(action[1]) > 0.1 || Math.abs(action[2]) > 0.1),
-        );
-      })
-      .toBe(true);
+  await expect
+    .poll(async () => {
+      const saved = await getSavedState(page);
+      return saved.run.pendingEncounter.actions.some(
+        (action) =>
+          action[0] === "tick" && (Math.abs(action[1]) > 0.1 || Math.abs(action[2]) > 0.1),
+      );
+    })
+    .toBe(true);
 
-    await expect(page.locator("[data-encounter-objective-label]")).toContainText(
-      "回收完成",
-      { timeout: 20_000 },
-    );
-    const retreat = page.locator('[data-action="encounter-retreat"]');
-    await expect(retreat).toContainText("+2灵石");
-    page.once("dialog", (dialog) => dialog.accept());
-    await retreat.tap();
+  await expect(page.locator("[data-encounter-objective-label]")).toContainText("回收完成", {
+    timeout: 20_000,
+  });
+  const retreat = page.locator('[data-action="encounter-retreat"]');
+  await expect(retreat).toContainText("+2灵石");
+  page.once("dialog", (dialog) => dialog.accept());
+  await retreat.tap();
 
-    await expect.poll(async () => (await getSavedState(page)).run.day).toBe(2);
-    const settled = await getSavedState(page);
-    expect(settled.run.pendingEncounter).toBeNull();
-    expect(settled.run.lastEncounter.battle).toMatchObject({
-      outcome: "retreated",
-      missionId: "salvage",
-      objectiveStatus: "completed",
-      objectiveStones: 2,
-    });
-    expect(settled.run.lastEncounter.battle.stones).toBeGreaterThanOrEqual(2);
-    expect(
-      settled.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight,
-    ).toBe(1);
-  },
-);
+  await expect.poll(async () => (await getSavedState(page)).run.day).toBe(2);
+  const settled = await getSavedState(page);
+  expect(settled.run.pendingEncounter).toBeNull();
+  expect(settled.run.lastEncounter.battle).toMatchObject({
+    outcome: "retreated",
+    missionId: "salvage",
+    objectiveStatus: "completed",
+    objectiveStones: 2,
+  });
+  expect(settled.run.lastEncounter.battle.stones).toBeGreaterThanOrEqual(2);
+  expect(settled.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight).toBe(1);
+});
