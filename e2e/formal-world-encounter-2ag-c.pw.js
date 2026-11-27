@@ -251,6 +251,7 @@ for (const viewport of [
 
       await salvage.tap();
       await expect(salvage).toHaveAttribute("aria-pressed", "true");
+      await expect(help).toContainText("本场需要本源意识接管");
       await expect(page.locator('[data-action="encounter-ai"]')).toBeDisabled();
       await expect(page.locator('[data-action="encounter-player"]')).toBeEnabled();
 
