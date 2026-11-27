@@ -206,7 +206,6 @@ describe("2AG-C formal world encounter transaction", () => {
     const before = JSON.stringify(run);
     const result = Engine.settleEncounter(run, { sortieId: run.pendingEncounter.id });
     expect(result.ok).toBe(false);
-    expect(run.pendingEncounter.id).toBe(pendingId);
     expect(JSON.stringify(run)).toBe(before);
   });
 });
