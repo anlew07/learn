@@ -216,7 +216,6 @@ test("formal recovery mission is selectable and its HUD fits the smallest mobile
   expect(box.y + box.height).toBeLessThanOrEqual(568);
 });
 
-
 async function startSalvageEncounter(page, viewport) {
   await page.setViewportSize(viewport);
   await installFightFixture(page);
@@ -273,9 +272,9 @@ for (const viewport of [
   );
 }
 
-test("real touch movement completes salvage and formal extraction banks its reward", async ({
-  page,
-}) => {
+test(
+  "real touch movement completes salvage and formal extraction banks its reward",
+  async ({ page }) => {
   const viewport = { width: 390, height: 844 };
   await startSalvageEncounter(page, viewport);
 
@@ -346,7 +345,5 @@ test("real touch movement completes salvage and formal extraction banks its rewa
     objectiveStones: 2,
   });
   expect(settled.run.lastEncounter.battle.stones).toBeGreaterThanOrEqual(2);
-  expect(
-    settled.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight,
-  ).toBe(1);
+  expect(settled.run.worlds.find((world) => world.id === "lingzai").metrics.actions.fight).toBe(1);
 });
