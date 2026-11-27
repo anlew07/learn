@@ -27,7 +27,13 @@ test("automatic day timer advances one day per cycle and respects event interrup
       await page.locator('button[data-action="toggle"]').click();
     }
     await page.clock.runFor(20_500);
+    if (await page.locator('[data-stage-panel="encounter"]').count()) {
+      await page.locator('[data-action="encounter-ai"]').click();
+    }
     await expect.poll(async () => (await saved(page)).run?.day).toBe(day + 1);
+    if (await page.locator('[data-stage-panel="encounter-result"]').count()) {
+      await page.locator('[data-action="scene-close"]').click();
+    }
   }
 
   const beforeSave = (await saved(page)).run;

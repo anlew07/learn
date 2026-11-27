@@ -1,8 +1,8 @@
 import { SORTIE } from "../config/sortie-data.js";
 
 /**
- * A pure, ephemeral estimate. This MUST NOT mutate Engine, RunState or ProfileState.
- * Stage 2C alone may later issue a validated, idempotent authoritative receipt.
+ * Pure battle outcome summary. It MUST NOT mutate Engine, RunState or ProfileState.
+ * The official Engine validates the trace and commits this summary exactly once.
  */
 export function previewSortieRewards(battle) {
   if (!battle || battle.outcome === "running") return null;
@@ -19,6 +19,10 @@ export function previewSortieRewards(battle) {
     outcome: battle.outcome,
     survivedSeconds: battle.tick / SORTIE.ticksPerSecond,
     defeated: battle.defeated,
+    hurt: battle.hurt,
+    hpRemaining: battle.hero?.hp ?? 0,
+    thunderHits: battle.thunderHits,
+    shieldBlocks: battle.shieldBlocks,
     weaponDamage: battle.weaponDamage,
     collectedShards,
     uncollectedShards: battle.drops.length,
