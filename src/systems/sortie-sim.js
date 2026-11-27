@@ -26,13 +26,16 @@ function makeSchedule(danger) {
     }));
   });
 }
-export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe") {
+export function createSortie(seed = "lingzai-demo", danger = 0, forgeLevel = 0, missionId = "safe", options = {}) {
   if (!SORTIE.mission.options.includes(missionId)) throw new Error("Invalid sortie mission");
+  const skillReleaseMode = options?.skillReleaseMode ?? "auto";
+  if (!["auto", "manual"].includes(skillReleaseMode)) throw new Error("Invalid skill release mode");
   const safeDanger = clamp(Number.isFinite(danger) ? danger : 0, 0, 100);
   if (!Number.isInteger(forgeLevel) || forgeLevel < 0 ||
     forgeLevel > SORTIE.forge.maxLevel) throw new Error("Invalid forge level");
   return {
     seed: String(seed), rng: hashSeed(seed), danger: safeDanger, tick: 0, remainderMs: 0,
+    skillReleaseMode,
     forgeLevel, weaponDamage: SORTIE.weapon.damage + forgeLevel * SORTIE.forge.damageBonus,
     hero: { x: SORTIE.player.x, y: SORTIE.player.y, hp: SORTIE.player.hp, invulnerable: 0 },
     enemies: [], shots: [], hostileShots: [], schedule: makeSchedule(safeDanger), nextSpawn: 0,
@@ -111,6 +114,7 @@ function collectFragments(battle) {
 }
 
 function applySkillEffects(battle) {
+  if (battle.skillReleaseMode === "manual") return;
   if (battle.skillId === "thunder" && battle.tick >= battle.thunderNextTick) {
     battle.thunderNextTick += Math.round(
       SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond,
@@ -186,6 +190,11 @@ export function chooseSortieSkill(battle, powerId) {
   }
   battle.skillId = powerId;
   battle.skillChoicePending = false;
+  if (battle.skillReleaseMode === "manual") {
+    battle.thunderNextTick = battle.tick;
+    battle.runeNextTick = battle.tick;
+    return { ok: true, skillId: powerId };
+  }
   if (powerId === "thunder") {
     battle.thunderNextTick = battle.tick +
       Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
@@ -196,6 +205,51 @@ export function chooseSortieSkill(battle, powerId) {
       Math.round(SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond);
   }
   return { ok: true, skillId: powerId };
+}
+
+/**
+ * Manual-release mode separates choosing a power from deciding when to use it.
+ * A failed cast (no target / existing shield / cooldown) never spends a charge.
+ */
+export function castSortieSkill(battle) {
+  if (!battle || battle.outcome !== "running" || battle.skillChoicePending) {
+    return { ok: false, error: "当前不能释放战技" };
+  }
+  if (battle.skillReleaseMode !== "manual") {
+    return { ok: false, error: "当前战技采用自动释放" };
+  }
+  if (battle.skillId === "thunder") {
+    if (battle.tick < battle.thunderNextTick) {
+      return { ok: false, error: "驭雷符仍在冷却" };
+    }
+    const target = battle.enemies
+      .map((enemy) => ({ enemy, range: distance(enemy, battle.hero) }))
+      .filter(({ enemy, range }) =>
+        enemy.hp > 0 && range <= SORTIE.skills.thunderRange,
+      )
+      .sort((a, b) => a.range - b.range || a.enemy.id - b.enemy.id)[0];
+    if (!target) return { ok: false, error: "攻击范围内没有目标" };
+
+    battle.thunderNextTick =
+      battle.tick + Math.round(SORTIE.skills.thunderCooldownSeconds * SORTIE.ticksPerSecond);
+    battle.flashTargets = [{ x: target.enemy.x, y: target.enemy.y }];
+    battle.flashUntil = battle.tick + 15;
+    battle.thunderHits++;
+    damageEnemy(battle, target.enemy, SORTIE.skills.thunderDamage);
+    battle.enemies = battle.enemies.filter((enemy) => enemy.hp > 0);
+    return { ok: true, skillId: "thunder", targets: 1 };
+  }
+  if (battle.skillId === "rune") {
+    if (battle.runeShield > 0) return { ok: false, error: "护盾尚未消耗" };
+    if (battle.tick < battle.runeNextTick) {
+      return { ok: false, error: "聚灵阵纹仍在充能" };
+    }
+    battle.runeNextTick =
+      battle.tick + Math.round(SORTIE.skills.runeRechargeSeconds * SORTIE.ticksPerSecond);
+    battle.runeShield = 1;
+    return { ok: true, skillId: "rune", shield: 1 };
+  }
+  return { ok: false, error: "尚未选择战技" };
 }
 
 /** Manual retreat is an explicit end, unlike refreshing an uncommitted sandbox. */

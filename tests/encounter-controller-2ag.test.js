@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import Engine from "../src/engine.js";
-import { createSortie, DURATION_TICKS, stepSortie, chooseSortieSkill } from "../src/systems/sortie-sim.js";
+import { createSortie, DURATION_TICKS, stepSortie, chooseSortieSkill, castSortieSkill } from "../src/systems/sortie-sim.js";
+import { replaySortieTrace } from "../src/systems/sortie-trace.js";
 import {
   chooseAutonomousEncounterSkill,
   getAutonomousEncounterDecision,
   getAutonomousEncounterInput,
+  shouldAutonomousCastEncounterSkill,
 } from "../src/systems/encounter-controller.js";
 
 function battleState(overrides = {}) {
@@ -36,6 +38,42 @@ function runAutopilot(seed, danger) {
     collectedShards: battle.collectedShards,
     x: battle.hero.x,
     y: battle.hero.y,
+  };
+}
+
+function runAutopilotTrace(seed, danger, skillReleaseMode) {
+  const battle = createSortie(seed, danger, 0, "safe", { skillReleaseMode });
+  const actions = [];
+  let guard = 0;
+  while (battle.outcome === "running" && guard < DURATION_TICKS + 2) {
+    const decision = getAutonomousEncounterDecision(battle);
+    if (decision.skillId) {
+      chooseSortieSkill(battle, decision.skillId);
+      actions.push(["skill", decision.skillId]);
+    } else {
+      if (decision.castSkill) {
+        const cast = castSortieSkill(battle);
+        if (cast.ok) actions.push(["cast", battle.skillId]);
+      }
+      const input = decision.input;
+      stepSortie(battle, input);
+      actions.push(["tick", input.x, input.y]);
+    }
+    guard++;
+  }
+  return { battle, actions };
+}
+
+function battleSummary(battle) {
+  return {
+    outcome: battle.outcome,
+    tick: battle.tick,
+    hp: battle.hero.hp,
+    defeated: battle.defeated,
+    hurt: battle.hurt,
+    collectedShards: battle.collectedShards,
+    thunderHits: battle.thunderHits,
+    shieldBlocks: battle.shieldBlocks,
   };
 }
 
@@ -198,6 +236,136 @@ describe("2AG shared encounter controller", () => {
     expect(Engine.previewNextAction(run, "missing-world").ok).toBe(false);
     expect(Engine.previewNextAction(null, "lingzai").ok).toBe(false);
     expect(JSON.stringify(run)).toBe(before);
+  });
+
+
+  it("keeps automatic skill activation as the backward-compatible default", () => {
+    const battle = createSortie("2ag-auto-skill-default");
+    battle.skillChoicePending = true;
+    expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+    expect(battle.skillReleaseMode).toBe("auto");
+    expect(battle.runeShield).toBe(1);
+  });
+
+  it("rejects manual cast commands in automatic mode without changing the selected skill", () => {
+    const battle = createSortie("2ag-auto-cast-rejected");
+    battle.skillChoicePending = true;
+    expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+    const shield = battle.runeShield;
+    const nextTick = battle.runeNextTick;
+
+    expect(castSortieSkill(battle)).toMatchObject({
+      ok: false,
+      error: "当前战技采用自动释放",
+    });
+    expect(battle.runeShield).toBe(shield);
+    expect(battle.runeNextTick).toBe(nextTick);
+  });
+
+  it("manual thunder waits for a deliberate cast and does not spend cooldown without a target", () => {
+    const battle = createSortie("2ag-manual-thunder", 0, 0, "safe", {
+      skillReleaseMode: "manual",
+    });
+    battle.skillChoicePending = true;
+    expect(chooseSortieSkill(battle, "thunder").ok).toBe(true);
+    expect(battle.thunderHits).toBe(0);
+
+    const emptyCast = castSortieSkill(battle);
+    expect(emptyCast.ok).toBe(false);
+    expect(battle.thunderNextTick).toBe(0);
+
+    battle.enemies.push({ id: 1, kind: "wolf", x: 250, y: 224, hp: 2 });
+    battle.nextShotTick = 10000;
+    battle.hero.invulnerable = 10000;
+    for (let tick = 0; tick < 240; tick++) stepSortie(battle, { x: 0, y: 0 });
+    expect(battle.thunderHits).toBe(0);
+
+    const cast = castSortieSkill(battle);
+    expect(cast).toMatchObject({ ok: true, skillId: "thunder", targets: 1 });
+    expect(battle.thunderHits).toBe(1);
+    expect(battle.enemies[0].hp).toBe(1);
+    expect(castSortieSkill(battle).ok).toBe(false);
+    expect(battle.thunderNextTick).toBeGreaterThan(battle.tick);
+  });
+
+  it("manual rune is held until the player casts it and blocks only one real hit", () => {
+    const battle = createSortie("2ag-manual-rune", 0, 0, "safe", {
+      skillReleaseMode: "manual",
+    });
+    battle.skillChoicePending = true;
+    expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+    expect(battle.runeShield).toBe(0);
+
+    expect(castSortieSkill(battle)).toMatchObject({ ok: true, skillId: "rune" });
+    expect(battle.runeShield).toBe(1);
+    battle.enemies.push({ id: 1, kind: "wolf", x: battle.hero.x, y: battle.hero.y, hp: 2 });
+    stepSortie(battle, { x: 0, y: 0 });
+    expect(battle.shieldBlocks).toBe(1);
+    expect(battle.runeShield).toBe(0);
+    expect(battle.hero.hp).toBe(8);
+    expect(castSortieSkill(battle)).toMatchObject({ ok: false });
+  });
+
+  it("AI times manual casts against real targets and incoming danger", () => {
+    const thunder = createSortie("2ag-ai-thunder", 0, 0, "safe", {
+      skillReleaseMode: "manual",
+    });
+    thunder.skillId = "thunder";
+    thunder.enemies.push({ id: 1, kind: "wolf", x: 250, y: 224, hp: 2 });
+    expect(shouldAutonomousCastEncounterSkill(thunder)).toBe(false);
+    thunder.enemies[0].x = 220;
+    expect(shouldAutonomousCastEncounterSkill(thunder)).toBe(true);
+
+    const rune = createSortie("2ag-ai-rune", 0, 0, "safe", {
+      skillReleaseMode: "manual",
+    });
+    rune.skillId = "rune";
+    rune.hostileShots.push({ x: 160, y: 180, vx: 0, vy: 2, ttl: 60 });
+    expect(shouldAutonomousCastEncounterSkill(rune)).toBe(true);
+  });
+
+  it("replays manual and automatic skill timing for 40 fixed seeds without drift", () => {
+    const totals = {
+      auto: { defeated: 0, hurt: 0, thunderHits: 0, shieldBlocks: 0 },
+      manual: { defeated: 0, hurt: 0, thunderHits: 0, shieldBlocks: 0, casts: 0 },
+    };
+
+    for (let index = 0; index < 40; index++) {
+      const seed = "2ag-skill-release-" + index;
+      const danger = [0, 45, 80][index % 3];
+      for (const mode of ["auto", "manual"]) {
+        const first = runAutopilotTrace(seed, danger, mode);
+        const second = runAutopilotTrace(seed, danger, mode);
+        expect(second.actions).toEqual(first.actions);
+        expect(battleSummary(second.battle)).toEqual(battleSummary(first.battle));
+
+        const replay = replaySortieTrace(
+          seed,
+          danger,
+          first.actions,
+          0,
+          "safe",
+          mode,
+        );
+        expect(replay.ok).toBe(true);
+        expect(battleSummary(replay.battle)).toEqual(battleSummary(first.battle));
+
+        const total = totals[mode];
+        const summary = battleSummary(first.battle);
+        total.defeated += summary.defeated;
+        total.hurt += summary.hurt;
+        total.thunderHits += summary.thunderHits;
+        total.shieldBlocks += summary.shieldBlocks;
+        if (mode === "manual") {
+          total.casts += first.actions.filter((action) => action[0] === "cast").length;
+        }
+      }
+    }
+
+    // This verifies that the manual mode is genuinely exercised; it does not
+    // assume it is stronger than auto mode before the balance results are read.
+    expect(totals.manual.casts).toBeGreaterThan(0);
+    expect(totals.manual.thunderHits + totals.manual.shieldBlocks).toBeGreaterThan(0);
   });
 
   it("replays the same autonomous decisions for 40 fixed seeds", () => {

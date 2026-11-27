@@ -1,3 +1,5 @@
+import { SORTIE } from "../config/sortie-data.js";
+
 const DEFAULT_FIELD = Object.freeze({
   width: 320,
   height: 448,
@@ -221,10 +223,48 @@ export function chooseAutonomousEncounterSkill(
   return available.includes(preferred) ? preferred : available[0];
 }
 
+/**
+ * The manual-release fallback uses the same battle state and cooldowns as a
+ * player. It waits for a useful target/window rather than spending a cast on
+ * cooldown as soon as it becomes available.
+ */
+export function shouldAutonomousCastEncounterSkill(battle) {
+  if (
+    !battle ||
+    battle.outcome !== "running" ||
+    battle.skillChoicePending ||
+    battle.skillReleaseMode !== "manual" ||
+    !battle.hero
+  ) {
+    return false;
+  }
+
+  const enemies = aliveEnemies(battle, battle.hero);
+  const incoming = (Array.isArray(battle.hostileShots) ? battle.hostileShots : [])
+    .some((shot, index) => Boolean(projectileThreat(shot, battle.hero, fieldOptions(), index)));
+
+  if (battle.skillId === "thunder") {
+    if (battle.tick < battle.thunderNextTick) return false;
+    const targets = enemies.filter(({ range }) => range <= SORTIE.skills.thunderRange);
+    return targets.length >= 2 || (targets.length > 0 && targets[0].range <= 88);
+  }
+
+  if (battle.skillId === "rune") {
+    if (battle.runeShield > 0 || battle.tick < battle.runeNextTick) return false;
+    const closeThreat = enemies.some(({ range }) => range <= 78);
+    const lowHealth = Number.isFinite(battle.hero.hp) &&
+      battle.hero.hp <= Math.ceil(SORTIE.player.hp * 0.65);
+    return lowHealth || closeThreat || incoming;
+  }
+
+  return false;
+}
+
 /** One read-only decision object for an AI-owned simulation tick. */
 export function getAutonomousEncounterDecision(battle, field) {
   return {
     input: getAutonomousEncounterInput(battle, field),
     skillId: chooseAutonomousEncounterSkill(battle),
+    castSkill: shouldAutonomousCastEncounterSkill(battle),
   };
 }
