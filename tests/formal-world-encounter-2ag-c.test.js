@@ -246,6 +246,7 @@ describe("2AG-D encounter transaction regression", () => {
     expect(Engine.chooseBuild(run, "lingzai", "thunder").ok).toBe(false);
     expect(Engine.aid(run, "zombie", "lingzai", "resource").ok).toBe(false);
     expect(Engine.settleSortie(run, { sortieId: run.pendingEncounter.id, actions: [["retreat"]] }).ok).toBe(false);
+    expect(run.pendingEncounter.id).toBe(pendingId);
     expect(JSON.stringify(run)).toBe(before);
   });
 
