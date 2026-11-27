@@ -2,6 +2,7 @@ import "./style.css"; import "./art-direction.css"; import "./stage-shell.css"; 
 import "./support-pages.css";
 import "./formal-title.css";
 import "./world-encounter.css";
+import "./world-gates.css";
 import { applyTextSize, readTextSize, setTextSize, supportPageHtml } from "./ui/support-pages.js";
 applyTextSize();
 import Engine from "./engine.js";
@@ -25,6 +26,7 @@ import { mergeProfileSecrets, summarizeProfileSecrets, availableArchiveTitles, e
 import { normalizeLegacyProfile, previewLegacyProgress, unlockLegacy, equipLegacy, resetLegacy } from "./systems/legacy-progression.js";
 import { saveRepository, assertRestorableSnapshot } from "./services/persistence.js";
 import { createExclusiveSession } from "./services/exclusive-session.js";
+import { getWorldGateView, worldGatePanelHtml } from "./world-gates.js";
 
 const app = document.querySelector("#app");
 const TEMPOS = DAY_DURATION_MS;
@@ -1030,7 +1032,7 @@ function stagePanelHtml(view) {
  const selected = Engine.byId(run,view.worldId) || activeWorlds()[0];
  const titles = { strategy:"世界档案与策略", event:"待处理事件与战技", aid:"跨世界援助",
   tactic:"战前支援", team:"队伍与战技", report:"战斗记录", guide:"生存手册",
-  encounter:"真实排险遭遇", "encounter-result":"排险结算", all:"全部世界", menu:"更多功能" };
+  encounter:"真实排险遭遇", "encounter-result":"排险结算", gates:"跨界航路", all:"全部世界", menu:"更多功能" };
  const locked=scenePanel==="encounter";
  let content = "";
  if (scenePanel === "encounter") {
@@ -1072,11 +1074,13 @@ function stagePanelHtml(view) {
   content=combat+sortie||'<p class="hint">本世界暂时没有战斗记录。</p>';
  }
  if (scenePanel === "guide") content = playerGuideHtml();
+ if (scenePanel === "gates") content = worldGatePanelHtml(getWorldGateView(run, view.worldId), { canSwitch: !inQuickStart() });
  if (scenePanel === "all") content = activeWorlds().map(worldOverviewHtml).join("")+recentWorldHistoryHtml();
  if (scenePanel === "menu") content =
   '<p>这是自动生存模拟。你选择策略和关键干预，分身每天自主行动。</p>'+
   '<button data-action="scene-panel" data-panel="guide">玩法帮助</button>'+
   '<button data-action="scene-panel" data-panel="all">全部世界档案</button>'+
+  '<button data-action="scene-panel" data-panel="gates">跨界航路</button>'+
   '<button data-action="scene-panel" data-panel="report">最近战报</button>'+
   '<button data-action="scene-classic">传统详细视图</button>'+
   '<button data-action="open-settings">设置与本机数据</button>'+
@@ -1121,7 +1125,7 @@ function sceneHtml() {
   '<span class="stage-time-progress" role="progressbar" aria-label="距下一天的计时进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="跟随真实模拟计时；日夜光照只是视觉提示"><span class="stage-time-fill"></span></span></span>'+
   '<button data-action="scene-panel" data-panel="menu" aria-label="更多功能" title="更多功能">☰</button></header>'+
   '<div class="stage-counters" aria-label="全局状态">'+
-  '<span class="stage-stat" data-stat="parallel" aria-label="当前同时守护'+view.activeWorldCount+'个世界，最多3个；本局已救援'+view.saved+'个"><span>并行世界</span><b>'+view.activeWorldCount+'<small>/3</small></b></span>'+
+  '<button type="button" class="stage-stat stage-world-gate-trigger" data-action="scene-panel" data-panel="gates" data-stat="parallel" aria-label="当前同时守护'+view.activeWorldCount+'个世界，最多3个；本局已救援'+view.saved+'个；点击查看跨界航路"><span>并行世界</span><b>'+view.activeWorldCount+'<small>/3</small></b></button>'+
   '<span class="stage-stat" data-stat="ap"><span>干预点</span><b>'+view.ap+'</b></span>'+
   '<span class="stage-stat" data-stat="soul"><span>灵魂</span><b>'+view.soul+'</b></span>'+
   '<span class="stage-stat" data-stat="resource"><span>'+esc(Engine.info(run,Engine.byId(run,view.worldId)).resourceName)+'</span><b>'+view.resource+'</b></span></div>'+

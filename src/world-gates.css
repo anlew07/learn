@@ -1,0 +1,422 @@
+/* Read-only world navigation: pixel gates share the existing stage materials. */
+.stage-world-gate-trigger {
+  width: 100%;
+  min-width: 0;
+  padding: 0 2px;
+  cursor: pointer;
+  font-size: 10px !important;
+}
+
+.stage-sheet[data-stage-panel="gates"] {
+  top: calc(6px + env(safe-area-inset-top));
+  bottom: calc(6px + env(safe-area-inset-bottom));
+  max-height: none;
+  min-height: 0;
+}
+
+.stage-sheet[data-stage-panel="gates"] .stage-sheet-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.world-gate-panel {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.world-gate-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px;
+  border: 2px solid var(--px-rim);
+  background: #25392f;
+  box-shadow: inset 2px 2px 0 #4b604d, 2px 2px 0 var(--px-shadow);
+}
+
+.world-gate-heading > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.world-gate-heading small {
+  color: #d8bd83;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.world-gate-heading h3 {
+  margin: 0;
+  color: var(--px-light);
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.world-gate-count {
+  display: grid;
+  flex: none;
+  gap: 1px;
+  min-width: 82px;
+  padding: 4px 7px;
+  border: 1px solid #74815d;
+  background: #1b2d25;
+  text-align: center;
+}
+
+.world-gate-count strong {
+  color: #bfe3a8;
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+}
+
+.world-gate-count span {
+  color: var(--px-text);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.world-gate-count small {
+  color: var(--px-muted);
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+.world-gate-description {
+  margin: 0;
+  color: var(--px-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.world-gate-hub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 30px;
+  color: var(--px-light);
+}
+
+.world-gate-hub > span {
+  padding: 4px 12px;
+  border: 2px solid #d5b87e;
+  background: #34483a;
+  box-shadow: 2px 2px 0 var(--px-shadow), inset 2px 2px 0 #647354;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.world-gate-hub small {
+  color: var(--px-muted);
+  font-size: 10px;
+}
+
+.world-gate-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding-top: 13px;
+}
+
+.world-gate-grid::before {
+  position: absolute;
+  top: 0;
+  left: 16%;
+  right: 16%;
+  height: 2px;
+  background: #a48d62;
+  content: "";
+}
+
+.world-gate-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 208px;
+  padding: 7px 4px 8px;
+  overflow: visible;
+  border: 2px solid #8b7958;
+  background: #293a30;
+  color: var(--px-text);
+  text-align: center;
+  text-decoration: none;
+  box-shadow: inset 2px 2px 0 #465b48, 2px 2px 0 var(--px-shadow);
+}
+
+.world-gate-card::before {
+  position: absolute;
+  top: -14px;
+  left: calc(50% - 1px);
+  height: 13px;
+  border-left: 2px solid #a48d62;
+  content: "";
+}
+
+button.world-gate-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.world-gate-card.is-current {
+  border-color: var(--px-light);
+  background: #3b513e;
+  box-shadow: inset 2px 2px 0 #73865e, 0 0 0 2px #8e9c6b, 3px 3px 0 var(--px-shadow);
+}
+
+.world-gate-card.world-gate-lingzai {
+  --gate-tone: #91d7b1;
+  --gate-fill: #244e45;
+}
+
+.world-gate-card.world-gate-zombie {
+  --gate-tone: #e2bb84;
+  --gate-fill: #594634;
+}
+
+.world-gate-card.world-gate-beast {
+  --gate-tone: #dfa5a0;
+  --gate-fill: #563c3d;
+}
+
+.world-gate-number {
+  color: var(--px-light);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.world-gate-portal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 59px;
+  margin: 3px 0 2px;
+  border: 3px solid var(--gate-tone, #89958b);
+  border-bottom: 0;
+  background: #14231e;
+  clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  box-shadow: 2px 2px 0 var(--px-shadow);
+}
+
+.world-gate-portal::before {
+  position: absolute;
+  inset: 7px 6px 0;
+  border: 1px solid var(--gate-tone, #89958b);
+  background: linear-gradient(180deg, var(--gate-fill, #34443a), #14231e);
+  content: "";
+}
+
+.world-gate-portal::after {
+  position: absolute;
+  bottom: -6px;
+  left: -5px;
+  right: -5px;
+  height: 6px;
+  background: var(--gate-tone, #89958b);
+  box-shadow: 2px 2px 0 var(--px-shadow);
+  content: "";
+}
+
+.world-gate-portal i {
+  position: relative;
+  z-index: 1;
+  color: var(--gate-tone, #b7c4ad);
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 900;
+  text-shadow: 1px 1px 0 #101916;
+}
+
+.world-gate-card strong {
+  display: block;
+  min-height: 2.3em;
+  max-width: 100%;
+  color: var(--px-text);
+  font-size: 11px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.world-gate-risk {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #cbd7bf;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.world-gate-risk i {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: #a8d493;
+  box-shadow: 1px 1px 0 var(--px-shadow);
+}
+
+.world-gate-risk.is-warning i {
+  background: #e7c27d;
+}
+
+.world-gate-risk.is-critical i {
+  background: #f09c7b;
+}
+
+.world-gate-metric {
+  color: var(--px-muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.world-gate-track {
+  display: block;
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  border: 1px solid #111e18;
+  background: #17251f;
+}
+
+.world-gate-track i {
+  display: block;
+  height: 100%;
+  background: #9bcf88;
+}
+
+.world-gate-level {
+  color: #e5c991;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.world-gate-action {
+  display: block;
+  width: 100%;
+  min-height: 25px;
+  margin-top: auto;
+  padding: 4px 2px;
+  border: 1px solid #b39b6d;
+  background: #3a503c;
+  color: #f8e9c6;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.world-gate-card.is-locked,
+.world-gate-card.is-empty {
+  border-style: dashed;
+  border-color: #6c735f;
+  background: #222e28;
+  box-shadow: inset 1px 1px 0 #39463a;
+}
+
+.world-gate-card.is-locked .world-gate-portal,
+.world-gate-card.is-empty .world-gate-portal {
+  --gate-tone: #828b7b;
+  --gate-fill: #2a362e;
+  opacity: 0.65;
+}
+
+.world-gate-card.is-locked strong,
+.world-gate-card.is-empty strong {
+  color: #d0c5a7;
+}
+
+.world-gate-lock-hint {
+  color: #c4c4ad;
+  font-size: 9px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.world-gate-seal {
+  margin-top: auto;
+  padding: 4px 3px;
+  color: #c5b89a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.world-gate-next-hint {
+  margin: 0;
+  padding: 7px 9px;
+  border-left: 3px solid var(--px-positive);
+  background: #273a2e;
+  color: #e3e8ce;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.world-gate-history {
+  padding: 7px 9px;
+  border: 1px solid #6e785b;
+  background: #202f27;
+}
+
+.world-gate-history h4 {
+  margin: 0 0 5px;
+  color: var(--px-light);
+  font-size: 11px;
+}
+
+.world-gate-history-list {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.world-gate-history-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+  color: var(--px-muted);
+  font-size: 10px;
+}
+
+.world-gate-history-list b {
+  flex: none;
+  color: #bde0a4;
+  font-size: 9px;
+}
+
+.world-gate-history-list b.is-failed {
+  color: #f0a17d;
+}
+
+.world-gate-history-empty {
+  margin: 0;
+  color: var(--px-muted);
+  font-size: 10px;
+}
+
+@media (max-width: 350px) {
+  .world-gate-grid {
+    gap: 4px;
+  }
+
+  .world-gate-card {
+    min-height: 214px;
+    padding-inline: 2px;
+  }
+
+  .world-gate-card strong {
+    font-size: 10px;
+  }
+
+  .world-gate-lock-hint,
+  .world-gate-risk,
+  .world-gate-metric,
+  .world-gate-level,
+  .world-gate-action {
+    font-size: 8px;
+  }
+}
