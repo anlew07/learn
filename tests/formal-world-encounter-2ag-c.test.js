@@ -272,7 +272,7 @@ describe("2AG-D encounter transaction regression", () => {
     expect(settled.run.day).toBe(2);
   });
 
-  it("uses injury-adjusted effective level and rejects a forged combat level", () => {
+  it("uses injury-adjusted effective level and rejects a forged combat-level snapshot", () => {
     const run = readyRun("2ag-e-injury");
     const world = Engine.byId(run, "lingzai");
     world.level = 4;
