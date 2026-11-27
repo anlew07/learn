@@ -1048,7 +1048,12 @@ function stagePanelHtml(view) {
    '<div class="encounter-mode-choices">'+
    '<button class="btn" data-action="encounter-ai"'+(salvageSelected?" disabled":"")+'>'+(run.encounterPreference==="ai"?"继续交给 AI":"让分身自主处理")+'</button>'+
    '<button class="btn-soft" data-action="encounter-player">'+(run.encounterPreference==="player"?"继续本源接管":"本源意识接管")+'</button></div>'+
-   '<p class="hint" id="encounter-mission-help">'+(salvageSelected?"险地回收需要本源意识接管。完成后撤离可锁定 +"+SORTIE.mission.rewardStones+" 灵石；继续战斗可争取更多碎片与胜利奖励，但倒下会失去目标奖励。":"控制方式会记住上次选择；战斗中可以交还 AI 或主动撤离。")+'其他世界会在这场战斗结束后完成本日行动。</p>':
+   '<p class="hint" id="encounter-mission-help">'+
+   "险地回收：10秒后出现回收点，到达并守住1秒。完成后撤离可锁定 +"+
+   SORTIE.mission.rewardStones+
+   " 灵石；继续战斗可争取更多碎片与胜利奖励，但倒下会失去目标奖励。"+
+   (salvageSelected?"本场需要本源意识接管。":"")+
+   '其他世界会在这场战斗结束后完成本日行动。</p>':
    '<p class="hint">当前没有等待接管的遭遇。</p>';
  }
  if (scenePanel === "encounter-result") content=encounterResultHtml();
