@@ -19,6 +19,10 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Temporary 2AG-J Prettier diagnostic
+        run: |
+          npx prettier scripts/encounter-mission-economy-2ag-j.mjs --write
+          git diff -- scripts/encounter-mission-economy-2ag-j.mjs
       - run: npm run format:check
       - run: npm run text:check
       - run: npm run text:runtime
