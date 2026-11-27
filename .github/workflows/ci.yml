@@ -43,6 +43,8 @@ jobs:
         run: npm run encounter:level-pressure:check
       - name: Compare recovery extraction decisions with paired seeds
         run: npm run encounter:extraction-decision:check
+      - name: Compare safe and salvage mission economy with paired seeds
+        run: npm run encounter:mission-economy:check
       - run: npm run build
       - run: npm run balance:check
       - run: npm run balance:matrix:check

@@ -30,7 +30,8 @@
     "encounter:skill-release:check": "node scripts/encounter-skill-release-2ag-b.mjs --assert",
     "encounter:level-progression:check": "node scripts/encounter-level-progression-2ag-e.mjs --assert",
     "encounter:level-pressure:check": "node scripts/encounter-level-pressure-2ag-e-b.mjs --assert",
-    "encounter:extraction-decision:check": "node scripts/encounter-extraction-decision-2ag-g.mjs --assert"
+    "encounter:extraction-decision:check": "node scripts/encounter-extraction-decision-2ag-g.mjs --assert",
+    "encounter:mission-economy:check": "node scripts/encounter-mission-economy-2ag-j.mjs --assert"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",
