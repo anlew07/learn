@@ -4,6 +4,7 @@ import {
   createSortie,
   stepSortie,
   chooseSortieSkill,
+  castSortieSkill,
   DURATION_TICKS,
 } from "../src/systems/sortie-sim.js";
 import {
@@ -57,6 +58,32 @@ describe("2AG-C formal world encounter transaction", () => {
       controller: "choice",
       actions: [],
     });
+  });
+
+  it("keeps formal encounters on automatic skill release", () => {
+    const run = readyRun("2ag-c-auto-skill-release");
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
+    const pending = run.pendingEncounter;
+    const battle = createSortie(
+      pending.seed,
+      pending.danger,
+      pending.forgeLevel,
+      pending.missionId,
+    );
+
+    expect(battle.skillReleaseMode).toBe("auto");
+    battle.skillChoicePending = true;
+    expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+    const shield = battle.runeShield;
+    const nextTick = battle.runeNextTick;
+    expect(shield).toBe(1);
+    expect(castSortieSkill(battle)).toMatchObject({
+      ok: false,
+      error: "当前战技采用自动释放",
+    });
+    expect(battle.runeShield).toBe(shield);
+    expect(battle.runeNextTick).toBe(nextTick);
   });
 
   it("does not interrupt an active event or a pending build choice", () => {
