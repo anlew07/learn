@@ -10,7 +10,54 @@
   background: #101b1d;
   font-size: 13px;
 }
+.encounter-screen[data-mission="salvage"] {
+  grid-template-rows: calc(52px + env(safe-area-inset-top)) 58px 26px minmax(0, 1fr) 22px;
+}
 .encounter-screen * { box-sizing: border-box; }
+.encounter-objective {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 10px;
+  border-bottom: 1px solid #52645c;
+  color: #e9dfc0;
+  background: #273a31;
+  font-size: 10px;
+  font-weight: 800;
+}
+.encounter-objective > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.encounter-objective-track {
+  height: 5px;
+  overflow: hidden;
+  border: 1px solid #77856c;
+  background: #17251f;
+}
+.encounter-objective-track i {
+  display: block;
+  height: 100%;
+  background: #d5b45f;
+  transition: width 100ms linear;
+}
+.encounter-objective[data-state="completed"] {
+  color: #ffe6a0;
+  background: #354331;
+}
+.encounter-objective[data-state="completed"] .encounter-objective-track i {
+  background: #e7c56c;
+}
+.encounter-objective[data-state="expired"] {
+  color: #b9b7a9;
+  background: #2c3030;
+}
+.encounter-objective[data-state="expired"] .encounter-objective-track i {
+  background: #73766c;
+}
 .encounter-top {
   display: flex;
   align-items: center;
@@ -183,7 +230,43 @@
 }
 .encounter-choice button b { font-size: 15px; }
 .encounter-choice button small { color: #c6d4bf; }
+.encounter-mission-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.encounter-mission-choices button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 8px;
+  border: 1px solid #71856e;
+  color: #f2ead0;
+  background: #263b33;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+.encounter-mission-choices button[aria-pressed="true"] {
+  border-color: #e4c477;
+  background: #4b4932;
+  color: #ffe6a0;
+}
+.encounter-mission-choices button small {
+  color: #c6d4bf;
+  font-size: 10px;
+  font-weight: 500;
+}
 .encounter-mode-choices { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 14px 0; }
+.encounter-mode-choices button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
 .encounter-result {
   display: flex;
   flex-direction: column;
@@ -197,6 +280,25 @@
 .encounter-result-heading small { color: #b6c7a9; }
 .encounter-result-heading h3 { margin: 4px 0; color: #f2d99a; font-size: 20px; }
 .encounter-result-heading p { margin: 0; }
+.encounter-objective-result {
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid #667c61;
+  color: #c9d9b8;
+  background: #21362d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.encounter-objective-result[data-state="banked"] {
+  border-color: #b49a5c;
+  color: #ffe6a0;
+  background: #3b392c;
+}
+.encounter-objective-result[data-state="lost"] {
+  border-color: #9c6e60;
+  color: #f1c4a7;
+  background: #3b2d2d;
+}
 .encounter-result-gains {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

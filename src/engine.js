@@ -736,7 +736,7 @@ const MultiworldEngine = (function () {
     }
     var verified=replaySortieTrace(sortieSeed(s),ling.d,request.actions,forgeLevel,missionId,"auto",combatLevel);
     if(!verified.ok)return {ok:false,error:verified.error};
-    var reward=previewSortieRewards(verified.battle);
+    var reward=previewSortieRewards(verified.battle,{bankObjectiveOnRetreat:formalEncounter});
     if(!reward)return {ok:false,error:"战斗未完成"};
     // All consequences are applied to a clone: a failed validation, including
     // an event that closes the world before the action, changes no caller data.
@@ -978,11 +978,39 @@ const MultiworldEngine = (function () {
     return {ok:true,pending:pending};
   }
 
+  /** Select the objective before choosing the encounter controller. */
+  function setEncounterMission(s,missionId){
+    var pending=s?.pendingEncounter;
+    if(!pending||pending.controller!=="choice")
+      return {ok:false,error:"当前没有等待选择任务的遭遇"};
+    if(typeof missionId!=="string"||!SORTIE.mission.options.includes(missionId))
+      return {ok:false,error:"无效的灵灾任务"};
+    if(missionId==="salvage"&&(!Number.isInteger(SORTIE.mission.rewardStones)||SORTIE.mission.rewardStones<=0))
+      return {ok:false,error:"险地回收任务当前不可用"};
+    if(pending.missionId===missionId&&sortieMissionFromCamp(s)===missionId)
+      return {ok:true,missionId,unchanged:true};
+    if(s.sortieCamp!==undefined&&s.sortieCamp!==null&&
+      (typeof s.sortieCamp!=="object"||Array.isArray(s.sortieCamp)))
+      return {ok:false,error:"营地任务记录无效"};
+    if(!s.sortieCamp)s.sortieCamp={forgeLevel:0,buildReceipt:null};
+    if(s.sortieCamp.forgeLevel===undefined)s.sortieCamp.forgeLevel=0;
+    if(!Number.isInteger(s.sortieCamp.forgeLevel)||s.sortieCamp.forgeLevel<0||
+      s.sortieCamp.forgeLevel>SORTIE.forge.maxLevel)
+      return {ok:false,error:"护灵剑台状态不合法"};
+    s.sortieCamp.missionSelection={
+      missionId,day:s.day,operationId:"encounter:"+s.day+":"+missionId
+    };
+    pending.missionId=missionId;
+    return {ok:true,missionId};
+  }
+
   /** Choose the controller for this real encounter and remember the preference. */
   function setEncounterMode(s,mode){
     var pending=s?.pendingEncounter;
     if(!pending||pending.controller!=="choice"||!["ai","player"].includes(mode))
       return {ok:false,error:"当前没有等待选择的遭遇"};
+    if(mode==="ai"&&pending.missionId==="salvage")
+      return {ok:false,error:"险地回收需要本源意识接管"};
     pending.controller=mode;
     s.encounterPreference=mode;
     s.paused=mode!=="player";
@@ -1044,7 +1072,7 @@ const MultiworldEngine = (function () {
 
   return {VERSION:VERSION,WORLDS:WORLDS,POWERS:POWERS,COMBOS:COMBOS,LABELS:LABELS,THRESHOLDS:THRESHOLDS,
     fresh:fresh,restore:restore,step:step,previewNextAction:previewNextAction,beginEncounter:beginEncounter,
-    setEncounterMode:setEncounterMode,handoffEncounterToAI:handoffEncounterToAI,
+    setEncounterMission:setEncounterMission,setEncounterMode:setEncounterMode,handoffEncounterToAI:handoffEncounterToAI,
     settleEncounter:settleEncounter,settleSortie:settleSortie,byId:byId,info:info,advise:advise,availableAP:availableAP,chooseBuild:outsideEncounter(chooseBuild),
     setStrategy:outsideEncounter(setStrategy),retreat:outsideEncounter(retreat),exitRetreat:outsideEncounter(exitRetreat),aid:outsideEncounter(aid),fuse:outsideEncounter(fuse),
     resolveEvent:outsideEncounter(resolveEvent),previewMajorEvent:previewMajorEvent,previewFusion:previewFusion,previewAid:previewResourceAid,previewStrategy:previewStrategyChange,previewTactic:previewTactic,useEcho:outsideEncounter(useEcho),applyCommand:applyCommand,canFinal:canFinal,bossRequirement:bossRequirement};
@@ -1054,8 +1082,10 @@ export default MultiworldEngine;
 function sortieMissionFromCamp(run) {
   const selection = run.sortieCamp?.missionSelection;
   if (selection === undefined || selection === null) return "safe";
-  if (!selection || typeof selection !== "object" || Array.isArray(selection) ||
-    !SORTIE.mission.options.includes(selection.missionId) ||
+  if (!selection || typeof selection !== "object" || Array.isArray(selection)) return null;
+  // A previous day's objective must never block the next day's encounter.
+  if (Number.isInteger(selection.day) && selection.day < run.day) return "safe";
+  if (!SORTIE.mission.options.includes(selection.missionId) ||
     selection.day !== run.day || typeof selection.operationId !== "string" ||
     !/^[A-Za-z0-9:_/.-]{1,128}$/.test(selection.operationId)) return null;
   return selection.missionId;

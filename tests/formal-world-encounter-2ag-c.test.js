@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import Engine from "../src/engine.js";
+import { SORTIE } from "../src/config/sortie-data.js";
 import {
   createSortie,
   stepSortie,
@@ -14,8 +15,8 @@ import {
 import { getAutonomousEncounterDecision } from "../src/systems/encounter-controller.js";
 import { assertRestorableSnapshot } from "../src/services/persistence.js";
 
-function readyRun() {
-  const run = Engine.fresh("2ag-preview-fight", 1, true);
+function readyRun(seed = "2ag-preview-fight") {
+  const run = Engine.fresh(seed, 1, true);
   Engine.byId(run, "lingzai").strategy = "clear";
   return run;
 }
@@ -355,5 +356,92 @@ describe("2AG-D encounter transaction regression", () => {
     expect(world.tacticalAssist).toBeNull();
     expect(world.lastCombat.tactic.kind).toBe("focus");
     expect(world.metrics.actions.fight).toBe(1);
+  });
+});
+
+describe("2AG-H recovery mission selection and extraction settlement", () => {
+  function completeRecoveryTrace(run) {
+    const pending = run.pendingEncounter;
+    const battle = createSortie(
+      pending.seed,
+      pending.danger,
+      pending.forgeLevel,
+      pending.missionId,
+      { combatLevel: pending.combatLevel },
+    );
+    const actions = [];
+    let guard = 0;
+    while (
+      battle.outcome === "running" &&
+      battle.mission.status !== "completed" &&
+      guard < DURATION_TICKS
+    ) {
+      if (battle.skillChoicePending) {
+        expect(chooseSortieSkill(battle, "rune").ok).toBe(true);
+        actions.push(["skill", "rune"]);
+        continue;
+      }
+      const dx = battle.mission.x - battle.hero.x;
+      const dy = battle.mission.y - battle.hero.y;
+      const range = Math.hypot(dx, dy);
+      const input = range <= battle.mission.collectRadius * 0.5 ?
+        { x: 0, y: 0 } : { x: dx / range, y: dy / range };
+      stepSortie(battle, input);
+      actions.push(["tick", input.x, input.y]);
+      guard++;
+    }
+    expect(battle.mission.status).toBe("completed");
+    expect(battle.outcome).toBe("running");
+    return actions;
+  }
+
+  it("allows the player to select salvage and banks +2 on real formal extraction", () => {
+    const run = readyRun("2ag-h-salvage-extraction");
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(run.pendingEncounter.missionId).toBe("safe");
+    expect(Engine.setEncounterMission(run, "invalid").ok).toBe(false);
+    expect(Engine.setEncounterMission(run, "salvage")).toMatchObject({
+      ok: true,
+      missionId: "salvage",
+    });
+    expect(run.pendingEncounter.missionId).toBe("salvage");
+    expect(Engine.setEncounterMode(run, "ai")).toMatchObject({ ok: false });
+    expect(run.pendingEncounter.controller).toBe("choice");
+    expect(Engine.setEncounterMode(run, "player").ok).toBe(true);
+
+    run.pendingEncounter.actions = completeRecoveryTrace(run);
+    run.pendingEncounter.actions.push(["retreat"]);
+    const settled = Engine.settleEncounter(run, { sortieId: run.pendingEncounter.id });
+    expect(settled.ok).toBe(true);
+    expect(settled.receipt.battle).toMatchObject({
+      outcome: "retreated",
+      missionId: "salvage",
+      objectiveStatus: "completed",
+      objectiveStones: SORTIE.mission.rewardStones,
+      stones: SORTIE.mission.rewardStones,
+    });
+    expect(settled.run.day).toBe(2);
+    expect(Engine.byId(settled.run, "lingzai").metrics.actions.fight).toBe(1);
+    const replayed = Engine.settleEncounter(settled.run, {
+      sortieId: settled.receipt.sortieId,
+    });
+    expect(replayed).toMatchObject({ ok: true, replayed: true });
+    expect(Engine.byId(replayed.run, "lingzai").resource)
+      .toBe(Engine.byId(settled.run, "lingzai").resource);
+  });
+
+  it("defaults stale previous-day salvage selections to the safe mission", () => {
+    const run = readyRun("2ag-h-stale-mission");
+    run.sortieCamp = {
+      forgeLevel: 0,
+      buildReceipt: null,
+      missionSelection: {
+        missionId: "salvage",
+        day: run.day - 1,
+        operationId: "encounter:old:salvage",
+      },
+    };
+    expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
+    expect(run.pendingEncounter.missionId).toBe("safe");
   });
 });
