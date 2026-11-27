@@ -234,7 +234,7 @@ describe("2AG-D encounter transaction regression", () => {
     return Engine.settleEncounter(run, { sortieId: pending.id });
   }
 
-  it("locks ordinary steps, commands and direct intervention APIs while pending", () => {
+  it("locks ordinary steps, commands and direct intervention APIs while pending without mutating the run", () => {
     const run = readyRun();
     expect(Engine.beginEncounter(run, "lingzai").ok).toBe(true);
     const before = JSON.stringify(run);
